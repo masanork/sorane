@@ -1,4 +1,5 @@
 import os
+import re
 import csv
 import argparse
 import base64
@@ -60,7 +61,9 @@ def get_tags_content(html_content):
 def inject_css_into_html(html_file, css_file):
     with open(css_file, 'r', encoding='utf-8') as f:
         css_content = f.read()
-    font_family_names = [line.split("'")[1] for line in css_content.splitlines() if "font-family" in line]
+
+    # font-familyの値を正規表現で取得
+    font_family_names = [m.group(1) for line in css_content.splitlines() if "font-family" in line and (m := re.search(r"font-family: '([^']+)';", line))]
 
     with open(html_file, 'r', encoding='utf-8') as f:
         content = f.read()
@@ -86,6 +89,11 @@ def inject_css_into_html(html_file, css_file):
 
     return output_html_file
 
+def get_font_family_name(font_file_path):
+    font = TTFont(font_file_path)
+    return font["name"].getName(1, 3, 1, 1033).toUnicode()
+
+
 def main():
     processed_fonts = set()
     parser = argparse.ArgumentParser(description='Generate CSS with embedded font data for specified HTML file and update the HTML file to use the font.')
@@ -104,14 +112,13 @@ def main():
 
     for tag_name, content in tags_content.items():
         font_index = load_font_index(style=tag_name)
-        used_fonts = {font_index[char] for char in content if char in font_index}
-        all_used_fonts.update(used_fonts)
+        used_fonts_for_tag = {font_index[char] for char in content if char in font_index}
+        all_used_fonts.update(used_fonts_for_tag)
 
-        for font_file in used_fonts:
+        for font_file in used_fonts_for_tag:
             relevant_chars = "".join([char for char in content if font_index.get(char) == font_file])
             font_family_name, data_uri = generate_data_uri(os.path.join("fonts", font_file), relevant_chars)
 
-            # ここで処理済みのフォントかどうかを確認します
             if font_family_name not in processed_fonts:
                 css_content += f"""
                 @font-face {{
@@ -119,10 +126,10 @@ def main():
                     src: url({data_uri}) format('woff2');
                 }}"""
                 processed_fonts.add(font_family_name)
-
-    # すべての使用されるフォントを1つのfont-familyプロパティで列挙します
-    font_families = ", ".join([f"'{font.split('.')[0]}'" for font in all_used_fonts])
-    css_content += f"body {{ font-family: {font_families}; }}"
+        
+        # ここで、特定のタグに対してフォントを適用します。
+        font_family_names_for_tag = [get_font_family_name(os.path.join("fonts", font_file)) for font_file in used_fonts_for_tag]
+        css_content += f"\n{tag_name} {{ font-family: {', '.join(font_family_names_for_tag)}; }}"
 
     output_css_file = os.path.splitext(args.file)[0] + ".css"
     with open(output_css_file, 'w', encoding='utf-8') as f:
