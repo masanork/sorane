@@ -87,6 +87,7 @@ def inject_css_into_html(html_file, css_file):
     return output_html_file
 
 def main():
+    processed_fonts = set()
     parser = argparse.ArgumentParser(description='Generate CSS with embedded font data for specified HTML file and update the HTML file to use the font.')
     parser.add_argument('file', help='The HTML file to process.')
     parser.add_argument('--style', help='Style name for selecting the appropriate CSV font index.')
@@ -105,15 +106,20 @@ def main():
         for font_file in used_fonts:
             relevant_chars = "".join([char for char in content if font_index.get(char) == font_file])
             font_family_name, data_uri = generate_data_uri(os.path.join("fonts", font_file), relevant_chars)
+
             css_content += f"""
             {tag_name} {{
                 font-family: '{font_family_name}';
-            }}
-            @font-face {{
-                font-family: '{font_family_name}';
-                src: url({data_uri}) format('woff2');
-            }}
-            """
+            }}"""
+
+            # ここで処理済みのフォントかどうかを確認します
+            if font_family_name not in processed_fonts:
+                css_content += f"""
+                @font-face {{
+                    font-family: '{font_family_name}';
+                    src: url({data_uri}) format('woff2');
+                }}"""
+                processed_fonts.add(font_family_name)  # このフォントを処理済みとして記録します
 
     output_css_file = os.path.splitext(args.file)[0] + ".css"
     with open(output_css_file, 'w', encoding='utf-8') as f:
