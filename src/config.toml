@@ -1,0 +1,4 @@
+[path]
+posts = "../posts"
+fonts = "../fonts"
+out = "../docs"

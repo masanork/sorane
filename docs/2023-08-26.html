@@ -1,0 +1,15 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+    <meta charset="UTF-8">
+    <title>Your Title Here</title>
+<link rel="stylesheet" type="text/css" href="2023-08-26.css"><style>body { font-family: Noto Serif JP, Noto Serif JP, Noto Serif JP, Noto Serif JP, Noto Serif JP, Noto Serif JP, Noto Serif JP, Noto Serif JP, Noto Serif JP Black, Noto Serif JP Black, Noto Serif JP, Noto Serif JP, Noto Serif JP, Noto Serif JP; }</style></head>
+<body>
+    <h1>GlyphPickerの拡張から静的サイト生成器soraneへ</h1>
+<h2>ページに多言語のWebFontを組み込む</h2>
+<p>GlyphPickerにmkfontindex/mkfontcssを追加した。もともと複数のフォントファイルを組み合わせてCSS WebFontとして組み込む実験を考えていたが、10日くらい前につくろうとした際は、動的なフォールバックは制御が複雑になり過ぎて、ChatGPTには荷が重かった。</p>
+<p>静的なindexをつくってしまえば簡単だし、その気になれば文字単位で使うフォントをチューニングできるので、却って便利ではないかと考え直した。割と簡単につくれてしまったので欲が出て、fontsディレクトリを丸ごと舐めるだけでなく、特定のフォントを優先順位付けして指定して、fontindex単位でstyleとして呼び出せるようにした。</p>
+<h2>静的サイト生成器 空音 sorane</h2>
+<p>フォント埋込機能を組み込んだ静的コンテンツジェネレーターをつくろうと試行錯誤中。フォントを埋め込み始めると、やっぱりタグ単位でフォントの指定をやりたくなってくるし、そうするとコンテンツ管理と組み合わせないと難しい。とはいえ本格的なSSGをつくるのも本意ではないので、あれこれメジャーなSSGを調べてみたのだが、やはりどれも複雑で改造は容易ではなさそう。そこで、とりあえず自分でつくることにした。</p>
+</body>
+</html>
