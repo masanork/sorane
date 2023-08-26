@@ -99,18 +99,17 @@ def main():
     tags_content = get_tags_content(html_content)
     css_content = ""
 
+    # すべてのタグのために使用されるフォントを集める
+    all_used_fonts = set()
+
     for tag_name, content in tags_content.items():
-        font_index = load_font_index(style=tag_name)  # タグ名に基づいてフォントインデックスをロード
+        font_index = load_font_index(style=tag_name)
         used_fonts = {font_index[char] for char in content if char in font_index}
+        all_used_fonts.update(used_fonts)
 
         for font_file in used_fonts:
             relevant_chars = "".join([char for char in content if font_index.get(char) == font_file])
             font_family_name, data_uri = generate_data_uri(os.path.join("fonts", font_file), relevant_chars)
-
-            css_content += f"""
-            {tag_name} {{
-                font-family: '{font_family_name}';
-            }}"""
 
             # ここで処理済みのフォントかどうかを確認します
             if font_family_name not in processed_fonts:
@@ -119,7 +118,11 @@ def main():
                     font-family: '{font_family_name}';
                     src: url({data_uri}) format('woff2');
                 }}"""
-                processed_fonts.add(font_family_name)  # このフォントを処理済みとして記録します
+                processed_fonts.add(font_family_name)
+
+    # すべての使用されるフォントを1つのfont-familyプロパティで列挙します
+    font_families = ", ".join([f"'{font.split('.')[0]}'" for font in all_used_fonts])
+    css_content += f"body {{ font-family: {font_families}; }}"
 
     output_css_file = os.path.splitext(args.file)[0] + ".css"
     with open(output_css_file, 'w', encoding='utf-8') as f:
