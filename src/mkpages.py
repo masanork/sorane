@@ -1,9 +1,9 @@
 import os
 import re
 import time
-import toml
-import markdown
 import subprocess
+import markdown
+import toml
 from bs4 import BeautifulSoup
 from jinja2 import Environment, FileSystemLoader
 
