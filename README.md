@@ -3,9 +3,9 @@ sorane - Static Site Generator
 
 sorane is a static site generator written in Python.
 
-mkfontindex.py - Font Indexer
-mkfontcss.py - WebFont embedded CSS
-mkpages.py - HTML pages generator
+- mkfontindex.py - Font Indexer
+- mkfontcss.py - WebFont embedded CSS generator
+- mkpages.py - HTML pages generator
 
 Usage
 ---
