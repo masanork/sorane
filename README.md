@@ -10,7 +10,7 @@ mkpages.py - HTML pages generator
 Usage
 ---
 
-最初に、フォントファイルをインデックスします。少なくともdefaultを、できればH1とH2向けもインデックスしてください。
+At first, you should make fontindex for default font and bold font.
 
 ```bash
 python mkfontindex.py TrueTypeFontFile.ttf --style=default
@@ -18,7 +18,7 @@ python mkfontindex.py TrueTypeBoldFontFile.ttf --style=H1
 python mkfontindex.py TrueTypeBoldFontFile.ttf --style=H2
 ```
 
-postsディレクトリにMarkdownファイルを配置してください。ファイル名は、YYYY-MM-DD-Title.mdの形式にしてください。出力ディレクトリには、postsディレクトリのファイル名と同じ名前のファイルが作成され、HTMLとCSSが生成されます。
+Please place Markdown files in the "posts" directory with the format "YYYY-MM-DD-Title.md" for the file name. A file with the same name as the file in the "posts" directory will be created in the output directory, and HTML and CSS will be generated.
 
 ```bash
 python mkpages.py
