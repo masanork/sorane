@@ -1,6 +1,7 @@
 import os
-import markdown
+import re
 import toml
+import markdown
 import subprocess
 from bs4 import BeautifulSoup
 from jinja2 import Environment, FileSystemLoader
@@ -32,20 +33,22 @@ def convert_md_to_html(md_path, template_path='template.html'):
 def generate_index_page(files, src_dir, template_path='index_template.html'):
     """index.htmlを生成する（Jinja2を使用）"""
     # 作成日でファイルをソート
-    files.sort(key=lambda x: get_file_creation_date(os.path.join(src_dir, x)), reverse=True)
+    files.sort(key=lambda x: get_creation_date_from_filename(x) or "", reverse=True)
 
     links = ""
     for file in files:
         md_path = os.path.join(src_dir, file)
         title = get_title_from_md(md_path)
-        creation_date = get_file_creation_date(md_path)
+        creation_date = get_creation_date_from_filename(file)
         last_updated = get_file_modification_date(md_path)
 
         # 作成日と最終更新日が異なる場合、両方を表示
-        if creation_date != last_updated:
+        if creation_date and creation_date != last_updated:
             date_str = f'作成日: {creation_date}, 最終更新: {last_updated}'
-        else:
+        elif creation_date:
             date_str = f'作成日: {creation_date}'
+        else:
+            date_str = f'最終更新: {last_updated}'
 
         html_filename = os.path.splitext(file)[0] + '.html'
         links += f'<p><a href="{html_filename}">{title}</a> ({date_str})</p>'
@@ -71,10 +74,12 @@ def get_title_from_md(md_path):
                 return heading.get_text()
     return None
 
-def get_file_creation_date(filepath):
-    """ファイルの作成日を取得する"""
-    create_time = os.path.getctime(filepath)
-    return time.strftime('%Y-%m-%d', time.localtime(create_time))
+def get_creation_date_from_filename(filename):
+    """ファイル名から作成日を推定する"""
+    match = re.match(r"(\d{4}-\d{2}-\d{2})(-.*|\.md$)", filename)
+    if match:
+        return match.group(1)
+    return None
 
 def get_file_modification_date(filepath):
     """ファイルの更新日を取得する"""
