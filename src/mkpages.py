@@ -18,16 +18,15 @@ def convert_md_to_html(md_path, template_path='template.html'):
     with open(md_path, 'r', encoding='utf-8') as f:
         md_content = f.read()
         html_content = markdown.markdown(md_content)
-        
-        # Markdownファイルからタイトルを取得
-        page_title = get_title_from_md(md_path)
-        if not page_title:  # タイトルが見つからない場合のデフォルト値
-            page_title = "Your Title Here"
 
+        # インディックスページに戻るリンクを追加
+        back_to_top_link = '<a href="index.html">戻る</a>'
+        html_content = back_to_top_link + html_content
+        
         # Jinja2テンプレートの読み込み
         env = Environment(loader=FileSystemLoader('./'))
         template = env.get_template(template_path)
-        rendered_html = template.render(title=page_title, content=html_content)
+        rendered_html = template.render(title="Your Title Here", content=html_content)
     return rendered_html
 
 def generate_index_page(files, src_dir, template_path='index_template.html'):
