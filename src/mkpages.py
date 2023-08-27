@@ -11,9 +11,6 @@ def load_config():
     """config.tomlから設定を読み込む"""
     with open("config.toml", "r", encoding="utf-8") as f:
         config = toml.load(f)
-    
-    # デバッグ出力
-    print("DEBUG: Loaded config =", config)
     return config
 
 def convert_md_to_html(md_path, template_path='template.html'):
@@ -38,7 +35,7 @@ def convert_md_to_html(md_path, template_path='template.html'):
         back_to_top_link = '<a href="index.html">戻る</a>'
         html_content = back_to_top_link + html_content + footer
         
-        # Markdownファイルからの見出しを取得してHTMLのタイトルに設定
+        # Markdownからの見出しを取得しHTMLのタイトルに設定
         page_title = get_title_from_md(md_path)
 
         # Jinja2テンプレートの読み込み
@@ -48,15 +45,14 @@ def convert_md_to_html(md_path, template_path='template.html'):
     return rendered_html
 
 def get_creation_date_from_filename(filename):
-    """ファイル名から作成日を取得する（例：2023-08-26-hoge.md -> 2023-08-26）"""
+    """ファイル名から作成日を取得"""
     pattern = r"(\d{4}-\d{2}-\d{2})"
     match = re.search(pattern, filename)
     if match:
         return match.group(1)
     return None
 
-def generate_index_page(files, src_dir, template_path='index_template.html'):
-
+def generate_index_page(files, src_dir, template_path='template.html'):
     """index.htmlを生成する（Jinja2を使用）"""
 
     files_with_dates = [(f, get_creation_date_from_filename(f)) for f in files]
@@ -64,7 +60,7 @@ def generate_index_page(files, src_dir, template_path='index_template.html'):
     # index.mdを除外
     files_with_dates = [(f, d) for f, d in files_with_dates if f != 'index.md']
     
-    # 日付を取得できなかったファイルを除外し、ユーザーに通知
+    # 日付を取得できなかったファイルを除外しユーザーに通知
     invalid_files = [f[0] for f in files_with_dates if f[1] is None]
     for invalid_file in invalid_files:
         print(f"Warning: The filename '{invalid_file}' does not contain a valid date. It will be excluded from the index.")
@@ -75,7 +71,7 @@ def generate_index_page(files, src_dir, template_path='index_template.html'):
 
     links = ""
 
-    # postsディレクトリ上のindex.mdからの見出しをタイトルとして取得し、その内容を冒頭に挿入
+    # postsのindex.mdからの見出しをタイトルとして取得
     index_md_path = os.path.join(src_dir, "index.md")
     if os.path.exists(index_md_path):
         index_title = get_title_from_md(index_md_path)
@@ -122,7 +118,7 @@ def main():
     src_dir = config["path"]["posts"]
     out_dir = config["path"]["out"]
 
-    # outディレクトリが存在しない場合、作成する
+    # outディレクトリが存在しない場合は作成
     if not os.path.exists(out_dir):
         os.makedirs(out_dir)
     
