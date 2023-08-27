@@ -46,23 +46,24 @@ def convert_md_to_html(md_path, template_path='template.html'):
 
 def generate_index_page(files, src_dir, template_path='index_template.html'):
     """index.htmlを生成する（Jinja2を使用）"""
-    # 更新日でファイルをソート
-    files.sort(key=lambda x: get_file_modification_date(os.path.join(src_dir, x)), reverse=True)
+    # ファイルの作成日でソート
+    files.sort(key=lambda x: get_creation_date_from_filename(x), reverse=True)
 
     links = ""
     for file in files:
         md_path = os.path.join(src_dir, file)
         title = get_title_from_md(md_path)
-        last_updated = get_file_modification_date(md_path)
+        creation_date = get_creation_date_from_filename(file)  # ファイル名から作成日を取得
+
         html_filename = os.path.splitext(file)[0] + '.html'
-        links += f'<p><a href="{html_filename}">{title}</a> (最終更新: {last_updated})</p>'
+        links += f'<p>{creation_date} <a href="{html_filename}">{title}</a></p>'
     
     config = load_config()
     index_title = config["contents"]["title"]  # config.tomlからタイトルを取得
 
     # Jinja2テンプレートの読み込み
     env = Environment(loader=FileSystemLoader('./'))
-    template = env.get_template(os.path.basename(template_path))
+    template = env.get_template(template_path)
     rendered_html = template.render(title=index_title, content=links)
     
     return rendered_html
