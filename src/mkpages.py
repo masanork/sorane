@@ -19,9 +19,21 @@ def convert_md_to_html(md_path, template_path='template.html'):
         md_content = f.read()
         html_content = markdown.markdown(md_content)
 
-        # インディックスページに戻るリンクを追加
+        # 作成日と更新日を取得
+        creation_date = get_creation_date_from_filename(os.path.basename(md_path))
+        modification_date = get_file_modification_date(md_path)
+
+        # フッターを作成
+        footer = '<footer>'
+        if creation_date:
+            footer += f'作成日: {creation_date}<br>'
+        if modification_date:
+            footer += f'更新日: {modification_date}'
+        footer += '</footer>'
+        
+        # トップページへのリンクとフッターをHTMLに追加
         back_to_top_link = '<a href="index.html">戻る</a>'
-        html_content = back_to_top_link + html_content
+        html_content = back_to_top_link + html_content + footer
         
         # Jinja2テンプレートの読み込み
         env = Environment(loader=FileSystemLoader('./'))
