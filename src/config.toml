@@ -2,3 +2,6 @@
 posts = "../posts"
 fonts = "../fonts"
 out = "../docs"
+
+[contents]
+title = "sorane開発日記"
