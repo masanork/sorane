@@ -1,34 +1,20 @@
 import os
 import re
+import time
 import toml
 import markdown
 import subprocess
 from bs4 import BeautifulSoup
 from jinja2 import Environment, FileSystemLoader
-import time
 
 def load_config():
     """config.tomlから設定を読み込む"""
     with open("config.toml", "r", encoding="utf-8") as f:
         config = toml.load(f)
+    
+    # デバッグ出力
+    print("DEBUG: Loaded config =", config)
     return config
-
-def convert_md_to_html(md_path, template_path='template.html'):
-    """MarkdownファイルをHTMLに変換し、テンプレートを適用"""
-    with open(md_path, 'r', encoding='utf-8') as f:
-        md_content = f.read()
-        html_content = markdown.markdown(md_content)
-        
-        # 作成日と更新日を取得
-        creation_date = get_creation_date_from_filename(md_path)
-        last_updated_date = get_file_modification_date(md_path)
-                
-        # Jinja2テンプレートの読み込み
-        env = Environment(loader=FileSystemLoader('./templates'))
-        template = env.get_template(template_path)
-        title = get_title_from_md(md_path)
-        rendered_html = template.render(title=title, content=html_content, date_info=date_info)
-    return rendered_html
 
 def convert_md_to_html(md_path, template_path='template.html'):
     """MarkdownファイルをHTMLに変換し、テンプレートを適用"""
@@ -69,20 +55,35 @@ def get_creation_date_from_filename(filename):
         return match.group(1)
     return None
 
-def generate_index_page(files, config, src_dir, template_path='index_template.html'):
+def generate_index_page(files, src_dir, template_path='index_template.html'):
+
     """index.htmlを生成する（Jinja2を使用）"""
+
     files_with_dates = [(f, get_creation_date_from_filename(f)) for f in files]
+    
+    # index.mdを除外
+    files_with_dates = [(f, d) for f, d in files_with_dates if f != 'index.md']
     
     # 日付を取得できなかったファイルを除外し、ユーザーに通知
     invalid_files = [f[0] for f in files_with_dates if f[1] is None]
     for invalid_file in invalid_files:
         print(f"Warning: The filename '{invalid_file}' does not contain a valid date. It will be excluded from the index.")
-
+    
     # 日付に基づいてファイルをソート
     valid_files = [f[0] for f in files_with_dates if f[1] is not None]
     valid_files.sort(key=lambda x: get_creation_date_from_filename(x), reverse=True)
 
     links = ""
+
+    # postsディレクトリ上のindex.mdからの見出しをタイトルとして取得し、その内容を冒頭に挿入
+    index_md_path = os.path.join(src_dir, "index.md")
+    if os.path.exists(index_md_path):
+        index_title = get_title_from_md(index_md_path)
+        with open(index_md_path, 'r', encoding='utf-8') as f:
+            index_content_md = f.read()
+        index_content_html = markdown.markdown(index_content_md)
+        links += index_content_html
+    
     for file in valid_files:
         md_path = os.path.join(src_dir, file)
         title = get_title_from_md(md_path)
@@ -93,7 +94,7 @@ def generate_index_page(files, config, src_dir, template_path='index_template.ht
     # Jinja2テンプレートの読み込み
     env = Environment(loader=FileSystemLoader('./'))
     template = env.get_template(template_path)
-    rendered_html = template.render(title=config["contents"]["title"], content=links)
+    rendered_html = template.render(title=index_title, content=links)
     
     return rendered_html
 
@@ -148,7 +149,7 @@ def main():
             subprocess.run(["python", "mkfontcss.py", html_path])
 
     # index.htmlの生成
-    index_content = generate_index_page(md_files, config, src_dir)
+    index_content = generate_index_page(md_files, src_dir)
     index_path = os.path.join(out_dir, 'index.html')
     with open(index_path, 'w', encoding='utf-8') as f:
         f.write(index_content)
