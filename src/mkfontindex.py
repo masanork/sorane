@@ -5,9 +5,20 @@ from fontTools.ttLib import TTFont
 
 def extract_characters_from_font(font_path):
     font = TTFont(font_path)
-    # cmap tableからUnicodeのコードポイントを取得
     cmap = font.getBestCmap()
-    return set(cmap.keys())  # コードポイントを直接取得します
+
+    entries = set(cmap.keys())
+
+    ivs_entries = set()  # IVS情報を保存するためのセット
+
+    # Format 14 (IVS)のサブテーブルを探す
+    for table in font['cmap'].tables:
+        if table.format == 14:
+            for var_selector, var_selector_record in table.uvsDict.items():
+                for base, _ in var_selector_record:
+                    ivs_entries.add((base, var_selector))
+
+    return entries, ivs_entries
 
 def main():
     parser = argparse.ArgumentParser(description="Create a font index based on code points.")
@@ -33,11 +44,17 @@ def main():
     character_to_font = {}
 
     for font_file in font_files:
-        codepoints = extract_characters_from_font(font_file)
+        codepoints, ivs_codepoints = extract_characters_from_font(font_file)
+        
         for codepoint in codepoints:
-            # コードポイントがまだ登録されていない場合のみ、現在のフォントのファイル名を登録する
-            if codepoint not in character_to_font:
-                character_to_font[codepoint] = os.path.basename(font_file)  # ファイル名のみをCSVに保存
+            char_str = chr(codepoint)
+            if char_str not in character_to_font:
+                character_to_font[char_str] = os.path.basename(font_file)
+
+        for base, var_selector in ivs_codepoints:
+            ivs_str = f"{chr(base)}{chr(var_selector)}"
+            if ivs_str not in character_to_font:
+                character_to_font[ivs_str] = os.path.basename(font_file)
 
     # --style オプションに基づいてCSVの名前を設定
     csv_name = args.style + ".csv" if args.style else "fontindex.csv"
@@ -48,8 +65,8 @@ def main():
     with open(csv_path, 'w', newline='', encoding='utf-8') as csvfile:
         writer = csv.writer(csvfile)
         writer.writerow(["Character", "Font File"])
-        for codepoint, font_file in character_to_font.items():
-            writer.writerow([chr(codepoint), font_file])
+        for entry, font_file in character_to_font.items():
+            writer.writerow([entry, font_file])
 
     print(f"{csv_name} has been saved to fonts directory.")
 
