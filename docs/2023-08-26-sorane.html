@@ -2,11 +2,11 @@
 <html lang="ja">
 <head>
     <meta charset="UTF-8">
-    <title>GlyphPickerから静的サイト生成器soraneへ</title>
-<link rel="stylesheet" type="text/css" href="2023-08-26-sorane.css"><style>body { font-family: Noto Serif Tangut, IPAmjMincho, Noto Serif JP Black, taisyokatujippoi7fontT5; }</style></head>
+    <title>GlyphPickerからSSG soraneへ</title>
+<link rel="stylesheet" type="text/css" href="2023-08-26-sorane.css"><style>body { font-family: IBM Plex Sans JP Light, IPAmjMincho, Noto Serif Tangut, IBM Plex Sans JP; }</style></head>
 <body>
-    <a href="index.html">戻る</a><h1>GlyphPickerから静的サイト生成器soraneへ</h1>
-<h2>ページに多言語のWebFontを組み込む</h2>
+    <a href="index.html">戻る</a><h1>GlyphPickerからSSG soraneへ</h1>
+<h2>CSSに多言語WebFontを組み込む</h2>
 <p>GlyphPickerにmkfontindex/mkfontcssを追加した。もともと複数のフォントファイルを組み合わせてCSS WebFontとして組み込む実験を考えていたが、10日くらい前につくろうとした際は、動的なフォールバックは制御が複雑になり過ぎた。
 静的なindexをつくってしまえば簡単だし、その気になれば文字単位で使うフォントをチューニングできるので却って便利ではないかと考え直した。割と簡単につくれてしまったので欲が出て、fontsディレクトリを丸ごと舐めるだけでなく、特定のフォントを優先順位付けして指定し、fontindex単位でstyleとして呼び出せるようにした。</p>
 <h2>静的サイト生成器 空音 sorane</h2>
