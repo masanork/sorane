@@ -18,6 +18,23 @@ def convert_md_to_html(md_path, template_path='template.html'):
     with open(md_path, 'r', encoding='utf-8') as f:
         md_content = f.read()
         html_content = markdown.markdown(md_content)
+        
+        # 作成日と更新日を取得
+        creation_date = get_creation_date_from_filename(md_path)
+        last_updated_date = get_file_modification_date(md_path)
+                
+        # Jinja2テンプレートの読み込み
+        env = Environment(loader=FileSystemLoader('./templates'))
+        template = env.get_template(template_path)
+        title = get_title_from_md(md_path)
+        rendered_html = template.render(title=title, content=html_content, date_info=date_info)
+    return rendered_html
+
+def convert_md_to_html(md_path, template_path='template.html'):
+    """MarkdownファイルをHTMLに変換し、テンプレートを適用"""
+    with open(md_path, 'r', encoding='utf-8') as f:
+        md_content = f.read()
+        html_content = markdown.markdown(md_content)
 
         # 作成日と更新日を取得
         creation_date = get_creation_date_from_filename(os.path.basename(md_path))
@@ -26,9 +43,9 @@ def convert_md_to_html(md_path, template_path='template.html'):
         # フッターを作成
         footer = '<footer>'
         if creation_date:
-            footer += f'作成日: {creation_date}<br>'
-        if modification_date:
-            footer += f'更新日: {modification_date}'
+            footer += f'作成日: {creation_date} '
+        if creation_date != modification_date:
+            footer += f'（最終更新: {modification_date}）'
         footer += '</footer>'
         
         # トップページへのリンクとフッターをHTMLに追加
