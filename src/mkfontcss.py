@@ -5,7 +5,7 @@ import argparse
 import base64
 from bs4 import BeautifulSoup
 from fontTools.ttLib import TTFont
-from fontTools.subset import Subsetter, Options
+from fontTools.subset import Subsetter
 
 def load_font_index(style=None, tag_name=None, fonts_dir="fonts"):
     # 初めにstyleを試す
@@ -35,9 +35,7 @@ def generate_data_uri(font_path, characters):
     font_family_name = font["name"].getName(1, 3, 1, 1033).toUnicode()
     
     # Subset font to only include specified characters
-    options = Options()
-    options.subrutinize = True
-    subsetter = Subsetter(options=options)
+    subsetter = Subsetter()
     subsetter.populate(text=characters)
     subsetter.subset(font)
 
