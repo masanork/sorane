@@ -17,26 +17,28 @@ def decode_woff2_from_data_uri(data_uri):
     base64_data = match.group(1)
     return base64.b64decode(base64_data)
 
+
 def get_codepoints_and_variants_from_font_binary(font_binary):
-    """Extracts all used codepoints and their IVS variants from a font binary."""
+    """Extracts all used codepoints and their IVS from a font binary."""
     with open('temp_font.woff2', 'wb') as f:
         f.write(font_binary)
 
     font = TTFont('temp_font.woff2')
     codepoints = set()
-    variants = {}
+    ivs_sequences = set()
 
     for table in font['cmap'].tables:
         codepoints.update(table.cmap.keys())
+        
+        # Extracting IVS if format is 14 (Unicode Variation Sequences)
+        if table.format == 14:
+            for uvs in table.uvsDict.values():
+                for uv in uvs:
+                    base, selector = uv[0], uv[1]
+                    ivs_sequences.add((base, selector))
 
-    if 'cvar' in font:
-        for var in font['cvar'].variations:
-            base, selector = divmod(var, 0x10000)
-            if base not in variants:
-                variants[base] = []
-            variants[base].append(selector)
+    return sorted(codepoints), sorted(ivs_sequences, key=lambda x: x[0])
     
-    return sorted(codepoints), variants
 
 def main(css_file):
     font_data_list = extract_data_uris_and_metadata_from_css(css_file)
