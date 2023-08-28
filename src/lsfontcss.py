@@ -8,7 +8,6 @@ def extract_data_uris_and_metadata_from_css(css_file):
     with open(css_file, 'r', encoding='utf-8') as f:
         content = f.read()
 
-    # This regular expression captures both font-family and src properties.
     pattern = re.compile(r"font-family: '([^']+)'[^}]*src: url\((data:font/woff2;base64,[^)]+)\)")
     return pattern.findall(content)
 
@@ -18,31 +17,43 @@ def decode_woff2_from_data_uri(data_uri):
     base64_data = match.group(1)
     return base64.b64decode(base64_data)
 
-def get_codepoints_from_font_binary(font_binary):
-    """Extracts all used codepoints from a font binary."""
+def get_codepoints_and_variants_from_font_binary(font_binary):
+    """Extracts all used codepoints and their IVS variants from a font binary."""
     with open('temp_font.woff2', 'wb') as f:
         f.write(font_binary)
 
     font = TTFont('temp_font.woff2')
     codepoints = set()
-    
+    variants = {}
+
     for table in font['cmap'].tables:
         codepoints.update(table.cmap.keys())
 
-    return sorted(codepoints)
+    if 'cvar' in font:
+        for var in font['cvar'].variations:
+            base, selector = divmod(var, 0x10000)
+            if base not in variants:
+                variants[base] = []
+            variants[base].append(selector)
+    
+    return sorted(codepoints), variants
 
 def main(css_file):
     font_data_list = extract_data_uris_and_metadata_from_css(css_file)
     
     for idx, (font_name, data_uri) in enumerate(font_data_list, 1):
         woff2_data = decode_woff2_from_data_uri(data_uri)
-        codepoints = get_codepoints_from_font_binary(woff2_data)
+        codepoints, variants = get_codepoints_and_variants_from_font_binary(woff2_data)
 
         print(f"Data URI #{idx} - Font Name: {font_name}:")
         for cp in codepoints:
-            # Convert codepoint to character, ensuring it's a valid character
             char_repr = chr(cp) if cp <= 0x10FFFF else '?'
             print(f"{hex(cp)} ({char_repr})")
+
+            if cp in variants:
+                for variant in variants[cp]:
+                    print(f"  IVS Variant: {hex(cp)}+{hex(variant)}")
+
         print("\n" + "-"*40 + "\n")
 
 if __name__ == '__main__':
