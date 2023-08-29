@@ -29,7 +29,7 @@ def get_codepoints_and_variants_from_font_binary(font_binary):
 
     for table in font['cmap'].tables:
         codepoints.update(table.cmap.keys())
-        
+
         # Extracting IVS if format is 14 (Unicode Variation Sequences)
         if table.format == 14:
             for uvs in table.uvsDict.values():
@@ -37,12 +37,12 @@ def get_codepoints_and_variants_from_font_binary(font_binary):
                     base, selector = uv[0], uv[1]
                     ivs_sequences.add((base, selector))
 
-    os.remove('temp_font.woff2')  # <-- 追加
+    os.remove('temp_font.woff2')
     return sorted(codepoints), sorted(ivs_sequences, key=lambda x: x[0])
 
 def main(css_file):
     font_data_list = extract_data_uris_and_metadata_from_css(css_file)
-    
+
     for idx, (font_name, data_uri) in enumerate(font_data_list, 1):
         woff2_data = decode_woff2_from_data_uri(data_uri)
         codepoints, variants = get_codepoints_and_variants_from_font_binary(woff2_data)
