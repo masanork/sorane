@@ -1,4 +1,5 @@
 import base64
+import os
 import re
 import sys
 from fontTools.ttLib import TTFont
@@ -16,7 +17,6 @@ def decode_woff2_from_data_uri(data_uri):
     match = re.match(r'data:[^;]+;base64,(.*)', data_uri)
     base64_data = match.group(1)
     return base64.b64decode(base64_data)
-
 
 def get_codepoints_and_variants_from_font_binary(font_binary):
     """Extracts all used codepoints and their IVS from a font binary."""
@@ -37,8 +37,8 @@ def get_codepoints_and_variants_from_font_binary(font_binary):
                     base, selector = uv[0], uv[1]
                     ivs_sequences.add((base, selector))
 
+    os.remove('temp_font.woff2')  # <-- 追加
     return sorted(codepoints), sorted(ivs_sequences, key=lambda x: x[0])
-    
 
 def main(css_file):
     font_data_list = extract_data_uris_and_metadata_from_css(css_file)
@@ -52,9 +52,9 @@ def main(css_file):
             char_repr = chr(cp) if cp <= 0x10FFFF else '?'
             print(f"{hex(cp)} ({char_repr})")
 
-            if cp in variants:
-                for variant in variants[cp]:
-                    print(f"  IVS Variant: {hex(cp)}+{hex(variant)}")
+            related_ivs = [(base, selector) for base, selector in variants if base == cp]
+            for _, glyph_name in related_ivs:
+                print(f"  IVS Variant: {hex(cp)} ({glyph_name if glyph_name else 'default'})")
 
         print("\n" + "-"*40 + "\n")
 
