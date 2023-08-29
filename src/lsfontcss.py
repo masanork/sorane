@@ -30,19 +30,22 @@ def get_codepoints_and_variants_from_font_binary(font_binary):
     for table in font['cmap'].tables:
         codepoints.update(table.cmap.keys())
 
-        # Extracting IVS if format is 14 (Unicode Variation Sequences)
         if table.format == 14:
             for uvs in table.uvsDict.values():
                 for uv in uvs:
                     base, selector = uv[0], uv[1]
-                    ivs_sequences.add((base, selector))
+                    if isinstance(selector, str):  # Convert glyph name to corresponding codepoint
+                        selector_codepoint = font.getGlyphID(selector)
+                        ivs_sequences.add((base, selector_codepoint))
+                    elif selector is not None:  # Exclude None values
+                        ivs_sequences.add((base, selector))
 
     os.remove('temp_font.woff2')
     return sorted(codepoints), sorted(ivs_sequences, key=lambda x: x[0])
 
 def main(css_file):
     font_data_list = extract_data_uris_and_metadata_from_css(css_file)
-
+    
     for idx, (font_name, data_uri) in enumerate(font_data_list, 1):
         woff2_data = decode_woff2_from_data_uri(data_uri)
         codepoints, variants = get_codepoints_and_variants_from_font_binary(woff2_data)
@@ -53,10 +56,23 @@ def main(css_file):
             print(f"{hex(cp)} ({char_repr})")
 
             related_ivs = [(base, selector) for base, selector in variants if base == cp]
-            for _, glyph_name in related_ivs:
-                print(f"  IVS Variant: {hex(cp)} ({glyph_name if glyph_name else 'default'})")
+
+            for base, selector in related_ivs:
+                if selector is None:
+                    print(f"  IVS Default Variant for {hex(base)}")
+                    continue
+
+                if isinstance(selector, str):  # selectorが文字列の場合のデバッグ出力
+                    print(f"Unexpected string selector: {selector} for base {hex(base)}")
+                    continue
+
+                ivs_repr = chr(base) + chr(get_correct_ivs(selector))  # IVSを適用した文字列
+                print(f"  IVS Variant: {hex(base)}+{hex(selector)} ({ivs_repr})")
 
         print("\n" + "-"*40 + "\n")
+
+def get_correct_ivs(selector):
+    return 0xE0100 + selector
 
 if __name__ == '__main__':
     if len(sys.argv) < 2:
@@ -64,3 +80,4 @@ if __name__ == '__main__':
         sys.exit(1)
 
     main(sys.argv[1])
+
