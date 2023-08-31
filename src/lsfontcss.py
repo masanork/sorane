@@ -2,6 +2,7 @@ import base64
 import os
 import re
 import sys
+import argparse
 from fontTools.ttLib import TTFont
 
 def extract_data_uris_and_metadata_from_css(css_file):
@@ -43,8 +44,29 @@ def get_codepoints_and_variants_from_font_binary(font_binary):
     os.remove('temp_font.woff2')
     return sorted(codepoints), sorted(ivs_sequences, key=lambda x: x[0])
 
-def main(css_file):
-    font_data_list = extract_data_uris_and_metadata_from_css(css_file)
+def display_font_tables(font_binary, dump_content=False):
+    """Displays all tables and their contents present in a font binary."""
+    with open('temp_font.woff2', 'wb') as f:
+        f.write(font_binary)
+
+    font = TTFont('temp_font.woff2')
+    print("Available tables in the font:")
+    for table_name in font.keys():
+        print(f"\nTable: {table_name}\n{'-'*40}")
+        if dump_content:
+            try:
+                table_data = font.getTableData(table_name)
+                print(table_data)
+            except:
+                print(f"Unable to display content for table: {table_name}")
+
+    os.remove('temp_font.woff2')
+
+def get_correct_ivs(selector):
+    return 0xE0100 + selector
+
+def main(args):
+    font_data_list = extract_data_uris_and_metadata_from_css(args.css_file)
     
     for idx, (font_name, data_uri) in enumerate(font_data_list, 1):
         woff2_data = decode_woff2_from_data_uri(data_uri)
@@ -71,13 +93,13 @@ def main(css_file):
 
         print("\n" + "-"*40 + "\n")
 
-def get_correct_ivs(selector):
-    return 0xE0100 + selector
+        # テーブルを表示
+        display_font_tables(woff2_data, args.dump)
 
 if __name__ == '__main__':
-    if len(sys.argv) < 2:
-        print("Usage: python script_name.py [CSS_FILE_NAME]")
-        sys.exit(1)
-
-    main(sys.argv[1])
-
+    parser = argparse.ArgumentParser(description='Extract glyphs and font tables from a CSS file.')
+    parser.add_argument('css_file', help='The CSS file to process.')
+    parser.add_argument('--dump', action='store_true', help='Dump the content of the font tables.')
+    
+    args = parser.parse_args()
+    main(args)

@@ -3,6 +3,7 @@ import re
 import csv
 import argparse
 import base64
+import toml
 from bs4 import BeautifulSoup
 from fontTools.ttLib import TTFont
 from fontTools.subset import Subsetter
@@ -93,8 +94,15 @@ def get_font_family_name(font_file_path):
     font = TTFont(font_file_path)
     return font["name"].getName(1, 3, 1, 1033).toUnicode()
 
+def load_config():
+    """config.tomlから設定を読み込む"""
+    with open('config.toml', 'r') as f:
+        config = toml.load(f)
+    return config
 
 def main():
+    config = load_config()
+    fonts_dir = config['path']['fonts']
     processed_fonts = set()
     parser = argparse.ArgumentParser(description='Generate CSS with embedded font data for specified HTML file and update the HTML file to use the font.')
     parser.add_argument('file', help='The HTML file to process.')
@@ -111,13 +119,13 @@ def main():
     all_used_fonts = set()
 
     for tag_name, content in tags_content.items():
-        font_index = load_font_index(style=tag_name)
+        font_index = load_font_index(style=tag_name, fonts_dir=fonts_dir)
         used_fonts_for_tag = {font_index[char] for char in content if char in font_index}
         all_used_fonts.update(used_fonts_for_tag)
 
         for font_file in used_fonts_for_tag:
             relevant_chars = "".join([char for char in content if font_index.get(char) == font_file])
-            font_family_name, data_uri = generate_data_uri(os.path.join("fonts", font_file), relevant_chars)
+            font_family_name, data_uri = generate_data_uri(os.path.join(fonts_dir, font_file), relevant_chars)
 
             if font_family_name not in processed_fonts:
                 css_content += f"""
@@ -128,7 +136,7 @@ def main():
                 processed_fonts.add(font_family_name)
         
         # ここで、特定のタグに対してフォントを適用します。
-        font_family_names_for_tag = [get_font_family_name(os.path.join("fonts", font_file)) for font_file in used_fonts_for_tag]
+        font_family_names_for_tag = [get_font_family_name(os.path.join(fonts_dir, font_file)) for font_file in used_fonts_for_tag]
         css_content += f"\n{tag_name} {{ font-family: {', '.join(font_family_names_for_tag)}; }}"
 
     output_css_file = os.path.splitext(args.file)[0] + ".css"
