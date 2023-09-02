@@ -114,8 +114,8 @@ def get_file_modification_date(filepath):
     mod_time = os.path.getmtime(filepath)
     return time.strftime('%Y-%m-%d', time.localtime(mod_time))
 
-def is_html_updated(filename, src_dir, out_dir):
-    """指定されたMarkdownファイルが対応するHTMLよりも新しいかを確認する"""
+def is_html_updated(filename, src_dir, out_dir, template_path='template.html'):
+    """指定されたMarkdownファイルまたはテンプレートが対応するHTMLよりも新しいかを確認する"""
     md_path = os.path.join(src_dir, filename)
     html_filename = os.path.splitext(filename)[0] + '.html'
     html_path = os.path.join(out_dir, html_filename)
@@ -124,12 +124,13 @@ def is_html_updated(filename, src_dir, out_dir):
     if not os.path.exists(html_path):
         return True
 
-    # MarkdownとHTMLのタイムスタンプを取得
+    # Markdown、テンプレート、HTMLのタイムスタンプを取得
     md_timestamp = os.path.getmtime(md_path)
+    template_timestamp = os.path.getmtime(template_path)
     html_timestamp = os.path.getmtime(html_path)
 
-    # MarkdownのタイムスタンプがHTMLよりも新しい場合はTrueを返す
-    return md_timestamp > html_timestamp
+    # MarkdownまたはテンプレートのタイムスタンプがHTMLよりも新しい場合はTrueを返す
+    return md_timestamp > html_timestamp or template_timestamp > html_timestamp
 
 def main():
     config = load_config()
@@ -139,10 +140,11 @@ def main():
     # outディレクトリが存在しない場合は作成
     if not os.path.exists(out_dir):
         os.makedirs(out_dir)
-    
+
     rebuild_all = '--rebuild' in sys.argv
 
     md_files = []
+    files_to_rebuild = []  # 再生成が必要なMarkdownファイルのリスト
     for filename in os.listdir(src_dir):
         if filename.endswith('.md'):
             md_files.append(filename)
@@ -156,6 +158,8 @@ def main():
             # 再生成フラグが設定されている、またはMarkdownが更新されている場合のみ生成
             if not rebuild_all and not is_html_updated(filename, src_dir, out_dir):
                 continue
+
+            files_to_rebuild.append(filename)  # 再生成リストに追加
             
             # MarkdownをHTMLに変換
             html_content = convert_md_to_html(md_path)
@@ -168,14 +172,13 @@ def main():
             # 生成したHTMLファイルを引数としてmkfontcss.pyを実行
             subprocess.run(["python", "mkfontcss.py", html_path])
 
-    # index.htmlの生成
-    index_content = generate_index_page(md_files, src_dir)
-    index_path = os.path.join(out_dir, 'index.html')
-    with open(index_path, 'w', encoding='utf-8') as f:
-        f.write(index_content)
-
-    # 生成したindex.htmlファイルを引数としてmkfontcss.pyを実行
-    subprocess.run(["python", "mkfontcss.py", index_path])
+    # files_to_rebuildが空でない場合、または--rebuildフラグが設定されている場合のみindex.htmlの生成
+    if files_to_rebuild or rebuild_all:
+        index_content = generate_index_page(md_files, src_dir)
+        index_path = os.path.join(out_dir, 'index.html')
+        with open(index_path, 'w', encoding='utf-8') as f:
+            f.write(index_content)
+        subprocess.run(["python", "mkfontcss.py", index_path])
 
 if __name__ == '__main__':
     main()

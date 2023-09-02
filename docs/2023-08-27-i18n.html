@@ -2,8 +2,33 @@
 <html lang="ja">
 <head>
     <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>CJK国際化対応のテスト🇯🇵🇨🇳🇰🇷</title>
-<link rel="stylesheet" type="text/css" href="2023-08-27-i18n.css"><style>body { font-family: Noto Color Emoji, IPAmjMincho, Noto Serif SC, Noto Serif Tangut, Noto Serif KR, IBM Plex Sans JP; }</style></head>
+    <style>
+        /* PCや大きなデバイス用の基本スタイル */
+        body {
+            margin: 20px;
+            padding: 0;
+        }
+
+        @media screen and (max-width: 768px) {
+            /* スマホやタブレット用のスタイル */
+            body {
+                font-size: 18px;  /* 文字サイズの調整 */
+                margin: 10px;     /* 余白の調整 */
+            }
+            /* すべてのボックスや要素の幅を最大化 */
+            div, article, section, header, footer, nav, aside {
+                width: 100%;
+                box-sizing: border-box;
+            }
+            /* リンクやボタンなどのタッチ要素のパディングを調整 */
+            a, button {
+                padding: 10px 15px;
+            }
+        }
+    </style>
+<link rel="stylesheet" type="text/css" href="2023-08-27-i18n.css"><style>body { font-family: Noto Serif KR, IPAmjMincho, Noto Color Emoji, Noto Serif Tangut, Noto Serif SC, IBM Plex Sans JP; }</style></head>
 <body>
     <a href="index.html">戻る</a><h1>CJK国際化対応のテスト🇯🇵🇨🇳🇰🇷</h1>
 <p>動作テストとして各国語と絵文字を組み込んだページを作成します。</p>
