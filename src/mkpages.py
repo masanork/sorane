@@ -114,11 +114,22 @@ def get_file_modification_date(filepath):
     mod_time = os.path.getmtime(filepath)
     return time.strftime('%Y-%m-%d', time.localtime(mod_time))
 
-def is_html_exists(filename, out_dir):
-    """指定されたMarkdownファイルに対応するHTMLが存在するかを確認する"""
+def is_html_updated(filename, src_dir, out_dir):
+    """指定されたMarkdownファイルが対応するHTMLよりも新しいかを確認する"""
+    md_path = os.path.join(src_dir, filename)
     html_filename = os.path.splitext(filename)[0] + '.html'
     html_path = os.path.join(out_dir, html_filename)
-    return os.path.exists(html_path)
+
+    # HTMLが存在しない場合はTrueを返す
+    if not os.path.exists(html_path):
+        return True
+
+    # MarkdownとHTMLのタイムスタンプを取得
+    md_timestamp = os.path.getmtime(md_path)
+    html_timestamp = os.path.getmtime(html_path)
+
+    # MarkdownのタイムスタンプがHTMLよりも新しい場合はTrueを返す
+    return md_timestamp > html_timestamp
 
 def main():
     config = load_config()
@@ -142,8 +153,8 @@ def main():
             html_filename = os.path.splitext(filename)[0] + '.html'
             html_path = os.path.join(out_dir, html_filename)
 
-            # デフォルトの動作または再生成フラグが設定されている、またはHTMLが存在しない場合のみ生成
-            if not rebuild_all and is_html_exists(filename, out_dir):
+            # 再生成フラグが設定されている、またはMarkdownが更新されている場合のみ生成
+            if not rebuild_all and not is_html_updated(filename, src_dir, out_dir):
                 continue
             
             # MarkdownをHTMLに変換
