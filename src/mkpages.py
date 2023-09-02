@@ -1,5 +1,6 @@
 import os
 import re
+import sys
 import time
 import subprocess
 import markdown
@@ -113,6 +114,12 @@ def get_file_modification_date(filepath):
     mod_time = os.path.getmtime(filepath)
     return time.strftime('%Y-%m-%d', time.localtime(mod_time))
 
+def is_html_exists(filename, out_dir):
+    """指定されたMarkdownファイルに対応するHTMLが存在するかを確認する"""
+    html_filename = os.path.splitext(filename)[0] + '.html'
+    html_path = os.path.join(out_dir, html_filename)
+    return os.path.exists(html_path)
+
 def main():
     config = load_config()
     src_dir = config["path"]["posts"]
@@ -122,6 +129,8 @@ def main():
     if not os.path.exists(out_dir):
         os.makedirs(out_dir)
     
+    rebuild_all = '--rebuild' in sys.argv
+
     md_files = []
     for filename in os.listdir(src_dir):
         if filename.endswith('.md'):
@@ -132,6 +141,10 @@ def main():
             # 出力するHTMLファイルの名前とパス
             html_filename = os.path.splitext(filename)[0] + '.html'
             html_path = os.path.join(out_dir, html_filename)
+
+            # デフォルトの動作または再生成フラグが設定されている、またはHTMLが存在しない場合のみ生成
+            if not rebuild_all and is_html_exists(filename, out_dir):
+                continue
             
             # MarkdownをHTMLに変換
             html_content = convert_md_to_html(md_path)
