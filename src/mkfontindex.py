@@ -1,6 +1,7 @@
 import os
 import csv
 import argparse
+import toml
 from fontTools.ttLib import TTFont
 
 def extract_characters_from_font(font_path):
@@ -8,7 +9,6 @@ def extract_characters_from_font(font_path):
     cmap = font.getBestCmap()
 
     entries = set(cmap.keys())
-
     ivs_entries = set()  # IVS情報を保存するためのセット
 
     # Format 14 (IVS)のサブテーブルを探す
@@ -27,7 +27,9 @@ def main():
     
     args = parser.parse_args()
     
-    fonts_dir = "fonts"
+    # 2. config.tomlからfontsのパスを読み取る
+    config = toml.load("config.toml")
+    fonts_dir = config["path"]["fonts"]
 
     if args.fonts:
         font_files = args.fonts  # フルパスのまま使用
@@ -42,7 +44,6 @@ def main():
         font_files.sort()
 
     character_to_font = {}
-
     for font_file in font_files:
         codepoints, ivs_codepoints = extract_characters_from_font(font_file)
         
@@ -59,8 +60,8 @@ def main():
     # --style オプションに基づいてCSVの名前を設定
     csv_name = args.style + ".csv" if args.style else "fontindex.csv"
     
-    # fonts_dirを使わずに、直接"fonts"ディレクトリを指定
-    csv_path = os.path.join("fonts", csv_name)
+    # 3. コード内の固定されたfontsディレクトリの参照を読み取ったパスに置き換え
+    csv_path = os.path.join(fonts_dir, csv_name)
     
     with open(csv_path, 'w', newline='', encoding='utf-8') as csvfile:
         writer = csv.writer(csvfile)
@@ -68,7 +69,7 @@ def main():
         for entry, font_file in character_to_font.items():
             writer.writerow([entry, font_file])
 
-    print(f"{csv_name} has been saved to fonts directory.")
+    print(f"{csv_name} has been saved to {fonts_dir} directory.")
 
 if __name__ == "__main__":
     main()
