@@ -87,6 +87,14 @@ function isSystemPage(concept: ParsedConcept["concept"]): boolean {
   return concept.frontmatter.isSystem === true;
 }
 
+function isBlogArticle(concept: ParsedConcept["concept"]): boolean {
+  return (
+    concept.type === "article" &&
+    !isSystemPage(concept) &&
+    !isSearchView(concept.frontmatter)
+  );
+}
+
 function frontmatterString(
   frontmatter: Record<string, unknown>,
   key: string,
@@ -207,7 +215,7 @@ export async function runBuild(opts: BuildOptions): Promise<BuildResult> {
   };
 
   const articleSummaries: ArticleListEntry[] = parsed
-    .filter((p) => p.concept.type === "article" && !isSystemPage(p.concept))
+    .filter((p) => isBlogArticle(p.concept))
     .map((p) => {
       const slug = slugFromRel(p.relPath);
       const outRel = resolvePermalink(config.build.permalink, slug, p.concept.timestamp);
@@ -225,7 +233,7 @@ export async function runBuild(opts: BuildOptions): Promise<BuildResult> {
 
   const parsedByHref = new Map<string, ParsedConcept>();
   for (const p of parsed) {
-    if (p.concept.type !== "article" || isSystemPage(p.concept)) continue;
+    if (!isBlogArticle(p.concept)) continue;
     const slug = slugFromRel(p.relPath);
     const outRel = resolvePermalink(config.build.permalink, slug, p.concept.timestamp);
     parsedByHref.set(outRel, p);
