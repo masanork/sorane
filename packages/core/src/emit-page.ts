@@ -18,6 +18,7 @@ export interface EmitPageOptions {
   readonly extraHead?: string[];
   readonly isIndex?: boolean;
   readonly showArchiveNav?: boolean;
+  readonly searchPath?: string;
 }
 
 export function emitPage(opts: EmitPageOptions): { mdOutRel: string; canonicalUrl?: string } {
@@ -47,6 +48,7 @@ export function emitPage(opts: EmitPageOptions): { mdOutRel: string; canonicalUr
     lang: opts.config.site.lang,
     feedPath: "feed.xml",
     showArchiveNav: opts.showArchiveNav,
+    searchPath: opts.searchPath,
     machineSources: [{ href: mdOutRel, type: "text/markdown" }],
     extraHead: opts.extraHead ?? (opts.fontCss ? [opts.fontCss] : undefined),
   });

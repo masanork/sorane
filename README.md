@@ -79,13 +79,16 @@ Pages with `noFontEmbedding: true` in frontmatter use system fonts.
 ## Search
 
 SQLite FTS5 trigram + optional ruri-v3-30m hybrid (vec KNN + FTS → RRF) at `.sorane/index.db`.
+`build` emits `assets/search-index.json` (+ model/runtime) when a hybrid index exists.
 
 ```bash
 npm run fetch-model                    # once: download ruri-v3-30m (~37MB)
-npx sorane index --cwd examples/minimal
+npx sorane index --cwd examples/minimal --force
 npx sorane search "OKF" --cwd examples/minimal
-npx sorane index --fts-only            # skip embeddings
+npx sorane build --cwd examples/minimal --clean
 ```
+
+Add a search page with `view: search` in frontmatter (see `examples/minimal/content/search.md`).
 
 Configure in `sorane.yaml`:
 
@@ -94,9 +97,9 @@ search:
   index: .sorane/index.db
   model: vendor/models
   model_id: ruri-v3-30m
+  asset_base_url: ""   # optional R2 URL for large assets
 ```
 
 ## Roadmap
 
-- `search-index.json` web export (browser search)
 - Astro theme layer (reads sorane build output)

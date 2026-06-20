@@ -1,4 +1,5 @@
 import { createFontProcessor } from "@sorane/font";
+import { emitSearchAssets } from "@sorane/search";
 import {
   parseConcept,
   buildBundleEntries,
@@ -25,6 +26,9 @@ import {
   renderArticleBody,
   renderBlogIndexBody,
   renderIndexBody,
+  buildSearchMount,
+  buildSearchHead,
+  isSearchView,
   type ArticleListEntry,
   type ArticleNav,
 } from "./ssg.ts";
@@ -233,6 +237,32 @@ export async function runBuild(opts: BuildOptions): Promise<BuildResult> {
 
   const fontProcessor = await createFontProcessor(cwd, config.fonts, outDir);
 
+  const sourceToUrl = new Map<string, string>();
+  let searchPageRel: string | undefined;
+  for (const p of parsed) {
+    const rel = p.relPath.replace(/\\/g, "/");
+    const slug = slugFromRel(p.relPath);
+    const outRel =
+      p.concept.type === "index" || slug === "index"
+        ? "index.html"
+        : resolvePermalink(config.build.permalink, slug, p.concept.timestamp);
+    if (!isSystemPage(p.concept)) {
+      sourceToUrl.set(rel, outRel);
+    }
+    if (isSearchView(p.concept.frontmatter) && p.concept.type === "article") {
+      searchPageRel = outRel;
+    }
+  }
+
+  const indexDbPath = resolve(cwd, config.search.index);
+  let searchNavPath: string | undefined;
+  if (searchPageRel && existsSync(indexDbPath)) {
+    const { IndexStore } = await import("@sorane/search");
+    const probe = new IndexStore(indexDbPath);
+    if (probe.hasVectors()) searchNavPath = searchPageRel;
+    probe.close();
+  }
+
   const siteEntries: SiteEntry[] = [];
   const catalogInputs: Array<{
     slug: string;
@@ -264,24 +294,39 @@ export async function runBuild(opts: BuildOptions): Promise<BuildResult> {
 
     const slug = slugFromRel(p.relPath);
     const outRel = resolvePermalink(config.build.permalink, slug, p.concept.timestamp);
-    const nav = articleNavFor(outRel, articleSummaries);
-    const bodyHtml = renderArticleBody(p.concept, nav);
+    const depth = outRel.replace(/\\/g, "/").split("/").length - 1;
+    const rootPrefix = depth > 0 ? "../".repeat(depth) : "./";
+    const isSearch = isSearchView(p.concept.frontmatter);
+    const nav = isSearch ? undefined : articleNavFor(outRel, articleSummaries);
+    const bodyHtml = isSearch
+      ? buildSearchMount(rootPrefix, config.search.asset_base_url) +
+        (p.concept.body.trim()
+          ? `<div class="search-intro">${renderMarkdown(p.concept.body)}</div>`
+          : "")
+      : renderArticleBody(p.concept, nav);
 
     const updated = frontmatterString(p.concept.frontmatter, "updated");
     const author = frontmatterString(p.concept.frontmatter, "author");
     const canonicalUrl = baseUrl.length > 0 ? `${baseUrl}/${outRel}` : undefined;
-    const jsonLd = buildBlogPostingJsonLd({
-      title: p.concept.title,
-      description: p.concept.description ?? extractDescription(p.concept.body) ?? undefined,
-      url: canonicalUrl ?? outRel,
-      datePublished: p.concept.timestamp,
-      dateModified: updated ?? p.concept.timestamp,
-      author,
-      siteTitle: config.site.title,
-      lang: config.site.lang,
-    });
+    const jsonLd = isSearch
+      ? ""
+      : buildBlogPostingJsonLd({
+          title: p.concept.title,
+          description: p.concept.description ?? extractDescription(p.concept.body) ?? undefined,
+          url: canonicalUrl ?? outRel,
+          datePublished: p.concept.timestamp,
+          dateModified: updated ?? p.concept.timestamp,
+          author,
+          siteTitle: config.site.title,
+          lang: config.site.lang,
+        });
 
-    const fontCss = await fontCssFor(p.concept, "./");
+    const fontCss = await fontCssFor(p.concept, rootPrefix);
+    const extraHead = isSearch
+      ? buildSearchHead(rootPrefix)
+      : jsonLd
+        ? [jsonLd]
+        : undefined;
     emitPage({
       cwd,
       config,
@@ -291,8 +336,9 @@ export async function runBuild(opts: BuildOptions): Promise<BuildResult> {
       bodyHtml,
       baseUrl,
       fontCss,
-      extraHead: [jsonLd],
+      extraHead,
       showArchiveNav: Boolean(indexParsed) && blogOpts.archives,
+      searchPath: searchNavPath,
     });
     builtPages += 1;
 
@@ -356,6 +402,7 @@ export async function runBuild(opts: BuildOptions): Promise<BuildResult> {
       fontCss,
       isIndex: true,
       showArchiveNav: blogOpts.archives,
+      searchPath: searchNavPath,
     });
     builtPages += 1;
     siteEntries.push({ url: "index.html", lastmod: undefined, isIndex: true });
@@ -384,6 +431,7 @@ export async function runBuild(opts: BuildOptions): Promise<BuildResult> {
         concept: syntheticConcept(`${config.site.title} — ページ ${pageNum}`),
         bodyHtml,
         baseUrl,
+        searchPath: searchNavPath,
       });
       builtPages += 1;
       siteEntries.push({ url: outRel, lastmod: undefined, isIndex: false });
@@ -403,6 +451,7 @@ export async function runBuild(opts: BuildOptions): Promise<BuildResult> {
       concept: syntheticConcept(`${config.site.title} — 年別アーカイブ`),
       bodyHtml: archiveIndexHtml,
       baseUrl,
+      searchPath: searchNavPath,
     });
     builtPages += 1;
     siteEntries.push({ url: "archive/index.html", lastmod: undefined, isIndex: false });
@@ -417,6 +466,7 @@ export async function runBuild(opts: BuildOptions): Promise<BuildResult> {
         concept: syntheticConcept(`${year}年`),
         bodyHtml: yearHtml,
         baseUrl,
+        searchPath: searchNavPath,
       });
       builtPages += 1;
       siteEntries.push({ url: `archive/${year}.html`, lastmod: undefined, isIndex: false });
@@ -434,6 +484,7 @@ export async function runBuild(opts: BuildOptions): Promise<BuildResult> {
         concept: syntheticConcept(`${y}年${m}月`),
         bodyHtml,
         baseUrl,
+        searchPath: searchNavPath,
       });
       builtPages += 1;
       siteEntries.push({ url: `archive/${ym}.html`, lastmod: undefined, isIndex: false });
@@ -453,6 +504,7 @@ export async function runBuild(opts: BuildOptions): Promise<BuildResult> {
         concept: syntheticConcept(`タグ: ${label}`),
         bodyHtml,
         baseUrl,
+        searchPath: searchNavPath,
       });
       builtPages += 1;
       siteEntries.push({ url: `tag/${tagSlug}.html`, lastmod: undefined, isIndex: false });
@@ -523,6 +575,17 @@ export async function runBuild(opts: BuildOptions): Promise<BuildResult> {
   if (existsSync(staticSrc)) {
     cpSync(staticSrc, join(outDir, staticDirName), { recursive: true });
   }
+
+  await emitSearchAssets({
+    cwd,
+    outDir,
+    indexPath: indexDbPath,
+    modelRoot: config.search.model,
+    modelId: config.search.model_id,
+    assetBaseUrl: config.search.asset_base_url || undefined,
+    sourceToUrl: (source) => sourceToUrl.get(source) ?? source.replace(/\.md$/i, ".html"),
+    onProgress: (message) => process.stdout.write(`[sorane] ${message}\n`),
+  });
 
   return { pages: builtPages, errors: 0 };
 }

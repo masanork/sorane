@@ -26,6 +26,8 @@ export interface SearchConfig {
   readonly model?: string;
   /** モデル ID（既定: ruri-v3-30m） */
   readonly model_id?: string;
+  /** 大容量検索資産の配信元（R2 等）。末尾 "/" 推奨。空なら同一オリジン。 */
+  readonly asset_base_url?: string;
 }
 
 export interface FontConfigInput {
@@ -68,6 +70,7 @@ export interface SoraneConfig {
     readonly index: string;
     readonly model: string;
     readonly model_id: string;
+    readonly asset_base_url: string;
   };
 }
 
@@ -100,6 +103,7 @@ export const DEFAULT_CONFIG: SoraneConfig = {
     index: ".sorane/index.db",
     model: "vendor/models",
     model_id: "ruri-v3-30m",
+    asset_base_url: "",
   },
 };
 

@@ -32,3 +32,25 @@ export {
 } from "./search.ts";
 export { walkMarkdown } from "./walk.ts";
 export { buildSearchIndex, type BuildIndexOptions, type BuildIndexResult } from "./build-index.ts";
+export {
+  buildWebIndex,
+  toSnippet,
+  defaultSourceUrl,
+  WEB_INDEX_SCHEMA_VERSION,
+  INT8_SCALE,
+  SNIPPET_LEN,
+  type WebChunk,
+  type WebIndex,
+} from "./web-export.ts";
+export { deriveWebIndex, type DeriveResult } from "./derive-web-index.ts";
+export {
+  vendorModel,
+  vendorRuntime,
+  copySearchScript,
+  readSearchScript,
+} from "./vendor-web.ts";
+export {
+  emitSearchAssets,
+  type EmitSearchAssetsOptions,
+  type EmitSearchAssetsResult,
+} from "./emit-search-assets.ts";

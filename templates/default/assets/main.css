@@ -63,3 +63,91 @@ article td {
   border: 1px solid var(--border);
   padding: 0.35rem 0.5rem;
 }
+
+.site-header {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: baseline;
+  justify-content: space-between;
+  gap: 0.75rem 1.5rem;
+  margin-bottom: 2rem;
+  padding-bottom: 1rem;
+  border-bottom: 1px solid var(--border);
+}
+
+.site-title {
+  font-family: var(--font-heading);
+  font-weight: 700;
+  font-size: 1.25rem;
+  text-decoration: none;
+  color: var(--text);
+}
+
+.site-nav {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.75rem 1rem;
+  font-size: 0.95rem;
+}
+
+.search-form {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.5rem;
+  margin: 1rem 0;
+}
+
+.search-input {
+  flex: 1 1 16rem;
+  padding: 0.5rem 0.75rem;
+  font-size: 1rem;
+  border: 1px solid var(--border);
+  border-radius: 4px;
+}
+
+.search-facet {
+  padding: 0.5rem;
+  border: 1px solid var(--border);
+  border-radius: 4px;
+}
+
+.search-submit {
+  padding: 0.5rem 1.2rem;
+  font-size: 1rem;
+  color: #fff;
+  background: var(--link);
+  border: none;
+  border-radius: 4px;
+  cursor: pointer;
+}
+
+.search-status {
+  color: var(--muted);
+  font-size: 0.9rem;
+}
+
+.search-results {
+  list-style: none;
+  padding: 0;
+  margin: 1rem 0;
+}
+
+.search-hit {
+  padding: 0.75rem 0;
+  border-bottom: 1px solid var(--border);
+}
+
+.search-hit-title {
+  font-weight: 600;
+}
+
+.search-hit-meta {
+  margin: 0.2rem 0;
+  font-size: 0.8rem;
+  color: var(--muted);
+}
+
+.search-hit-snippet {
+  margin: 0.2rem 0 0;
+  font-size: 0.9rem;
+}

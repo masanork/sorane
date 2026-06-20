@@ -47,6 +47,7 @@ export interface PageShellOptions {
   readonly extraHead?: ReadonlyArray<string>;
   readonly feedPath?: string;
   readonly showArchiveNav?: boolean;
+  readonly searchPath?: string;
 }
 
 export interface ArticleListEntry {
@@ -125,6 +126,9 @@ export function buildPage(opts: PageShellOptions): string {
   const navParts: string[] = [];
   if (opts.showArchiveNav) {
     navParts.push(`<a href="${escapeHtml(`${opts.rootPrefix}archive/index.html`)}">Archive</a>`);
+  }
+  if (opts.searchPath) {
+    navParts.push(`<a href="${escapeHtml(opts.rootPrefix + opts.searchPath)}">Search</a>`);
   }
   if (feed) navParts.push(`<a href="${escapeHtml(feed)}">Feed</a>`);
   const nav =
@@ -327,6 +331,51 @@ export function renderBlogIndexBody(opts: BlogIndexOptions): string {
     `${more}` +
     `</div>\n`
   );
+}
+
+export function isSearchView(frontmatter: Record<string, unknown>): boolean {
+  return frontmatter.view === "search";
+}
+
+export function buildSearchMount(rootPrefix: string, assetBaseUrl = ""): string {
+  const opts = [
+    ["", "すべて"],
+    ["article", "記事"],
+    ["index", "トップ"],
+  ]
+    .map(([v, l]) => `<option value="${escapeHtml(v!)}">${escapeHtml(l!)}</option>`)
+    .join("");
+  const assetBase = assetBaseUrl.length > 0 ? assetBaseUrl : rootPrefix;
+  const indexUrl =
+    assetBaseUrl.length > 0
+      ? `${assetBase}search-index.json`
+      : `${rootPrefix}assets/search-index.json`;
+  const modelBase = `${assetBase}models/`;
+  return (
+    `<div class="search" data-search data-index="${escapeHtml(indexUrl)}"` +
+    ` data-model-base="${escapeHtml(modelBase)}" data-lib-base="${escapeHtml(rootPrefix)}assets/search/lib/">` +
+    `<form class="search-form" role="search">` +
+    `<input type="search" name="q" class="search-input" placeholder="キーワードや自然文で検索" autocomplete="off" aria-label="検索キーワード">` +
+    `<select name="type" class="search-facet" aria-label="種別で絞り込み">${opts}</select>` +
+    `<button type="submit" class="search-submit">検索</button>` +
+    `</form>` +
+    `<p class="search-status" data-search-status>検索には JavaScript（と初回のみ埋め込みモデルの読み込み）が必要です。</p>` +
+    `<ol class="search-results" data-search-results></ol>` +
+    `</div>\n`
+  );
+}
+
+export function buildSearchHead(rootPrefix: string): string[] {
+  const libBase = `${rootPrefix || "./"}assets/search/lib/`;
+  return [
+    `<script type="importmap">${JSON.stringify({
+      imports: {
+        "onnxruntime-web/webgpu": `${libBase}ort.webgpu.bundle.min.mjs`,
+        "onnxruntime-common": `${libBase}ort.webgpu.bundle.min.mjs`,
+      },
+    })}</script>`,
+    `<script type="module" src="${rootPrefix}assets/search.mjs"></script>`,
+  ];
 }
 
 /** シンプルな index（examples 向け）。blog サイトは renderBlogIndexBody を使う。 */

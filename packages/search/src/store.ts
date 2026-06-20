@@ -262,6 +262,28 @@ export class IndexStore {
     return this.db.prepare(sql).all(buf, knnLimit, ...binds, k) as VecHit[];
   }
 
+  exportAll(): { rows: ChunkRow[]; vectors: number[][] } {
+    const rows = this.db
+      .prepare(`SELECT ${CHUNK_COLS} FROM chunks c ORDER BY c.id`)
+      .all() as ChunkRow[];
+    if (!this.tableExists("vec_chunks") || rows.length === 0) {
+      return { rows, vectors: rows.map(() => []) };
+    }
+    const getVec = this.db.prepare("SELECT embedding FROM vec_chunks WHERE rowid = ?");
+    const vectors: number[][] = rows.map((r) => {
+      const v = getVec.get(BigInt(r.id)) as { embedding: Buffer | Uint8Array } | undefined;
+      if (!v) return [];
+      const buf = v.embedding;
+      const f32 = new Float32Array(
+        buf.buffer,
+        buf.byteOffset,
+        buf.byteLength / Float32Array.BYTES_PER_ELEMENT,
+      );
+      return Array.from(f32);
+    });
+    return { rows, vectors };
+  }
+
   ftsSearch(query: string, k: number, filter: MetaFilter = {}): FtsHit[] {
     const { clause, binds } = buildWhere(filter);
     const sql = `
