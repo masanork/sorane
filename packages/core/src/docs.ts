@@ -8,7 +8,7 @@ import {
   type RenderedMarkdown,
   renderMarkdownDocument,
 } from "./render.ts";
-import { isD2CompileEnabled } from "./diagrams/compile-d2.ts";
+import { needsAsyncDiagramCompile } from "./diagrams/needs-async-compile.ts";
 import {
   renderMarkdownDocumentAsync,
   type AsyncRenderOptions,
@@ -227,7 +227,7 @@ export function renderDocsArticleFromConceptWithMeta(
   const rendered = renderMarkdownDocument(body, opts);
   return {
     bodyHtml: renderDocsArticleBody(concept, rendered, nav, lang, opts),
-    diagrams: rendered.diagrams ?? { mermaid: 0, d2: 0 },
+    diagrams: rendered.diagrams ?? { mermaid: 0, d2: 0, graphviz: 0 },
   };
 }
 
@@ -238,12 +238,12 @@ export async function renderDocsArticleFromConceptWithMetaForConfig(
   opts?: DocsArticleRenderOpts,
 ): Promise<DocsArticleResult> {
   const body = stripDuplicateTitleHeading(concept.body, concept.title);
-  const rendered = isD2CompileEnabled(opts?.diagrams)
+  const rendered = needsAsyncDiagramCompile(opts?.diagrams)
     ? await renderMarkdownDocumentAsync(body, opts)
     : renderMarkdownDocument(body, opts);
   return {
     bodyHtml: renderDocsArticleBody(concept, rendered, nav, lang, opts),
-    diagrams: rendered.diagrams ?? { mermaid: 0, d2: 0 },
+    diagrams: rendered.diagrams ?? { mermaid: 0, d2: 0, graphviz: 0 },
   };
 }
 

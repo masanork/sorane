@@ -33,7 +33,11 @@ describe("renderArticleBodyWithMeta", () => {
 
 describe("buildPage (diagram extraHead)", () => {
   test("diagramHead を head に挿入できる", () => {
-    const head = diagramHeadForPage({ mermaid: 1, d2: 0 }, "./", DEFAULT_DIAGRAMS_CONFIG)!;
+    const head = diagramHeadForPage(
+      { mermaid: 1, d2: 0, graphviz: 0 },
+      "./",
+      DEFAULT_DIAGRAMS_CONFIG,
+    )!;
     const html = buildPage({
       title: "T",
       siteTitle: "Site",

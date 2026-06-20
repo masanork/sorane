@@ -81,7 +81,7 @@ describe("renderMarkdownDocument (d2)", () => {
         rootPrefix: "./",
         onDiagramWarning: () => {},
       });
-      expect(diagrams.d2).toBe(1);
+      expect(diagrams?.d2).toBe(1);
       expect(html).toContain("language-d2");
       expect(html.includes("diagram--d2")).toBe(false);
     } finally {
@@ -99,7 +99,7 @@ describe("renderMarkdownDocument (d2)", () => {
         d2OutDir: join(tmp, "d2"),
         rootPrefix: "../",
       });
-      expect(diagrams.d2).toBe(1);
+      expect(diagrams?.d2).toBe(1);
       expect(html).toContain('class="diagram diagram--d2"');
       expect(html).toContain("../assets/diagrams/d2/");
       expect(html).toContain('loading="lazy"');

@@ -12,7 +12,7 @@ import { fileURLToPath } from "node:url";
 import { createRequire } from "node:module";
 import type { DiagramsConfig } from "../config.ts";
 import { resolveThemeAssetDir } from "../theme-assets.ts";
-import { resolveMermaidMode } from "./diagram-meta.ts";
+import { contentNeedsMermaidClient, resolveMermaidMode } from "./diagram-meta.ts";
 
 const require = createRequire(import.meta.url);
 
@@ -71,8 +71,8 @@ export function emitDiagramAssets(opts: EmitDiagramAssetsOptions): EmitDiagramAs
   if (resolveMermaidMode(config) === "off") {
     return { copied: false, bytes: 0 };
   }
-  if (opts.contentHasMermaid === false) {
-    log("diagrams: no mermaid fences; skipping asset copy");
+  if (!contentNeedsMermaidClient(opts.contentHasMermaid === true, config)) {
+    log("diagrams: no client mermaid needed; skipping asset copy");
     return { copied: false, bytes: 0 };
   }
 

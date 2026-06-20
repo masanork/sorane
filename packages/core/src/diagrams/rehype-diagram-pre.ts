@@ -11,7 +11,12 @@ function classNames(value: unknown): string[] {
 
 function isDiagramCode(node: Element): boolean {
   const cls = classNames(node.properties?.className);
-  return cls.includes("language-mermaid") || cls.includes("language-d2");
+  return (
+    cls.includes("language-mermaid") ||
+    cls.includes("language-d2") ||
+    cls.includes("language-graphviz") ||
+    cls.includes("language-dot")
+  );
 }
 
 /** `pre > code.language-mermaid|d2` の alt を親 `pre` の data-sorane-alt へ移す。 */

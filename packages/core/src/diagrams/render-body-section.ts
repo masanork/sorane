@@ -2,7 +2,7 @@ import type { TocEntry, RenderOptions } from "../render.ts";
 import { renderMarkdownDocument } from "../render.ts";
 import type { DiagramRenderMeta } from "./diagram-meta.ts";
 import { emptyDiagramMeta } from "./diagram-meta.ts";
-import { isD2CompileEnabled } from "./compile-d2.ts";
+import { needsAsyncDiagramCompile } from "./needs-async-compile.ts";
 import {
   renderMarkdownDocumentAsync,
   type AsyncRenderOptions,
@@ -40,12 +40,12 @@ export async function renderBodySectionAsync(
   };
 }
 
-/** `d2.enabled` なら非同期（D2 コンパイル）、それ以外は同期。 */
+/** ビルド時コンパイルが必要なら非同期、それ以外は同期。 */
 export async function renderBodySectionForConfig(
   markdown: string,
   opts?: BodySectionOptions,
 ): Promise<BodySectionResult> {
-  if (isD2CompileEnabled(opts?.diagrams)) {
+  if (needsAsyncDiagramCompile(opts?.diagrams)) {
     return renderBodySectionAsync(markdown, opts);
   }
   return renderBodySection(markdown, opts);

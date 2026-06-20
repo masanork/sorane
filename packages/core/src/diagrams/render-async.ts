@@ -10,8 +10,22 @@ import {
   isD2CompileEnabled,
   resolveD2Binary,
 } from "./compile-d2.ts";
+import {
+  compileGraphvizToSvg,
+  isGraphvizCompileEnabled,
+  isGraphvizLang,
+  resolveGraphvizBinary,
+} from "./compile-graphviz.ts";
+import {
+  compileMermaidToSvg,
+  isMermaidBuildEnabled,
+  resolveMmdcBinary,
+} from "./compile-mermaid.ts";
 import { extractAltText } from "./parse-diagram-fence.ts";
-import { remarkInjectD2Figures } from "./remark-inject-d2.ts";
+import {
+  remarkInjectBuiltFigures,
+  type InjectedBuiltFigure,
+} from "./remark-inject-built-figures.ts";
 import { remarkDiagramFences } from "./parse-diagram-fence.ts";
 import { rehypeDiagramPre } from "./rehype-diagram-pre.ts";
 import type {
@@ -79,53 +93,112 @@ function rehypeCollectOutline(outline: TocEntry[]) {
 export interface AsyncRenderOptions extends RenderOptions {
   readonly rootPrefix?: string;
   readonly d2OutDir?: string;
+  readonly mermaidOutDir?: string;
+  readonly graphvizOutDir?: string;
   readonly onDiagramWarning?: (message: string) => void;
 }
 
-async function compileD2Figures(
+async function compileBuiltFigures(
   tree: Root,
   diagramConfig: DiagramsConfig,
   opts: AsyncRenderOptions,
-): Promise<ReadonlyMap<Code, { src: string; alt: string }>> {
-  const figures = new Map<Code, { src: string; alt: string }>();
-  if (!isD2CompileEnabled(diagramConfig) || !opts.d2OutDir) return figures;
-
-  const d2Nodes: Code[] = [];
-  visit(tree, "code", (node) => {
-    if (node.lang === "d2") d2Nodes.push(node);
-  });
-
+): Promise<ReadonlyMap<Code, InjectedBuiltFigure>> {
+  const figures = new Map<Code, InjectedBuiltFigure>();
   const rootPrefix = opts.rootPrefix ?? "./";
-  const binary = resolveD2Binary(diagramConfig);
-  for (const node of d2Nodes) {
-    const alt = extractAltText(node.meta, node.value) ?? "Diagram";
-    const result = await compileD2ToSvg({
-      source: node.value,
-      binary,
-      outDir: opts.d2OutDir,
+  const warn = opts.onDiagramWarning;
+
+  if (isD2CompileEnabled(diagramConfig) && opts.d2OutDir) {
+    const binary = resolveD2Binary(diagramConfig);
+    const d2Nodes: Code[] = [];
+    visit(tree, "code", (node) => {
+      if (node.lang === "d2") d2Nodes.push(node);
     });
-    if (!result.ok) {
-      opts.onDiagramWarning?.(
-        `diagrams: d2 compile failed (${result.hash.slice(0, 8)}…): ${result.warning ?? "unknown error"}`,
-      );
-      continue;
+    for (const node of d2Nodes) {
+      const alt = extractAltText(node.meta, node.value) ?? "Diagram";
+      const result = await compileD2ToSvg({
+        source: node.value,
+        binary,
+        outDir: opts.d2OutDir,
+      });
+      if (!result.ok) {
+        warn?.(
+          `diagrams: d2 compile failed (${result.hash.slice(0, 8)}…): ${result.warning ?? "unknown error"}`,
+        );
+        continue;
+      }
+      figures.set(node, {
+        src: `${rootPrefix}assets/diagrams/d2/${result.svgFileName}`,
+        alt,
+        variant: "d2",
+      });
     }
-    figures.set(node, {
-      src: `${rootPrefix}assets/diagrams/d2/${result.svgFileName}`,
-      alt,
-    });
   }
+
+  if (isMermaidBuildEnabled(diagramConfig) && opts.mermaidOutDir) {
+    const binary = resolveMmdcBinary(diagramConfig);
+    const mermaidNodes: Code[] = [];
+    visit(tree, "code", (node) => {
+      if (node.lang === "mermaid") mermaidNodes.push(node);
+    });
+    for (const node of mermaidNodes) {
+      const alt = extractAltText(node.meta, node.value) ?? "Diagram";
+      const result = await compileMermaidToSvg({
+        source: node.value,
+        binary,
+        outDir: opts.mermaidOutDir,
+      });
+      if (!result.ok) {
+        warn?.(
+          `diagrams: mermaid build failed (${result.hash.slice(0, 8)}…): ${result.warning ?? "unknown error"}`,
+        );
+        continue;
+      }
+      figures.set(node, {
+        src: `${rootPrefix}assets/diagrams/mermaid/${result.svgFileName}`,
+        alt,
+        variant: "mermaid",
+      });
+    }
+  }
+
+  if (isGraphvizCompileEnabled(diagramConfig) && opts.graphvizOutDir) {
+    const binary = resolveGraphvizBinary(diagramConfig);
+    const gvNodes: Code[] = [];
+    visit(tree, "code", (node) => {
+      if (isGraphvizLang(node.lang)) gvNodes.push(node);
+    });
+    for (const node of gvNodes) {
+      const alt = extractAltText(node.meta, node.value) ?? "Diagram";
+      const result = await compileGraphvizToSvg({
+        source: node.value,
+        binary,
+        outDir: opts.graphvizOutDir,
+      });
+      if (!result.ok) {
+        warn?.(
+          `diagrams: graphviz compile failed (${result.hash.slice(0, 8)}…): ${result.warning ?? "unknown error"}`,
+        );
+        continue;
+      }
+      figures.set(node, {
+        src: `${rootPrefix}assets/diagrams/graphviz/${result.svgFileName}`,
+        alt,
+        variant: "graphviz",
+      });
+    }
+  }
+
   return figures;
 }
 
-/** Markdown 本文を非同期で変換する（`d2.enabled` 時に D2 フェンスを SVG へコンパイル）。 */
+/** Markdown 本文を非同期で変換する（ビルド時コンパイルバックエンド用）。 */
 export async function renderMarkdownDocumentAsync(
   markdown: string,
   opts?: AsyncRenderOptions,
 ): Promise<RenderedMarkdown> {
   const diagramConfig = opts?.diagrams ?? DEFAULT_DIAGRAMS_CONFIG;
   const outline: TocEntry[] = [];
-  const diagrams: DiagramRenderMeta = { mermaid: 0, d2: 0 };
+  const diagrams: DiagramRenderMeta = { mermaid: 0, d2: 0, graphviz: 0 };
 
   const tree = unified()
     .use(remarkParse)
@@ -134,10 +207,10 @@ export async function renderMarkdownDocumentAsync(
     .parse(rewriteLinks(markdown)) as Root;
 
   Object.assign(diagrams, countDiagramsForConfig(tree, diagramConfig));
-  const d2Figures = await compileD2Figures(tree, diagramConfig, opts ?? {});
+  const builtFigures = await compileBuiltFigures(tree, diagramConfig, opts ?? {});
 
   const processor = unified()
-    .use(remarkInjectD2Figures(d2Figures))
+    .use(remarkInjectBuiltFigures(builtFigures))
     .use(remarkRehype, { allowDangerousHtml: true })
     .use(rehypeRaw)
     .use(rehypeDiagramPre)

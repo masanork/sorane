@@ -61,6 +61,7 @@ export const sanitizeSchema: Schema = {
         "diagram",
         "diagram--d2",
         "diagram--mermaid",
+        "diagram--graphviz",
       ],
       "role",
     ],
@@ -205,7 +206,7 @@ export function renderMarkdownDocument(
 ): RenderedMarkdown {
   const diagramConfig = opts?.diagrams ?? DEFAULT_DIAGRAMS_CONFIG;
   const outline: TocEntry[] = [];
-  const diagrams: DiagramRenderMeta = { mermaid: 0, d2: 0 };
+  const diagrams: DiagramRenderMeta = { mermaid: 0, d2: 0, graphviz: 0 };
   const html = markdownPipeline(outline, diagrams, diagramConfig)
     .processSync(rewriteLinks(markdown))
     .toString()

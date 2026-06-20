@@ -2,6 +2,7 @@ import type { Code, Root } from "mdast";
 import type { Plugin } from "unified";
 import { visit } from "unist-util-visit";
 import type { DiagramsConfig } from "../config.ts";
+import { isGraphvizLang } from "./compile-graphviz.ts";
 
 export type MermaidKind =
   | "flowchart"
@@ -60,14 +61,22 @@ export function extractAltText(
 }
 
 export interface SoraneDiagramMeta {
-  readonly lang: "mermaid" | "d2";
+  readonly lang: "mermaid" | "d2" | "graphviz";
   readonly altText?: string;
-  readonly kind?: MermaidKindOrUnsupported | "d2";
+  readonly kind?: MermaidKindOrUnsupported | "d2" | "graphviz";
 }
 
-function annotateDiagramCode(node: Code, lang: "mermaid" | "d2"): void {
+function annotateDiagramCode(
+  node: Code,
+  lang: "mermaid" | "d2" | "graphviz",
+): void {
   const altText = extractAltText(node.meta, node.value);
-  const kind = lang === "mermaid" ? detectDiagramKind(node.value) : "d2";
+  const kind =
+    lang === "mermaid"
+      ? detectDiagramKind(node.value)
+      : lang === "d2"
+        ? "d2"
+        : "graphviz";
   const data = (node.data ?? {}) as Record<string, unknown>;
   node.data = {
     ...data,
@@ -89,6 +98,11 @@ export function remarkDiagramFences(config: DiagramsConfig): Plugin<[], Root> {
       if (node.lang === "d2") {
         if (config.d2?.enabled !== true) return;
         annotateDiagramCode(node, "d2");
+        return;
+      }
+      if (isGraphvizLang(node.lang)) {
+        if (config.graphviz?.enabled !== true) return;
+        annotateDiagramCode(node, "graphviz");
       }
     });
   };

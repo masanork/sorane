@@ -87,15 +87,21 @@ build:
   diagrams:
     enabled: true
     mermaid:
-      mode: client    # client | off（build は未実装）
+      mode: client    # client | build | off
+      mmdc: mmdc      # mermaid.mode: build 時の CLI（既定は @mermaid-js/mermaid-cli）
     d2:
-      enabled: false  # Phase 2: ビルド時 SVG
+      enabled: false
       binary: d2
+    graphviz:
+      enabled: false
+      binary: dot
 ```
 
-- ` ```mermaid ` … クライアント側で SVG 描画（`assets/diagrams/sorane-mermaid-loader.mjs` を条件付きで読み込み）
+- ` ```mermaid ` … `mode: client`（既定）ではクライアント描画（`sorane-mermaid-loader.mjs` を条件付き読み込み）
+- `mermaid.mode: build` … `@mermaid-js/mermaid-cli`（mmdc + Chromium）でビルド時 SVG（`assets/diagrams/mermaid/{hash}.svg`）。クライアント loader は不要
 - `alt="..."` を info string に付けるか、`%% alt: 説明` コメントで代替テキストを指定
-- `mermaid.mode: build`（Chromium + mmdc によるビルド時 SVG）は**未実装**です。指定しても `client` と同様に動作し、警告が出ます
-- `d2.enabled: true` … ビルド時に `d2` CLI で SVG を生成（`assets/diagrams/d2/{hash}.svg`）。CI に `d2` が無い場合は警告のうえ `<pre><code>` フォールバック
+- `d2.enabled: true` … `d2` CLI でビルド時 SVG（`assets/diagrams/d2/{hash}.svg`）
+- ` ```graphviz ` / ` ```dot ` … `graphviz.enabled: true` かつ `dot` が PATH にあるときビルド時 SVG
+- いずれのバックエンドも CLI 欠落時は警告のうえ `<pre><code>` フォールバック（ビルドは継続）
 
 詳細と例は [図表](diagrams.html) を参照してください。

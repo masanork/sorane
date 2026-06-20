@@ -3,24 +3,27 @@ import type { Plugin } from "unified";
 import { visit } from "unist-util-visit";
 import { escapeHtml } from "../render.ts";
 
-export interface InjectedD2Figure {
+export type BuiltFigureVariant = "d2" | "mermaid" | "graphviz";
+
+export interface InjectedBuiltFigure {
   readonly src: string;
   readonly alt: string;
+  readonly variant: BuiltFigureVariant;
 }
 
-/** コンパイル済み D2 フェンスを raw HTML figure に差し替える。 */
-export function remarkInjectD2Figures(
-  figures: ReadonlyMap<Code, InjectedD2Figure>,
+/** ビルド時コンパイル済みフェンスを raw HTML figure に差し替える。 */
+export function remarkInjectBuiltFigures(
+  figures: ReadonlyMap<Code, InjectedBuiltFigure>,
 ): Plugin<[], Root> {
   return () => (tree: Root) => {
     visit(tree, "code", (node, index, parent) => {
-      if (node.lang !== "d2" || parent === undefined || index === undefined) return;
+      if (parent === undefined || index === undefined) return;
       const fig = figures.get(node);
       if (!fig) return;
       parent.children[index] = {
         type: "html",
         value:
-          `<figure class="diagram diagram--d2" role="img" aria-label="${escapeHtml(fig.alt)}">` +
+          `<figure class="diagram diagram--${fig.variant}" role="img" aria-label="${escapeHtml(fig.alt)}">` +
           `<img src="${escapeHtml(fig.src)}" alt="${escapeHtml(fig.alt)}" loading="lazy" decoding="async" />` +
           `</figure>`,
       };

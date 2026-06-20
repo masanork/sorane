@@ -82,6 +82,8 @@ import {
   type BodySectionOptions,
 } from "./diagrams/render-body-section.ts";
 import { isD2CompileEnabled } from "./diagrams/compile-d2.ts";
+import { isGraphvizCompileEnabled } from "./diagrams/compile-graphviz.ts";
+import { isMermaidBuildEnabled } from "./diagrams/compile-mermaid.ts";
 import { resolveThemeAssetDir } from "./theme-assets.ts";
 import {
   docsNavFor,
@@ -278,21 +280,19 @@ export async function runBuild(opts: BuildOptions): Promise<BuildResult> {
   const baseUrl = config.site.base_url.replace(/\/$/, "");
   const diagramConfig = config.build.diagrams ?? DEFAULT_DIAGRAMS_CONFIG;
   const d2OutDir = join(outDir, "assets", "diagrams", "d2");
-  if (isD2CompileEnabled(diagramConfig)) {
-    mkdirSync(d2OutDir, { recursive: true });
-  }
+  const mermaidOutDir = join(outDir, "assets", "diagrams", "mermaid");
+  const graphvizOutDir = join(outDir, "assets", "diagrams", "graphviz");
+  if (isD2CompileEnabled(diagramConfig)) mkdirSync(d2OutDir, { recursive: true });
+  if (isMermaidBuildEnabled(diagramConfig)) mkdirSync(mermaidOutDir, { recursive: true });
+  if (isGraphvizCompileEnabled(diagramConfig)) mkdirSync(graphvizOutDir, { recursive: true });
   const bodySectionOpts = (rootPrefix: string): BodySectionOptions => ({
     diagrams: diagramConfig,
     rootPrefix,
     d2OutDir,
+    mermaidOutDir,
+    graphvizOutDir,
     onDiagramWarning: (message) => process.stderr.write(`[sorane] ${message}\n`),
   });
-
-  if (diagramConfig.mermaid?.mode === "build") {
-    process.stderr.write(
-      "[sorane] diagrams: mermaid.mode=build is not implemented; using client render\n",
-    );
-  }
 
   const hasAnyDisclosure = parsed.some(
     (p) => parseAiDisclosure(p.concept.frontmatter) !== null,

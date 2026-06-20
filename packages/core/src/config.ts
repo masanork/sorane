@@ -60,8 +60,13 @@ export interface DiagramsConfig {
   readonly mermaid?: {
     readonly mode?: MermaidMode;
     readonly version?: string;
+    readonly mmdc?: string;
   };
   readonly d2?: {
+    readonly enabled?: boolean;
+    readonly binary?: string;
+  };
+  readonly graphviz?: {
     readonly enabled?: boolean;
     readonly binary?: string;
   };
@@ -69,8 +74,9 @@ export interface DiagramsConfig {
 
 export const DEFAULT_DIAGRAMS_CONFIG: Required<DiagramsConfig> = {
   enabled: true,
-  mermaid: { mode: "client", version: "~11.15.0" },
+  mermaid: { mode: "client", version: "~11.15.0", mmdc: "mmdc" },
   d2: { enabled: false, binary: "d2" },
+  graphviz: { enabled: false, binary: "dot" },
 };
 
 export interface AiDisclosureConfig {
@@ -193,6 +199,10 @@ export function mergeConfig(partial: Partial<SoraneConfig>): SoraneConfig {
             d2: {
               ...DEFAULT_DIAGRAMS_CONFIG.d2,
               ...partial.build.diagrams.d2,
+            },
+            graphviz: {
+              ...DEFAULT_DIAGRAMS_CONFIG.graphviz,
+              ...partial.build.diagrams.graphviz,
             },
           }
         : DEFAULT_DIAGRAMS_CONFIG,

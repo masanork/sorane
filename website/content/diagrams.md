@@ -31,6 +31,17 @@ sequenceDiagram
   BUILD->>DIST: HTML + assets/diagrams/
 ```
 
+## Graphviz（ビルド時 SVG）
+
+`build.diagrams.graphviz.enabled: true` と Graphviz `dot` CLI が必要です。
+
+```dot alt="依存関係"
+digraph G {
+  render -> build
+  build -> dist
+}
+```
+
 ## D2（ビルド時 SVG）
 
 ` ```d2 ` フェンスはビルド時に SVG へコンパイルします（`build.diagrams.d2.enabled: true` と `d2` CLI が必要）。

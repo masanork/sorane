@@ -518,7 +518,9 @@ figure[role="img"] svg {
 }
 
 pre code.language-mermaid,
-pre code.language-d2 {
+pre code.language-d2,
+pre code.language-graphviz,
+pre code.language-dot {
   font-size: 0.85em;
 }
 
