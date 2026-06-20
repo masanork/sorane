@@ -217,6 +217,17 @@ describe("buildLlmsTxt", () => {
     expect(txt).toContain("## AI content disclosure");
     expect(txt).toContain("Labeled articles: 2");
   });
+
+  test("diagramsEnabled で図表フェンスの説明を追加する", () => {
+    const txt = buildLlmsTxt({
+      siteTitle: "S",
+      siteDescription: "D",
+      baseUrl: "https://ex.dev",
+      diagramsEnabled: true,
+    });
+    expect(txt).toContain("```mermaid");
+    expect(txt).toContain("sorane-mermaid-loader.mjs");
+  });
 });
 
 describe("emitPage", () => {

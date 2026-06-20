@@ -2,7 +2,10 @@ import { dirname, relative } from "node:path";
 import type { OkfConcept } from "@sorane/okf";
 import type { AiDisclosure } from "./ai-disclosure.ts";
 import { aiDisclosureJsonLdFields, buildCompactAiBadgeHtml } from "./ai-disclosure.ts";
-import { escapeHtml, renderMarkdown, stripDuplicateTitleHeading } from "./render.ts";
+import type { DiagramsConfig } from "./config.ts";
+import { renderBodySection } from "./diagrams/render-body-section.ts";
+import type { DiagramRenderMeta } from "./diagrams/diagram-meta.ts";
+import { escapeHtml, stripDuplicateTitleHeading } from "./render.ts";
 import { siteLabels, type SiteLabels } from "./site-labels.ts";
 
 export function extractDescription(body: string, maxLen = 200): string | null {
@@ -345,11 +348,16 @@ export function articleFontClass(concept: OkfConcept): string {
   return SERIF_FONT_STYLES.has(font) ? " font-serif" : "";
 }
 
-export function renderArticleBody(
+export interface ArticleBodyResult {
+  readonly bodyHtml: string;
+  readonly diagrams: DiagramRenderMeta;
+}
+
+export function renderArticleBodyWithMeta(
   concept: OkfConcept,
   nav?: ArticleNav,
-  opts?: { readonly badgeHtml?: string },
-): string {
+  opts?: { readonly badgeHtml?: string; readonly diagrams?: DiagramsConfig },
+): ArticleBodyResult {
   const updated =
     typeof concept.frontmatter.updated === "string"
       ? concept.frontmatter.updated
@@ -359,6 +367,10 @@ export function renderArticleBody(
   const author =
     typeof concept.frontmatter.author === "string" ? concept.frontmatter.author : undefined;
   const badge = opts?.badgeHtml ?? "";
+  const section = renderBodySection(
+    stripDuplicateTitleHeading(concept.body, concept.title),
+    { diagrams: opts?.diagrams },
+  );
   const header = [
     "<header>",
     `<h1>${escapeHtml(concept.title)}</h1>`,
@@ -367,13 +379,21 @@ export function renderArticleBody(
     badge,
     "</header>",
   ].join("\n");
-  return (
+  const bodyHtml =
     `<article class="article-page${articleFontClass(concept)}">\n` +
     `${header}\n` +
-    `<div class="article-body">\n${renderMarkdown(stripDuplicateTitleHeading(concept.body, concept.title))}\n</div>\n` +
+    `<div class="article-body">\n${section.html}\n</div>\n` +
     `${articleNavHtml(nav)}\n` +
-    `</article>`
-  );
+    `</article>`;
+  return { bodyHtml, diagrams: section.diagrams };
+}
+
+export function renderArticleBody(
+  concept: OkfConcept,
+  nav?: ArticleNav,
+  opts?: { readonly badgeHtml?: string; readonly diagrams?: DiagramsConfig },
+): string {
+  return renderArticleBodyWithMeta(concept, nav, opts).bodyHtml;
 }
 
 export function renderBlogIndexBody(opts: BlogIndexOptions): string {

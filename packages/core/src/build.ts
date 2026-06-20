@@ -24,11 +24,16 @@ import {
   resolveAiDisclosureFlags,
 } from "./ai-disclosure.ts";
 import { buildCatalogJsonLd } from "./catalog.ts";
-import { mergeConfig, resolvePermalink, type SoraneConfig } from "./config.ts";
+import {
+  DEFAULT_DIAGRAMS_CONFIG,
+  mergeConfig,
+  resolvePermalink,
+  type SoraneConfig,
+} from "./config.ts";
 import {
   buildBlogPostingJsonLd,
   extractDescription,
-  renderArticleBody,
+  renderArticleBodyWithMeta,
   renderBlogIndexBody,
   renderIndexBody,
   buildSearchMount,
@@ -63,15 +68,25 @@ import {
   type FeedEntry,
   type SiteEntry,
 } from "./site-meta.ts";
-import { renderMarkdown } from "./render.ts";
+import {
+  diagramHeadForPage,
+  emptyDiagramMeta,
+  mergeDiagramMeta,
+} from "./diagrams/diagram-meta.ts";
+import {
+  contentHasMermaidFences,
+  emitDiagramAssets,
+} from "./diagrams/emit-diagram-assets.ts";
+import { renderBodySection } from "./diagrams/render-body-section.ts";
 import { resolveThemeAssetDir } from "./theme-assets.ts";
 import {
   docsNavFor,
   docsSidebarHtml,
-  renderDocsArticleFromConcept,
+  renderDocsArticleFromConceptWithMeta,
   renderDocsIndexBody,
   resolveDocsNav,
 } from "./docs.ts";
+import type { DiagramRenderMeta } from "./diagrams/diagram-meta.ts";
 
 export interface BuildOptions {
   readonly cwd: string;
@@ -124,12 +139,19 @@ function frontmatterString(
 }
 
 /** index.md 本文がタイトルと同じ見出しだけなら intro を出さない。 */
-function introHtmlFromBody(body: string, title: string): string | undefined {
+function introHtmlFromBodyWithMeta(
+  body: string,
+  title: string,
+  diagrams: SoraneConfig["build"]["diagrams"],
+): { readonly introHtml?: string; readonly diagrams: DiagramRenderMeta } {
   const trimmed = body.trim();
-  if (!trimmed) return undefined;
+  if (!trimmed) return { diagrams: emptyDiagramMeta() };
   const onlyH1 = /^#\s+(.+?)\s*$/s.exec(trimmed);
-  if (onlyH1 && onlyH1[1]!.trim() === title.trim()) return undefined;
-  return renderMarkdown(body);
+  if (onlyH1 && onlyH1[1]!.trim() === title.trim()) {
+    return { diagrams: emptyDiagramMeta() };
+  }
+  const section = renderBodySection(body, { diagrams });
+  return { introHtml: section.html, diagrams: section.diagrams };
 }
 
 function syntheticConcept(title: string, description?: string): OkfConcept {
@@ -250,6 +272,13 @@ export async function runBuild(opts: BuildOptions): Promise<BuildResult> {
   }
 
   const baseUrl = config.site.base_url.replace(/\/$/, "");
+  const diagramConfig = config.build.diagrams ?? DEFAULT_DIAGRAMS_CONFIG;
+
+  if (diagramConfig.mermaid?.mode === "build") {
+    process.stderr.write(
+      "[sorane] diagrams: mermaid.mode=build is not implemented; using client render\n",
+    );
+  }
 
   const hasAnyDisclosure = parsed.some(
     (p) => parseAiDisclosure(p.concept.frontmatter) !== null,
@@ -430,19 +459,41 @@ export async function runBuild(opts: BuildOptions): Promise<BuildResult> {
             policyUrl: pageAiFlags.policyUrl,
           })
         : "";
-    const bodyHtml = isSearch
-      ? buildSearchMount(rootPrefix, {
+    let pageDiagrams = emptyDiagramMeta();
+    let bodyHtml: string;
+    if (isSearch) {
+      const searchIntro = p.concept.body.trim()
+        ? renderBodySection(p.concept.body, { diagrams: diagramConfig })
+        : undefined;
+      pageDiagrams = searchIntro?.diagrams ?? emptyDiagramMeta();
+      bodyHtml =
+        buildSearchMount(rootPrefix, {
           assetBaseUrl: config.search.asset_base_url,
           mode: searchMode,
         }) +
-        (p.concept.body.trim()
-          ? `<div class="search-intro">${renderMarkdown(p.concept.body)}</div>`
-          : "")
-      : isDocsPage
-        ? renderDocsArticleFromConcept(p.concept, nav, config.site.lang, {
-            badgeHtml,
-          })
-        : renderArticleBody(p.concept, nav, { badgeHtml });
+        (searchIntro
+          ? `<div class="search-intro">${searchIntro.html}</div>`
+          : "");
+    } else if (isDocsPage) {
+      const doc = renderDocsArticleFromConceptWithMeta(p.concept, nav, config.site.lang, {
+        badgeHtml,
+        diagrams: diagramConfig,
+      });
+      bodyHtml = doc.bodyHtml;
+      pageDiagrams = doc.diagrams;
+    } else {
+      const article = renderArticleBodyWithMeta(p.concept, nav, {
+        badgeHtml,
+        diagrams: diagramConfig,
+      });
+      bodyHtml = article.bodyHtml;
+      pageDiagrams = article.diagrams;
+    }
+    const diagramHead = diagramHeadForPage(
+      pageDiagrams,
+      rootPrefix,
+      diagramConfig,
+    );
 
     const updated = frontmatterString(p.concept.frontmatter, "updated");
     const author = frontmatterString(p.concept.frontmatter, "author");
@@ -468,10 +519,14 @@ export async function runBuild(opts: BuildOptions): Promise<BuildResult> {
       isSearch,
     });
     const extraHead = isSearch
-      ? buildSearchHead(rootPrefix, searchMode)
+      ? [
+          ...buildSearchHead(rootPrefix, searchMode),
+          ...(diagramHead ? [diagramHead] : []),
+        ]
       : [
           ...(jsonLd ? [jsonLd] : []),
           ...(headerSearch.extraHead ?? []),
+          ...(diagramHead ? [diagramHead] : []),
         ];
     emitPage({
       cwd,
@@ -512,31 +567,45 @@ export async function runBuild(opts: BuildOptions): Promise<BuildResult> {
     const useBlogLayout = p.concept.type === "index";
 
     let bodyHtml: string;
+    let indexDiagrams = emptyDiagramMeta();
+    const indexTitle = p.concept.title || config.site.title;
+    const intro = introHtmlFromBodyWithMeta(p.concept.body, indexTitle, diagramConfig);
+    indexDiagrams = mergeDiagramMeta(indexDiagrams, intro.diagrams);
+
     if (docsMode && useBlogLayout) {
       bodyHtml = renderDocsIndexBody({
-        siteTitle: p.concept.title || config.site.title,
+        siteTitle: indexTitle,
         description: p.concept.description ?? config.site.description,
         profileUrl: frontmatterString(p.concept.frontmatter, "profileUrl"),
         githubUrl: frontmatterString(p.concept.frontmatter, "githubUrl"),
-        introHtml: introHtmlFromBody(p.concept.body, p.concept.title || config.site.title),
+        introHtml: intro.introHtml,
         docsNav,
         lang: config.site.lang,
       });
     } else if (useBlogLayout) {
       const featuredMode = blogOpts.featured_mode;
-      const featuredBody =
-        latestParsed && featuredMode !== "off"
-          ? featuredMode === "full"
-            ? renderMarkdown(latestParsed.concept.body)
-            : renderFeaturedExcerpt(latestParsed.concept, blogOpts.excerpt_length)
-          : "";
+      let featuredBody = "";
+      if (latestParsed && featuredMode !== "off") {
+        if (featuredMode === "full") {
+          const featured = renderBodySection(latestParsed.concept.body, {
+            diagrams: diagramConfig,
+          });
+          featuredBody = featured.html;
+          indexDiagrams = mergeDiagramMeta(indexDiagrams, featured.diagrams);
+        } else {
+          featuredBody = renderFeaturedExcerpt(
+            latestParsed.concept,
+            blogOpts.excerpt_length,
+          );
+        }
+      }
       bodyHtml = renderBlogIndexBody({
-        siteTitle: p.concept.title || config.site.title,
+        siteTitle: indexTitle,
         description: p.concept.description ?? config.site.description,
         showHeaderTitle: false,
         profileUrl: frontmatterString(p.concept.frontmatter, "profileUrl"),
         githubUrl: frontmatterString(p.concept.frontmatter, "githubUrl"),
-        introHtml: introHtmlFromBody(p.concept.body, p.concept.title || config.site.title),
+        introHtml: intro.introHtml,
         lang: config.site.lang,
         latestArticle:
           latestParsed && featuredMode !== "off" && featuredBody
@@ -574,9 +643,15 @@ export async function runBuild(opts: BuildOptions): Promise<BuildResult> {
       lang: config.site.lang,
     });
     const indexHeaderSearch = headerSearchFor("./", { docsLayout: docsMode });
+    const indexDiagramHead = diagramHeadForPage(
+      indexDiagrams,
+      "./",
+      diagramConfig,
+    );
     const indexExtraHead = [
       indexJsonLd,
       ...(indexHeaderSearch.extraHead ?? []),
+      ...(indexDiagramHead ? [indexDiagramHead] : []),
     ];
     emitPage({
       cwd,
@@ -781,6 +856,7 @@ export async function runBuild(opts: BuildOptions): Promise<BuildResult> {
       siteDescription: config.site.description,
       baseUrl,
       aiLabeledCount: siteAiFlags.machineReadable ? aiLabeledCount : undefined,
+      diagramsEnabled: diagramConfig.enabled !== false,
     }),
     "utf8",
   );
@@ -818,6 +894,14 @@ export async function runBuild(opts: BuildOptions): Promise<BuildResult> {
   if (aiLabelsSrc) {
     cpSync(aiLabelsSrc, join(outDir, "assets/ai-labels"), { recursive: true });
   }
+
+  emitDiagramAssets({
+    cwd,
+    outDir,
+    config: diagramConfig,
+    contentHasMermaid: contentHasMermaidFences(mdFiles),
+    onProgress: (message) => process.stdout.write(`[sorane] ${message}\n`),
+  });
 
   const staticDirName = config.build.static_dir ?? "static";
   const staticSrc = resolve(cwd, staticDirName);

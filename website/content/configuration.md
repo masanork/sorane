@@ -77,3 +77,25 @@ search:
 - `sorane index --hybrid` … ベクトル付きインデックス（要 `npm run fetch-model`）
 
 検索 UI は `view: search` を持つ記事ページで有効になります。
+
+## 図表（Mermaid / D2）
+
+Markdown のコードフェンスで図を書けます。ソースは `.md` 代替ファイルと OKF バンドルにそのまま残ります。
+
+```yaml
+build:
+  diagrams:
+    enabled: true
+    mermaid:
+      mode: client    # client | off（build は未実装）
+    d2:
+      enabled: false  # Phase 2: ビルド時 SVG
+      binary: d2
+```
+
+- ` ```mermaid ` … クライアント側で SVG 描画（`assets/diagrams/sorane-mermaid-loader.mjs` を条件付きで読み込み）
+- `alt="..."` を info string に付けるか、`%% alt: 説明` コメントで代替テキストを指定
+- `mermaid.mode: build`（Chromium + mmdc によるビルド時 SVG）は**未実装**です。指定しても `client` と同様に動作し、警告が出ます
+- `d2.enabled: true` は将来の D2 ビルド時コンパイル用（Phase 1 では無効のまま）
+
+詳細と例は [図表](diagrams.html) を参照してください。

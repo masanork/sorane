@@ -20,6 +20,7 @@ docs:
     - ai-onboarding.html
     - cli.html
     - configuration.html
+    - diagrams.html
     - okf-profile.html
     - deployment.html
     - releases.html

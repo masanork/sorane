@@ -1,6 +1,7 @@
 import type { OkfConcept } from "@sorane/okf";
 import { dirname, relative } from "node:path";
-import type { DocsNavSpec } from "./config.ts";
+import type { DiagramsConfig, DocsNavSpec } from "./config.ts";
+import type { DiagramRenderMeta } from "./diagrams/diagram-meta.ts";
 import {
   escapeHtml,
   stripDuplicateTitleHeading,
@@ -11,6 +12,12 @@ import { siteLabels } from "./site-labels.ts";
 
 export interface DocsArticleRenderOpts {
   readonly badgeHtml?: string;
+  readonly diagrams?: DiagramsConfig;
+}
+
+export interface DocsArticleResult {
+  readonly bodyHtml: string;
+  readonly diagrams: DiagramRenderMeta;
 }
 
 export interface ArticleNav {
@@ -205,13 +212,25 @@ export function resolveDocsNav(
   });
 }
 
+export function renderDocsArticleFromConceptWithMeta(
+  concept: OkfConcept,
+  nav: ArticleNav | undefined,
+  lang: string,
+  opts?: DocsArticleRenderOpts,
+): DocsArticleResult {
+  const body = stripDuplicateTitleHeading(concept.body, concept.title);
+  const rendered = renderMarkdownDocument(body, { diagrams: opts?.diagrams });
+  return {
+    bodyHtml: renderDocsArticleBody(concept, rendered, nav, lang, opts),
+    diagrams: rendered.diagrams ?? { mermaid: 0, d2: 0 },
+  };
+}
+
 export function renderDocsArticleFromConcept(
   concept: OkfConcept,
   nav: ArticleNav | undefined,
   lang: string,
   opts?: DocsArticleRenderOpts,
 ): string {
-  const body = stripDuplicateTitleHeading(concept.body, concept.title);
-  const rendered = renderMarkdownDocument(body);
-  return renderDocsArticleBody(concept, rendered, nav, lang, opts);
+  return renderDocsArticleFromConceptWithMeta(concept, nav, lang, opts).bodyHtml;
 }

@@ -53,6 +53,26 @@ export interface DocsConfig {
   readonly nav?: readonly DocsNavSpec[];
 }
 
+export type MermaidMode = "client" | "build" | "off";
+
+export interface DiagramsConfig {
+  readonly enabled?: boolean;
+  readonly mermaid?: {
+    readonly mode?: MermaidMode;
+    readonly version?: string;
+  };
+  readonly d2?: {
+    readonly enabled?: boolean;
+    readonly binary?: string;
+  };
+}
+
+export const DEFAULT_DIAGRAMS_CONFIG: Required<DiagramsConfig> = {
+  enabled: true,
+  mermaid: { mode: "client", version: "~11.15.0" },
+  d2: { enabled: false, binary: "d2" },
+};
+
 export interface AiDisclosureConfig {
   readonly enabled?: boolean;
   readonly badges?: boolean;
@@ -89,6 +109,7 @@ export interface SoraneConfig {
     readonly static_dir?: string;
     readonly blog?: BlogBuildConfig;
     readonly ai_disclosure?: AiDisclosureConfig;
+    readonly diagrams?: DiagramsConfig;
   };
   readonly fonts: {
     readonly enabled: boolean;
@@ -131,6 +152,7 @@ export const DEFAULT_CONFIG: SoraneConfig = {
       tags: true,
     },
     ai_disclosure: {},
+    diagrams: DEFAULT_DIAGRAMS_CONFIG,
   },
   fonts: {
     enabled: false,
@@ -160,6 +182,20 @@ export function mergeConfig(partial: Partial<SoraneConfig>): SoraneConfig {
       ai_disclosure: partial.build?.ai_disclosure
         ? { ...DEFAULT_CONFIG.build.ai_disclosure, ...partial.build.ai_disclosure }
         : DEFAULT_CONFIG.build.ai_disclosure,
+      diagrams: partial.build?.diagrams
+        ? {
+            ...DEFAULT_DIAGRAMS_CONFIG,
+            ...partial.build.diagrams,
+            mermaid: {
+              ...DEFAULT_DIAGRAMS_CONFIG.mermaid,
+              ...partial.build.diagrams.mermaid,
+            },
+            d2: {
+              ...DEFAULT_DIAGRAMS_CONFIG.d2,
+              ...partial.build.diagrams.d2,
+            },
+          }
+        : DEFAULT_DIAGRAMS_CONFIG,
     },
     fonts: { ...DEFAULT_CONFIG.fonts, ...partial.fonts },
     search: { ...DEFAULT_CONFIG.search, ...partial.search },

@@ -41,6 +41,7 @@ export interface LlmsTxtOptions {
   readonly siteDescription: string;
   readonly baseUrl: string;
   readonly aiLabeledCount?: number;
+  readonly diagramsEnabled?: boolean;
 }
 
 export interface FeedEntry {
@@ -112,6 +113,13 @@ export function buildLlmsTxt(opts: LlmsTxtOptions): string {
     `- [DCAT catalog](${abs("catalog.jsonld")})`,
     `- [Sitemap](${abs("sitemap.xml")})`,
   ];
+  if (opts.diagramsEnabled) {
+    lines.push(
+      "",
+      "Diagram fences (` ```mermaid `, ` ```d2 `) in page bodies are preserved verbatim in sibling `.md` alternates and the OKF bundle.",
+      "HTML pages may load client-side Mermaid (`assets/diagrams/sorane-mermaid-loader.mjs`) when fences are present.",
+    );
+  }
   if (opts.aiLabeledCount !== undefined && opts.aiLabeledCount > 0) {
     lines.push(
       "",

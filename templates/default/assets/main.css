@@ -505,3 +505,18 @@ body.docs-site .site-footer {
   vertical-align: middle;
   margin-left: 0.35rem;
 }
+
+figure[role="img"] {
+  max-width: 100%;
+  overflow-x: auto;
+  margin: 1.25rem 0;
+}
+
+figure[role="img"] svg {
+  max-width: 100%;
+  height: auto;
+}
+
+pre code.language-mermaid {
+  font-size: 0.85em;
+}

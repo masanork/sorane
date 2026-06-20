@@ -31,6 +31,22 @@ describe("mergeConfig", () => {
     expect(cfg.build.ai_disclosure?.json_ld).toBe(false);
     expect(cfg.build.ai_disclosure?.enabled).toBe(undefined);
   });
+
+  test("diagrams を deep merge する", () => {
+    const cfg = mergeConfig({
+      build: {
+        content_dir: "content",
+        out_dir: "dist",
+        permalink: "{{slug}}.html",
+        diagrams: { mermaid: { mode: "off" }, d2: { enabled: true } },
+      },
+    });
+    expect(cfg.build.diagrams?.enabled).toBe(true);
+    expect(cfg.build.diagrams?.mermaid?.mode).toBe("off");
+    expect(cfg.build.diagrams?.mermaid?.version).toBe("~11.15.0");
+    expect(cfg.build.diagrams?.d2?.enabled).toBe(true);
+    expect(cfg.build.diagrams?.d2?.binary).toBe("d2");
+  });
 });
 
 describe("resolvePermalink", () => {

@@ -4,7 +4,16 @@ import rehypeAutolinkHeadings from "rehype-autolink-headings";
 import rehypeRaw from "rehype-raw";
 import rehypeSanitize, { defaultSchema } from "rehype-sanitize";
 import { SlugLedger } from "@sorane/search";
+import type { DiagramsConfig } from "./config.ts";
+import { DEFAULT_DIAGRAMS_CONFIG } from "./config.ts";
+import {
+  countDiagramsForConfig,
+  type DiagramRenderMeta,
+} from "./diagrams/diagram-meta.ts";
+import { remarkDiagramFences } from "./diagrams/parse-diagram-fence.ts";
+import { rehypeDiagramPre } from "./diagrams/rehype-diagram-pre.ts";
 import rehypeStringify from "rehype-stringify";
+import type { Root as MdastRoot } from "mdast";
 import remarkGfm from "remark-gfm";
 import remarkParse from "remark-parse";
 import remarkRehype from "remark-rehype";
@@ -50,6 +59,7 @@ const sanitizeSchema: Schema = {
     object: ["width", "height"],
     param: ["name", "value"],
     img: [...(schemaAttributes.img ?? []), "title"],
+    pre: [...(schemaAttributes.pre ?? []), "dataSoraneAlt"],
   },
   tagNames: [
     ...(defaultSchema.tagNames ?? []),
@@ -69,10 +79,17 @@ export interface TocEntry {
   readonly text: string;
 }
 
+export interface RenderOptions {
+  readonly diagrams?: DiagramsConfig;
+}
+
 export interface RenderedMarkdown {
   readonly html: string;
   readonly outline: readonly TocEntry[];
+  readonly diagrams?: DiagramRenderMeta;
 }
+
+export type { DiagramRenderMeta };
 
 function hastToPlainText(node: { type?: string; value?: string; children?: unknown[] }): string {
   if (node.type === "text" && typeof node.value === "string") return node.value;
@@ -112,12 +129,21 @@ function rehypeCollectOutline(outline: TocEntry[]) {
   };
 }
 
-function markdownPipeline(outline: TocEntry[]) {
+function markdownPipeline(
+  outline: TocEntry[],
+  diagrams: DiagramRenderMeta,
+  diagramConfig: DiagramsConfig,
+) {
   return unified()
     .use(remarkParse)
     .use(remarkGfm)
+    .use(remarkDiagramFences(diagramConfig))
+    .use(() => (tree: MdastRoot) => {
+      Object.assign(diagrams, countDiagramsForConfig(tree, diagramConfig));
+    })
     .use(remarkRehype, { allowDangerousHtml: true })
     .use(rehypeRaw)
+    .use(rehypeDiagramPre)
     .use(rehypeHeadingIds)
     .use(rehypeAutolinkHeadings, {
       behavior: "append",
@@ -162,9 +188,14 @@ export function stripDuplicateTitleHeading(markdown: string, title: string): str
 }
 
 /** Markdown 本文をサニタイズ済み HTML と見出し outline に変換する。 */
-export function renderMarkdownDocument(markdown: string): RenderedMarkdown {
+export function renderMarkdownDocument(
+  markdown: string,
+  opts?: RenderOptions,
+): RenderedMarkdown {
+  const diagramConfig = opts?.diagrams ?? DEFAULT_DIAGRAMS_CONFIG;
   const outline: TocEntry[] = [];
-  const html = markdownPipeline(outline)
+  const diagrams: DiagramRenderMeta = { mermaid: 0, d2: 0 };
+  const html = markdownPipeline(outline, diagrams, diagramConfig)
     .processSync(rewriteLinks(markdown))
     .toString()
     .replace(/\r\n?/g, "\n")
@@ -172,12 +203,13 @@ export function renderMarkdownDocument(markdown: string): RenderedMarkdown {
   return {
     html: html.length > 0 ? `${html}\n` : "",
     outline,
+    diagrams,
   };
 }
 
 /** Markdown 本文をサニタイズ済み HTML に変換する。 */
-export function renderMarkdown(markdown: string): string {
-  return renderMarkdownDocument(markdown).html;
+export function renderMarkdown(markdown: string, opts?: RenderOptions): string {
+  return renderMarkdownDocument(markdown, opts).html;
 }
 
 export function escapeHtml(text: string): string {
