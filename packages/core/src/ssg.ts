@@ -1,5 +1,5 @@
 import type { OkfConcept } from "@sorane/okf";
-import { escapeHtml, renderMarkdown } from "./render.ts";
+import { escapeHtml, renderMarkdown, stripDuplicateTitleHeading } from "./render.ts";
 import { siteLabels, type SiteLabels } from "./site-labels.ts";
 
 export function extractDescription(body: string, maxLen = 200): string | null {
@@ -330,7 +330,7 @@ export function renderArticleBody(concept: OkfConcept, nav?: ArticleNav): string
   return (
     `<article class="article-page${articleFontClass(concept)}">\n` +
     `${header}\n` +
-    `<div class="article-body">\n${renderMarkdown(concept.body)}\n</div>\n` +
+    `<div class="article-body">\n${renderMarkdown(stripDuplicateTitleHeading(concept.body, concept.title))}\n</div>\n` +
     `${articleNavHtml(nav)}\n` +
     `</article>`
   );
