@@ -42,6 +42,56 @@ export interface LlmsTxtOptions {
   readonly baseUrl: string;
 }
 
+export interface FeedEntry {
+  readonly title: string;
+  readonly url: string;
+  readonly id: string;
+  readonly updated: string;
+  readonly summary?: string;
+}
+
+export function buildAtomFeed(
+  entries: readonly FeedEntry[],
+  opts: { siteTitle: string; siteDescription: string; baseUrl: string; feedPath?: string },
+): string {
+  const feedUrl =
+    opts.baseUrl.length > 0
+      ? `${opts.baseUrl}/${opts.feedPath ?? "feed.xml"}`
+      : opts.feedPath ?? "feed.xml";
+  const updated =
+    entries.length > 0
+      ? entries[0]!.updated
+      : new Date().toISOString();
+  const items = entries
+    .map((e) => {
+      const summary = e.summary
+        ? `<summary>${escapeXml(e.summary)}</summary>`
+        : "";
+      return (
+        `  <entry>\n` +
+        `    <title>${escapeXml(e.title)}</title>\n` +
+        `    <link href="${escapeXml(e.url)}" />\n` +
+        `    <id>${escapeXml(e.id)}</id>\n` +
+        `    <updated>${escapeXml(e.updated)}</updated>\n` +
+        `${summary}\n` +
+        `  </entry>`
+      );
+    })
+    .join("\n");
+  return (
+    '<?xml version="1.0" encoding="utf-8"?>\n' +
+    '<feed xmlns="http://www.w3.org/2005/Atom">\n' +
+    `  <title>${escapeXml(opts.siteTitle)}</title>\n` +
+    `  <subtitle>${escapeXml(opts.siteDescription)}</subtitle>\n` +
+    `  <link href="${escapeXml(feedUrl)}" rel="self" />\n` +
+    `  <link href="${escapeXml(opts.baseUrl.length > 0 ? opts.baseUrl + "/" : "")}" />\n` +
+    `  <updated>${escapeXml(updated)}</updated>\n` +
+    `  <id>${escapeXml(feedUrl)}</id>\n` +
+    `${items}\n` +
+    `</feed>\n`
+  );
+}
+
 export function buildLlmsTxt(opts: LlmsTxtOptions): string {
   const abs = (u: string) =>
     /^https?:/.test(u) || opts.baseUrl.length === 0 ? u : `${opts.baseUrl}/${u}`;

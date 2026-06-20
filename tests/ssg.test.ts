@@ -3,13 +3,46 @@ import { join } from "node:path";
 import { tmpdir } from "node:os";
 import { describe, expect, test } from "./_expect.ts";
 import { runBuild } from "../packages/core/src/build.ts";
-import { extractDescription, buildPage } from "../packages/core/src/ssg.ts";
+import { extractDescription, buildPage, renderBlogIndexBody } from "../packages/core/src/ssg.ts";
+import { buildAtomFeed } from "../packages/core/src/site-meta.ts";
 import { migrateToOkf } from "../packages/core/src/migrate.ts";
 
 describe("extractDescription", () => {
   test("最初の散文段落を抽出", () => {
     const d = extractDescription("# Title\n\nFirst paragraph here.\n\nSecond.\n");
     expect(d).toBe("First paragraph here.");
+  });
+});
+
+describe("renderBlogIndexBody", () => {
+  test("最新記事とアーカイブを出す", () => {
+    const html = renderBlogIndexBody({
+      siteTitle: "My Blog",
+      description: "lead text",
+      profileUrl: "./profile.html",
+      latestArticle: {
+        title: "Latest",
+        href: "latest.html",
+        timestamp: "2025-12-29T00:00:00Z",
+        bodyHtml: "<p>Body</p>",
+      },
+      articles: [{ title: "Older", href: "older.html", timestamp: "2025-01-01T00:00:00Z" }],
+    });
+    expect(html).toContain("blog-featured");
+    expect(html).toContain("過去の記事");
+    expect(html).toContain("profile.html");
+    expect(html).toContain("Older");
+  });
+});
+
+describe("buildAtomFeed", () => {
+  test("Atom feed を生成", () => {
+    const xml = buildAtomFeed(
+      [{ title: "T", url: "https://ex.dev/a.html", id: "https://ex.dev/a.html", updated: "2025-01-01T00:00:00Z" }],
+      { siteTitle: "S", siteDescription: "D", baseUrl: "https://ex.dev" },
+    );
+    expect(xml).toContain("<feed");
+    expect(xml).toContain("https://ex.dev/a.html");
   });
 });
 
@@ -66,6 +99,7 @@ describe("runBuild", () => {
       expect(existsSync(join(tmp, "dist/2025-01-01-hello.html"))).toBe(true);
       expect(existsSync(join(tmp, "dist/2025-01-01-hello.md"))).toBe(true);
       expect(existsSync(join(tmp, "dist/okf/bundle.tar.gz"))).toBe(true);
+      expect(existsSync(join(tmp, "dist/feed.xml"))).toBe(true);
       const html = readFileSync(join(tmp, "dist/2025-01-01-hello.html"), "utf8");
       expect(html).toContain("Hello OKF");
       expect(html).toContain('type="text/markdown"');

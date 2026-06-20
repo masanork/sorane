@@ -24,10 +24,20 @@ import {
   buildPage,
   extractDescription,
   renderArticleBody,
+  renderBlogIndexBody,
   renderIndexBody,
   rootPrefixFromRel,
+  type ArticleListEntry,
 } from "./ssg.ts";
-import { buildLlmsTxt, buildRobotsTxt, buildSitemapXml, type SiteEntry } from "./site-meta.ts";
+import {
+  buildAtomFeed,
+  buildLlmsTxt,
+  buildRobotsTxt,
+  buildSitemapXml,
+  type FeedEntry,
+  type SiteEntry,
+} from "./site-meta.ts";
+import { renderMarkdown } from "./render.ts";
 
 export interface BuildOptions {
   readonly cwd: string;
@@ -56,6 +66,18 @@ function walkMarkdown(root: string): string[] {
 function slugFromRel(relPath: string): string {
   const base = relPath.replace(/\\/g, "/").split("/").pop() ?? relPath;
   return base.replace(/\.md$/i, "");
+}
+
+function isSystemPage(concept: ParsedConcept["concept"]): boolean {
+  return concept.frontmatter.isSystem === true;
+}
+
+function frontmatterString(
+  frontmatter: Record<string, unknown>,
+  key: string,
+): string | undefined {
+  const v = frontmatter[key];
+  return typeof v === "string" && v.length > 0 ? v : undefined;
 }
 
 function tarBytes(entries: Array<{ path: string; content: string }>): Buffer {
@@ -134,8 +156,8 @@ export async function runBuild(opts: BuildOptions): Promise<BuildResult> {
 
   const baseUrl = config.site.base_url.replace(/\/$/, "");
 
-  const articleSummaries = parsed
-    .filter((p) => p.concept.type === "article")
+  const articleSummaries: ArticleListEntry[] = parsed
+    .filter((p) => p.concept.type === "article" && !isSystemPage(p.concept))
     .map((p) => {
       const slug = slugFromRel(p.relPath);
       const outRel = resolvePermalink(config.build.permalink, slug, p.concept.timestamp);
@@ -143,9 +165,20 @@ export async function runBuild(opts: BuildOptions): Promise<BuildResult> {
         title: p.concept.title,
         href: outRel,
         timestamp: p.concept.timestamp,
+        updated: frontmatterString(p.concept.frontmatter, "updated"),
+        author: frontmatterString(p.concept.frontmatter, "author"),
+        description: p.concept.description ?? extractDescription(p.concept.body) ?? undefined,
       };
     })
     .sort((a, b) => (b.timestamp ?? "").localeCompare(a.timestamp ?? ""));
+
+  const parsedByHref = new Map<string, ParsedConcept>();
+  for (const p of parsed) {
+    if (p.concept.type !== "article" || isSystemPage(p.concept)) continue;
+    const slug = slugFromRel(p.relPath);
+    const outRel = resolvePermalink(config.build.permalink, slug, p.concept.timestamp);
+    parsedByHref.set(outRel, p);
+  }
 
   const fontProcessor = await createFontProcessor(cwd, config.fonts, outDir);
 
@@ -175,9 +208,36 @@ export async function runBuild(opts: BuildOptions): Promise<BuildResult> {
     const mdOutRel = outRel.replace(/\.html$/, ".md");
     writeFileSync(join(outDir, mdOutRel), conceptToOkfMarkdown(p.concept), "utf8");
 
-    const bodyHtml = isIndex
-      ? renderIndexBody(config.site.title, articleSummaries)
-      : renderArticleBody(p.concept);
+    let bodyHtml: string;
+    if (isIndex) {
+      const latest = articleSummaries[0];
+      const latestParsed = latest ? parsedByHref.get(latest.href) : undefined;
+      const useBlogLayout = p.concept.type === "index";
+      if (useBlogLayout) {
+        bodyHtml = renderBlogIndexBody({
+          siteTitle: p.concept.title || config.site.title,
+          description: p.concept.description ?? config.site.description,
+          profileUrl: frontmatterString(p.concept.frontmatter, "profileUrl"),
+          introHtml: p.concept.body.trim() ? renderMarkdown(p.concept.body) : undefined,
+          latestArticle: latestParsed
+            ? {
+                title: latestParsed.concept.title,
+                href: latest!.href,
+                timestamp: latestParsed.concept.timestamp,
+                updated: frontmatterString(latestParsed.concept.frontmatter, "updated"),
+                author: frontmatterString(latestParsed.concept.frontmatter, "author"),
+                bodyHtml: renderMarkdown(latestParsed.concept.body),
+              }
+            : undefined,
+          articles: latest ? articleSummaries.slice(1) : articleSummaries,
+          archiveLimit: 100,
+        });
+      } else {
+        bodyHtml = renderIndexBody(config.site.title, articleSummaries);
+      }
+    } else {
+      bodyHtml = renderArticleBody(p.concept);
+    }
 
     const fontCss = fontProcessor
       ? await fontProcessor.fontCssForPage({
@@ -200,6 +260,7 @@ export async function runBuild(opts: BuildOptions): Promise<BuildResult> {
       description,
       canonicalUrl,
       lang: config.site.lang,
+      feedPath: "feed.xml",
       machineSources: [{ href: mdOutRel, type: "text/markdown" }],
       extraHead: fontCss ? [fontCss] : undefined,
     });
@@ -219,6 +280,27 @@ export async function runBuild(opts: BuildOptions): Promise<BuildResult> {
       });
     }
   }
+
+  const feedEntries: FeedEntry[] = articleSummaries.slice(0, 30).map((a) => {
+    const absUrl = baseUrl.length > 0 ? `${baseUrl}/${a.href}` : a.href;
+    const ts = a.timestamp ?? new Date().toISOString();
+    return {
+      title: a.title,
+      url: absUrl,
+      id: absUrl,
+      updated: ts.includes("T") ? ts : `${ts}T00:00:00Z`,
+      summary: a.description,
+    };
+  });
+  writeFileSync(
+    join(outDir, "feed.xml"),
+    buildAtomFeed(feedEntries, {
+      siteTitle: config.site.title,
+      siteDescription: config.site.description,
+      baseUrl,
+    }),
+    "utf8",
+  );
 
   writeFileSync(join(outDir, "robots.txt"), buildRobotsTxt(baseUrl), "utf8");
   writeFileSync(
