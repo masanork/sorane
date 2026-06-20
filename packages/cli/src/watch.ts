@@ -1,5 +1,5 @@
-import { watch } from "node:fs";
-import { existsSync, resolve } from "node:path";
+import { existsSync, watch } from "node:fs";
+import { resolve } from "node:path";
 import { runBuildCmd } from "./build.ts";
 import { loadSoraneConfig, parseCwdFlag } from "./config-load.ts";
 
