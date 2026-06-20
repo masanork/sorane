@@ -1,3 +1,4 @@
+import type { Schema } from "hast-util-sanitize";
 import rehypeRaw from "rehype-raw";
 import rehypeSanitize, { defaultSchema } from "rehype-sanitize";
 import rehypeStringify from "rehype-stringify";
@@ -6,27 +7,29 @@ import remarkParse from "remark-parse";
 import remarkRehype from "remark-rehype";
 import { unified } from "unified";
 
+const schemaAttributes = defaultSchema.attributes ?? {};
+
 /** はてな移行記事の HTML を許可しつつ script 等は落とす。 */
-const sanitizeSchema = {
+const sanitizeSchema: Schema = {
   ...defaultSchema,
   attributes: {
-    ...defaultSchema.attributes,
+    ...schemaAttributes,
     a: [
-      ...(defaultSchema.attributes.a ?? []).filter(
+      ...(schemaAttributes.a ?? []).filter(
         (entry) => (typeof entry === "string" ? entry : entry[0]) !== "className",
       ),
       "title",
       ["className", "data-footnote-backref", "keyword", "okeyword"],
     ],
     blockquote: [
-      ...(defaultSchema.attributes.blockquote ?? []),
+      ...(schemaAttributes.blockquote ?? []),
       ["className", "twitter-tweet"],
       "dataLang",
       "dataDnt",
       "dataConversation",
     ],
     span: [
-      ...(defaultSchema.attributes.span ?? []),
+      ...(schemaAttributes.span ?? []),
       ["style", /^font-style:\s*italic;?$/i],
     ],
     figure: [["className", "figure-image", "figure-image-fotolife", "mceNonEditable"]],
@@ -35,7 +38,7 @@ const sanitizeSchema = {
     embed: ["src", "type", "width", "height"],
     object: ["width", "height"],
     param: ["name", "value"],
-    img: [...(defaultSchema.attributes.img ?? []), "title"],
+    img: [...(schemaAttributes.img ?? []), "title"],
   },
   tagNames: [
     ...(defaultSchema.tagNames ?? []),

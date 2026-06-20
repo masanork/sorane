@@ -3,6 +3,7 @@ import { join } from "node:path";
 import { tmpdir } from "node:os";
 import { describe, expect, test } from "./_expect.ts";
 import { runBuild } from "../packages/core/src/build.ts";
+import { mergeConfig, type SoraneConfig } from "../packages/core/src/config.ts";
 import { emitPage } from "../packages/core/src/emit-page.ts";
 import {
   extractDescription,
@@ -181,10 +182,10 @@ describe("emitPage", () => {
       const concept = normalizeConcept({ type: "article", title: "T" }, "Body", "t");
       emitPage({
         cwd: tmp,
-        config: {
+        config: mergeConfig({
           site: { title: "Site", lang: "ja" },
-          build: { content_dir: "content", out_dir: join(tmp, "dist") },
-        },
+          build: { out_dir: join(tmp, "dist") },
+        } as Partial<SoraneConfig>),
         outDir: join(tmp, "dist"),
         outRel: "t.html",
         concept,
@@ -249,7 +250,7 @@ describe("runBuild", () => {
     try {
       const result = await runBuild({
         cwd: exampleRoot,
-        config: { build: { out_dir: join(tmp, "dist") } },
+        config: { build: { out_dir: join(tmp, "dist") } } as Partial<SoraneConfig>,
         clean: true,
       });
       expect(result.pages).toBe(1);

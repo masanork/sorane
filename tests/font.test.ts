@@ -92,7 +92,7 @@ describe("createFontProcessor", () => {
           enabled: true,
           cache_dir: join(tmp, "cache"),
           skip_key: "noFontEmbedding",
-          roles: { code: ["Noto Sans Mono"] },
+          roles: { body: ["Noto Sans Mono"], code: ["Noto Sans Mono"] },
           sources: {
             "Noto Sans Mono": { source: "assets/fonts/NotoSansMono-Regular.ttf", embed: "static" },
           },

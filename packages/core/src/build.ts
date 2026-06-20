@@ -135,16 +135,16 @@ function articleNavFor(
 ): ArticleNav | undefined {
   const i = summaries.findIndex((s) => s.href === href);
   if (i < 0) return undefined;
-  const nav: ArticleNav = {};
-  if (i > 0) {
-    const prev = summaries[i - 1]!;
-    nav.prev = { href: prev.href, title: prev.title };
-  }
-  if (i < summaries.length - 1) {
-    const next = summaries[i + 1]!;
-    nav.next = { href: next.href, title: next.title };
-  }
-  return nav.prev || nav.next ? nav : undefined;
+  const prev =
+    i > 0
+      ? { href: summaries[i - 1]!.href, title: summaries[i - 1]!.title }
+      : undefined;
+  const next =
+    i < summaries.length - 1
+      ? { href: summaries[i + 1]!.href, title: summaries[i + 1]!.title }
+      : undefined;
+  if (!prev && !next) return undefined;
+  return { prev, next };
 }
 
 function tarBytes(entries: Array<{ path: string; content: string }>): Buffer {
