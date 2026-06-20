@@ -13,12 +13,19 @@ site:
   description: Site description
   base_url: https://example.pages.dev
   lang: ja
+  og_image: /assets/og-default.png   # 任意。要 base_url
 
 build:
   content_dir: content
   out_dir: dist
   permalink: "{{slug}}.html"
 ```
+
+記事ごとに `og_image` frontmatter で上書きできます（絶対 URL またはサイトルート相対パス）。
+
+## 404 ページ
+
+ビルドは常に `404.html` を `out_dir` 直下に出力します。`content/404.md` で本文をカスタムできます（詳細は [デプロイ](deployment.html)）。
 
 ## ブログ機能
 
@@ -104,4 +111,20 @@ build:
 - ` ```graphviz ` / ` ```dot ` … `graphviz.enabled: true` かつ `dot` が PATH にあるときビルド時 SVG
 - いずれのバックエンドも CLI 欠落時は警告のうえ `<pre><code>` フォールバック（ビルドは継続）
 
-詳細と例は [図表](diagrams.html) を参照してください。
+詳細と例は [図表](diagrams.html) を参照してください。`sorane validate` は alt 欠落の図表フェンスを warning で報告します。
+
+## AI コンテンツ開示
+
+`profile: sorane-okf/0.2` と frontmatter で IPTC / schema.org 準拠の開示ができます。詳細は [AI コンテンツ開示](ai-disclosure.html) を参照してください。
+
+## 静的画像 C2PA
+
+```yaml
+build:
+  c2pa:
+    enabled: false
+    embed: true
+    binary: c2patool
+```
+
+`content/asset-provenance.yaml` と組み合わせて `static/` 内の JPEG/PNG に署名します。`sorane build --skip-c2pa` で CI スナップショット向けに署名を省略できます。

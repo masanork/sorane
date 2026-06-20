@@ -1,0 +1,5 @@
+# Optional: provenance for raster files under static/
+# assets:
+#   hero.jpg:
+#     digitalSourceType: trainedAlgorithmicMedia
+#     aiDisclosureNote: Describe how the image was produced.

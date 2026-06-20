@@ -21,6 +21,7 @@
     "test:coverage": "node --experimental-test-coverage --test-coverage-lines=90 --test-coverage-branches=65 --test-coverage-functions=75 --test-coverage-include='packages/**/*.ts' --test-coverage-exclude='packages/**/wasm/**' --test 'tests/**/*.test.ts'",
     "test:coverage:lcov": "c8 --include='packages/**' --exclude='packages/**/wasm/**' --reporter=text-summary --reporter=lcov --report-dir=coverage node --test 'tests/**/*.test.ts'",
     "test:e2e": "playwright test",
+    "test:c2pa": "node --test tests/c2pa-pass.test.ts tests/static-assets.test.ts tests/asset-provenance.test.ts",
     "typecheck": "tsc --noEmit"
   },
   "engines": {

@@ -1,6 +1,6 @@
 ---
 type: article
-title: 図表（Mermaid）
+title: 図表（Mermaid / D2 / Graphviz）
 profile: sorane-okf/0.1
 excludeFromList: true
 ---
@@ -29,6 +29,18 @@ sequenceDiagram
   participant DIST as dist/
   MD->>BUILD: parse + render
   BUILD->>DIST: HTML + assets/diagrams/
+```
+
+## Mermaid（ビルド時 SVG）
+
+`mermaid.mode: build` にすると `@mermaid-js/mermaid-cli`（mmdc）で SVG を生成します。クライアント loader は不要です。
+
+```yaml
+build:
+  diagrams:
+    mermaid:
+      mode: build
+      mmdc: mmdc
 ```
 
 ## Graphviz（ビルド時 SVG）

@@ -101,6 +101,6 @@ describe("buildPage docs layout", () => {
     });
     expect(html).toContain('class="skip-link"');
     expect(html).toContain('class="docs-layout"');
-    expect(html).toContain('id="main"');
+    expect(html).toContain('<main id="main" class="docs-main">');
   });
 });

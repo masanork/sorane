@@ -106,7 +106,7 @@ function setup(root) {
   let busy = false;
 
   const setStatus = (msg) => {
-    if (compact || !status) return;
+    if (!status) return;
     status.textContent = msg;
   };
 

@@ -23,7 +23,8 @@ Copy [`template/site/`](template/site/) into your own GitHub repo. It includes *
 ## CLI
 
 ```bash
-npx sorane build [--cwd <dir>] [--clean]
+npx sorane build [--cwd <dir>] [--clean] [--watch]
+npx sorane watch [--cwd <dir>] [--clean]
 npx sorane validate [--cwd <dir>]
 npx sorane migrate [--cwd <dir>] [--dry-run]
 npx sorane index [--cwd <dir>] [--force]

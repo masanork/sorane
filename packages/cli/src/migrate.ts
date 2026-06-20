@@ -1,6 +1,6 @@
 import { existsSync, readdirSync, readFileSync, statSync, writeFileSync } from "node:fs";
 import { join, relative, resolve } from "node:path";
-import { migrateToOkf } from "@sorane/core";
+import { migrateToOkf, parseBumpProfileArg } from "@sorane/core";
 import { loadSoraneConfig, parseCwdFlag } from "./config-load.ts";
 
 function walkMarkdown(root: string): string[] {
@@ -21,6 +21,7 @@ export async function runMigrateCmd(argv: string[]): Promise<void> {
   const config = loadSoraneConfig(cwd);
   const contentDir = resolve(cwd, config.build.content_dir);
   const dryRun = argv.includes("--dry-run");
+  const bumpProfile = parseBumpProfileArg(argv);
 
   if (!existsSync(contentDir)) {
     throw new Error(`content directory not found: ${contentDir}`);
@@ -30,7 +31,7 @@ export async function runMigrateCmd(argv: string[]): Promise<void> {
   for (const abs of walkMarkdown(contentDir)) {
     const rel = relative(contentDir, abs);
     const source = readFileSync(abs, "utf8");
-    const migrated = migrateToOkf(source, rel);
+    const migrated = migrateToOkf(source, rel, bumpProfile ? { bumpProfile } : undefined);
     if (migrated !== source) {
       count++;
       if (dryRun) {

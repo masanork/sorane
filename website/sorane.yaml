@@ -24,6 +24,7 @@ docs:
     - cli.html
     - configuration.html
     - diagrams.html
+    - ai-disclosure.html
     - okf-profile.html
     - deployment.html
     - releases.html

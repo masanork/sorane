@@ -148,11 +148,16 @@ function chunkBody(body: string, meta: Meta): { text: string; path: string; slug
   return out;
 }
 
+function isNotFoundPath(relPath: string): boolean {
+  const base = relPath.replace(/\\/g, "/").split("/").pop() ?? relPath;
+  return base.replace(/\.md$/i, "") === "404";
+}
+
 /** 1 文書を検索チャンク列へ。 */
 export function chunkDocument(source: string, relPath: string): Chunk[] {
   const { frontmatter, body } = extract(source);
   const meta = readMeta(frontmatter);
-  if (meta.skip) return [];
+  if (meta.skip || isNotFoundPath(relPath)) return [];
 
   const raw = chunkBody(body, meta);
   return raw.map((c, i) => ({

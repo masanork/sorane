@@ -4,7 +4,22 @@ import type { ParsedConcept } from "@sorane/okf";
 import { conceptToOkfMarkdown } from "@sorane/okf";
 import { buildPage } from "./ssg.ts";
 import type { SoraneConfig } from "./config.ts";
+import { resolveOgImageUrl } from "./og-meta.ts";
 import { extractDescription } from "./ssg.ts";
+
+function pageOgImage(
+  frontmatter: Record<string, unknown>,
+  siteOgImage: string | undefined,
+  baseUrl: string,
+): string | undefined {
+  const raw =
+    typeof frontmatter.og_image === "string"
+      ? frontmatter.og_image
+      : typeof frontmatter.ogImage === "string"
+        ? frontmatter.ogImage
+        : siteOgImage;
+  return resolveOgImageUrl(baseUrl, raw);
+}
 
 export interface EmitPageOptions {
   readonly cwd: string;
@@ -64,6 +79,7 @@ export function emitPage(opts: EmitPageOptions): { mdOutRel: string; canonicalUr
     docsLayout: opts.docsLayout,
     docsSidebarHtml: opts.docsSidebarHtml,
     headerSearchHtml: opts.headerSearchHtml,
+    ogImageUrl: pageOgImage(opts.concept.frontmatter, opts.config.site.og_image, opts.baseUrl),
   });
   writeFileSync(outAbs, html, "utf8");
 

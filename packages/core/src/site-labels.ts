@@ -6,6 +6,8 @@ export interface SiteLabels {
   readonly github: string;
   readonly readMore: string;
   readonly pastArticles: string;
+  readonly moreArticles: string;
+  readonly yearArchive: string;
   readonly updated: string;
   readonly toc: string;
   readonly documentation: string;
@@ -26,6 +28,8 @@ const JA: SiteLabels = {
   github: "GitHub",
   readMore: "続きを読む →",
   pastArticles: "過去の記事",
+  moreArticles: "さらに読む →",
+  yearArchive: "年別に探す",
   updated: "更",
   toc: "目次",
   documentation: "ドキュメント",
@@ -46,6 +50,8 @@ const EN: SiteLabels = {
   github: "GitHub",
   readMore: "Read more →",
   pastArticles: "Archive",
+  moreArticles: "More articles →",
+  yearArchive: "Browse by year",
   updated: "upd",
   toc: "On this page",
   documentation: "Documentation",
@@ -73,6 +79,8 @@ export function siteChromeText(lang: string, siteTitle: string, includeSearch = 
     labels.github,
     labels.readMore,
     labels.pastArticles,
+    labels.moreArticles,
+    labels.yearArchive,
     labels.updated,
     labels.toc,
     labels.documentation,

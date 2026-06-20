@@ -93,16 +93,27 @@ import {
   resolveDocsNav,
 } from "./docs.ts";
 import type { DiagramRenderMeta } from "./diagrams/diagram-meta.ts";
+import { processStaticAssets } from "./static-assets.ts";
+import {
+  isNotFoundSource,
+  notFoundBodySource,
+  notFoundLabels,
+  renderCustomNotFoundBody,
+  renderDefaultNotFoundBody,
+} from "./not-found.ts";
 
 export interface BuildOptions {
   readonly cwd: string;
   readonly config: Partial<SoraneConfig>;
   readonly clean?: boolean;
+  /** CI スナップショット用: C2PA 署名をスキップ */
+  readonly skipC2pa?: boolean;
 }
 
 export interface BuildResult {
   readonly pages: number;
   readonly errors: number;
+  readonly durationMs: number;
 }
 
 function walkMarkdown(root: string): string[] {
@@ -127,10 +138,11 @@ function isSystemPage(concept: ParsedConcept["concept"]): boolean {
   return concept.frontmatter.isSystem === true;
 }
 
-function isBlogArticle(concept: ParsedConcept["concept"]): boolean {
+function isBlogArticle(concept: ParsedConcept["concept"], relPath: string): boolean {
   return (
     concept.type === "article" &&
     !isSystemPage(concept) &&
+    !isNotFoundSource(relPath) &&
     !isSearchView(concept.frontmatter) &&
     concept.frontmatter.excludeFromList !== true
   );
@@ -238,6 +250,7 @@ article pre { overflow-x: auto; }
 `;
 
 export async function runBuild(opts: BuildOptions): Promise<BuildResult> {
+  const startedAt = performance.now();
   const { cwd } = opts;
   const config = mergeConfig(opts.config);
   const contentDir = resolve(cwd, config.build.content_dir);
@@ -313,7 +326,7 @@ export async function runBuild(opts: BuildOptions): Promise<BuildResult> {
   };
 
   const articleSummaries: ArticleListEntry[] = parsed
-    .filter((p) => isBlogArticle(p.concept))
+    .filter((p) => isBlogArticle(p.concept, p.relPath))
     .map((p) => {
       const slug = slugFromRel(p.relPath);
       const outRel = resolvePermalink(config.build.permalink, slug, p.concept.timestamp);
@@ -335,7 +348,7 @@ export async function runBuild(opts: BuildOptions): Promise<BuildResult> {
 
   const parsedByHref = new Map<string, ParsedConcept>();
   for (const p of parsed) {
-    if (!isBlogArticle(p.concept)) continue;
+    if (!isBlogArticle(p.concept, p.relPath)) continue;
     const slug = slugFromRel(p.relPath);
     const outRel = resolvePermalink(config.build.permalink, slug, p.concept.timestamp);
     parsedByHref.set(outRel, p);
@@ -369,7 +382,7 @@ export async function runBuild(opts: BuildOptions): Promise<BuildResult> {
       p.concept.type === "index" || slug === "index"
         ? "index.html"
         : resolvePermalink(config.build.permalink, slug, p.concept.timestamp);
-    if (!isSystemPage(p.concept)) {
+    if (!isSystemPage(p.concept) && !isNotFoundSource(rel)) {
       sourceToUrl.set(rel, outRel);
     }
     if (isSearchView(p.concept.frontmatter) && p.concept.type === "article") {
@@ -393,14 +406,16 @@ export async function runBuild(opts: BuildOptions): Promise<BuildResult> {
     }
     probe.close();
   }
-  const headerSearchEnabled = docsMode && searchIndexReady;
+  const headerSearchEnabled = searchIndexReady;
   const searchNavPath = headerSearchEnabled || !searchIndexReady ? undefined : searchPageRel;
+  const showArchiveInHeader =
+    Boolean(indexParsed) && blogOpts.archives && !headerSearchEnabled;
 
   function headerSearchFor(
     rootPrefix: string,
     page: { readonly docsLayout?: boolean; readonly isSearch?: boolean },
   ): { readonly headerSearchHtml?: string; readonly extraHead?: string[] } {
-    if (!headerSearchEnabled || !page.docsLayout || page.isSearch) return {};
+    if (!headerSearchEnabled || page.isSearch) return {};
     return {
       headerSearchHtml: buildSearchMount(rootPrefix, {
         assetBaseUrl: config.search.asset_base_url,
@@ -447,7 +462,13 @@ export async function runBuild(opts: BuildOptions): Promise<BuildResult> {
 
   // --- Phase A: articles（SSG の核）---
   for (const p of parsed) {
-    if (p.concept.type !== "article" || isSystemPage(p.concept)) continue;
+    if (
+      p.concept.type !== "article" ||
+      isSystemPage(p.concept) ||
+      isNotFoundSource(p.relPath)
+    ) {
+      continue;
+    }
 
     const slug = slugFromRel(p.relPath);
     const outRel = resolvePermalink(config.build.permalink, slug, p.concept.timestamp);
@@ -554,7 +575,7 @@ export async function runBuild(opts: BuildOptions): Promise<BuildResult> {
       baseUrl,
       fontCss,
       extraHead: extraHead.length > 0 ? extraHead : undefined,
-      showArchiveNav: Boolean(indexParsed) && blogOpts.archives,
+      showArchiveNav: showArchiveInHeader,
       searchPath: searchNavPath,
       docsLayout: isDocsPage,
       docsSidebarHtml: isDocsPage ? docsSidebarHtml(docsNav, outRel, outRel) : undefined,
@@ -645,11 +666,9 @@ export async function runBuild(opts: BuildOptions): Promise<BuildResult> {
         showListDescriptions: blogOpts.show_list_descriptions,
         showOnLists: siteAiFlags.showOnLists,
         listRootPrefix: "./",
+        moreArticlesHref: archivePages.length > 1 ? "page/2.html" : undefined,
+        yearArchiveHref: blogOpts.archives ? "archive/index.html" : undefined,
       });
-      if (archivePages.length > 1) {
-        bodyHtml +=
-          `<p class="blog-more-pages"><a href="page/2.html">さらに過去の記事を見る →</a></p>\n`;
-      }
     } else {
       bodyHtml = renderIndexBody(config.site.title, archivePages[0] ?? articleSummaries);
     }
@@ -686,7 +705,7 @@ export async function runBuild(opts: BuildOptions): Promise<BuildResult> {
       isIndex: true,
       pageKind: "website",
       extraHead: indexExtraHead,
-      showArchiveNav: blogOpts.archives,
+      showArchiveNav: showArchiveInHeader,
       searchPath: searchNavPath,
       docsLayout: docsMode,
       docsSidebarHtml: docsMode
@@ -715,7 +734,9 @@ export async function runBuild(opts: BuildOptions): Promise<BuildResult> {
         },
       );
       const concept = syntheticConcept(`${config.site.title} — ページ ${pageNum}`);
-      const fontCss = await fontCssFor(concept, rootPrefixFromRel(outRel), bodyHtml);
+      const rootPrefix = rootPrefixFromRel(outRel);
+      const fontCss = await fontCssFor(concept, rootPrefix, bodyHtml);
+      const pageChrome = headerSearchFor(rootPrefix, { isSearch: false });
       emitPage({
         cwd,
         config,
@@ -725,7 +746,10 @@ export async function runBuild(opts: BuildOptions): Promise<BuildResult> {
         bodyHtml,
         baseUrl,
         fontCss,
+        showArchiveNav: showArchiveInHeader,
         searchPath: searchNavPath,
+        headerSearchHtml: pageChrome.headerSearchHtml,
+        extraHead: pageChrome.extraHead,
       });
       builtPages += 1;
       siteEntries.push({ url: outRel, lastmod: undefined, isIndex: false });
@@ -747,6 +771,9 @@ export async function runBuild(opts: BuildOptions): Promise<BuildResult> {
       rootPrefixFromRel("archive/index.html"),
       archiveIndexHtml,
     );
+    const archiveIndexChrome = headerSearchFor(rootPrefixFromRel("archive/index.html"), {
+      isSearch: false,
+    });
     emitPage({
       cwd,
       config,
@@ -756,7 +783,10 @@ export async function runBuild(opts: BuildOptions): Promise<BuildResult> {
       bodyHtml: archiveIndexHtml,
       baseUrl,
       fontCss: archiveIndexFontCss,
+      showArchiveNav: showArchiveInHeader,
       searchPath: searchNavPath,
+      headerSearchHtml: archiveIndexChrome.headerSearchHtml,
+      extraHead: archiveIndexChrome.extraHead,
     });
     builtPages += 1;
     siteEntries.push({ url: "archive/index.html", lastmod: undefined, isIndex: false });
@@ -766,6 +796,7 @@ export async function runBuild(opts: BuildOptions): Promise<BuildResult> {
       const yearHtml = renderMonthListForYear(year, byMonth, yearOutRel);
       const yearConcept = syntheticConcept(`${year}年`);
       const yearFontCss = await fontCssFor(yearConcept, rootPrefixFromRel(yearOutRel), yearHtml);
+      const yearChrome = headerSearchFor(rootPrefixFromRel(yearOutRel), { isSearch: false });
       emitPage({
         cwd,
         config,
@@ -775,7 +806,10 @@ export async function runBuild(opts: BuildOptions): Promise<BuildResult> {
         bodyHtml: yearHtml,
         baseUrl,
         fontCss: yearFontCss,
+        showArchiveNav: showArchiveInHeader,
         searchPath: searchNavPath,
+        headerSearchHtml: yearChrome.headerSearchHtml,
+        extraHead: yearChrome.extraHead,
       });
       builtPages += 1;
       siteEntries.push({ url: `archive/${year}.html`, lastmod: undefined, isIndex: false });
@@ -791,6 +825,7 @@ export async function runBuild(opts: BuildOptions): Promise<BuildResult> {
       });
       const monthConcept = syntheticConcept(`${y}年${m}月`);
       const monthFontCss = await fontCssFor(monthConcept, rootPrefixFromRel(monthOutRel), bodyHtml);
+      const monthChrome = headerSearchFor(rootPrefixFromRel(monthOutRel), { isSearch: false });
       emitPage({
         cwd,
         config,
@@ -800,7 +835,10 @@ export async function runBuild(opts: BuildOptions): Promise<BuildResult> {
         bodyHtml,
         baseUrl,
         fontCss: monthFontCss,
+        showArchiveNav: showArchiveInHeader,
         searchPath: searchNavPath,
+        headerSearchHtml: monthChrome.headerSearchHtml,
+        extraHead: monthChrome.extraHead,
       });
       builtPages += 1;
       siteEntries.push({ url: `archive/${ym}.html`, lastmod: undefined, isIndex: false });
@@ -818,6 +856,7 @@ export async function runBuild(opts: BuildOptions): Promise<BuildResult> {
       });
       const tagConcept = syntheticConcept(`タグ: ${label}`);
       const tagFontCss = await fontCssFor(tagConcept, rootPrefixFromRel(tagOutRel), bodyHtml);
+      const tagChrome = headerSearchFor(rootPrefixFromRel(tagOutRel), { isSearch: false });
       emitPage({
         cwd,
         config,
@@ -827,7 +866,10 @@ export async function runBuild(opts: BuildOptions): Promise<BuildResult> {
         bodyHtml,
         baseUrl,
         fontCss: tagFontCss,
+        showArchiveNav: showArchiveInHeader,
         searchPath: searchNavPath,
+        headerSearchHtml: tagChrome.headerSearchHtml,
+        extraHead: tagChrome.extraHead,
       });
       builtPages += 1;
       siteEntries.push({ url: `tag/${tagSlug}.html`, lastmod: undefined, isIndex: false });
@@ -896,7 +938,12 @@ export async function runBuild(opts: BuildOptions): Promise<BuildResult> {
 
   const bundleEntries = buildBundleEntries(
     parsed
-      .filter((p) => p.concept.type !== "index" && slugFromRel(p.relPath) !== "index")
+      .filter(
+        (p) =>
+          p.concept.type !== "index" &&
+          slugFromRel(p.relPath) !== "index" &&
+          !isNotFoundSource(p.relPath),
+      )
       .map((p) => ({
         concept: p.concept,
         slug: slugFromRel(p.relPath),
@@ -924,11 +971,76 @@ export async function runBuild(opts: BuildOptions): Promise<BuildResult> {
     onProgress: (message) => process.stdout.write(`[sorane] ${message}\n`),
   });
 
+  // --- 404.html（Cloudflare Pages 等のエラーページ）---
+  const notFoundParsed = parsed.find((p) => isNotFoundSource(p.relPath));
   const staticDirName = config.build.static_dir ?? "static";
   const staticSrc = resolve(cwd, staticDirName);
-  if (existsSync(staticSrc)) {
-    cpSync(staticSrc, join(outDir, staticDirName), { recursive: true });
+  const staticNotFoundHtml = join(staticSrc, "404.html");
+
+  if (notFoundParsed) {
+    const rootPrefix = "./";
+    const section = await renderBodySectionForConfig(
+      notFoundBodySource(notFoundParsed.concept),
+      bodySectionOpts(rootPrefix),
+    );
+    const bodyHtml = renderCustomNotFoundBody(notFoundParsed.concept, section.html);
+    const fontCss = await fontCssFor(notFoundParsed.concept, rootPrefix, bodyHtml);
+    const notFoundChrome = headerSearchFor("./", { isSearch: false });
+    emitPage({
+      cwd,
+      config,
+      outDir,
+      outRel: "404.html",
+      concept: notFoundParsed.concept,
+      bodyHtml,
+      baseUrl,
+      fontCss,
+      showArchiveNav: showArchiveInHeader,
+      searchPath: searchNavPath,
+      pageKind: "website",
+      headerSearchHtml: notFoundChrome.headerSearchHtml,
+      extraHead: notFoundChrome.extraHead,
+    });
+    builtPages += 1;
+  } else if (existsSync(staticNotFoundHtml)) {
+    copyFileSync(staticNotFoundHtml, join(outDir, "404.html"));
+    builtPages += 1;
+  } else {
+    const concept = syntheticConcept(
+      notFoundLabels(config.site.lang).heading,
+      config.site.description,
+    );
+    const bodyHtml = renderDefaultNotFoundBody(config.site.lang);
+    const defaultNotFoundChrome = headerSearchFor("./", { isSearch: false });
+    emitPage({
+      cwd,
+      config,
+      outDir,
+      outRel: "404.html",
+      concept,
+      bodyHtml,
+      baseUrl,
+      showArchiveNav: showArchiveInHeader,
+      searchPath: searchNavPath,
+      pageKind: "website",
+      headerSearchHtml: defaultNotFoundChrome.headerSearchHtml,
+      extraHead: defaultNotFoundChrome.extraHead,
+    });
+    builtPages += 1;
   }
+
+  await processStaticAssets({
+    cwd,
+    staticSrc,
+    outDir,
+    staticDirName,
+    contentDir,
+    c2pa: config.build.c2pa,
+    imageMetadata: config.build.image_metadata,
+    skipC2pa: opts.skipC2pa,
+    onWarning: (message) => process.stderr.write(`[sorane] ${message}\n`),
+    onProgress: (message) => process.stdout.write(`[sorane] ${message}\n`),
+  });
 
   await emitSearchAssets({
     cwd,
@@ -945,5 +1057,5 @@ export async function runBuild(opts: BuildOptions): Promise<BuildResult> {
     onProgress: (message) => process.stdout.write(`[sorane] ${message}\n`),
   });
 
-  return { pages: builtPages, errors: 0 };
+  return { pages: builtPages, errors: 0, durationMs: performance.now() - startedAt };
 }

@@ -35,7 +35,7 @@ jobs:
           path: coverage/lcov.info
           if-no-files-found: ignore
 
-  e2e-diagram:
+  e2e:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
@@ -50,5 +50,27 @@ jobs:
       - name: Install Playwright Chromium
         run: npx playwright install chromium --with-deps
 
-      - name: Diagram smoke (Playwright)
+      - name: Playwright E2E
         run: npm run test:e2e
+
+  c2pa:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: "23"
+
+      - name: Install dependencies
+        run: npm ci
+
+      - name: Install c2patool
+        run: |
+          C2PA_VER=0.26.67
+          curl -sL "https://github.com/contentauth/c2pa-rs/releases/download/c2patool-v${C2PA_VER}/c2patool-v${C2PA_VER}-x86_64-unknown-linux-gnu.tgz" | tar xz
+          sudo mv "c2patool-v${C2PA_VER}-x86_64-unknown-linux-gnu/c2patool" /usr/local/bin/c2patool
+          c2patool --version
+
+      - name: C2PA unit + integration tests
+        run: node --test tests/c2pa-pass.test.ts tests/static-assets.test.ts tests/asset-provenance.test.ts

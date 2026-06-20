@@ -1,5 +1,7 @@
 import { existsSync, readdirSync, readFileSync, statSync } from "node:fs";
 import { join, relative, resolve } from "node:path";
+import { validateDiagramAltWarnings, validateHeadingWarnings } from "@sorane/core";
+import { extract } from "@sorane/okf";
 import { validateSource } from "@sorane/okf";
 import { loadSoraneConfig, parseCwdFlag } from "./config-load.ts";
 
@@ -31,6 +33,15 @@ export async function runValidateCmd(argv: string[]): Promise<void> {
     const result = validateSource(rel, source);
     for (const w of result.warnings) {
       process.stderr.write(`[sorane] ${rel}: warning: ${w}\n`);
+    }
+    const { body } = extract(source);
+    if (body !== null) {
+      for (const w of validateDiagramAltWarnings(body, config.build.diagrams ?? {})) {
+        process.stderr.write(`[sorane] ${rel}: warning: ${w}\n`);
+      }
+      for (const w of validateHeadingWarnings(body)) {
+        process.stderr.write(`[sorane] ${rel}: warning: ${w}\n`);
+      }
     }
     if (!result.ok) {
       for (const issue of result.issues) {

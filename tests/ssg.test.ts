@@ -176,6 +176,30 @@ describe("renderBlogIndexBody", () => {
     expect(html).toContain("過去の記事");
     expect(html).toContain("古い記事");
   });
+
+  test("続き一覧と年別へのナビを出す", () => {
+    const html = renderBlogIndexBody({
+      siteTitle: "Blog",
+      lang: "ja",
+      articles: [{ title: "古い記事", href: "old.html", timestamp: "2025-01-01T00:00:00Z" }],
+      moreArticlesHref: "page/2.html",
+      yearArchiveHref: "archive/index.html",
+    });
+    expect(html).toContain('class="blog-archive-nav"');
+    expect(html).toContain('href="page/2.html"');
+    expect(html).toContain("さらに読む →");
+    expect(html).toContain('href="archive/index.html"');
+    expect(html).toContain("年別に探す");
+  });
+});
+
+describe("buildSearchMount", () => {
+  test("header variant でコンパクト検索を出す", async () => {
+    const { buildSearchMount } = await import("../packages/core/src/ssg.ts");
+    const html = buildSearchMount("./", { variant: "header" });
+    expect(html).toContain('class="search search--header"');
+    expect(html).not.toContain("search-facet");
+  });
 });
 
 describe("buildAtomFeed", () => {
@@ -282,7 +306,37 @@ describe("buildPage", () => {
       showArchiveNav: true,
     });
     expect(html).toContain('og:type" content="website"');
-    expect(html).toContain("アーカイブ");
+    expect(html).toContain("年別に探す");
+  });
+
+  test("全ページにスキップリンクと main ランドマークを出す", () => {
+    const html = buildPage({
+      title: "Post",
+      siteTitle: "Site",
+      bodyHtml: "<p>x</p>",
+      rootPrefix: "./",
+      lang: "ja",
+    });
+    expect(html).toContain('class="skip-link"');
+    expect(html).toContain('href="#main"');
+    expect(html).toContain("<main id=\"main\">");
+  });
+
+  test("OG / Twitter メタを出す", () => {
+    const html = buildPage({
+      title: "Post",
+      siteTitle: "Site",
+      bodyHtml: "<p>x</p>",
+      rootPrefix: "./",
+      description: "Lead",
+      canonicalUrl: "https://ex.dev/post.html",
+      lang: "ja",
+      ogImageUrl: "https://ex.dev/assets/og.png",
+    });
+    expect(html).toContain('property="og:image" content="https://ex.dev/assets/og.png"');
+    expect(html).toContain('name="twitter:card" content="summary_large_image"');
+    expect(html).toContain('property="og:locale" content="ja_JP"');
+    expect(html).toContain('name="twitter:title" content="Post"');
   });
 });
 
@@ -318,7 +372,7 @@ describe("runBuild", () => {
         config: { build: { out_dir: join(tmp, "dist") } } as Partial<SoraneConfig>,
         clean: true,
       });
-      expect(result.pages).toBe(1);
+      expect(result.pages).toBe(2);
       expect(existsSync(join(tmp, "dist/2025-06-01-note.html"))).toBe(true);
       expect(existsSync(join(tmp, "dist/index.html"))).toBe(false);
     } finally {
@@ -348,10 +402,12 @@ describe("runBuild", () => {
         clean: true,
       });
       expect(result.pages >= 2).toBe(true);
+      expect(result.durationMs >= 0).toBe(true);
       expect(existsSync(join(tmp, "dist/index.html"))).toBe(true);
       expect(existsSync(join(tmp, "dist/2025-01-01-hello.html"))).toBe(true);
       expect(existsSync(join(tmp, "dist/archive/index.html"))).toBe(true);
       expect(existsSync(join(tmp, "dist/2025-01-01-hello.md"))).toBe(true);
+      expect(existsSync(join(tmp, "dist/404.html"))).toBe(true);
       expect(existsSync(join(tmp, "dist/okf/bundle.tar.gz"))).toBe(true);
       expect(existsSync(join(tmp, "dist/feed.xml"))).toBe(true);
       const html = readFileSync(join(tmp, "dist/2025-01-01-hello.html"), "utf8");

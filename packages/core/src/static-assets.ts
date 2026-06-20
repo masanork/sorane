@@ -1,0 +1,115 @@
+import { cpSync, existsSync, mkdirSync, readdirSync, statSync } from "node:fs";
+import { dirname, join, relative, resolve } from "node:path";
+import {
+  loadAssetProvenance,
+  lookupAssetProvenance,
+  resolveC2paCreateIntent,
+} from "./asset-provenance.ts";
+import {
+  c2patoolAvailable,
+  isC2paRasterPath,
+  resolveC2paCredentials,
+  signRasterWithC2pa,
+  type C2paCredentials,
+} from "./c2pa-pass.ts";
+import type { C2paConfig, ImageMetadataConfig } from "./config.ts";
+
+export interface StaticAssetPassOptions {
+  readonly cwd: string;
+  readonly staticSrc: string;
+  readonly outDir: string;
+  readonly staticDirName: string;
+  readonly contentDir: string;
+  readonly c2pa?: C2paConfig;
+  readonly imageMetadata?: ImageMetadataConfig;
+  readonly skipC2pa?: boolean;
+  readonly onWarning?: (message: string) => void;
+  readonly onProgress?: (message: string) => void;
+}
+
+export interface StaticAssetPassResult {
+  readonly rasterSigned: number;
+  readonly rasterCopied: number;
+}
+
+function walkFiles(root: string): string[] {
+  const out: string[] = [];
+  function visit(dir: string): void {
+    for (const name of readdirSync(dir).sort()) {
+      const abs = join(dir, name);
+      if (statSync(abs).isDirectory()) visit(abs);
+      else out.push(abs);
+    }
+  }
+  visit(root);
+  return out;
+}
+
+export async function processStaticAssets(
+  opts: StaticAssetPassOptions,
+): Promise<StaticAssetPassResult> {
+  const warn = opts.onWarning ?? (() => {});
+  const log = opts.onProgress ?? (() => {});
+
+  if (!existsSync(opts.staticSrc)) {
+    return { rasterSigned: 0, rasterCopied: 0 };
+  }
+
+  const outRoot = join(opts.outDir, opts.staticDirName);
+  cpSync(opts.staticSrc, outRoot, { recursive: true });
+
+  const provenance = loadAssetProvenance(
+    opts.contentDir,
+    opts.imageMetadata?.manifest,
+  );
+
+  const c2paConfig = opts.c2pa;
+  const skipC2pa = opts.skipC2pa === true;
+  let credentials: C2paCredentials | null = null;
+  let c2paBinary = c2paConfig?.binary ?? "c2patool";
+
+  if (c2paConfig?.enabled === true && !skipC2pa) {
+    credentials = resolveC2paCredentials(c2paConfig);
+    if (!credentials) {
+      warn(
+        "c2pa.enabled but signing credentials missing (set certificate_path/private_key_path or SORANE_C2PA_CERT/SORANE_C2PA_KEY); static images copied unsigned",
+      );
+    } else if (!c2patoolAvailable(c2paBinary)) {
+      warn(`c2pa.enabled but ${c2paBinary} not found on PATH; static images copied unsigned`);
+      credentials = null;
+    }
+  }
+
+  let rasterSigned = 0;
+  let rasterCopied = 0;
+
+  for (const abs of walkFiles(opts.staticSrc)) {
+    const rel = relative(opts.staticSrc, abs).replace(/\\/g, "/");
+    if (!isC2paRasterPath(rel)) continue;
+    rasterCopied += 1;
+    const outPath = join(outRoot, rel);
+
+    if (!credentials) continue;
+
+    const entry = lookupAssetProvenance(provenance, rel);
+    const createIntent = resolveC2paCreateIntent(entry);
+    const signed = signRasterWithC2pa(abs, outPath, {
+      binary: c2paBinary,
+      embed: c2paConfig?.embed !== false,
+      createIntent,
+      credentials,
+    });
+    if (signed.ok) {
+      rasterSigned += 1;
+      log(`c2pa: signed static/${rel} (${createIntent})`);
+    } else {
+      warn(`c2pa: failed to sign static/${rel}: ${signed.message ?? "unknown error"}`);
+    }
+  }
+
+  if (rasterSigned > 0) {
+    log(`c2pa: ${rasterSigned} raster asset(s) signed`);
+  }
+
+  return { rasterSigned, rasterCopied };
+}

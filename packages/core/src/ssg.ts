@@ -10,6 +10,7 @@ import {
 } from "./diagrams/render-body-section.ts";
 import type { DiagramRenderMeta } from "./diagrams/diagram-meta.ts";
 import { escapeHtml, stripDuplicateTitleHeading } from "./render.ts";
+import { ogLocaleFromLang } from "./og-meta.ts";
 import { siteLabels, type SiteLabels } from "./site-labels.ts";
 
 export function extractDescription(body: string, maxLen = 200): string | null {
@@ -107,6 +108,7 @@ export interface PageShellOptions {
   readonly docsLayout?: boolean;
   readonly docsSidebarHtml?: string;
   readonly headerSearchHtml?: string;
+  readonly ogImageUrl?: string;
 }
 
 export interface ArticleListEntry {
@@ -149,6 +151,10 @@ export interface BlogIndexOptions {
   readonly labels?: SiteLabels;
   readonly showOnLists?: boolean;
   readonly listRootPrefix?: string;
+  /** トップのアーカイブ欄から続きの一覧へ（例: page/2.html） */
+  readonly moreArticlesHref?: string;
+  /** 年別アーカイブ index への相対 URL */
+  readonly yearArchiveHref?: string;
 }
 
 export function buildPage(opts: PageShellOptions): string {
@@ -177,6 +183,20 @@ export function buildPage(opts: PageShellOptions): string {
     head.push(`<link rel="canonical" href="${u}">`);
     head.push(`<meta property="og:url" content="${u}">`);
   }
+  const lang = opts.lang ?? "ja";
+  head.push(`<meta property="og:locale" content="${escapeHtml(ogLocaleFromLang(lang))}">`);
+  if (opts.ogImageUrl) {
+    const img = escapeHtml(opts.ogImageUrl);
+    head.push(`<meta property="og:image" content="${img}">`);
+    head.push(`<meta name="twitter:card" content="summary_large_image">`);
+    head.push(`<meta name="twitter:image" content="${img}">`);
+  } else {
+    head.push(`<meta name="twitter:card" content="summary">`);
+  }
+  head.push(`<meta name="twitter:title" content="${titleEsc}">`);
+  if (opts.description) {
+    head.push(`<meta name="twitter:description" content="${escapeHtml(opts.description)}">`);
+  }
   if (opts.machineSources) {
     for (const s of opts.machineSources) {
       head.push(
@@ -190,13 +210,12 @@ export function buildPage(opts: PageShellOptions): string {
     );
   }
   if (opts.extraHead) head.push(...opts.extraHead);
-  const lang = opts.lang ?? "ja";
   const labels = siteLabels(lang);
   const home = `${opts.rootPrefix}index.html`;
   const navParts: string[] = [];
   if (opts.showArchiveNav) {
     navParts.push(
-      `<a href="${escapeHtml(`${opts.rootPrefix}archive/index.html`)}">${escapeHtml(labels.archive)}</a>`,
+      `<a href="${escapeHtml(`${opts.rootPrefix}archive/index.html`)}">${escapeHtml(labels.yearArchive)}</a>`,
     );
   }
   if (opts.searchPath) {
@@ -212,9 +231,8 @@ export function buildPage(opts: PageShellOptions): string {
     opts.headerSearchHtml || nav
       ? `<div class="site-header-end">\n${opts.headerSearchHtml ?? ""}${nav}\n</div>\n`
       : "";
-  const skipLink = opts.docsLayout
-    ? `<a href="#main" class="skip-link">${escapeHtml(labels.skipToContent)}</a>\n`
-    : "";
+  const skipLink =
+    `<a href="#main" class="skip-link">${escapeHtml(labels.skipToContent)}</a>\n`;
   const bodyClass = opts.docsLayout ? ' class="docs-site"' : "";
   let mainBlock = `<main id="main">\n${opts.bodyHtml}\n</main>\n`;
   if (opts.docsLayout && opts.docsSidebarHtml) {
@@ -227,7 +245,7 @@ export function buildPage(opts: PageShellOptions): string {
       `</details>\n` +
       `<div class="docs-sidebar-desktop">\n${opts.docsSidebarHtml}</div>\n` +
       `</aside>\n` +
-      `<div class="docs-main" id="main">\n${opts.bodyHtml}\n</div>\n` +
+      `<main id="main" class="docs-main">\n${opts.bodyHtml}\n</main>\n` +
       `</div>\n`;
   }
   return (
@@ -509,9 +527,25 @@ export function renderBlogIndexBody(opts: BlogIndexOptions): string {
     })
     .join("\n");
 
+  const archiveNavLinks: string[] = [];
+  if (opts.moreArticlesHref) {
+    archiveNavLinks.push(
+      `<a href="${escapeHtml(opts.moreArticlesHref)}" class="blog-archive-more">${escapeHtml(labels.moreArticles)}</a>`,
+    );
+  }
+  if (opts.yearArchiveHref) {
+    archiveNavLinks.push(
+      `<a href="${escapeHtml(opts.yearArchiveHref)}" class="blog-archive-by-year">${escapeHtml(labels.yearArchive)}</a>`,
+    );
+  }
+  const archiveNav =
+    archiveNavLinks.length > 0
+      ? `<nav class="blog-archive-nav" aria-label="${escapeHtml(labels.pastArticles)}">${archiveNavLinks.join("")}</nav>\n`
+      : "";
+
   const more =
     items.length > 0
-      ? `<section class="blog-archive">\n<h2>${escapeHtml(labels.pastArticles)}</h2>\n<ul class="blog-list">\n${items}\n</ul>\n</section>\n`
+      ? `<section class="blog-archive">\n<h2>${escapeHtml(labels.pastArticles)}</h2>\n<ul class="blog-list">\n${items}\n</ul>\n${archiveNav}</section>\n`
       : "";
 
   const showTitle = opts.showHeaderTitle !== false;
@@ -581,13 +615,13 @@ export function buildSearchMount(
         `</form>`;
   const status =
     variant === "header"
-      ? ""
-      : `<p class="search-status" data-search-status></p>`;
+      ? `<p class="search-status search-status--sr" data-search-status aria-live="polite" aria-atomic="true"></p>`
+      : `<p class="search-status" data-search-status aria-live="polite" aria-atomic="true"></p>`;
   return (
     `<div class="${searchClass}" data-search data-index="${escapeHtml(indexUrl)}"${hybridAttrs}>` +
     `${form}` +
     `${status}` +
-    `<ol class="search-results" data-search-results></ol>` +
+    `<ol class="search-results" data-search-results role="list" aria-live="polite" aria-relevant="additions"></ol>` +
     `</div>\n`
   );
 }

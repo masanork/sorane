@@ -79,6 +79,23 @@ export const DEFAULT_DIAGRAMS_CONFIG: Required<DiagramsConfig> = {
   graphviz: { enabled: false, binary: "dot" },
 };
 
+export interface ImageMetadataConfig {
+  readonly enabled?: boolean;
+  readonly exiftool?: string;
+  /** 既定: content/asset-provenance.yaml */
+  readonly manifest?: string;
+}
+
+export interface C2paConfig {
+  readonly enabled?: boolean;
+  /** 既定 true（埋め込み）。false は sidecar .c2pa（開発用） */
+  readonly embed?: boolean;
+  readonly binary?: string;
+  readonly certificate_path?: string;
+  readonly private_key_path?: string;
+  readonly settings_path?: string;
+}
+
 export interface AiDisclosureConfig {
   readonly enabled?: boolean;
   readonly badges?: boolean;
@@ -106,6 +123,8 @@ export interface SoraneConfig {
     readonly description: string;
     readonly base_url: string;
     readonly lang: string;
+    /** 既定の OGP 画像（絶対 URL またはサイトルート相対パス。要 base_url） */
+    readonly og_image?: string;
   };
   readonly build: {
     readonly content_dir: string;
@@ -116,6 +135,8 @@ export interface SoraneConfig {
     readonly blog?: BlogBuildConfig;
     readonly ai_disclosure?: AiDisclosureConfig;
     readonly diagrams?: DiagramsConfig;
+    readonly image_metadata?: ImageMetadataConfig;
+    readonly c2pa?: C2paConfig;
   };
   readonly fonts: {
     readonly enabled: boolean;
@@ -159,6 +180,8 @@ export const DEFAULT_CONFIG: SoraneConfig = {
     },
     ai_disclosure: {},
     diagrams: DEFAULT_DIAGRAMS_CONFIG,
+    image_metadata: {},
+    c2pa: { enabled: false, embed: true, binary: "c2patool" },
   },
   fonts: {
     enabled: false,
@@ -206,6 +229,12 @@ export function mergeConfig(partial: Partial<SoraneConfig>): SoraneConfig {
             },
           }
         : DEFAULT_DIAGRAMS_CONFIG,
+      image_metadata: partial.build?.image_metadata
+        ? { ...DEFAULT_CONFIG.build.image_metadata, ...partial.build.image_metadata }
+        : DEFAULT_CONFIG.build.image_metadata,
+      c2pa: partial.build?.c2pa
+        ? { ...DEFAULT_CONFIG.build.c2pa, ...partial.build.c2pa }
+        : DEFAULT_CONFIG.build.c2pa,
     },
     fonts: { ...DEFAULT_CONFIG.fonts, ...partial.fonts },
     search: { ...DEFAULT_CONFIG.search, ...partial.search },

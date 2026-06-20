@@ -1,0 +1,116 @@
+---
+type: article
+title: AI コンテンツ開示
+profile: sorane-okf/0.1
+excludeFromList: true
+---
+
+記事の frontmatter で、生成 AI の関与を **IPTC / schema.org 準拠**の機械可読フィールドとして宣言できます。人向けには EU 透明性アイコン（任意）も表示されます。
+
+**テキスト記事**の開示は frontmatter で完結します。**`static/` 配下の JPEG/PNG** はオプションで [C2PA](https://c2pa.org/) 署名できます（下記）。画像 XMP（ExifTool）は今後の拡張です。
+
+## いつ付けるか
+
+**既定は「付けない」。** 人が普通に書いた記事（IME・スペルチェックのみ）では `digitalSourceType` は不要です。
+
+| 状況 | 推奨 |
+|---|---|
+| 人が書き、AI に推敲・要約・翻訳などを部分的に依頼 | `compositeWithTrainedAlgorithmicMedia` |
+| 生成 AI が本文の大部分を書き、人は軽い確認のみ | `trainedAlgorithmicMedia` |
+| 「人が書いた」と明示的に機械可読で宣言したい（任意） | `humanEdits`（バッジは出ない） |
+
+## 最小例
+
+```yaml
+---
+type: article
+title: 例の記事
+profile: sorane-okf/0.2
+digitalSourceType: compositeWithTrainedAlgorithmicMedia
+aiDisclosureNote: 下書きに Claude を使用。事実関係は著者が確認済み。
+aiSystems:
+  - name: Claude
+    provider: Anthropic
+---
+```
+
+`euAiLabel`（`basic` / `fully-generated` / `partially-modified`）は EU アイコンの上書き用です。省略時は `digitalSourceType` から推論されます。
+
+## どこに載るか
+
+開示を付けた記事は、ビルド成果物の次の場所に伝播します。
+
+- 記事 HTML（EU バッジ・任意）
+- `BlogPosting` JSON-LD の `digitalSourceType`
+- ページ横の `.md` alternate と `okf/bundle.tar.gz`
+- `catalog.jsonld` / `search-index.json` / `feed.xml`
+- `llms.txt` の開示記事カウント
+
+## 設定（sorane.yaml）
+
+```yaml
+build:
+  ai_disclosure:
+    badges: true              # HTML バッジ（既定: 開示あり時 true）
+    json_ld: true             # BlogPosting JSON-LD
+    machine_readable: true    # catalog / search-index
+    atom: true                # feed.xml の category term
+    show_on_lists: true       # 一覧のコンパクトアイコン
+    policy_url: https://example.com/ai-policy.html
+```
+
+`enabled: false` にするとバッジ等を抑えられますが、ページに開示 frontmatter がある場合は JSON-LD 等は既定で有効のままです（設計ドキュメント参照）。
+
+## 検証
+
+```bash
+sorane validate --cwd .
+```
+
+`sorane-okf/0.2` では未知の `digitalSourceType` や、`euAiLabel` だけで `digitalSourceType` が無い場合はエラーになります。
+
+## 図表のアクセシビリティ
+
+図表フェンス（mermaid / d2 等）には代替テキストを付けてください。`validate` は alt 欠落を **warning** で知らせます（ビルドは継続）。
+
+````markdown
+```mermaid alt="認証フロー"
+flowchart LR
+  A --> B
+```
+````
+
+またはフェンス内の `%% alt: 認証フロー` コメントでも構いません。詳細は [図表（Mermaid / D2）](diagrams.html) を参照してください。
+
+## 静的画像の C2PA（`static/` の JPEG/PNG）
+
+`content/asset-provenance.yaml` で画像ごとの `digitalSourceType` を宣言し、ビルド時に **c2patool** で manifest を埋め込みます（オプトイン）。
+
+```yaml
+# content/asset-provenance.yaml
+assets:
+  hero.jpg:
+    digitalSourceType: trainedAlgorithmicMedia
+    aiDisclosureNote: Generated with Example Model; author reviewed.
+```
+
+```yaml
+# sorane.yaml
+build:
+  c2pa:
+    enabled: true
+    embed: true
+    certificate_path: /path/to/cert.pem   # または env SORANE_C2PA_CERT
+    private_key_path: /path/to/key.pem    # または env SORANE_C2PA_KEY
+```
+
+- 証明書はリポジトリにコミットしない（CI Secrets / ローカル dev key）
+- 再現可能ビルドが必要な CI では `sorane build --skip-c2pa`
+- `c2patool` が PATH に無い、または cred 無しのときは **警告のうえコピーのみ**（ビルドは継続）
+
+## プロファイル
+
+- `sorane-okf/0.1` … 開示フィールドは任意（検証は緩い）
+- `sorane-okf/0.2` … 開示フィールドの形状を厳密に検証
+
+スキーマ: [OKF プロファイル](okf-profile.html)（`sorane-okf/0.2`）

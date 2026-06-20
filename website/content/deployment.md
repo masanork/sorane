@@ -20,6 +20,18 @@ excludeFromList: true
 
 初回のみ Cloudflare で Pages プロジェクト `sorane` を作成してください（`wrangler pages project create sorane`）。
 
+### 404 ページ
+
+ビルドは常に `dist/404.html` を出力します。Cloudflare Pages はこれを自動的にエラーページとして使います。
+
+| 優先 | ソース | 結果 |
+|------|--------|------|
+| 1 | `content/404.md` | sorane でレンダリング（サイトヘッダー付き） |
+| 2 | `static/404.html` | そのままコピー（Markdown 無しのとき） |
+| 3 | （なし） | 言語に応じた既定ページ（`lang: ja` は日英併記） |
+
+`404.md` はサイトマップ・ブログ一覧・OKF バンドル・検索インデックスから除外されます。
+
 ### 注意点
 
 - **シークレット**: `CLOUDFLARE_API_TOKEN`, `CLOUDFLARE_ACCOUNT_ID`（リポジトリ Secrets）
