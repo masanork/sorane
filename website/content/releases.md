@@ -21,7 +21,7 @@ excludeFromList: true
 ```
 masanork/sorane
 ├── packages/*   … CLI・ビルドエンジン
-└── website/     … ドキュメント（sorane.dev）
+└── website/     … SSG ドキュメント（ssg.sorane.dev）
 ```
 
 **大規模サイト** — コンテンツとツールを分離する場合、CI で sorane の ref を pin します。
@@ -38,7 +38,7 @@ masanork/sorane
 
 ### Phase 1 — ドキュメントとタグ付けリリース
 
-- [x] 公式サイト `sorane.dev`（`sorane.pages.dev` はフォールバック）
+- [x] SSG ドキュメント `ssg.sorane.dev`（`sorane.pages.dev` はフォールバック）
 - [ ] `CHANGELOG.md` と SemVer タグ（`v0.1.0` …）
 - [ ] GitHub Releases にソース tarball + Bunsen フォント資産
 
@@ -54,4 +54,5 @@ masanork/sorane
 
 - Astro テーマ層（sorane 出力の上に載せる）
 - Homebrew formula / Docker image
-- [x] `sorane.dev` カスタムドメイン
+- [x] `ssg.sorane.dev`（SSG ドキュメント）
+- [ ] `sorane.dev` ニュースサイト

@@ -2,7 +2,7 @@
 
 OKF-native static site generator. Markdown concepts with YAML frontmatter become a static site with machine-readable outputs for agents and search tools.
 
-- **Documentation & live site:** https://sorane.dev/ (built from `website/` in this repo)
+- **Documentation & live site:** https://ssg.sorane.dev/ (built from `website/` in this repo)
 
 ## Requirements
 
@@ -111,13 +111,13 @@ The product site lives in `website/` and is built with sorane itself:
 npm run build -- --cwd website --clean
 ```
 
-Cloudflare Pages deploys `website/dist` to **sorane.dev** on push to `main` (see `.github/workflows/pages.yml`).
+Cloudflare Pages deploys `website/dist` to **ssg.sorane.dev** on push to `main` (see `.github/workflows/pages.yml`). The apex `sorane.dev` is reserved for a future news site.
 
 ## Distribution
 
 | Method | Status |
 |--------|--------|
-| `git clone` + `npm ci` | Available (see [releases](https://sorane.dev/releases.html)) |
+| `git clone` + `npm ci` | Available (see [releases](https://ssg.sorane.dev/releases.html)) |
 | GitHub Release tags | Planned |
 | npm package | Planned |
 

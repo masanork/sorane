@@ -6,7 +6,7 @@ All notable changes to sorane are documented here. Versioning follows [SemVer](h
 
 ### Added
 
-- Official docs site (`website/`) at sorane.dev (Cloudflare Pages)
+- Official docs site (`website/`) at ssg.sorane.dev (Cloudflare Pages)
 - `excludeFromList` frontmatter to omit pages from blog index/archive lists
 - Docs UX: `docs.nav` sidebar, page TOC, prev/next pager, heading anchors
 - `sorane.yaml` `docs.nav` for documentation site navigation order

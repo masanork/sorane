@@ -44,4 +44,4 @@ profile: sorane-okf/0.1
 
 プロファイル定義はリポジトリの `profile/sorane-okf-0.1.schema.json` にあり、公式サイトでは [こちら](profile/sorane-okf-0.1.schema.json) から取得できます。
 
-`$id` は本番ドメイン `sorane.dev` を指します。
+`$id` は SSG ドキュメントの本番 URL `ssg.sorane.dev` を指します。
