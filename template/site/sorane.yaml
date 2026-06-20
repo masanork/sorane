@@ -1,0 +1,13 @@
+site:
+  title: My Site
+  description: A sorane site edited with AI assistants
+  base_url: https://example.pages.dev
+  lang: ja
+
+build:
+  content_dir: content
+  out_dir: dist
+  permalink: "{{slug}}.html"
+
+search:
+  index: .sorane/index.db

@@ -17,6 +17,7 @@ build:
 docs:
   nav:
     - getting-started.html
+    - ai-onboarding.html
     - cli.html
     - configuration.html
     - okf-profile.html

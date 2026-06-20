@@ -1,0 +1,40 @@
+name: Deploy site
+
+on:
+  push:
+    branches: [main]
+  workflow_dispatch:
+
+jobs:
+  deploy:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/checkout@v4
+        with:
+          repository: masanork/sorane
+          path: sorane
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: "23"
+
+      - run: npm ci
+        working-directory: sorane
+
+      - name: Validate content
+        run: node sorane/packages/cli/src/main.ts validate --cwd .
+
+      - name: Build search index
+        run: node sorane/packages/cli/src/main.ts index --cwd . --force
+
+      - name: Build site
+        run: node sorane/packages/cli/src/main.ts build --cwd . --clean
+
+      - name: Deploy to Cloudflare Pages
+        uses: cloudflare/wrangler-action@v3
+        with:
+          apiToken: ${{ secrets.CLOUDFLARE_API_TOKEN }}
+          accountId: ${{ secrets.CLOUDFLARE_ACCOUNT_ID }}
+          command: pages deploy dist --project-name YOUR_PROJECT

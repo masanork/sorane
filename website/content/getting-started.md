@@ -30,9 +30,11 @@ npm run build -- --cwd examples/minimal --clean
 
 ## 自分のサイトを作る
 
-1. 空のディレクトリに `sorane.yaml` と `content/` を置く
-2. `content/index.md`（トップ）と記事 `.md` を書く
-3. `sorane build --cwd . --clean` で `dist/` を生成
+**おすすめ:** [`template/site/`](https://github.com/masanork/sorane/tree/main/template/site) をコピーするか GitHub テンプレートとして使う。`AGENTS.md` 付きで Cursor / Claude / Antigravity 向けにすぐ始められます。
+
+1. `template/site/` を新しいリポジトリに置く（`sorane.yaml` + `content/` + `AGENTS.md`）
+2. 記事を `content/` に追加（または AI アシスタントに任せる）
+3. `sorane validate` → `sorane build --cwd . --clean`
 4. `dist/` を Cloudflare Pages 等にデプロイ
 
-設定の詳細は [設定（sorane.yaml）](configuration.html) を参照してください。
+AI 向けの詳細は [AI アシスタント向けオンボーディング](ai-onboarding.html) を参照してください。設定は [設定（sorane.yaml）](configuration.html) を参照してください。

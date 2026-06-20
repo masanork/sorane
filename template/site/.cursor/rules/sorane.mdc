@@ -1,0 +1,16 @@
+---
+description: sorane OKF content — frontmatter, validate, build
+globs: content/**/*.md,sorane.yaml
+alwaysApply: false
+---
+
+# sorane content site
+
+Read `AGENTS.md` at the repo root for full instructions.
+
+## Quick rules
+
+- Edit only `content/**/*.md` and `sorane.yaml`; never `dist/`
+- Frontmatter: `type` (`article` | `index`), `title`, `profile: sorane-okf/0.1`
+- After edits: `validate --cwd .` → `index --force` (if search) → `build --clean`
+- sorane CLI: `node "$SORANE_ROOT/packages/cli/src/main.ts"` (see AGENTS.md)

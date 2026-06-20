@@ -16,6 +16,10 @@ npm test
 npm run build -- --cwd examples/minimal --clean
 ```
 
+## New site (AI-assisted)
+
+Copy [`template/site/`](template/site/) into your own GitHub repo. It includes **AGENTS.md** (Cursor, Claude Code, Antigravity, Codex, …), Cursor rules, and a sample CI workflow. See [AI onboarding](https://ssg.sorane.dev/ai-onboarding.html).
+
 ## CLI
 
 ```bash
