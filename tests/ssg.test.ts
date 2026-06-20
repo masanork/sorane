@@ -243,6 +243,16 @@ describe("migrateToOkf", () => {
   });
 });
 
+describe("resolveThemeCss", () => {
+  test("website/ からリポジトリ直下の templates を解決する", async () => {
+    const { resolveThemeCss } = await import("../packages/core/src/build.ts");
+    const websiteRoot = join(import.meta.dirname, "../website");
+    const css = resolveThemeCss(websiteRoot);
+    expect(css?.endsWith("templates/default/assets/main.css")).toBe(true);
+    expect(existsSync(css!)).toBe(true);
+  });
+});
+
 describe("runBuild", () => {
   test("article-only example は index 無しで記事だけ焼く", async () => {
     const exampleRoot = join(import.meta.dirname, "../examples/articles-only");

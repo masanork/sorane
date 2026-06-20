@@ -179,6 +179,20 @@ function tarBytes(entries: Array<{ path: string; content: string }>): Buffer {
   return Buffer.concat(blocks);
 }
 
+/** サイト cwd または親ディレクトリからテーマ CSS を探す（monorepo の website/ 等）。 */
+export function resolveThemeCss(cwd: string): string | null {
+  const rel = join("templates", "default", "assets", "main.css");
+  let dir = resolve(cwd);
+  for (let depth = 0; depth < 6; depth++) {
+    const candidate = join(dir, rel);
+    if (existsSync(candidate)) return candidate;
+    const parent = dirname(dir);
+    if (parent === dir) break;
+    dir = parent;
+  }
+  return null;
+}
+
 const DEFAULT_CSS = `/* sorane default */
 :root { color-scheme: light; --text: #1a1a1a; --muted: #555; --link: #0b57d0; }
 body { font-family: system-ui, sans-serif; line-height: 1.7; max-width: 42rem; margin: 2rem auto; padding: 0 1rem; color: var(--text); }
@@ -691,8 +705,8 @@ export async function runBuild(opts: BuildOptions): Promise<BuildResult> {
   );
   writeFileSync(join(outDir, "okf/bundle.tar.gz"), gzipSync(tarBytes(bundleEntries)));
 
-  const templateCss = resolve(cwd, "templates/default/assets/main.css");
-  if (existsSync(templateCss)) {
+  const templateCss = resolveThemeCss(cwd);
+  if (templateCss) {
     copyFileSync(templateCss, join(outDir, "assets/main.css"));
   } else {
     writeFileSync(join(outDir, "assets/main.css"), DEFAULT_CSS, "utf8");
