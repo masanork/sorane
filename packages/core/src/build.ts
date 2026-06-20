@@ -32,6 +32,7 @@ import {
   renderFeaturedExcerpt,
   sanitizeListDescription,
   buildWebSiteJsonLd,
+  rootPrefixFromRel,
   type ArticleListEntry,
   type ArticleNav,
 } from "./ssg.ts";
@@ -302,18 +303,20 @@ export async function runBuild(opts: BuildOptions): Promise<BuildResult> {
   async function fontCssFor(
     concept: ParsedConcept["concept"],
     rootPrefix: string,
-    opts?: { readonly renderedHtml?: string; readonly siteTitle?: string; readonly lang?: string; readonly searchNav?: boolean },
+    renderedHtml?: string,
   ): Promise<string | undefined> {
     if (!fontProcessor) return undefined;
-    const chrome =
-      opts?.siteTitle && opts.lang
-        ? siteChromeText(opts.lang, opts.siteTitle, opts.searchNav)
-        : "";
-    const extraText = (opts?.renderedHtml ? plainTextFromHtml(opts.renderedHtml) : "") + chrome;
+    const chrome = siteChromeText(
+      config.site.lang,
+      config.site.title,
+      Boolean(searchNavPath),
+    );
+    const extraText =
+      (renderedHtml ? plainTextFromHtml(renderedHtml) : "") + chrome;
     return fontProcessor.fontCssForPage({
       body: concept.body,
       title: concept.title,
-      extraText: extraText.length > 0 ? extraText : undefined,
+      extraText,
       frontmatter: {
         ...concept.frontmatter,
         type: concept.type,
@@ -356,7 +359,7 @@ export async function runBuild(opts: BuildOptions): Promise<BuildResult> {
           lang: config.site.lang,
         });
 
-    const fontCss = await fontCssFor(p.concept, rootPrefix);
+    const fontCss = await fontCssFor(p.concept, rootPrefix, isSearch ? bodyHtml : undefined);
     const extraHead = isSearch
       ? buildSearchHead(rootPrefix)
       : jsonLd
@@ -436,12 +439,7 @@ export async function runBuild(opts: BuildOptions): Promise<BuildResult> {
       bodyHtml = renderIndexBody(config.site.title, archivePages[0] ?? articleSummaries);
     }
 
-    const fontCss = await fontCssFor(p.concept, "./", {
-      renderedHtml: bodyHtml,
-      siteTitle: config.site.title,
-      lang: config.site.lang,
-      searchNav: Boolean(searchNavPath),
-    });
+    const fontCss = await fontCssFor(p.concept, "./", bodyHtml);
     const indexCanonical =
       baseUrl.length > 0 ? `${baseUrl}/index.html` : undefined;
     const indexJsonLd = buildWebSiteJsonLd({
@@ -484,14 +482,17 @@ export async function runBuild(opts: BuildOptions): Promise<BuildResult> {
           basePath: "index.html",
         },
       );
+      const concept = syntheticConcept(`${config.site.title} — ページ ${pageNum}`);
+      const fontCss = await fontCssFor(concept, rootPrefixFromRel(outRel), bodyHtml);
       emitPage({
         cwd,
         config,
         outDir,
         outRel,
-        concept: syntheticConcept(`${config.site.title} — ページ ${pageNum}`),
+        concept,
         bodyHtml,
         baseUrl,
+        fontCss,
         searchPath: searchNavPath,
       });
       builtPages += 1;
@@ -504,14 +505,21 @@ export async function runBuild(opts: BuildOptions): Promise<BuildResult> {
     const byMonth = groupByYearMonth(articleSummaries);
 
     const archiveIndexHtml = renderYearArchiveIndexBody(config.site.title, byYear);
+    const archiveIndexConcept = syntheticConcept(`${config.site.title} — 年別アーカイブ`);
+    const archiveIndexFontCss = await fontCssFor(
+      archiveIndexConcept,
+      rootPrefixFromRel("archive/index.html"),
+      archiveIndexHtml,
+    );
     emitPage({
       cwd,
       config,
       outDir,
       outRel: "archive/index.html",
-      concept: syntheticConcept(`${config.site.title} — 年別アーカイブ`),
+      concept: archiveIndexConcept,
       bodyHtml: archiveIndexHtml,
       baseUrl,
+      fontCss: archiveIndexFontCss,
       searchPath: searchNavPath,
     });
     builtPages += 1;
@@ -519,14 +527,18 @@ export async function runBuild(opts: BuildOptions): Promise<BuildResult> {
 
     for (const year of [...byYear.keys()].sort((a, b) => b.localeCompare(a))) {
       const yearHtml = renderMonthListForYear(year, byMonth);
+      const yearOutRel = `archive/${year}.html`;
+      const yearConcept = syntheticConcept(`${year}年`);
+      const yearFontCss = await fontCssFor(yearConcept, rootPrefixFromRel(yearOutRel), yearHtml);
       emitPage({
         cwd,
         config,
         outDir,
-        outRel: `archive/${year}.html`,
-        concept: syntheticConcept(`${year}年`),
+        outRel: yearOutRel,
+        concept: yearConcept,
         bodyHtml: yearHtml,
         baseUrl,
+        fontCss: yearFontCss,
         searchPath: searchNavPath,
       });
       builtPages += 1;
@@ -537,14 +549,18 @@ export async function runBuild(opts: BuildOptions): Promise<BuildResult> {
       const monthArticles = byMonth.get(ym)!;
       const [y, m] = ym.split("-");
       const bodyHtml = renderArchiveListBody(`${y}年${m}月`, undefined, monthArticles);
+      const monthOutRel = `archive/${ym}.html`;
+      const monthConcept = syntheticConcept(`${y}年${m}月`);
+      const monthFontCss = await fontCssFor(monthConcept, rootPrefixFromRel(monthOutRel), bodyHtml);
       emitPage({
         cwd,
         config,
         outDir,
-        outRel: `archive/${ym}.html`,
-        concept: syntheticConcept(`${y}年${m}月`),
+        outRel: monthOutRel,
+        concept: monthConcept,
         bodyHtml,
         baseUrl,
+        fontCss: monthFontCss,
         searchPath: searchNavPath,
       });
       builtPages += 1;
@@ -557,14 +573,18 @@ export async function runBuild(opts: BuildOptions): Promise<BuildResult> {
     for (const [tagSlug, tagged] of byTag) {
       const label = tagged[0]?.tags?.find((t) => slugifyTag(t) === tagSlug) ?? tagSlug;
       const bodyHtml = renderArchiveListBody(`タグ: ${label}`, undefined, tagged);
+      const tagOutRel = `tag/${tagSlug}.html`;
+      const tagConcept = syntheticConcept(`タグ: ${label}`);
+      const tagFontCss = await fontCssFor(tagConcept, rootPrefixFromRel(tagOutRel), bodyHtml);
       emitPage({
         cwd,
         config,
         outDir,
-        outRel: `tag/${tagSlug}.html`,
-        concept: syntheticConcept(`タグ: ${label}`),
+        outRel: tagOutRel,
+        concept: tagConcept,
         bodyHtml,
         baseUrl,
+        fontCss: tagFontCss,
         searchPath: searchNavPath,
       });
       builtPages += 1;
