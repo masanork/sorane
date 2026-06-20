@@ -1,0 +1,10 @@
+site:
+  title: "Sorane Example"
+  description: "OKF-native static site example"
+  base_url: "https://example.pages.dev"
+  lang: ja
+
+build:
+  content_dir: content
+  out_dir: dist
+  permalink: "{{slug}}.html"

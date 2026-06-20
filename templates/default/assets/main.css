@@ -1,0 +1,51 @@
+:root {
+  color-scheme: light;
+  --text: #1a1a1a;
+  --muted: #555;
+  --link: #0b57d0;
+  --border: #e5e5e5;
+}
+
+body {
+  font-family: system-ui, -apple-system, sans-serif;
+  line-height: 1.7;
+  max-width: 42rem;
+  margin: 2rem auto;
+  padding: 0 1rem;
+  color: var(--text);
+}
+
+a {
+  color: var(--link);
+}
+
+h1 {
+  line-height: 1.25;
+}
+
+.article-meta {
+  color: var(--muted);
+  font-size: 0.9rem;
+}
+
+.article-list {
+  padding-left: 1.25rem;
+}
+
+article pre {
+  overflow-x: auto;
+  padding: 0.75rem 1rem;
+  border: 1px solid var(--border);
+  border-radius: 4px;
+}
+
+article table {
+  border-collapse: collapse;
+  width: 100%;
+}
+
+article th,
+article td {
+  border: 1px solid var(--border);
+  padding: 0.35rem 0.5rem;
+}

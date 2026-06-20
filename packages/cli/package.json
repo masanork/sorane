@@ -1,0 +1,13 @@
+{
+  "name": "@sorane/cli",
+  "version": "0.1.0",
+  "type": "module",
+  "bin": {
+    "sorane": "./src/main.ts"
+  },
+  "dependencies": {
+    "@sorane/core": "0.1.0",
+    "@sorane/okf": "0.1.0",
+    "js-yaml": "^4.1.0"
+  }
+}

@@ -1,0 +1,29 @@
+{
+  "name": "sorane",
+  "version": "0.1.0",
+  "description": "OKF-native static site generator (Rust/TypeScript)",
+  "private": true,
+  "type": "module",
+  "workspaces": [
+    "packages/*"
+  ],
+  "bin": {
+    "sorane": "packages/cli/src/main.ts"
+  },
+  "scripts": {
+    "build": "node packages/cli/src/main.ts build",
+    "validate": "node packages/cli/src/main.ts validate",
+    "migrate": "node packages/cli/src/main.ts migrate",
+    "test": "node --test \"tests/**/*.test.ts\"",
+    "typecheck": "tsc --noEmit"
+  },
+  "engines": {
+    "node": ">=23.6"
+  },
+  "devDependencies": {
+    "@types/js-yaml": "^4.0.9",
+    "@types/node": "^22.0.0",
+    "typescript": "^5.7.0"
+  },
+  "license": "MIT"
+}
