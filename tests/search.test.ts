@@ -1,4 +1,4 @@
-import { mkdirSync, mkdtempSync, rmSync, writeFileSync } from "node:fs";
+import { existsSync, mkdirSync, mkdtempSync, rmSync, writeFileSync } from "node:fs";
 import { tmpdir } from "node:os";
 import { join } from "node:path";
 import { describe, expect, test } from "./_expect.ts";
@@ -7,6 +7,7 @@ import {
   buildSearchIndex,
   checkModelMismatch,
   chunkDocument,
+  deriveWebIndex,
   makeSnippet,
   IndexStore,
   planIncremental,
@@ -168,6 +169,12 @@ Full-text search uses SQLite FTS5 trigram tokenization for Japanese partial matc
       const ftsOnly = await search(store, null, "trigram", { k: 3, ftsOnly: true });
       expect(ftsOnly.length > 0).toBe(true);
       store.close();
+
+      const webIndexPath = join(dir, "search-index.json");
+      const derived = await deriveWebIndex(indexPath, webIndexPath, () => "post.html");
+      expect(derived.written).toBe(true);
+      expect(derived.chunks > 0).toBe(true);
+      expect(existsSync(webIndexPath)).toBe(true);
     } finally {
       rmSync(dir, { recursive: true, force: true });
     }

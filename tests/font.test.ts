@@ -8,7 +8,8 @@ import {
   createFontProcessor,
 } from "../packages/font/src/index.ts";
 
-const blogMono = join(import.meta.dirname, "../../blog/assets/fonts/NotoSansMono-Regular.ttf");
+const repoRoot = join(import.meta.dirname, "..");
+const fixtureMono = join(repoRoot, "tests/fixtures/fonts/NotoSansMono-Regular.ttf");
 
 describe("buildFontFaceCss", () => {
   test("単一フォントの style を返す", () => {
@@ -36,12 +37,12 @@ describe("buildFontStackCss", () => {
 
 describe("createFontProcessor", () => {
   test("disabled は null", async () => {
-    const proc = await createFontProcessor(process.cwd(), { enabled: false, cache_dir: ".cache", skip_key: "skip" }, "dist");
+    const proc = await createFontProcessor(repoRoot, { enabled: false, cache_dir: ".cache", skip_key: "skip" }, "dist");
     expect(proc).toBe(null);
   });
 
   test("ソース欠落は null", async () => {
-    const proc = await createFontProcessor(process.cwd(), {
+    const proc = await createFontProcessor(repoRoot, {
       enabled: true,
       cache_dir: ".cache",
       skip_key: "skip",
@@ -51,19 +52,48 @@ describe("createFontProcessor", () => {
     expect(proc).toBe(null);
   });
 
-  test("static フォントで CSS を生成する", async () => {
-    if (!existsSync(blogMono)) return;
+  test("単一フォント（後方互換）モード", async () => {
+    if (!existsSync(fixtureMono)) return;
     const tmp = mkdtempSync(join(tmpdir(), "sorane-font-"));
     try {
       const proc = await createFontProcessor(
-        join(import.meta.dirname, "../../blog"),
+        repoRoot,
+        {
+          enabled: true,
+          cache_dir: join(tmp, "cache"),
+          skip_key: "skip",
+          family: "Fixture Mono",
+          source: "tests/fixtures/fonts/NotoSansMono-Regular.ttf",
+          weight: "400",
+        },
+        join(tmp, "dist"),
+      );
+      const css = await proc!.fontCssForPage({
+        body: "abc",
+        title: "T",
+        frontmatter: {},
+        rootPrefix: "./",
+      });
+      expect(css).toContain("Fixture Mono");
+      expect(css).toContain("body {");
+    } finally {
+      rmSync(tmp, { recursive: true, force: true });
+    }
+  });
+
+  test("static フォントで CSS を生成する", async () => {
+    if (!existsSync(fixtureMono)) return;
+    const tmp = mkdtempSync(join(tmpdir(), "sorane-font-"));
+    try {
+      const proc = await createFontProcessor(
+        repoRoot,
         {
           enabled: true,
           cache_dir: join(tmp, "cache"),
           skip_key: "noFontEmbedding",
           roles: { body: ["Noto Sans Mono"], code: ["Noto Sans Mono"] },
           sources: {
-            "Noto Sans Mono": { source: "assets/fonts/NotoSansMono-Regular.ttf", embed: "static" },
+            "Noto Sans Mono": { source: "tests/fixtures/fonts/NotoSansMono-Regular.ttf", embed: "static" },
           },
         },
         join(tmp, "dist"),
@@ -83,18 +113,18 @@ describe("createFontProcessor", () => {
   });
 
   test("noFontEmbedding でスキップ", async () => {
-    if (!existsSync(blogMono)) return;
+    if (!existsSync(fixtureMono)) return;
     const tmp = mkdtempSync(join(tmpdir(), "sorane-font-"));
     try {
       const proc = await createFontProcessor(
-        join(import.meta.dirname, "../../blog"),
+        repoRoot,
         {
           enabled: true,
           cache_dir: join(tmp, "cache"),
           skip_key: "noFontEmbedding",
           roles: { body: ["Noto Sans Mono"], code: ["Noto Sans Mono"] },
           sources: {
-            "Noto Sans Mono": { source: "assets/fonts/NotoSansMono-Regular.ttf", embed: "static" },
+            "Noto Sans Mono": { source: "tests/fixtures/fonts/NotoSansMono-Regular.ttf", embed: "static" },
           },
         },
         join(tmp, "dist"),
@@ -112,30 +142,29 @@ describe("createFontProcessor", () => {
   });
 
   test("subset フォントを生成する", async () => {
-    const vf = join(import.meta.dirname, "../../blog/assets/fonts/NotoSansJP-VF.ttf");
-    if (!existsSync(vf)) return;
+    if (!existsSync(fixtureMono)) return;
     const tmp = mkdtempSync(join(tmpdir(), "sorane-font-"));
     try {
       const proc = await createFontProcessor(
-        join(import.meta.dirname, "../../blog"),
+        repoRoot,
         {
           enabled: true,
           cache_dir: join(tmp, "cache"),
           skip_key: "noFontEmbedding",
-          roles: { body: ["Noto Sans JP"] },
+          roles: { body: ["Noto Sans Mono"] },
           sources: {
-            "Noto Sans JP": { source: "assets/fonts/NotoSansJP-VF.ttf", weight: "100 900" },
+            "Noto Sans Mono": { source: "tests/fixtures/fonts/NotoSansMono-Regular.ttf", weight: "400" },
           },
         },
         join(tmp, "dist"),
       );
       const css = await proc!.fontCssForPage({
-        body: "漢字テスト",
-        title: "題",
+        body: "ABC 012",
+        title: "T",
         frontmatter: {},
         rootPrefix: "../",
       });
-      expect(css).toContain("Noto Sans JP");
+      expect(css).toContain("Noto Sans Mono");
       expect(css).toContain("woff2");
     } finally {
       rmSync(tmp, { recursive: true, force: true });

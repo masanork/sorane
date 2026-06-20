@@ -136,7 +136,11 @@ export async function createFontProcessor(
 
   const subsetFonts = fonts.filter((f) => f.embed === "subset");
   if (subsetFonts.length > 0) {
-    await subsetWoff2(subsetFonts[0]!.bytes, "あ"); // warm WASM
+    try {
+      await subsetWoff2(subsetFonts[0]!.bytes, "Aa"); // warm WASM
+    } catch {
+      // ウォームアップ失敗は本番サブセット処理に委ねる
+    }
   }
 
   const written = new Map<string, string>();
