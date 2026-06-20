@@ -319,7 +319,7 @@ export async function runBuild(opts: BuildOptions): Promise<BuildResult> {
   }
 
   const indexDbPath = resolve(cwd, config.search.index);
-  let searchNavPath: string | undefined;
+  let searchIndexReady = false;
   const searchMode = config.search.mode ?? "fts";
   if (searchPageRel && existsSync(indexDbPath)) {
     const { IndexStore } = await import("@sorane/search");
@@ -327,13 +327,17 @@ export async function runBuild(opts: BuildOptions): Promise<BuildResult> {
     const { chunks } = probe.counts();
     if (chunks > 0) {
       if (searchMode === "hybrid") {
-        if (probe.hasVectors()) searchNavPath = searchPageRel;
+        searchIndexReady = probe.hasVectors();
       } else {
-        searchNavPath = searchPageRel;
+        searchIndexReady = true;
       }
     }
     probe.close();
   }
+  const embedSearchOnIndex =
+    docsMode && Boolean(indexParsed) && searchIndexReady;
+  const searchNavPath =
+    embedSearchOnIndex || !searchIndexReady ? undefined : searchPageRel;
 
   const siteEntries: SiteEntry[] = [];
   const catalogInputs: Array<{
@@ -463,6 +467,12 @@ export async function runBuild(opts: BuildOptions): Promise<BuildResult> {
         profileUrl: frontmatterString(p.concept.frontmatter, "profileUrl"),
         githubUrl: frontmatterString(p.concept.frontmatter, "githubUrl"),
         introHtml: introHtmlFromBody(p.concept.body, p.concept.title || config.site.title),
+        searchHtml: embedSearchOnIndex
+          ? buildSearchMount("./", {
+              assetBaseUrl: config.search.asset_base_url,
+              mode: searchMode,
+            })
+          : undefined,
         docsNav,
         lang: config.site.lang,
       });
@@ -514,6 +524,10 @@ export async function runBuild(opts: BuildOptions): Promise<BuildResult> {
       url: indexCanonical,
       lang: config.site.lang,
     });
+    const indexExtraHead = [
+      indexJsonLd,
+      ...(embedSearchOnIndex ? buildSearchHead("./", searchMode) : []),
+    ];
     emitPage({
       cwd,
       config,
@@ -525,7 +539,7 @@ export async function runBuild(opts: BuildOptions): Promise<BuildResult> {
       fontCss,
       isIndex: true,
       pageKind: "website",
-      extraHead: [indexJsonLd],
+      extraHead: indexExtraHead,
       showArchiveNav: blogOpts.archives,
       searchPath: searchNavPath,
       docsLayout: docsMode,

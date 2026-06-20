@@ -179,7 +179,6 @@ export function buildPage(opts: PageShellOptions): string {
   const lang = opts.lang ?? "ja";
   const labels = siteLabels(lang);
   const home = `${opts.rootPrefix}index.html`;
-  const feed = opts.feedPath ? `${opts.rootPrefix}${opts.feedPath}` : undefined;
   const navParts: string[] = [];
   if (opts.showArchiveNav) {
     navParts.push(
@@ -190,9 +189,6 @@ export function buildPage(opts: PageShellOptions): string {
     navParts.push(
       `<a href="${escapeHtml(opts.rootPrefix + opts.searchPath)}">${escapeHtml(labels.search)}</a>`,
     );
-  }
-  if (feed) {
-    navParts.push(`<a href="${escapeHtml(feed)}">${escapeHtml(labels.feed)}</a>`);
   }
   const nav =
     navParts.length > 0

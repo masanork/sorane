@@ -109,5 +109,5 @@ sorane emits agent-friendly artifacts in `dist/`: `llms.txt`, `catalog.jsonld`, 
 
 ## Docs
 
-- https://ssg.sorane.dev/
-- OKF profile: https://ssg.sorane.dev/okf-profile.html
+- https://sorane.dev/
+- OKF profile: https://sorane.dev/okf-profile.html

@@ -7,7 +7,7 @@ excludeFromList: true
 
 ## Cloudflare Pages（推奨）
 
-本番例は [sorane SSG ドキュメント](https://ssg.sorane.dev/) です。リポジトリ内の `website/` を sorane 自身でビルドし、CI から `website/dist` をデプロイしています（dogfooding）。
+本番例は [sorane 公式サイト](https://sorane.dev/) です。リポジトリ内の `website/` を sorane 自身でビルドし、CI から `website/dist` をデプロイしています（dogfooding）。
 
 ```yaml
 # .github/workflows/pages.yml（概要）
@@ -47,10 +47,10 @@ excludeFromList: true
 
 | ホスト | 用途 |
 |--------|------|
-| `ssg.sorane.dev` | sorane SSG のドキュメント・ツール紹介（この `website/` の本番） |
-| `sorane.dev` | 将来のニュースサイト（構想中・未デプロイ） |
+| `sorane.dev` | プロダクトサイト（この `website/` の本番） |
+| `ssg.sorane.dev` | 同上のミラー（SSG ドキュメント用サブドメイン） |
 | `sorane.pages.dev` | Pages 既定 URL（フォールバック） |
 
-`sorane.dev` は Cloudflare Domains で取得済みです。SSG ドキュメントは Pages プロジェクト `sorane` に `ssg.sorane.dev` をカスタムドメインとして追加し、`sorane.yaml` の `base_url` を `https://ssg.sorane.dev` に揃えています。
+`sorane.dev` は Cloudflare Domains で取得済みです。Pages プロジェクト `sorane` に `sorane.dev` と `ssg.sorane.dev` の両方をカスタムドメインとして追加し、`sorane.yaml` の `base_url` を `https://sorane.dev` に揃えています。
 
-初回は **Workers & Pages → sorane → Custom domains** で `ssg.sorane.dev` の DNS / SSL が `Active` になるまで数分かかることがあります。
+初回は **Workers & Pages → sorane → Custom domains** で各ホストの DNS / SSL が `Active` になるまで数分かかることがあります。

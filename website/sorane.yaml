@@ -1,7 +1,7 @@
 site:
   title: sorane
   description: OKF-native static site generator
-  base_url: https://ssg.sorane.dev
+  base_url: https://sorane.dev
   lang: ja
 
 build:
