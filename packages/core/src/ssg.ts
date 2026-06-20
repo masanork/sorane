@@ -68,6 +68,8 @@ export interface ArticleNav {
 export interface BlogIndexOptions {
   readonly siteTitle: string;
   readonly description?: string;
+  /** false のとき blog-header の h1 を出さない（site-header と重複させない） */
+  readonly showHeaderTitle?: boolean;
   readonly profileUrl?: string;
   readonly introHtml?: string;
   readonly latestArticle?: {
@@ -319,10 +321,11 @@ export function renderBlogIndexBody(opts: BlogIndexOptions): string {
       ? `<section class="blog-archive">\n<h2>過去の記事</h2>\n<ul class="blog-list">\n${items}\n</ul>\n</section>\n`
       : "";
 
+  const showTitle = opts.showHeaderTitle !== false;
   return (
     `<div class="blog-index">\n` +
     `<header class="blog-header">\n` +
-    `<h1>${escapeHtml(opts.siteTitle)}</h1>\n` +
+    (showTitle ? `<h1>${escapeHtml(opts.siteTitle)}</h1>\n` : "") +
     (opts.description ? `<p class="blog-lead">${escapeHtml(opts.description)}</p>\n` : "") +
     (profile ? `<div class="blog-profile">${profile}</div>\n` : "") +
     `${intro}` +

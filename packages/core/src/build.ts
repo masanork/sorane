@@ -103,6 +103,15 @@ function frontmatterString(
   return typeof v === "string" && v.length > 0 ? v : undefined;
 }
 
+/** index.md 本文がタイトルと同じ見出しだけなら intro を出さない。 */
+function introHtmlFromBody(body: string, title: string): string | undefined {
+  const trimmed = body.trim();
+  if (!trimmed) return undefined;
+  const onlyH1 = /^#\s+(.+?)\s*$/s.exec(trimmed);
+  if (onlyH1 && onlyH1[1]!.trim() === title.trim()) return undefined;
+  return renderMarkdown(body);
+}
+
 function syntheticConcept(title: string, description?: string): OkfConcept {
   return {
     type: "index",
@@ -375,8 +384,9 @@ export async function runBuild(opts: BuildOptions): Promise<BuildResult> {
       bodyHtml = renderBlogIndexBody({
         siteTitle: p.concept.title || config.site.title,
         description: p.concept.description ?? config.site.description,
+        showHeaderTitle: false,
         profileUrl: frontmatterString(p.concept.frontmatter, "profileUrl"),
-        introHtml: p.concept.body.trim() ? renderMarkdown(p.concept.body) : undefined,
+        introHtml: introHtmlFromBody(p.concept.body, p.concept.title || config.site.title),
         latestArticle: latestParsed
           ? {
               title: latestParsed.concept.title,

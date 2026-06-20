@@ -33,6 +33,17 @@ describe("renderBlogIndexBody", () => {
     expect(html).toContain("profile.html");
     expect(html).toContain("Older");
   });
+
+  test("showHeaderTitle: false で blog-header h1 を省略できる", () => {
+    const html = renderBlogIndexBody({
+      siteTitle: "My Blog",
+      description: "lead",
+      showHeaderTitle: false,
+      articles: [],
+    });
+    expect(html.includes("<h1>My Blog</h1>")).toBe(false);
+    expect(html).toContain("blog-lead");
+  });
 });
 
 describe("buildAtomFeed", () => {
