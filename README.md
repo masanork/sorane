@@ -2,8 +2,7 @@
 
 OKF-native static site generator. Markdown concepts with YAML frontmatter become a static site with machine-readable outputs for agents and search tools.
 
-- **Documentation:** https://sorane.pages.dev/
-- **Live example:** https://masanork.pages.dev/ ([blog](https://github.com/masanork/blog) content repo)
+- **Documentation & live site:** https://sorane.pages.dev/ (built from `website/` in this repo)
 
 ## Requirements
 

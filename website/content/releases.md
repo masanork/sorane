@@ -9,19 +9,22 @@ excludeFromList: true
 
 | 手段 | 状態 | 用途 |
 |------|------|------|
-| git clone + `npm ci` | **利用可能** | 開発・本番ビルド（blog CI と同じ） |
+| git clone + `npm ci` | **利用可能** | 開発・本番ビルド（公式サイト CI と同じ） |
 | GitHub Release タグ | 計画中 | バージョン固定・フォント資産配布 |
 | npm publish | 未対応 | `npx sorane` での手軽な利用 |
 | Docker イメージ | 未対応 | CI / 再現性の高いビルド |
 
-## 推奨: コンテンツとツールの分離
+## 配布の形
+
+**公式サイト（本番例）** — 単一リポジトリ:
 
 ```
-masanork/blog     … 記事・sorane.yaml・テーマ（コンテンツ）
-masanork/sorane   … CLI・ビルドエンジン（ツール）
+masanork/sorane
+├── packages/*   … CLI・ビルドエンジン
+└── website/     … ドキュメント（sorane.pages.dev）
 ```
 
-CI で sorane の ref（branch / tag）を pin すれば、サイトとツールを独立に更新できます。
+**大規模サイト** — コンテンツとツールを分離する場合、CI で sorane の ref を pin します。
 
 ```yaml
 - uses: actions/checkout@v4

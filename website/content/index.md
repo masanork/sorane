@@ -12,4 +12,4 @@ Markdown と YAML frontmatter から、人間向け HTML と機械可読な OKF 
 
 - [GitHub](https://github.com/masanork/sorane)
 - [OKF プロファイル schema](profile/sorane-okf-0.1.schema.json)
-- [使用例: masanork.pages.dev](https://masanork.pages.dev/)
+- [最小構成の例（examples/minimal）](https://github.com/masanork/sorane/tree/main/examples/minimal)
