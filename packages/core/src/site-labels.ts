@@ -31,3 +31,20 @@ const EN: SiteLabels = {
 export function siteLabels(lang: string): SiteLabels {
   return lang.startsWith("ja") ? JA : EN;
 }
+
+/** サイトヘッダ・フッタ等の固定 UI 文言（フォントサブセット用） */
+export function siteChromeText(lang: string, siteTitle: string, includeSearch = false): string {
+  const labels = siteLabels(lang);
+  const parts = [
+    siteTitle,
+    labels.archive,
+    labels.feed,
+    labels.profile,
+    labels.readMore,
+    labels.pastArticles,
+    labels.updated,
+    "サイト",
+  ];
+  if (includeSearch) parts.push(labels.search);
+  return parts.join("");
+}

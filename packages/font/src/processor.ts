@@ -41,6 +41,8 @@ export interface FontProcessor {
   fontCssForPage(opts: {
     body: string;
     title: string;
+    /** レンダリング済み HTML 由来の追加文字（index 等） */
+    extraText?: string;
     frontmatter: Record<string, unknown>;
     rootPrefix: string;
   }): Promise<string | undefined>;
@@ -163,7 +165,7 @@ export async function createFontProcessor(
         return undefined;
       }
 
-      const text = extractCharset(opts.body, opts.title);
+      const text = extractCharset(opts.body, opts.title, undefined, opts.extraText ?? "");
       const key = textHash(text);
       const faces: Array<{ family: string; url: string; weight: string; format?: "woff2" | "truetype" | "opentype" }> = [
         ...staticFaces.map((f) => ({

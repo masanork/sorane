@@ -1,4 +1,4 @@
-import { createFontProcessor } from "@sorane/font";
+import { createFontProcessor, plainTextFromHtml } from "@sorane/font";
 import { emitSearchAssets } from "@sorane/search";
 import {
   parseConcept,
@@ -47,6 +47,7 @@ import {
   slugifyTag,
 } from "./blog-pages.ts";
 import { emitPage } from "./emit-page.ts";
+import { siteChromeText } from "./site-labels.ts";
 import type { OkfConcept } from "@sorane/okf";
 import {
   buildAtomFeed,
@@ -301,11 +302,18 @@ export async function runBuild(opts: BuildOptions): Promise<BuildResult> {
   async function fontCssFor(
     concept: ParsedConcept["concept"],
     rootPrefix: string,
+    opts?: { readonly renderedHtml?: string; readonly siteTitle?: string; readonly lang?: string; readonly searchNav?: boolean },
   ): Promise<string | undefined> {
     if (!fontProcessor) return undefined;
+    const chrome =
+      opts?.siteTitle && opts.lang
+        ? siteChromeText(opts.lang, opts.siteTitle, opts.searchNav)
+        : "";
+    const extraText = (opts?.renderedHtml ? plainTextFromHtml(opts.renderedHtml) : "") + chrome;
     return fontProcessor.fontCssForPage({
       body: concept.body,
       title: concept.title,
+      extraText: extraText.length > 0 ? extraText : undefined,
       frontmatter: {
         ...concept.frontmatter,
         type: concept.type,
@@ -428,7 +436,12 @@ export async function runBuild(opts: BuildOptions): Promise<BuildResult> {
       bodyHtml = renderIndexBody(config.site.title, archivePages[0] ?? articleSummaries);
     }
 
-    const fontCss = await fontCssFor(p.concept, "./");
+    const fontCss = await fontCssFor(p.concept, "./", {
+      renderedHtml: bodyHtml,
+      siteTitle: config.site.title,
+      lang: config.site.lang,
+      searchNav: Boolean(searchNavPath),
+    });
     const indexCanonical =
       baseUrl.length > 0 ? `${baseUrl}/index.html` : undefined;
     const indexJsonLd = buildWebSiteJsonLd({
