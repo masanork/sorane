@@ -98,7 +98,9 @@ describe("remarkDiagramFences", () => {
       )
       .runSync(tree);
     const code = firstCode(tree);
-    expect(code.data?.soraneDiagram).toBe(undefined);
+    expect((code.data as { soraneDiagram?: unknown } | undefined)?.soraneDiagram).toBe(
+      undefined,
+    );
   });
 
   test("d2 は enabled 時のみ注釈する", () => {

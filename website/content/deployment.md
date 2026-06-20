@@ -24,6 +24,7 @@ excludeFromList: true
 
 - **シークレット**: `CLOUDFLARE_API_TOKEN`, `CLOUDFLARE_ACCOUNT_ID`（リポジトリ Secrets）
 - **テーマ CSS**: `website/` のようにサブディレクトリを cwd にする場合、親の `templates/default/` を自動参照します
+- **D2 図表**: sorane.dev は `build.diagrams.d2.enabled: true` のため CI で [d2](https://d2lang.com/) CLI（`v0.7.1`）をインストールします。自サイトで D2 を使う場合も `pages.yml` に同様のステップを追加してください
 
 ## 大規模サイト（コンテンツ分離）
 

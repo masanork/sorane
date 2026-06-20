@@ -9,6 +9,9 @@ build:
   out_dir: dist
   permalink: "{{slug}}.html"
   static_dir: static
+  diagrams:
+    d2:
+      enabled: true
   blog:
     archives: false
     tags: false

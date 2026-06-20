@@ -23,7 +23,7 @@ import { visit } from "unist-util-visit";
 const schemaAttributes = defaultSchema.attributes ?? {};
 
 /** はてな移行記事の HTML を許可しつつ script 等は落とす。 */
-const sanitizeSchema: Schema = {
+export const sanitizeSchema: Schema = {
   ...defaultSchema,
   clobberPrefix: "",
   attributes: {
@@ -52,13 +52,24 @@ const sanitizeSchema: Schema = {
       ...(schemaAttributes.span ?? []),
       ["style", /^font-style:\s*italic;?$/i],
     ],
-    figure: [["className", "figure-image", "figure-image-fotolife", "mceNonEditable"]],
+    figure: [
+      [
+        "className",
+        "figure-image",
+        "figure-image-fotolife",
+        "mceNonEditable",
+        "diagram",
+        "diagram--d2",
+        "diagram--mermaid",
+      ],
+      "role",
+    ],
     figcaption: [],
     iframe: ["src", "width", "height", "frameBorder", "allowFullScreen"],
     embed: ["src", "type", "width", "height"],
     object: ["width", "height"],
     param: ["name", "value"],
-    img: [...(schemaAttributes.img ?? []), "title"],
+    img: [...(schemaAttributes.img ?? []), "title", "loading", "decoding"],
     pre: [...(schemaAttributes.pre ?? []), "dataSoraneAlt"],
   },
   tagNames: [

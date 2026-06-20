@@ -96,6 +96,6 @@ build:
 - ` ```mermaid ` … クライアント側で SVG 描画（`assets/diagrams/sorane-mermaid-loader.mjs` を条件付きで読み込み）
 - `alt="..."` を info string に付けるか、`%% alt: 説明` コメントで代替テキストを指定
 - `mermaid.mode: build`（Chromium + mmdc によるビルド時 SVG）は**未実装**です。指定しても `client` と同様に動作し、警告が出ます
-- `d2.enabled: true` は将来の D2 ビルド時コンパイル用（Phase 1 では無効のまま）
+- `d2.enabled: true` … ビルド時に `d2` CLI で SVG を生成（`assets/diagrams/d2/{hash}.svg`）。CI に `d2` が無い場合は警告のうえ `<pre><code>` フォールバック
 
 詳細と例は [図表](diagrams.html) を参照してください。

@@ -71,10 +71,7 @@ function annotateDiagramCode(node: Code, lang: "mermaid" | "d2"): void {
   const data = (node.data ?? {}) as Record<string, unknown>;
   node.data = {
     ...data,
-    hProperties:
-      lang === "mermaid"
-        ? { dataSoraneAlt: altText ?? "" }
-        : {},
+    hProperties: { dataSoraneAlt: altText ?? "" },
     soraneDiagram: { lang, altText, kind } satisfies SoraneDiagramMeta,
   } as Code["data"];
 }

@@ -9,11 +9,12 @@ function classNames(value: unknown): string[] {
   return [];
 }
 
-function isMermaidCode(node: Element): boolean {
-  return classNames(node.properties?.className).includes("language-mermaid");
+function isDiagramCode(node: Element): boolean {
+  const cls = classNames(node.properties?.className);
+  return cls.includes("language-mermaid") || cls.includes("language-d2");
 }
 
-/** `pre > code.language-mermaid` の alt を親 `pre` の data-sorane-alt へ移す。 */
+/** `pre > code.language-mermaid|d2` の alt を親 `pre` の data-sorane-alt へ移す。 */
 export function rehypeDiagramPre() {
   return (tree: HastRoot) => {
     visit(tree, "element", (node) => {
@@ -21,7 +22,7 @@ export function rehypeDiagramPre() {
       const code = node.children.find(
         (c): c is Element => c.type === "element" && c.tagName === "code",
       );
-      if (!code || !isMermaidCode(code)) return;
+      if (!code || !isDiagramCode(code)) return;
       const alt = code.properties?.dataSoraneAlt;
       if (typeof alt === "string" && alt.length > 0) {
         node.properties ??= {};

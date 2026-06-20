@@ -8,9 +8,14 @@ import {
   type RenderedMarkdown,
   renderMarkdownDocument,
 } from "./render.ts";
+import { isD2CompileEnabled } from "./diagrams/compile-d2.ts";
+import {
+  renderMarkdownDocumentAsync,
+  type AsyncRenderOptions,
+} from "./diagrams/render-async.ts";
 import { siteLabels } from "./site-labels.ts";
 
-export interface DocsArticleRenderOpts {
+export interface DocsArticleRenderOpts extends AsyncRenderOptions {
   readonly badgeHtml?: string;
   readonly diagrams?: DiagramsConfig;
 }
@@ -219,7 +224,23 @@ export function renderDocsArticleFromConceptWithMeta(
   opts?: DocsArticleRenderOpts,
 ): DocsArticleResult {
   const body = stripDuplicateTitleHeading(concept.body, concept.title);
-  const rendered = renderMarkdownDocument(body, { diagrams: opts?.diagrams });
+  const rendered = renderMarkdownDocument(body, opts);
+  return {
+    bodyHtml: renderDocsArticleBody(concept, rendered, nav, lang, opts),
+    diagrams: rendered.diagrams ?? { mermaid: 0, d2: 0 },
+  };
+}
+
+export async function renderDocsArticleFromConceptWithMetaForConfig(
+  concept: OkfConcept,
+  nav: ArticleNav | undefined,
+  lang: string,
+  opts?: DocsArticleRenderOpts,
+): Promise<DocsArticleResult> {
+  const body = stripDuplicateTitleHeading(concept.body, concept.title);
+  const rendered = isD2CompileEnabled(opts?.diagrams)
+    ? await renderMarkdownDocumentAsync(body, opts)
+    : renderMarkdownDocument(body, opts);
   return {
     bodyHtml: renderDocsArticleBody(concept, rendered, nav, lang, opts),
     diagrams: rendered.diagrams ?? { mermaid: 0, d2: 0 },

@@ -517,6 +517,12 @@ figure[role="img"] svg {
   height: auto;
 }
 
-pre code.language-mermaid {
+pre code.language-mermaid,
+pre code.language-d2 {
   font-size: 0.85em;
+}
+
+figure.diagram img {
+  max-width: 100%;
+  height: auto;
 }

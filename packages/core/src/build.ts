@@ -33,7 +33,7 @@ import {
 import {
   buildBlogPostingJsonLd,
   extractDescription,
-  renderArticleBodyWithMeta,
+  renderArticleBodyWithMetaForConfig,
   renderBlogIndexBody,
   renderIndexBody,
   buildSearchMount,
@@ -77,12 +77,16 @@ import {
   contentHasMermaidFences,
   emitDiagramAssets,
 } from "./diagrams/emit-diagram-assets.ts";
-import { renderBodySection } from "./diagrams/render-body-section.ts";
+import {
+  renderBodySectionForConfig,
+  type BodySectionOptions,
+} from "./diagrams/render-body-section.ts";
+import { isD2CompileEnabled } from "./diagrams/compile-d2.ts";
 import { resolveThemeAssetDir } from "./theme-assets.ts";
 import {
   docsNavFor,
   docsSidebarHtml,
-  renderDocsArticleFromConceptWithMeta,
+  renderDocsArticleFromConceptWithMetaForConfig,
   renderDocsIndexBody,
   resolveDocsNav,
 } from "./docs.ts";
@@ -139,18 +143,18 @@ function frontmatterString(
 }
 
 /** index.md 本文がタイトルと同じ見出しだけなら intro を出さない。 */
-function introHtmlFromBodyWithMeta(
+async function introHtmlFromBodyWithMeta(
   body: string,
   title: string,
-  diagrams: SoraneConfig["build"]["diagrams"],
-): { readonly introHtml?: string; readonly diagrams: DiagramRenderMeta } {
+  sectionOpts: BodySectionOptions,
+): Promise<{ readonly introHtml?: string; readonly diagrams: DiagramRenderMeta }> {
   const trimmed = body.trim();
   if (!trimmed) return { diagrams: emptyDiagramMeta() };
   const onlyH1 = /^#\s+(.+?)\s*$/s.exec(trimmed);
   if (onlyH1 && onlyH1[1]!.trim() === title.trim()) {
     return { diagrams: emptyDiagramMeta() };
   }
-  const section = renderBodySection(body, { diagrams });
+  const section = await renderBodySectionForConfig(body, sectionOpts);
   return { introHtml: section.html, diagrams: section.diagrams };
 }
 
@@ -273,6 +277,16 @@ export async function runBuild(opts: BuildOptions): Promise<BuildResult> {
 
   const baseUrl = config.site.base_url.replace(/\/$/, "");
   const diagramConfig = config.build.diagrams ?? DEFAULT_DIAGRAMS_CONFIG;
+  const d2OutDir = join(outDir, "assets", "diagrams", "d2");
+  if (isD2CompileEnabled(diagramConfig)) {
+    mkdirSync(d2OutDir, { recursive: true });
+  }
+  const bodySectionOpts = (rootPrefix: string): BodySectionOptions => ({
+    diagrams: diagramConfig,
+    rootPrefix,
+    d2OutDir,
+    onDiagramWarning: (message) => process.stderr.write(`[sorane] ${message}\n`),
+  });
 
   if (diagramConfig.mermaid?.mode === "build") {
     process.stderr.write(
@@ -463,7 +477,7 @@ export async function runBuild(opts: BuildOptions): Promise<BuildResult> {
     let bodyHtml: string;
     if (isSearch) {
       const searchIntro = p.concept.body.trim()
-        ? renderBodySection(p.concept.body, { diagrams: diagramConfig })
+        ? await renderBodySectionForConfig(p.concept.body, bodySectionOpts(rootPrefix))
         : undefined;
       pageDiagrams = searchIntro?.diagrams ?? emptyDiagramMeta();
       bodyHtml =
@@ -475,16 +489,18 @@ export async function runBuild(opts: BuildOptions): Promise<BuildResult> {
           ? `<div class="search-intro">${searchIntro.html}</div>`
           : "");
     } else if (isDocsPage) {
-      const doc = renderDocsArticleFromConceptWithMeta(p.concept, nav, config.site.lang, {
-        badgeHtml,
-        diagrams: diagramConfig,
-      });
+      const doc = await renderDocsArticleFromConceptWithMetaForConfig(
+        p.concept,
+        nav,
+        config.site.lang,
+        { badgeHtml, ...bodySectionOpts(rootPrefix) },
+      );
       bodyHtml = doc.bodyHtml;
       pageDiagrams = doc.diagrams;
     } else {
-      const article = renderArticleBodyWithMeta(p.concept, nav, {
+      const article = await renderArticleBodyWithMetaForConfig(p.concept, nav, {
         badgeHtml,
-        diagrams: diagramConfig,
+        ...bodySectionOpts(rootPrefix),
       });
       bodyHtml = article.bodyHtml;
       pageDiagrams = article.diagrams;
@@ -569,7 +585,11 @@ export async function runBuild(opts: BuildOptions): Promise<BuildResult> {
     let bodyHtml: string;
     let indexDiagrams = emptyDiagramMeta();
     const indexTitle = p.concept.title || config.site.title;
-    const intro = introHtmlFromBodyWithMeta(p.concept.body, indexTitle, diagramConfig);
+    const intro = await introHtmlFromBodyWithMeta(
+      p.concept.body,
+      indexTitle,
+      bodySectionOpts("./"),
+    );
     indexDiagrams = mergeDiagramMeta(indexDiagrams, intro.diagrams);
 
     if (docsMode && useBlogLayout) {
@@ -587,9 +607,10 @@ export async function runBuild(opts: BuildOptions): Promise<BuildResult> {
       let featuredBody = "";
       if (latestParsed && featuredMode !== "off") {
         if (featuredMode === "full") {
-          const featured = renderBodySection(latestParsed.concept.body, {
-            diagrams: diagramConfig,
-          });
+          const featured = await renderBodySectionForConfig(
+            latestParsed.concept.body,
+            bodySectionOpts("./"),
+          );
           featuredBody = featured.html;
           indexDiagrams = mergeDiagramMeta(indexDiagrams, featured.diagrams);
         } else {

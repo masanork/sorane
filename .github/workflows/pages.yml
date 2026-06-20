@@ -31,6 +31,11 @@ jobs:
       - name: Install dependencies
         run: npm ci
 
+      - name: Install d2 CLI
+        run: |
+          curl -fsSL https://d2lang.com/install.sh | sh -s -- --version v0.7.1 --prefix "$HOME/.local"
+          echo "$HOME/.local/bin" >> "$GITHUB_PATH"
+
       - name: Build search index
         run: node packages/cli/src/main.ts index --cwd website --force
 

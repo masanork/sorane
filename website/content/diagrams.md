@@ -31,6 +31,20 @@ sequenceDiagram
   BUILD->>DIST: HTML + assets/diagrams/
 ```
 
+## D2（ビルド時 SVG）
+
+` ```d2 ` フェンスはビルド時に SVG へコンパイルします（`build.diagrams.d2.enabled: true` と `d2` CLI が必要）。
+
+```d2 alt="シンプルなトポロジ"
+sorane: {
+  shape: rectangle
+}
+build: {
+  shape: rectangle
+}
+sorane -> build: render
+```
+
 ## 設定
 
 `build.diagrams` で有効化・モードを切り替えます。詳細は [設定](configuration.html) を参照してください。
