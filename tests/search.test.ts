@@ -9,15 +9,31 @@ import {
   makeSnippet,
   IndexStore,
   planIncremental,
+  rrfFuse,
+  RRF_K,
   searchFts,
 } from "../packages/search/src/index.ts";
 
 describe("buildFtsQuery", () => {
   test("助詞混じりクエリを OR フレーズに分解", () => {
-    const q = buildFtsQuery("バッチ処理の標準仕様");
-    expect(q.includes("バッチ処理")).toBe(true);
-    expect(q.includes("標準仕様")).toBe(true);
-    expect(q.includes(" OR ")).toBe(true);
+    expect(buildFtsQuery("バッチ処理の標準仕様")).toBe('"バッチ処理" OR "標準仕様"');
+  });
+});
+
+describe("rrfFuse", () => {
+  test("複数ランキングを融合する", () => {
+    const fused = rrfFuse([
+      [10, 20, 30],
+      [20, 10, 40],
+    ]);
+    expect(fused.get(10)! > fused.get(30)!).toBe(true);
+    expect(fused.get(20)! > fused.get(40)!).toBe(true);
+  });
+
+  test("空入力は空 map", () => {
+    expect(rrfFuse([]).size).toBe(0);
+    const score = rrfFuse([[7]], RRF_K).get(7)!;
+    expect(Math.abs(score - 1 / (RRF_K + 1)) < 1e-9).toBe(true);
   });
 });
 
@@ -78,7 +94,7 @@ This system page should never appear in the search index even with a long enough
 });
 
 describe("index + search integration", () => {
-  test("FTS でヒットする", () => {
+  test("FTS でヒットする", async () => {
     const dir = mkdtempSync(join(tmpdir(), "sorane-search-"));
     const contentDir = join(dir, "content");
     const indexPath = join(dir, "index.db");
@@ -100,9 +116,10 @@ Full-text search uses SQLite FTS5 trigram tokenization for Japanese partial matc
 
       );
 
-      const built = buildSearchIndex({ contentDir, indexPath, force: true });
+      const built = await buildSearchIndex({ contentDir, indexPath, force: true });
       expect(built.chunks > 0).toBe(true);
       expect(built.chunks).toBe(built.fts);
+      expect(built.mode).toBe("fts-only");
 
       const store = new IndexStore(indexPath);
       const hits = searchFts(store, "FTS5 trigram", { k: 5 });

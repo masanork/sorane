@@ -1,6 +1,8 @@
 import { readFileSync } from "node:fs";
 import { relative, resolve } from "node:path";
 import { chunkDocument } from "./chunker.ts";
+import type { EmbeddingProvider } from "./embeddings.ts";
+import { DOC_PREFIX } from "./embeddings.ts";
 import { hashContent, planIncremental } from "./incremental.ts";
 import { IndexStore } from "./store.ts";
 import { walkMarkdown } from "./walk.ts";
@@ -9,6 +11,7 @@ export interface BuildIndexOptions {
   readonly contentDir: string;
   readonly indexPath: string;
   readonly force?: boolean;
+  readonly embeddings?: EmbeddingProvider | null;
   readonly onProgress?: (message: string) => void;
 }
 
@@ -19,12 +22,18 @@ export interface BuildIndexResult {
   readonly unchanged: number;
   readonly chunks: number;
   readonly fts: number;
+  readonly vec: number;
+  readonly mode: "hybrid" | "fts-only";
 }
 
-export function buildSearchIndex(opts: BuildIndexOptions): BuildIndexResult {
+export async function buildSearchIndex(opts: BuildIndexOptions): Promise<BuildIndexResult> {
   const contentDir = resolve(opts.contentDir);
   const log = opts.onProgress ?? (() => {});
-  const store = new IndexStore(opts.indexPath, { fresh: opts.force === true });
+  const hybrid = opts.embeddings != null;
+  const store = new IndexStore(opts.indexPath, {
+    fresh: opts.force === true,
+    dim: hybrid ? opts.embeddings!.dimensions : 256,
+  });
 
   const files = walkMarkdown(contentDir);
   const disk = new Map<string, string>();
@@ -41,7 +50,8 @@ export function buildSearchIndex(opts: BuildIndexOptions): BuildIndexResult {
 
   log(
     `incremental: added ${plan.added.length} / changed ${plan.changed.length} / ` +
-      `removed ${plan.removed.length} / unchanged ${plan.unchanged.length} (${files.length} files)`,
+      `removed ${plan.removed.length} / unchanged ${plan.unchanged.length} (${files.length} files)` +
+      (hybrid ? " [hybrid]" : " [fts-only]"),
   );
 
   for (const rel of plan.removed) {
@@ -62,18 +72,34 @@ export function buildSearchIndex(opts: BuildIndexOptions): BuildIndexResult {
       log(`[${i + 1}/${targets.length}] ${rel}: 0 chunks`);
       continue;
     }
-    store.addChunks(chunks);
+    const vectors = hybrid
+      ? await opts.embeddings!.embedBatch(chunks.map((c) => DOC_PREFIX + c.text))
+      : undefined;
+    store.addChunks(chunks, vectors);
     store.setSourceHash(rel, sha);
     totalChunks += chunks.length;
     log(`[${i + 1}/${targets.length}] ${rel}: ${chunks.length} chunks (${totalChunks} total)`);
   }
 
-  store.setMeta();
+  if (hybrid && opts.embeddings) {
+    store.setMeta({
+      modelId: opts.embeddings.modelId ?? "ruri-v3-30m",
+      dim: opts.embeddings.dimensions,
+      quant: opts.embeddings.quant ?? "q8",
+      modelSha256: opts.embeddings.modelSha256 ?? "",
+    });
+  } else {
+    store.setMeta();
+  }
+
   const counts = store.counts();
   store.close();
 
   if (counts.chunks !== counts.fts) {
     throw new Error(`index mismatch: chunks=${counts.chunks} fts=${counts.fts}`);
+  }
+  if (hybrid && counts.chunks !== counts.vec) {
+    throw new Error(`index mismatch: chunks=${counts.chunks} vec=${counts.vec}`);
   }
 
   return {
@@ -83,5 +109,7 @@ export function buildSearchIndex(opts: BuildIndexOptions): BuildIndexResult {
     unchanged: plan.unchanged.length,
     chunks: counts.chunks,
     fts: counts.fts,
+    vec: counts.vec,
+    mode: hybrid ? "hybrid" : "fts-only",
   };
 }

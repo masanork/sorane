@@ -6,10 +6,12 @@
     ".": "./src/index.ts"
   },
   "dependencies": {
+    "@huggingface/transformers": "^4.2.0",
     "@sorane/okf": "0.1.0",
     "better-sqlite3": "^12.11.1",
     "remark-gfm": "^4.0.1",
     "remark-parse": "^11.0.0",
+    "sqlite-vec": "^0.1.9",
     "unified": "^11.0.0"
   },
   "devDependencies": {

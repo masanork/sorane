@@ -30,8 +30,8 @@ async function main(): Promise<void> {
           "  build     --cwd <dir> [--clean]\n" +
           "  validate  --cwd <dir>\n" +
           "  migrate   --cwd <dir> [--dry-run]\n" +
-          "  index     --cwd <dir> [--force] [--out <path>]\n" +
-          "  search    <query> [--cwd <dir>] [--type article] [--tag <slug>] [--k 10] [--json]\n",
+          "  index     --cwd <dir> [--force] [--fts-only] [--out <path>] [--model <dir>] [--model-id <id>]\n" +
+          "  search    <query> [--cwd <dir>] [--type article] [--tag <slug>] [--k 10] [--json] [--fts-only]\n",
       );
       process.exit(command === undefined ? 0 : 1);
   }

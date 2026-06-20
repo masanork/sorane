@@ -16,6 +16,7 @@
     "migrate": "node packages/cli/src/main.ts migrate",
     "index": "node packages/cli/src/main.ts index",
     "search": "node packages/cli/src/main.ts search",
+    "fetch-model": "node scripts/fetch-model.ts",
     "test": "node --test \"tests/**/*.test.ts\"",
     "typecheck": "tsc --noEmit"
   },
@@ -29,6 +30,9 @@
   },
   "license": "MIT",
   "allowScripts": {
-    "better-sqlite3": true
+    "better-sqlite3": true,
+    "onnxruntime-node": true,
+    "protobufjs": true,
+    "sharp": true
   }
 }

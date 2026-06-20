@@ -76,16 +76,27 @@ fonts:
 
 Pages with `noFontEmbedding: true` in frontmatter use system fonts.
 
-## Search (FTS)
+## Search
 
-Phase 1: SQLite FTS5 trigram index at `.sorane/index.db` (configurable via `search.index` in `sorane.yaml`).
+SQLite FTS5 trigram + optional ruri-v3-30m hybrid (vec KNN + FTS → RRF) at `.sorane/index.db`.
 
 ```bash
+npm run fetch-model                    # once: download ruri-v3-30m (~37MB)
 npx sorane index --cwd examples/minimal
 npx sorane search "OKF" --cwd examples/minimal
+npx sorane index --fts-only            # skip embeddings
+```
+
+Configure in `sorane.yaml`:
+
+```yaml
+search:
+  index: .sorane/index.db
+  model: vendor/models
+  model_id: ruri-v3-30m
 ```
 
 ## Roadmap
 
-- Embeddings + hybrid search (port from mrlgss `rag/`)
+- `search-index.json` web export (browser search)
 - Astro theme layer (reads sorane build output)

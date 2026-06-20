@@ -1,14 +1,19 @@
+import { existsSync } from "node:fs";
 import { resolve } from "node:path";
-import { IndexStore, searchFts } from "@sorane/search";
+import { IndexStore, RuriEmbeddings, search, checkModelMismatch } from "@sorane/search";
 import { loadSoraneConfig, parseCwdFlag } from "./config-load.ts";
 
 function parseSearchArgs(argv: string[]): {
+  cwd: string;
   query: string;
   indexPath: string;
+  modelRoot: string;
+  modelId: string;
   k: number;
   docType: string;
   tag: string;
   json: boolean;
+  ftsOnly: boolean;
 } {
   const cwd = parseCwdFlag(argv);
   const config = loadSoraneConfig(cwd);
@@ -23,12 +28,16 @@ function parseSearchArgs(argv: string[]): {
       ? resolve(cwd, argv[outFlag + 1]!)
       : resolve(cwd, config.search.index);
   return {
+    cwd,
     query,
     indexPath,
+    modelRoot: resolve(cwd, get("--model", config.search.model)),
+    modelId: get("--model-id", config.search.model_id),
     k: Number(get("--k", "10")) || 10,
     docType: get("--type", ""),
     tag: get("--tag", ""),
     json: argv.includes("--json"),
+    ftsOnly: argv.includes("--fts-only"),
   };
 }
 
@@ -36,18 +45,42 @@ export async function runSearchCmd(argv: string[]): Promise<void> {
   const args = parseSearchArgs(argv);
   if (!args.query) {
     process.stderr.write(
-      "usage: sorane search <query> [--cwd <dir>] [--type article] [--tag <slug>] [--k 10] [--json]\n",
+      "usage: sorane search <query> [--cwd <dir>] [--type article] [--tag <slug>] [--k 10] [--json] [--fts-only]\n",
     );
     process.exit(2);
   }
 
   const store = new IndexStore(args.indexPath);
-  const results = searchFts(store, args.query, {
+  let embeddings = null;
+  if (!args.ftsOnly && store.hasVectors()) {
+    const modelDir = resolve(args.modelRoot, args.modelId);
+    if (!existsSync(modelDir)) {
+      process.stderr.write(
+        `[sorane] model not found at ${modelDir}; searching FTS-only\n`,
+      );
+    } else {
+      embeddings = new RuriEmbeddings({
+        modelRoot: args.modelRoot,
+        modelId: args.modelId,
+      });
+      const mismatch = checkModelMismatch(
+        store.readMeta(),
+        args.modelId,
+        embeddings.dimensions,
+      );
+      if (mismatch) {
+        process.stderr.write(`[sorane] warning: ${mismatch}; consider re-indexing with --force\n`);
+      }
+    }
+  }
+
+  const results = await search(store, embeddings, args.query, {
     k: args.k,
     filter: {
       docType: args.docType || undefined,
       tag: args.tag || undefined,
     },
+    ftsOnly: args.ftsOnly,
   });
   store.close();
 
@@ -63,7 +96,7 @@ export async function runSearchCmd(argv: string[]): Promise<void> {
 
   for (const [i, row] of results.entries()) {
     process.stdout.write(
-      `${i + 1}. ${row.title || row.source} (${row.source}#${row.headingSlug || row.chunkIndex})\n` +
+      `${i + 1}. ${row.title || row.source} (${row.source}#${row.headingSlug || row.chunkIndex}) [${row.score.toFixed(4)}]\n` +
         `   ${row.headingPath}\n` +
         `   ${row.snippet}\n\n`,
     );
