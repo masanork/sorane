@@ -1,5 +1,6 @@
 import type { OkfConcept } from "@sorane/okf";
 import { escapeHtml, renderMarkdown } from "./render.ts";
+import { siteLabels, type SiteLabels } from "./site-labels.ts";
 
 export function extractDescription(body: string, maxLen = 200): string | null {
   const lines = body.split(/\r?\n/);
@@ -35,6 +36,50 @@ export function extractDescription(body: string, maxLen = 200): string | null {
   return text.slice(0, maxLen).replace(/\s+\S*$/, "") + "…";
 }
 
+/** リスト用 description の HTML タグ・エスケープ残骸を除去する。 */
+export function sanitizeListDescription(text: string, maxLen = 200): string {
+  let t = text
+    .replace(/\\</g, "<")
+    .replace(/<[^>]+>/g, "")
+    .replace(/&lt;/g, "<")
+    .replace(/&gt;/g, ">")
+    .replace(/&amp;/g, "&")
+    .replace(/&quot;/g, '"')
+    .replace(/\s+/g, " ")
+    .trim();
+  if (t.length <= maxLen) return t;
+  return t.slice(0, maxLen).replace(/\s+\S*$/, "") + "…";
+}
+
+export function renderFeaturedExcerpt(
+  concept: OkfConcept,
+  excerptLength: number,
+): string {
+  const text =
+    concept.description ??
+    extractDescription(concept.body, excerptLength) ??
+    extractDescription(concept.body);
+  if (!text) return "";
+  return `<p>${escapeHtml(text)}</p>`;
+}
+
+export function buildWebSiteJsonLd(opts: {
+  readonly title: string;
+  readonly description?: string;
+  readonly url?: string;
+  readonly lang: string;
+}): string {
+  const data: Record<string, unknown> = {
+    "@context": "https://schema.org",
+    "@type": "WebSite",
+    name: opts.title,
+    inLanguage: opts.lang,
+  };
+  if (opts.description) data.description = opts.description;
+  if (opts.url) data.url = opts.url;
+  return `<script type="application/ld+json">${JSON.stringify(data)}</script>`;
+}
+
 export interface PageShellOptions {
   readonly title: string;
   readonly siteTitle: string;
@@ -48,6 +93,7 @@ export interface PageShellOptions {
   readonly feedPath?: string;
   readonly showArchiveNav?: boolean;
   readonly searchPath?: string;
+  readonly pageKind?: "website" | "article";
 }
 
 export interface ArticleListEntry {
@@ -82,6 +128,9 @@ export interface BlogIndexOptions {
   };
   readonly articles: readonly ArticleListEntry[];
   readonly archiveLimit?: number;
+  readonly showListDescriptions?: boolean;
+  readonly lang?: string;
+  readonly labels?: SiteLabels;
 }
 
 export function buildPage(opts: PageShellOptions): string {
@@ -96,9 +145,10 @@ export function buildPage(opts: PageShellOptions): string {
     head.push(`<meta name="description" content="${d}">`);
     head.push(`<meta property="og:description" content="${d}">`);
   }
+  const ogType = opts.pageKind === "website" ? "website" : "article";
   head.push(
     `<meta property="og:title" content="${titleEsc}">`,
-    `<meta property="og:type" content="article">`,
+    `<meta property="og:type" content="${ogType}">`,
     `<meta property="og:site_name" content="${escapeHtml(opts.siteTitle)}">`,
     `<link rel="stylesheet" href="${opts.rootPrefix}assets/main.css">`,
     `<link rel="alternate" type="application/ld+json" href="${opts.rootPrefix}catalog.jsonld">`,
@@ -123,16 +173,23 @@ export function buildPage(opts: PageShellOptions): string {
   }
   if (opts.extraHead) head.push(...opts.extraHead);
   const lang = opts.lang ?? "ja";
+  const labels = siteLabels(lang);
   const home = `${opts.rootPrefix}index.html`;
   const feed = opts.feedPath ? `${opts.rootPrefix}${opts.feedPath}` : undefined;
   const navParts: string[] = [];
   if (opts.showArchiveNav) {
-    navParts.push(`<a href="${escapeHtml(`${opts.rootPrefix}archive/index.html`)}">Archive</a>`);
+    navParts.push(
+      `<a href="${escapeHtml(`${opts.rootPrefix}archive/index.html`)}">${escapeHtml(labels.archive)}</a>`,
+    );
   }
   if (opts.searchPath) {
-    navParts.push(`<a href="${escapeHtml(opts.rootPrefix + opts.searchPath)}">Search</a>`);
+    navParts.push(
+      `<a href="${escapeHtml(opts.rootPrefix + opts.searchPath)}">${escapeHtml(labels.search)}</a>`,
+    );
   }
-  if (feed) navParts.push(`<a href="${escapeHtml(feed)}">Feed</a>`);
+  if (feed) {
+    navParts.push(`<a href="${escapeHtml(feed)}">${escapeHtml(labels.feed)}</a>`);
+  }
   const nav =
     navParts.length > 0
       ? `<nav class="site-nav" aria-label="サイト">${navParts.join("")}</nav>`
@@ -271,8 +328,9 @@ export function renderArticleBody(concept: OkfConcept, nav?: ArticleNav): string
 }
 
 export function renderBlogIndexBody(opts: BlogIndexOptions): string {
+  const labels = opts.labels ?? siteLabels(opts.lang ?? "ja");
   const profile = opts.profileUrl
-    ? `<a href="${escapeHtml(opts.profileUrl)}" class="blog-profile-link">Profile</a>`
+    ? `<a href="${escapeHtml(opts.profileUrl)}" class="blog-profile-link">${escapeHtml(labels.profile)}</a>`
     : "";
   const intro = opts.introHtml
     ? `<div class="blog-intro">${opts.introHtml}</div>`
@@ -292,7 +350,7 @@ export function renderBlogIndexBody(opts: BlogIndexOptions): string {
       }) +
       `</header>\n` +
       `<div class="article-body">\n${la.bodyHtml}\n</div>\n` +
-      `<p class="blog-permalink"><a href="${escapeHtml(la.href)}">Permalink →</a></p>\n` +
+      `<p class="blog-permalink"><a href="${escapeHtml(la.href)}">${escapeHtml(labels.readMore)}</a></p>\n` +
       `</article>\n`;
   }
 
@@ -303,9 +361,15 @@ export function renderBlogIndexBody(opts: BlogIndexOptions): string {
       const meta: string[] = [];
       if (date) meta.push(`<time datetime="${escapeHtml(date)}">${escapeHtml(date)}</time>`);
       const updated = formatDate(a.updated);
-      if (updated && updated !== date) meta.push(`<span class="article-updated">更 ${escapeHtml(updated)}</span>`);
+      if (updated && updated !== date) {
+        meta.push(
+          `<span class="article-updated">${escapeHtml(labels.updated)} ${escapeHtml(updated)}</span>`,
+        );
+      }
       if (a.author) meta.push(`<span>${escapeHtml(a.author)}</span>`);
-      if (a.description) meta.push(`<span class="blog-list-desc">${escapeHtml(a.description)}</span>`);
+      if (opts.showListDescriptions && a.description) {
+        meta.push(`<span class="blog-list-desc">${escapeHtml(a.description)}</span>`);
+      }
       const metaHtml = meta.length > 0 ? `<div class="blog-list-meta">${meta.join(" · ")}</div>` : "";
       return (
         `<li class="blog-list-item">\n` +
@@ -318,7 +382,7 @@ export function renderBlogIndexBody(opts: BlogIndexOptions): string {
 
   const more =
     items.length > 0
-      ? `<section class="blog-archive">\n<h2>過去の記事</h2>\n<ul class="blog-list">\n${items}\n</ul>\n</section>\n`
+      ? `<section class="blog-archive">\n<h2>${escapeHtml(labels.pastArticles)}</h2>\n<ul class="blog-list">\n${items}\n</ul>\n</section>\n`
       : "";
 
   const showTitle = opts.showHeaderTitle !== false;

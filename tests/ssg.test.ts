@@ -3,7 +3,14 @@ import { join } from "node:path";
 import { tmpdir } from "node:os";
 import { describe, expect, test } from "./_expect.ts";
 import { runBuild } from "../packages/core/src/build.ts";
-import { extractDescription, buildPage, renderBlogIndexBody } from "../packages/core/src/ssg.ts";
+import {
+  extractDescription,
+  sanitizeListDescription,
+  renderFeaturedExcerpt,
+  buildPage,
+  renderBlogIndexBody,
+} from "../packages/core/src/ssg.ts";
+import { normalizeConcept } from "../packages/okf/src/index.ts";
 import { buildAtomFeed } from "../packages/core/src/site-meta.ts";
 import { migrateToOkf } from "../packages/core/src/migrate.ts";
 
@@ -14,11 +21,32 @@ describe("extractDescription", () => {
   });
 });
 
+describe("sanitizeListDescription", () => {
+  test("HTML タグを除去する", () => {
+    const d = sanitizeListDescription('hello <a href="x">link</a> world');
+    expect(d).toBe("hello link world");
+  });
+});
+
+describe("renderFeaturedExcerpt", () => {
+  test("抜粋を p タグで返す", () => {
+    const concept = normalizeConcept(
+      { type: "article", title: "T" },
+      "First para.\n\nSecond para.",
+      "a",
+    );
+    const html = renderFeaturedExcerpt(concept, 400);
+    expect(html).toContain("<p>First para.</p>");
+    expect(html.includes("<h")).toBe(false);
+  });
+});
+
 describe("renderBlogIndexBody", () => {
   test("最新記事とアーカイブを出す", () => {
     const html = renderBlogIndexBody({
       siteTitle: "My Blog",
       description: "lead text",
+      lang: "en",
       profileUrl: "./profile.html",
       latestArticle: {
         title: "Latest",
@@ -29,7 +57,7 @@ describe("renderBlogIndexBody", () => {
       articles: [{ title: "Older", href: "older.html", timestamp: "2025-01-01T00:00:00Z" }],
     });
     expect(html).toContain("blog-featured");
-    expect(html).toContain("過去の記事");
+    expect(html).toContain("Archive");
     expect(html).toContain("profile.html");
     expect(html).toContain("Older");
   });
@@ -43,6 +71,16 @@ describe("renderBlogIndexBody", () => {
     });
     expect(html.includes("<h1>My Blog</h1>")).toBe(false);
     expect(html).toContain("blog-lead");
+  });
+
+  test("lang: ja で日本語ラベル", () => {
+    const html = renderBlogIndexBody({
+      siteTitle: "Blog",
+      lang: "ja",
+      articles: [{ title: "古い記事", href: "old.html", timestamp: "2025-01-01T00:00:00Z" }],
+    });
+    expect(html).toContain("過去の記事");
+    expect(html).toContain("古い記事");
   });
 });
 
@@ -68,6 +106,20 @@ describe("buildPage", () => {
     });
     expect(html).toContain('rel="alternate"');
     expect(html).toContain("text/markdown");
+  });
+
+  test("index は og:type website", () => {
+    const html = buildPage({
+      title: "Blog",
+      siteTitle: "Blog",
+      bodyHtml: "<p>x</p>",
+      rootPrefix: "./",
+      pageKind: "website",
+      lang: "ja",
+      showArchiveNav: true,
+    });
+    expect(html).toContain('og:type" content="website"');
+    expect(html).toContain("アーカイブ");
   });
 });
 

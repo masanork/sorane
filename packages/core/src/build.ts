@@ -29,9 +29,13 @@ import {
   buildSearchMount,
   buildSearchHead,
   isSearchView,
+  renderFeaturedExcerpt,
+  sanitizeListDescription,
+  buildWebSiteJsonLd,
   type ArticleListEntry,
   type ArticleNav,
 } from "./ssg.ts";
+import type { FeaturedMode } from "./config.ts";
 import {
   groupByTag,
   groupByYear,
@@ -219,6 +223,10 @@ export async function runBuild(opts: BuildOptions): Promise<BuildResult> {
 
   const blogOpts = {
     page_size: config.build.blog?.page_size ?? 50,
+    index_archive_limit: config.build.blog?.index_archive_limit ?? 15,
+    featured_mode: (config.build.blog?.featured_mode ?? "excerpt") as FeaturedMode,
+    excerpt_length: config.build.blog?.excerpt_length ?? 400,
+    show_list_descriptions: config.build.blog?.show_list_descriptions ?? false,
     archives: config.build.blog?.archives ?? true,
     tags: config.build.blog?.tags ?? true,
   };
@@ -228,13 +236,15 @@ export async function runBuild(opts: BuildOptions): Promise<BuildResult> {
     .map((p) => {
       const slug = slugFromRel(p.relPath);
       const outRel = resolvePermalink(config.build.permalink, slug, p.concept.timestamp);
+      const rawDesc =
+        p.concept.description ?? extractDescription(p.concept.body) ?? undefined;
       return {
         title: p.concept.title,
         href: outRel,
         timestamp: p.concept.timestamp,
         updated: frontmatterString(p.concept.frontmatter, "updated"),
         author: frontmatterString(p.concept.frontmatter, "author"),
-        description: p.concept.description ?? extractDescription(p.concept.body) ?? undefined,
+        description: rawDesc ? sanitizeListDescription(rawDesc) : undefined,
         tags: p.concept.tags,
       };
     })
@@ -381,24 +391,34 @@ export async function runBuild(opts: BuildOptions): Promise<BuildResult> {
 
     let bodyHtml: string;
     if (useBlogLayout) {
+      const featuredMode = blogOpts.featured_mode;
+      const featuredBody =
+        latestParsed && featuredMode !== "off"
+          ? featuredMode === "full"
+            ? renderMarkdown(latestParsed.concept.body)
+            : renderFeaturedExcerpt(latestParsed.concept, blogOpts.excerpt_length)
+          : "";
       bodyHtml = renderBlogIndexBody({
         siteTitle: p.concept.title || config.site.title,
         description: p.concept.description ?? config.site.description,
         showHeaderTitle: false,
         profileUrl: frontmatterString(p.concept.frontmatter, "profileUrl"),
         introHtml: introHtmlFromBody(p.concept.body, p.concept.title || config.site.title),
-        latestArticle: latestParsed
-          ? {
-              title: latestParsed.concept.title,
-              href: latest!.href,
-              timestamp: latestParsed.concept.timestamp,
-              updated: frontmatterString(latestParsed.concept.frontmatter, "updated"),
-              author: frontmatterString(latestParsed.concept.frontmatter, "author"),
-              bodyHtml: renderMarkdown(latestParsed.concept.body),
-            }
-          : undefined,
+        lang: config.site.lang,
+        latestArticle:
+          latestParsed && featuredMode !== "off" && featuredBody
+            ? {
+                title: latestParsed.concept.title,
+                href: latest!.href,
+                timestamp: latestParsed.concept.timestamp,
+                updated: frontmatterString(latestParsed.concept.frontmatter, "updated"),
+                author: frontmatterString(latestParsed.concept.frontmatter, "author"),
+                bodyHtml: featuredBody,
+              }
+            : undefined,
         articles: archivePages[0] ?? [],
-        archiveLimit: blogOpts.page_size,
+        archiveLimit: blogOpts.index_archive_limit,
+        showListDescriptions: blogOpts.show_list_descriptions,
       });
       if (archivePages.length > 1) {
         bodyHtml +=
@@ -409,6 +429,14 @@ export async function runBuild(opts: BuildOptions): Promise<BuildResult> {
     }
 
     const fontCss = await fontCssFor(p.concept, "./");
+    const indexCanonical =
+      baseUrl.length > 0 ? `${baseUrl}/index.html` : undefined;
+    const indexJsonLd = buildWebSiteJsonLd({
+      title: p.concept.title || config.site.title,
+      description: p.concept.description ?? config.site.description,
+      url: indexCanonical,
+      lang: config.site.lang,
+    });
     emitPage({
       cwd,
       config,
@@ -419,6 +447,8 @@ export async function runBuild(opts: BuildOptions): Promise<BuildResult> {
       baseUrl,
       fontCss,
       isIndex: true,
+      pageKind: "website",
+      extraHead: [indexJsonLd, ...(fontCss ? [fontCss] : [])],
       showArchiveNav: blogOpts.archives,
       searchPath: searchNavPath,
     });

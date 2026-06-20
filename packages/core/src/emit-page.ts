@@ -19,6 +19,7 @@ export interface EmitPageOptions {
   readonly isIndex?: boolean;
   readonly showArchiveNav?: boolean;
   readonly searchPath?: string;
+  readonly pageKind?: "website" | "article";
 }
 
 export function emitPage(opts: EmitPageOptions): { mdOutRel: string; canonicalUrl?: string } {
@@ -49,6 +50,7 @@ export function emitPage(opts: EmitPageOptions): { mdOutRel: string; canonicalUr
     feedPath: "feed.xml",
     showArchiveNav: opts.showArchiveNav,
     searchPath: opts.searchPath,
+    pageKind: opts.pageKind ?? (opts.isIndex ? "website" : "article"),
     machineSources: [{ href: mdOutRel, type: "text/markdown" }],
     extraHead: opts.extraHead ?? (opts.fontCss ? [opts.fontCss] : undefined),
   });

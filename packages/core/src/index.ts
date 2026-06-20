@@ -10,7 +10,12 @@ export {
   buildSearchMount,
   buildSearchHead,
   isSearchView,
+  sanitizeListDescription,
+  renderFeaturedExcerpt,
+  buildWebSiteJsonLd,
 } from "./ssg.ts";
+export { siteLabels, type SiteLabels } from "./site-labels.ts";
+export type { FeaturedMode } from "./config.ts";
 export { renderMarkdown, rewriteLinks, escapeHtml } from "./render.ts";
 export { buildCatalogJsonLd, type CatalogEntry } from "./catalog.ts";
 export {

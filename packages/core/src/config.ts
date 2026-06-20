@@ -10,9 +10,19 @@ export interface FontRoles {
   readonly code?: readonly string[];
 }
 
+export type FeaturedMode = "excerpt" | "full" | "off";
+
 export interface BlogBuildConfig {
-  /** 1ページあたりの記事数（index のアーカイブ欄・page/N.html） */
+  /** 1ページあたりの記事数（page/N.html） */
   readonly page_size?: number;
+  /** トップ index のアーカイブ欄に載せる件数（既定 15） */
+  readonly index_archive_limit?: number;
+  /** トップの最新記事表示: excerpt | full | off */
+  readonly featured_mode?: FeaturedMode;
+  /** featured_mode: excerpt の最大文字数 */
+  readonly excerpt_length?: number;
+  /** アーカイブリストに description を出す */
+  readonly show_list_descriptions?: boolean;
   /** archive/index.html, archive/YYYY.html 等を生成 */
   readonly archives?: boolean;
   /** tag/slug.html を生成 */
@@ -87,6 +97,10 @@ export const DEFAULT_CONFIG: SoraneConfig = {
     permalink: "{{slug}}.html",
     blog: {
       page_size: 50,
+      index_archive_limit: 15,
+      featured_mode: "excerpt",
+      excerpt_length: 400,
+      show_list_descriptions: false,
       archives: true,
       tags: true,
     },
