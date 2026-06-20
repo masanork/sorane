@@ -9,3 +9,6 @@ website/.sorane/
 vendor/models/
 coverage/
 .wrangler/
+test-results/
+playwright-report/
+blob-report/
