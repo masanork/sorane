@@ -302,6 +302,15 @@ export function buildBlogPostingJsonLd(opts: {
   return `<script type="application/ld+json">${JSON.stringify(data)}</script>`;
 }
 
+const SERIF_FONT_STYLES = new Set(["GJM", "serif", "mincho"]);
+
+/** frontmatter の font スタイルが明朝指定なら class を返す。 */
+export function articleFontClass(concept: OkfConcept): string {
+  const font = concept.frontmatter.font;
+  if (typeof font !== "string") return "";
+  return SERIF_FONT_STYLES.has(font) ? " font-serif" : "";
+}
+
 export function renderArticleBody(concept: OkfConcept, nav?: ArticleNav): string {
   const updated =
     typeof concept.frontmatter.updated === "string"
@@ -319,7 +328,7 @@ export function renderArticleBody(concept: OkfConcept, nav?: ArticleNav): string
     "</header>",
   ].join("\n");
   return (
-    `<article class="article-page">\n` +
+    `<article class="article-page${articleFontClass(concept)}">\n` +
     `${header}\n` +
     `<div class="article-body">\n${renderMarkdown(concept.body)}\n</div>\n` +
     `${articleNavHtml(nav)}\n` +

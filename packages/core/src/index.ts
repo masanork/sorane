@@ -11,6 +11,7 @@ export {
   buildSearchHead,
   isSearchView,
   sanitizeListDescription,
+  articleFontClass,
   renderFeaturedExcerpt,
   buildWebSiteJsonLd,
 } from "./ssg.ts";

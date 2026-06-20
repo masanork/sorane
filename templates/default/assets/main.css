@@ -24,9 +24,16 @@ body {
 }
 
 h1, h2, h3 {
-  font-family: var(--font-heading);
+  font-family: var(--font-body);
   font-weight: 700;
   line-height: 1.5;
+}
+
+.font-serif,
+.font-serif h1,
+.font-serif h2,
+.font-serif h3 {
+  font-family: var(--font-heading);
 }
 
 a {
@@ -76,7 +83,7 @@ article td {
 }
 
 .site-title {
-  font-family: var(--font-heading);
+  font-family: var(--font-body);
   font-weight: 700;
   font-size: 1.25rem;
   text-decoration: none;

@@ -9,6 +9,8 @@ import {
   renderFeaturedExcerpt,
   buildPage,
   renderBlogIndexBody,
+  renderArticleBody,
+  articleFontClass,
 } from "../packages/core/src/ssg.ts";
 import { normalizeConcept } from "../packages/okf/src/index.ts";
 import { buildAtomFeed } from "../packages/core/src/site-meta.ts";
@@ -38,6 +40,26 @@ describe("renderFeaturedExcerpt", () => {
     const html = renderFeaturedExcerpt(concept, 400);
     expect(html).toContain("<p>First para.</p>");
     expect(html.includes("<h")).toBe(false);
+  });
+});
+
+describe("articleFontClass", () => {
+  test("font: GJM で font-serif", () => {
+    const concept = normalizeConcept({ type: "article", title: "T", font: "GJM" }, "body", "a");
+    expect(articleFontClass(concept)).toBe(" font-serif");
+  });
+
+  test("font 未指定は空", () => {
+    const concept = normalizeConcept({ type: "article", title: "T" }, "body", "a");
+    expect(articleFontClass(concept)).toBe("");
+  });
+});
+
+describe("renderArticleBody", () => {
+  test("font: GJM で article-page に font-serif", () => {
+    const concept = normalizeConcept({ type: "article", title: "T", font: "GJM" }, "body", "a");
+    const html = renderArticleBody(concept);
+    expect(html).toContain('class="article-page font-serif"');
   });
 });
 
