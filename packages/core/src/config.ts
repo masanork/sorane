@@ -1,3 +1,15 @@
+export interface FontSourceSpec {
+  readonly source: string;
+  readonly weight?: string;
+  readonly embed?: "subset" | "static";
+}
+
+export interface FontRoles {
+  readonly body: readonly string[];
+  readonly heading?: readonly string[];
+  readonly code?: readonly string[];
+}
+
 export interface FontConfigInput {
   readonly enabled?: boolean;
   readonly family?: string;
@@ -5,6 +17,8 @@ export interface FontConfigInput {
   readonly cache_dir?: string;
   readonly weight?: string;
   readonly skip_key?: string;
+  readonly roles?: FontRoles;
+  readonly sources?: Readonly<Record<string, FontSourceSpec>>;
 }
 
 export interface SoraneConfig {
@@ -23,11 +37,13 @@ export interface SoraneConfig {
   };
   readonly fonts: {
     readonly enabled: boolean;
-    readonly family: string;
-    readonly source: string;
     readonly cache_dir: string;
-    readonly weight: string;
     readonly skip_key: string;
+    readonly family?: string;
+    readonly source?: string;
+    readonly weight?: string;
+    readonly roles?: FontRoles;
+    readonly sources?: Readonly<Record<string, FontSourceSpec>>;
   };
 }
 

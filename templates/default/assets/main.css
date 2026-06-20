@@ -1,31 +1,45 @@
+/* デジタル庁デザインシステム β — Std-17N-170 ベース（既定テーマ） */
+
 :root {
   color-scheme: light;
-  --text: #1a1a1a;
-  --muted: #555;
-  --link: #0b57d0;
-  --border: #e5e5e5;
+  --font-body: "Noto Sans JP", -apple-system, BlinkMacSystemFont, sans-serif;
+  --font-heading: "Noto Serif JP", serif;
+  --font-mono: "Noto Sans Mono", monospace;
+  --text: #1a1a1c;
+  --muted: #626264;
+  --link: #0017c1;
+  --border: #d8d8db;
 }
 
 body {
-  font-family: system-ui, -apple-system, sans-serif;
+  font-family: var(--font-body);
+  font-size: 17px;
+  font-weight: 400;
   line-height: 1.7;
-  max-width: 42rem;
+  letter-spacing: 0.02em;
+  max-width: 45rem;
   margin: 2rem auto;
-  padding: 0 1rem;
+  padding: 0 1.5rem;
   color: var(--text);
+}
+
+h1, h2, h3 {
+  font-family: var(--font-heading);
+  font-weight: 700;
+  line-height: 1.5;
 }
 
 a {
   color: var(--link);
 }
 
-h1 {
-  line-height: 1.25;
+code, pre {
+  font-family: var(--font-mono);
 }
 
 .article-meta {
   color: var(--muted);
-  font-size: 0.9rem;
+  font-size: 16px;
 }
 
 .article-list {
