@@ -1,0 +1,13 @@
+site:
+  title: "Articles Only"
+  description: "Article-only SSG example (no index.md)"
+  base_url: "https://example.pages.dev"
+  lang: ja
+
+build:
+  content_dir: content
+  out_dir: dist
+  permalink: "{{slug}}.html"
+  blog:
+    archives: false
+    tags: false

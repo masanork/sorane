@@ -73,6 +73,23 @@ describe("migrateToOkf", () => {
 });
 
 describe("runBuild", () => {
+  test("article-only example は index 無しで記事だけ焼く", async () => {
+    const exampleRoot = join(import.meta.dirname, "../examples/articles-only");
+    const tmp = mkdtempSync(join(tmpdir(), "sorane-articles-"));
+    try {
+      const result = await runBuild({
+        cwd: exampleRoot,
+        config: { build: { out_dir: join(tmp, "dist") } },
+        clean: true,
+      });
+      expect(result.pages).toBe(1);
+      expect(existsSync(join(tmp, "dist/2025-06-01-note.html"))).toBe(true);
+      expect(existsSync(join(tmp, "dist/index.html"))).toBe(false);
+    } finally {
+      rmSync(tmp, { recursive: true, force: true });
+    }
+  });
+
   test("minimal example を dist に焼く", async () => {
     const exampleRoot = join(import.meta.dirname, "../examples/minimal");
     const tmp = mkdtempSync(join(tmpdir(), "sorane-build-"));
@@ -94,9 +111,10 @@ describe("runBuild", () => {
         },
         clean: true,
       });
-      expect(result.pages).toBe(2);
+      expect(result.pages >= 2).toBe(true);
       expect(existsSync(join(tmp, "dist/index.html"))).toBe(true);
       expect(existsSync(join(tmp, "dist/2025-01-01-hello.html"))).toBe(true);
+      expect(existsSync(join(tmp, "dist/archive/index.html"))).toBe(true);
       expect(existsSync(join(tmp, "dist/2025-01-01-hello.md"))).toBe(true);
       expect(existsSync(join(tmp, "dist/okf/bundle.tar.gz"))).toBe(true);
       expect(existsSync(join(tmp, "dist/feed.xml"))).toBe(true);

@@ -10,6 +10,15 @@ export interface FontRoles {
   readonly code?: readonly string[];
 }
 
+export interface BlogBuildConfig {
+  /** 1ページあたりの記事数（index のアーカイブ欄・page/N.html） */
+  readonly page_size?: number;
+  /** archive/index.html, archive/YYYY.html 等を生成 */
+  readonly archives?: boolean;
+  /** tag/slug.html を生成 */
+  readonly tags?: boolean;
+}
+
 export interface FontConfigInput {
   readonly enabled?: boolean;
   readonly family?: string;
@@ -34,6 +43,7 @@ export interface SoraneConfig {
     readonly permalink: string;
     /** 存在すれば out_dir へ再帰コピーする静的資産ディレクトリ（例: static/）。 */
     readonly static_dir?: string;
+    readonly blog?: BlogBuildConfig;
   };
   readonly fonts: {
     readonly enabled: boolean;
@@ -58,6 +68,11 @@ export const DEFAULT_CONFIG: SoraneConfig = {
     content_dir: "content",
     out_dir: "dist",
     permalink: "{{slug}}.html",
+    blog: {
+      page_size: 50,
+      archives: true,
+      tags: true,
+    },
   },
   fonts: {
     enabled: false,
@@ -72,7 +87,11 @@ export const DEFAULT_CONFIG: SoraneConfig = {
 export function mergeConfig(partial: Partial<SoraneConfig>): SoraneConfig {
   return {
     site: { ...DEFAULT_CONFIG.site, ...partial.site },
-    build: { ...DEFAULT_CONFIG.build, ...partial.build },
+    build: {
+      ...DEFAULT_CONFIG.build,
+      ...partial.build,
+      blog: { ...DEFAULT_CONFIG.build.blog, ...partial.build?.blog },
+    },
     fonts: { ...DEFAULT_CONFIG.fonts, ...partial.fonts },
   };
 }

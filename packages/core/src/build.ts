@@ -1,6 +1,5 @@
 import { createFontProcessor } from "@sorane/font";
 import {
-  conceptToOkfMarkdown,
   parseConcept,
   buildBundleEntries,
   type ParsedConcept,
@@ -21,14 +20,26 @@ import { dirname, join, relative, resolve } from "node:path";
 import { buildCatalogJsonLd } from "./catalog.ts";
 import { mergeConfig, resolvePermalink, type SoraneConfig } from "./config.ts";
 import {
-  buildPage,
+  buildBlogPostingJsonLd,
   extractDescription,
   renderArticleBody,
   renderBlogIndexBody,
   renderIndexBody,
-  rootPrefixFromRel,
   type ArticleListEntry,
+  type ArticleNav,
 } from "./ssg.ts";
+import {
+  groupByTag,
+  groupByYear,
+  groupByYearMonth,
+  paginate,
+  renderArchiveListBody,
+  renderMonthListForYear,
+  renderYearArchiveIndexBody,
+  slugifyTag,
+} from "./blog-pages.ts";
+import { emitPage } from "./emit-page.ts";
+import type { OkfConcept } from "@sorane/okf";
 import {
   buildAtomFeed,
   buildLlmsTxt,
@@ -78,6 +89,35 @@ function frontmatterString(
 ): string | undefined {
   const v = frontmatter[key];
   return typeof v === "string" && v.length > 0 ? v : undefined;
+}
+
+function syntheticConcept(title: string, description?: string): OkfConcept {
+  return {
+    type: "index",
+    title,
+    body: "",
+    frontmatter: {},
+    warnings: [],
+    description,
+  };
+}
+
+function articleNavFor(
+  href: string,
+  summaries: readonly ArticleListEntry[],
+): ArticleNav | undefined {
+  const i = summaries.findIndex((s) => s.href === href);
+  if (i < 0) return undefined;
+  const nav: ArticleNav = {};
+  if (i > 0) {
+    const prev = summaries[i - 1]!;
+    nav.prev = { href: prev.href, title: prev.title };
+  }
+  if (i < summaries.length - 1) {
+    const next = summaries[i + 1]!;
+    nav.next = { href: next.href, title: next.title };
+  }
+  return nav.prev || nav.next ? nav : undefined;
 }
 
 function tarBytes(entries: Array<{ path: string; content: string }>): Buffer {
@@ -156,6 +196,12 @@ export async function runBuild(opts: BuildOptions): Promise<BuildResult> {
 
   const baseUrl = config.site.base_url.replace(/\/$/, "");
 
+  const blogOpts = {
+    page_size: config.build.blog?.page_size ?? 50,
+    archives: config.build.blog?.archives ?? true,
+    tags: config.build.blog?.tags ?? true,
+  };
+
   const articleSummaries: ArticleListEntry[] = parsed
     .filter((p) => p.concept.type === "article" && !isSystemPage(p.concept))
     .map((p) => {
@@ -168,6 +214,7 @@ export async function runBuild(opts: BuildOptions): Promise<BuildResult> {
         updated: frontmatterString(p.concept.frontmatter, "updated"),
         author: frontmatterString(p.concept.frontmatter, "author"),
         description: p.concept.description ?? extractDescription(p.concept.body) ?? undefined,
+        tags: p.concept.tags,
       };
     })
     .sort((a, b) => (b.timestamp ?? "").localeCompare(a.timestamp ?? ""));
@@ -180,6 +227,10 @@ export async function runBuild(opts: BuildOptions): Promise<BuildResult> {
     parsedByHref.set(outRel, p);
   }
 
+  const indexParsed = parsed.find(
+    (p) => p.concept.type === "index" || slugFromRel(p.relPath) === "index",
+  );
+
   const fontProcessor = await createFontProcessor(cwd, config.fonts, outDir);
 
   const siteEntries: SiteEntry[] = [];
@@ -188,96 +239,223 @@ export async function runBuild(opts: BuildOptions): Promise<BuildResult> {
     url: string;
     concept: ParsedConcept["concept"];
   }> = [];
+  let builtPages = 0;
 
+  async function fontCssFor(
+    concept: ParsedConcept["concept"],
+    rootPrefix: string,
+  ): Promise<string | undefined> {
+    if (!fontProcessor) return undefined;
+    return fontProcessor.fontCssForPage({
+      body: concept.body,
+      title: concept.title,
+      frontmatter: {
+        ...concept.frontmatter,
+        type: concept.type,
+        noFontEmbedding: concept.frontmatter.noFontEmbedding,
+      },
+      rootPrefix,
+    });
+  }
+
+  // --- Phase A: articles（SSG の核）---
   for (const p of parsed) {
+    if (p.concept.type !== "article" || isSystemPage(p.concept)) continue;
+
     const slug = slugFromRel(p.relPath);
-    const isIndex = p.concept.type === "index" || slug === "index";
-    const outRel = isIndex
-      ? "index.html"
-      : resolvePermalink(config.build.permalink, slug, p.concept.timestamp);
-    const outAbs = join(outDir, outRel);
-    mkdirSync(dirname(outAbs), { recursive: true });
+    const outRel = resolvePermalink(config.build.permalink, slug, p.concept.timestamp);
+    const nav = articleNavFor(outRel, articleSummaries);
+    const bodyHtml = renderArticleBody(p.concept, nav);
 
-    const rootPrefix = isIndex ? "./" : rootPrefixFromRel(outRel);
-    const description =
-      p.concept.description ??
-      extractDescription(p.concept.body) ??
-      (isIndex ? config.site.description : undefined);
+    const updated = frontmatterString(p.concept.frontmatter, "updated");
+    const author = frontmatterString(p.concept.frontmatter, "author");
     const canonicalUrl = baseUrl.length > 0 ? `${baseUrl}/${outRel}` : undefined;
+    const jsonLd = buildBlogPostingJsonLd({
+      title: p.concept.title,
+      description: p.concept.description ?? extractDescription(p.concept.body) ?? undefined,
+      url: canonicalUrl ?? outRel,
+      datePublished: p.concept.timestamp,
+      dateModified: updated ?? p.concept.timestamp,
+      author,
+      siteTitle: config.site.title,
+      lang: config.site.lang,
+    });
 
-    const mdOutRel = outRel.replace(/\.html$/, ".md");
-    writeFileSync(join(outDir, mdOutRel), conceptToOkfMarkdown(p.concept), "utf8");
+    const fontCss = await fontCssFor(p.concept, "./");
+    emitPage({
+      cwd,
+      config,
+      outDir,
+      outRel,
+      concept: p.concept,
+      bodyHtml,
+      baseUrl,
+      fontCss,
+      extraHead: [jsonLd],
+      showArchiveNav: Boolean(indexParsed) && blogOpts.archives,
+    });
+    builtPages += 1;
+
+    siteEntries.push({ url: outRel, lastmod: p.concept.timestamp, isIndex: false });
+    catalogInputs.push({
+      slug,
+      url: canonicalUrl ?? outRel,
+      concept: p.concept,
+    });
+  }
+
+  // --- Phase B: index（任意 — content/index.md がある場合のみ）---
+  const listForPagination = indexParsed && articleSummaries[0]
+    ? articleSummaries.slice(1)
+    : articleSummaries;
+  const archivePages = paginate(listForPagination, blogOpts.page_size);
+
+  if (indexParsed) {
+    const p = indexParsed;
+    const latest = articleSummaries[0];
+    const latestParsed = latest ? parsedByHref.get(latest.href) : undefined;
+    const useBlogLayout = p.concept.type === "index";
 
     let bodyHtml: string;
-    if (isIndex) {
-      const latest = articleSummaries[0];
-      const latestParsed = latest ? parsedByHref.get(latest.href) : undefined;
-      const useBlogLayout = p.concept.type === "index";
-      if (useBlogLayout) {
-        bodyHtml = renderBlogIndexBody({
-          siteTitle: p.concept.title || config.site.title,
-          description: p.concept.description ?? config.site.description,
-          profileUrl: frontmatterString(p.concept.frontmatter, "profileUrl"),
-          introHtml: p.concept.body.trim() ? renderMarkdown(p.concept.body) : undefined,
-          latestArticle: latestParsed
-            ? {
-                title: latestParsed.concept.title,
-                href: latest!.href,
-                timestamp: latestParsed.concept.timestamp,
-                updated: frontmatterString(latestParsed.concept.frontmatter, "updated"),
-                author: frontmatterString(latestParsed.concept.frontmatter, "author"),
-                bodyHtml: renderMarkdown(latestParsed.concept.body),
-              }
-            : undefined,
-          articles: latest ? articleSummaries.slice(1) : articleSummaries,
-          archiveLimit: 100,
-        });
-      } else {
-        bodyHtml = renderIndexBody(config.site.title, articleSummaries);
+    if (useBlogLayout) {
+      bodyHtml = renderBlogIndexBody({
+        siteTitle: p.concept.title || config.site.title,
+        description: p.concept.description ?? config.site.description,
+        profileUrl: frontmatterString(p.concept.frontmatter, "profileUrl"),
+        introHtml: p.concept.body.trim() ? renderMarkdown(p.concept.body) : undefined,
+        latestArticle: latestParsed
+          ? {
+              title: latestParsed.concept.title,
+              href: latest!.href,
+              timestamp: latestParsed.concept.timestamp,
+              updated: frontmatterString(latestParsed.concept.frontmatter, "updated"),
+              author: frontmatterString(latestParsed.concept.frontmatter, "author"),
+              bodyHtml: renderMarkdown(latestParsed.concept.body),
+            }
+          : undefined,
+        articles: archivePages[0] ?? [],
+        archiveLimit: blogOpts.page_size,
+      });
+      if (archivePages.length > 1) {
+        bodyHtml +=
+          `<p class="blog-more-pages"><a href="page/2.html">さらに過去の記事を見る →</a></p>\n`;
       }
     } else {
-      bodyHtml = renderArticleBody(p.concept);
+      bodyHtml = renderIndexBody(config.site.title, archivePages[0] ?? articleSummaries);
     }
 
-    const fontCss = fontProcessor
-      ? await fontProcessor.fontCssForPage({
-          body: p.concept.body,
-          title: p.concept.title,
-          frontmatter: {
-            ...p.concept.frontmatter,
-            type: p.concept.type,
-            noFontEmbedding: p.concept.frontmatter.noFontEmbedding,
-          },
-          rootPrefix,
-        })
-      : undefined;
-
-    const html = buildPage({
-      title: p.concept.title,
-      siteTitle: config.site.title,
+    const fontCss = await fontCssFor(p.concept, "./");
+    emitPage({
+      cwd,
+      config,
+      outDir,
+      outRel: "index.html",
+      concept: p.concept,
       bodyHtml,
-      rootPrefix,
-      description,
-      canonicalUrl,
-      lang: config.site.lang,
-      feedPath: "feed.xml",
-      machineSources: [{ href: mdOutRel, type: "text/markdown" }],
-      extraHead: fontCss ? [fontCss] : undefined,
+      baseUrl,
+      fontCss,
+      isIndex: true,
+      showArchiveNav: blogOpts.archives,
     });
-    writeFileSync(outAbs, html, "utf8");
+    builtPages += 1;
+    siteEntries.push({ url: "index.html", lastmod: undefined, isIndex: true });
+  }
 
-    siteEntries.push({
-      url: outRel,
-      lastmod: p.concept.timestamp,
-      isIndex,
-    });
-
-    if (!isIndex) {
-      catalogInputs.push({
-        slug,
-        url: canonicalUrl ?? outRel,
-        concept: p.concept,
+  // --- Phase C: 派生ブログページ（index がある場合）---
+  if (indexParsed) {
+    for (let i = 1; i < archivePages.length; i++) {
+      const pageNum = i + 1;
+      const outRel = `page/${pageNum}.html`;
+      const bodyHtml = renderArchiveListBody(
+        `${config.site.title} — ページ ${pageNum}`,
+        undefined,
+        archivePages[i]!,
+        {
+          page: pageNum,
+          totalPages: archivePages.length,
+          basePath: "index.html",
+        },
+      );
+      emitPage({
+        cwd,
+        config,
+        outDir,
+        outRel,
+        concept: syntheticConcept(`${config.site.title} — ページ ${pageNum}`),
+        bodyHtml,
+        baseUrl,
       });
+      builtPages += 1;
+      siteEntries.push({ url: outRel, lastmod: undefined, isIndex: false });
+    }
+  }
+
+  if (indexParsed && blogOpts.archives && articleSummaries.length > 0) {
+    const byYear = groupByYear(articleSummaries);
+    const byMonth = groupByYearMonth(articleSummaries);
+
+    const archiveIndexHtml = renderYearArchiveIndexBody(config.site.title, byYear);
+    emitPage({
+      cwd,
+      config,
+      outDir,
+      outRel: "archive/index.html",
+      concept: syntheticConcept(`${config.site.title} — 年別アーカイブ`),
+      bodyHtml: archiveIndexHtml,
+      baseUrl,
+    });
+    builtPages += 1;
+    siteEntries.push({ url: "archive/index.html", lastmod: undefined, isIndex: false });
+
+    for (const year of [...byYear.keys()].sort((a, b) => b.localeCompare(a))) {
+      const yearHtml = renderMonthListForYear(year, byMonth);
+      emitPage({
+        cwd,
+        config,
+        outDir,
+        outRel: `archive/${year}.html`,
+        concept: syntheticConcept(`${year}年`),
+        bodyHtml: yearHtml,
+        baseUrl,
+      });
+      builtPages += 1;
+      siteEntries.push({ url: `archive/${year}.html`, lastmod: undefined, isIndex: false });
+    }
+
+    for (const ym of [...byMonth.keys()].sort((a, b) => b.localeCompare(a))) {
+      const monthArticles = byMonth.get(ym)!;
+      const [y, m] = ym.split("-");
+      const bodyHtml = renderArchiveListBody(`${y}年${m}月`, undefined, monthArticles);
+      emitPage({
+        cwd,
+        config,
+        outDir,
+        outRel: `archive/${ym}.html`,
+        concept: syntheticConcept(`${y}年${m}月`),
+        bodyHtml,
+        baseUrl,
+      });
+      builtPages += 1;
+      siteEntries.push({ url: `archive/${ym}.html`, lastmod: undefined, isIndex: false });
+    }
+  }
+
+  if (indexParsed && blogOpts.tags) {
+    const byTag = groupByTag(articleSummaries);
+    for (const [tagSlug, tagged] of byTag) {
+      const label = tagged[0]?.tags?.find((t) => slugifyTag(t) === tagSlug) ?? tagSlug;
+      const bodyHtml = renderArchiveListBody(`タグ: ${label}`, undefined, tagged);
+      emitPage({
+        cwd,
+        config,
+        outDir,
+        outRel: `tag/${tagSlug}.html`,
+        concept: syntheticConcept(`タグ: ${label}`),
+        bodyHtml,
+        baseUrl,
+      });
+      builtPages += 1;
+      siteEntries.push({ url: `tag/${tagSlug}.html`, lastmod: undefined, isIndex: false });
     }
   }
 
@@ -346,5 +524,5 @@ export async function runBuild(opts: BuildOptions): Promise<BuildResult> {
     cpSync(staticSrc, join(outDir, staticDirName), { recursive: true });
   }
 
-  return { pages: parsed.length, errors: 0 };
+  return { pages: builtPages, errors: 0 };
 }

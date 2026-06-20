@@ -46,6 +46,7 @@ export interface PageShellOptions {
   readonly lang?: string;
   readonly extraHead?: ReadonlyArray<string>;
   readonly feedPath?: string;
+  readonly showArchiveNav?: boolean;
 }
 
 export interface ArticleListEntry {
@@ -55,6 +56,12 @@ export interface ArticleListEntry {
   readonly updated?: string;
   readonly author?: string;
   readonly description?: string;
+  readonly tags?: readonly string[];
+}
+
+export interface ArticleNav {
+  readonly prev?: { href: string; title: string };
+  readonly next?: { href: string; title: string };
 }
 
 export interface BlogIndexOptions {
@@ -115,9 +122,15 @@ export function buildPage(opts: PageShellOptions): string {
   const lang = opts.lang ?? "ja";
   const home = `${opts.rootPrefix}index.html`;
   const feed = opts.feedPath ? `${opts.rootPrefix}${opts.feedPath}` : undefined;
-  const nav = feed
-    ? `<nav class="site-nav" aria-label="サイト"><a href="${escapeHtml(feed)}">Feed</a></nav>`
-    : "";
+  const navParts: string[] = [];
+  if (opts.showArchiveNav) {
+    navParts.push(`<a href="${escapeHtml(`${opts.rootPrefix}archive/index.html`)}">Archive</a>`);
+  }
+  if (feed) navParts.push(`<a href="${escapeHtml(feed)}">Feed</a>`);
+  const nav =
+    navParts.length > 0
+      ? `<nav class="site-nav" aria-label="サイト">${navParts.join("")}</nav>`
+      : "";
   return (
     "<!doctype html>\n" +
     `<html lang="${escapeHtml(lang)}">\n` +
@@ -160,7 +173,73 @@ function articleMetaHtml(opts: {
   return `<p class="article-meta">${parts.join(" · ")}</p>`;
 }
 
-export function renderArticleBody(concept: OkfConcept): string {
+export function slugifyTag(tag: string): string {
+  return tag
+    .trim()
+    .toLowerCase()
+    .replace(/\s+/g, "-")
+    .replace(/[^a-z0-9\u3040-\u30ff\u3400-\u9fff-]/gi, "");
+}
+
+function tagsHtml(tags: readonly string[] | undefined): string {
+  if (!tags || tags.length === 0) return "";
+  const items = tags
+    .map((t) => {
+      const slug = slugifyTag(t);
+      return slug
+        ? `<a class="article-tag" href="tag/${escapeHtml(slug)}.html">${escapeHtml(t)}</a>`
+        : "";
+    })
+    .filter(Boolean)
+    .join(" ");
+  if (!items) return "";
+  return `<p class="article-tags">${items}</p>`;
+}
+
+function articleNavHtml(nav?: ArticleNav): string {
+  if (!nav?.prev && !nav?.next) return "";
+  const parts: string[] = [];
+  if (nav.prev) {
+    parts.push(
+      `<span class="article-nav-prev"><a href="${escapeHtml(nav.prev.href)}">← ${escapeHtml(nav.prev.title)}</a></span>`,
+    );
+  }
+  if (nav.next) {
+    parts.push(
+      `<span class="article-nav-next"><a href="${escapeHtml(nav.next.href)}">${escapeHtml(nav.next.title)} →</a></span>`,
+    );
+  }
+  return `<nav class="article-nav" aria-label="記事">${parts.join(" · ")}</nav>`;
+}
+
+export function buildBlogPostingJsonLd(opts: {
+  title: string;
+  description?: string;
+  url: string;
+  datePublished?: string;
+  dateModified?: string;
+  author?: string;
+  siteTitle: string;
+  lang: string;
+}): string {
+  const data: Record<string, unknown> = {
+    "@context": "https://schema.org",
+    "@type": "BlogPosting",
+    headline: opts.title,
+    url: opts.url,
+    inLanguage: opts.lang,
+    isPartOf: { "@type": "Blog", name: opts.siteTitle },
+  };
+  if (opts.description) data.description = opts.description;
+  if (opts.datePublished) data.datePublished = opts.datePublished;
+  if (opts.dateModified) data.dateModified = opts.dateModified;
+  if (opts.author) {
+    data.author = { "@type": "Person", name: opts.author };
+  }
+  return `<script type="application/ld+json">${JSON.stringify(data)}</script>`;
+}
+
+export function renderArticleBody(concept: OkfConcept, nav?: ArticleNav): string {
   const updated =
     typeof concept.frontmatter.updated === "string"
       ? concept.frontmatter.updated
@@ -173,9 +252,16 @@ export function renderArticleBody(concept: OkfConcept): string {
     "<header>",
     `<h1>${escapeHtml(concept.title)}</h1>`,
     articleMetaHtml({ timestamp: concept.timestamp, updated, author }),
+    tagsHtml(concept.tags),
     "</header>",
   ].join("\n");
-  return `<article class="article-page">\n${header}\n<div class="article-body">\n${renderMarkdown(concept.body)}\n</div>\n</article>`;
+  return (
+    `<article class="article-page">\n` +
+    `${header}\n` +
+    `<div class="article-body">\n${renderMarkdown(concept.body)}\n</div>\n` +
+    `${articleNavHtml(nav)}\n` +
+    `</article>`
+  );
 }
 
 export function renderBlogIndexBody(opts: BlogIndexOptions): string {
