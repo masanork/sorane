@@ -5,3 +5,4 @@ dist/
 *.log
 .sorane/
 vendor/models/
+coverage/

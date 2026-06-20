@@ -5,13 +5,16 @@ import { describe, expect, test } from "./_expect.ts";
 import {
   buildFtsQuery,
   buildSearchIndex,
+  checkModelMismatch,
   chunkDocument,
   makeSnippet,
   IndexStore,
   planIncremental,
   rrfFuse,
   RRF_K,
+  search,
   searchFts,
+  searchHybrid,
 } from "../packages/search/src/index.ts";
 
 describe("buildFtsQuery", () => {
@@ -41,6 +44,19 @@ describe("makeSnippet", () => {
   test("長文を省略する", () => {
     const text = "あ".repeat(200);
     expect(makeSnippet(text, "", 40).length <= 41).toBe(true);
+  });
+
+  test("クエリ位置を中心に抜粋する", () => {
+    const text = "あ".repeat(50) + "needle" + "い".repeat(50);
+    const snip = makeSnippet(text, "needle", 30);
+    expect(snip.includes("needle")).toBe(true);
+  });
+});
+
+describe("checkModelMismatch", () => {
+  test("不一致を報告する", () => {
+    expect(checkModelMismatch({ dim: "8", model_id: "a" }, "b", 4)).toContain("dim");
+    expect(checkModelMismatch({ dim: "4", model_id: "x" }, "x", 4)).toBe(null);
   });
 });
 
@@ -116,18 +132,42 @@ Full-text search uses SQLite FTS5 trigram tokenization for Japanese partial matc
 
       );
 
-      const built = await buildSearchIndex({ contentDir, indexPath, force: true });
+      const mockEmbeddings = {
+        dimensions: 4,
+        modelId: "test",
+        quant: "q8",
+        modelSha256: "",
+        embed: async () => [1, 0, 0, 0],
+        embedBatch: async (texts: string[]) => texts.map(() => [1, 0, 0, 0]),
+      };
+
+      const built = await buildSearchIndex({
+        contentDir,
+        indexPath,
+        force: true,
+        embeddings: mockEmbeddings,
+      });
       expect(built.chunks > 0).toBe(true);
       expect(built.chunks).toBe(built.fts);
-      expect(built.mode).toBe("fts-only");
+      expect(built.chunks).toBe(built.vec);
+      expect(built.mode).toBe("hybrid");
 
       const store = new IndexStore(indexPath);
       const hits = searchFts(store, "FTS5 trigram", { k: 5 });
-      store.close();
 
       expect(hits.length > 0).toBe(true);
       expect(hits[0]!.title).toBe("Sorane Search");
       expect(hits[0]!.snippet.includes("FTS5") || hits[0]!.text.includes("FTS5")).toBe(true);
+
+      const hybrid = await searchHybrid(store, mockEmbeddings, "trigram", { k: 3 });
+      expect(hybrid.length > 0).toBe(true);
+
+      const routed = await search(store, mockEmbeddings, "trigram", { k: 3 });
+      expect(routed.length > 0).toBe(true);
+
+      const ftsOnly = await search(store, null, "trigram", { k: 3, ftsOnly: true });
+      expect(ftsOnly.length > 0).toBe(true);
+      store.close();
     } finally {
       rmSync(dir, { recursive: true, force: true });
     }

@@ -2,11 +2,27 @@ import { readFileSync } from "node:fs";
 import { join } from "node:path";
 import { describe, expect, test } from "./_expect.ts";
 import {
+  escapeHtml,
   renderMarkdown,
+  rewriteLinks,
   stripDuplicateTitleHeading,
 } from "../packages/core/src/render.ts";
 import { renderArticleBody } from "../packages/core/src/ssg.ts";
 import { normalizeConcept } from "../packages/okf/src/index.ts";
+
+describe("rewriteLinks", () => {
+  test(".md を .html に書き換える", () => {
+    expect(rewriteLinks("[x](./a.md)")).toContain("a.html");
+    expect(rewriteLinks("[x](https://ex.dev/a.md)")).toContain("a.md");
+    expect(rewriteLinks("[x](#sec)")).toContain("#sec");
+  });
+});
+
+describe("escapeHtml", () => {
+  test("特殊文字をエスケープする", () => {
+    expect(escapeHtml(`<a>&"`)).toBe("&lt;a&gt;&amp;&quot;");
+  });
+});
 
 describe("renderMarkdown", () => {
   test("はてな移行 HTML を本文として描画する", () => {

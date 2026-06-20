@@ -12,6 +12,12 @@ import {
   renderBlogIndexBody,
   renderArticleBody,
   articleFontClass,
+  rootPrefixFromRel,
+  relLinkFrom,
+  slugifyTag,
+  isSearchView,
+  buildWebSiteJsonLd,
+  buildBlogPostingJsonLd,
 } from "../packages/core/src/ssg.ts";
 import { normalizeConcept } from "../packages/okf/src/index.ts";
 import { buildAtomFeed } from "../packages/core/src/site-meta.ts";
@@ -21,6 +27,47 @@ describe("extractDescription", () => {
   test("最初の散文段落を抽出", () => {
     const d = extractDescription("# Title\n\nFirst paragraph here.\n\nSecond.\n");
     expect(d).toBe("First paragraph here.");
+  });
+
+  test("HTML 行の前の散文はスキップして次を取る", () => {
+    const d = extractDescription("# T\n\n<p>x</p>\n\nPlain text here.\n");
+    expect(d).toBe("Plain text here.");
+  });
+});
+
+describe("rootPrefixFromRel", () => {
+  test("深さに応じた prefix", () => {
+    expect(rootPrefixFromRel("index.html")).toBe("./");
+    expect(rootPrefixFromRel("archive/2007.html")).toBe("../");
+  });
+});
+
+describe("slugifyTag", () => {
+  test("タグを slug 化", () => {
+    expect(slugifyTag("Hello World")).toBe("hello-world");
+    expect(slugifyTag("  ")).toBe("");
+  });
+});
+
+describe("isSearchView", () => {
+  test("view: search を判定", () => {
+    expect(isSearchView({ view: "search" })).toBe(true);
+    expect(isSearchView({})).toBe(false);
+  });
+});
+
+describe("JSON-LD", () => {
+  test("WebSite と BlogPosting", () => {
+    const site = buildWebSiteJsonLd({ title: "S", lang: "ja", url: "https://ex.dev" });
+    expect(site).toContain("WebSite");
+    const post = buildBlogPostingJsonLd({
+      title: "T",
+      url: "https://ex.dev/t.html",
+      siteTitle: "S",
+      lang: "ja",
+      datePublished: "2025-01-01T00:00:00Z",
+    });
+    expect(post).toContain("BlogPosting");
   });
 });
 
@@ -94,6 +141,15 @@ describe("renderBlogIndexBody", () => {
     });
     expect(html.includes("<h1>My Blog</h1>")).toBe(false);
     expect(html).toContain("blog-lead");
+  });
+
+  test("showListDescriptions で description を出す", () => {
+    const html = renderBlogIndexBody({
+      siteTitle: "Blog",
+      articles: [{ title: "A", href: "a.html", timestamp: "2025-01-01T00:00:00Z", description: "lead" }],
+      showListDescriptions: true,
+    });
+    expect(html).toContain("lead");
   });
 
   test("lang: ja で日本語ラベル", () => {
