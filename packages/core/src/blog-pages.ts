@@ -1,6 +1,6 @@
 import type { ArticleListEntry } from "./ssg.ts";
 import { escapeHtml } from "./render.ts";
-import { renderBlogIndexBody, slugifyTag } from "./ssg.ts";
+import { relLinkFrom, renderBlogIndexBody, slugifyTag } from "./ssg.ts";
 
 export { slugifyTag };
 
@@ -56,40 +56,46 @@ export function paginate<T>(items: readonly T[], pageSize: number): T[][] {
   return pages;
 }
 
+export function blogPaginationRel(page: number): string {
+  return page <= 1 ? "index.html" : `page/${page}.html`;
+}
+
 export function renderArchiveListBody(
   title: string,
   description: string | undefined,
   articles: readonly ArticleListEntry[],
-  pagination?: { page: number; totalPages: number; basePath: string },
+  opts?: { fromRel: string; page?: number; totalPages?: number },
 ): string {
+  const fromRel = opts?.fromRel ?? "index.html";
   const items = articles
     .map((a) => {
       const date = a.timestamp?.slice(0, 10) ?? "";
       const dateHtml = date
         ? `<time datetime="${escapeHtml(date)}">${escapeHtml(date)}</time> · `
         : "";
+      const href = relLinkFrom(fromRel, a.href);
       return (
         `<li class="blog-list-item">` +
-        `${dateHtml}<a href="${escapeHtml(a.href)}" class="blog-list-title">${escapeHtml(a.title)}</a>` +
+        `${dateHtml}<a href="${escapeHtml(href)}" class="blog-list-title">${escapeHtml(a.title)}</a>` +
         `</li>`
       );
     })
     .join("\n");
 
   let pager = "";
-  if (pagination && pagination.totalPages > 1) {
+  const page = opts?.page;
+  const totalPages = opts?.totalPages;
+  if (page !== undefined && totalPages !== undefined && totalPages > 1) {
     const parts: string[] = [];
-    if (pagination.page > 1) {
-      const prev =
-        pagination.page === 2
-          ? pagination.basePath
-          : `${pagination.basePath.replace(/\/$/, "")}/page/${pagination.page - 1}.html`;
-      parts.push(`<a href="${escapeHtml(prev)}" rel="prev">← 前へ</a>`);
-    }
-    parts.push(`<span>${pagination.page} / ${pagination.totalPages}</span>`);
-    if (pagination.page < pagination.totalPages) {
+    if (page > 1) {
       parts.push(
-        `<a href="${escapeHtml(`${pagination.basePath.replace(/\/$/, "")}/page/${pagination.page + 1}.html`)}" rel="next">次へ →</a>`,
+        `<a href="${escapeHtml(relLinkFrom(fromRel, blogPaginationRel(page - 1)))}" rel="prev">← 前へ</a>`,
+      );
+    }
+    parts.push(`<span>${page} / ${totalPages}</span>`);
+    if (page < totalPages) {
+      parts.push(
+        `<a href="${escapeHtml(relLinkFrom(fromRel, blogPaginationRel(page + 1)))}" rel="next">次へ →</a>`,
       );
     }
     pager = `<nav class="blog-pagination" aria-label="ページ">${parts.join(" · ")}</nav>`;
@@ -109,12 +115,14 @@ export function renderArchiveListBody(
 export function renderYearArchiveIndexBody(
   siteTitle: string,
   byYear: Map<string, ArticleListEntry[]>,
+  fromRel = "archive/index.html",
 ): string {
   const years = [...byYear.keys()].sort((a, b) => b.localeCompare(a));
   const items = years
     .map((y) => {
       const count = byYear.get(y)!.length;
-      return `<li><a href="archive/${escapeHtml(y)}.html">${escapeHtml(y)}</a> (${count})</li>`;
+      const href = relLinkFrom(fromRel, `archive/${y}.html`);
+      return `<li><a href="${escapeHtml(href)}">${escapeHtml(y)}</a> (${count})</li>`;
     })
     .join("\n");
   return (
@@ -128,6 +136,7 @@ export function renderYearArchiveIndexBody(
 export function renderMonthListForYear(
   year: string,
   byMonth: Map<string, ArticleListEntry[]>,
+  fromRel = `archive/${year}.html`,
 ): string {
   const months = [...byMonth.keys()]
     .filter((ym) => ym.startsWith(year))
@@ -136,14 +145,16 @@ export function renderMonthListForYear(
     .map((ym) => {
       const count = byMonth.get(ym)!.length;
       const label = ym.slice(5);
-      return `<li><a href="archive/${escapeHtml(ym)}.html">${escapeHtml(year)}年${escapeHtml(label)}月</a> (${count})</li>`;
+      const href = relLinkFrom(fromRel, `archive/${ym}.html`);
+      return `<li><a href="${escapeHtml(href)}">${escapeHtml(year)}年${escapeHtml(label)}月</a> (${count})</li>`;
     })
     .join("\n");
+  const backHref = relLinkFrom(fromRel, "archive/index.html");
   return (
     `<div class="blog-index">\n` +
     `<header class="blog-header"><h1>${escapeHtml(year)}年</h1></header>\n` +
     `<ul class="blog-list">\n${items}\n</ul>\n` +
-    `<p><a href="archive/index.html">← 年別アーカイブ</a></p>\n` +
+    `<p><a href="${escapeHtml(backHref)}">← 年別アーカイブ</a></p>\n` +
     `</div>\n`
   );
 }

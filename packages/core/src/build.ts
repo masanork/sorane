@@ -476,11 +476,7 @@ export async function runBuild(opts: BuildOptions): Promise<BuildResult> {
         `${config.site.title} — ページ ${pageNum}`,
         undefined,
         archivePages[i]!,
-        {
-          page: pageNum,
-          totalPages: archivePages.length,
-          basePath: "index.html",
-        },
+        { fromRel: outRel, page: pageNum, totalPages: archivePages.length },
       );
       const concept = syntheticConcept(`${config.site.title} — ページ ${pageNum}`);
       const fontCss = await fontCssFor(concept, rootPrefixFromRel(outRel), bodyHtml);
@@ -504,7 +500,11 @@ export async function runBuild(opts: BuildOptions): Promise<BuildResult> {
     const byYear = groupByYear(articleSummaries);
     const byMonth = groupByYearMonth(articleSummaries);
 
-    const archiveIndexHtml = renderYearArchiveIndexBody(config.site.title, byYear);
+    const archiveIndexHtml = renderYearArchiveIndexBody(
+      config.site.title,
+      byYear,
+      "archive/index.html",
+    );
     const archiveIndexConcept = syntheticConcept(`${config.site.title} — 年別アーカイブ`);
     const archiveIndexFontCss = await fontCssFor(
       archiveIndexConcept,
@@ -526,8 +526,8 @@ export async function runBuild(opts: BuildOptions): Promise<BuildResult> {
     siteEntries.push({ url: "archive/index.html", lastmod: undefined, isIndex: false });
 
     for (const year of [...byYear.keys()].sort((a, b) => b.localeCompare(a))) {
-      const yearHtml = renderMonthListForYear(year, byMonth);
       const yearOutRel = `archive/${year}.html`;
+      const yearHtml = renderMonthListForYear(year, byMonth, yearOutRel);
       const yearConcept = syntheticConcept(`${year}年`);
       const yearFontCss = await fontCssFor(yearConcept, rootPrefixFromRel(yearOutRel), yearHtml);
       emitPage({
@@ -548,8 +548,10 @@ export async function runBuild(opts: BuildOptions): Promise<BuildResult> {
     for (const ym of [...byMonth.keys()].sort((a, b) => b.localeCompare(a))) {
       const monthArticles = byMonth.get(ym)!;
       const [y, m] = ym.split("-");
-      const bodyHtml = renderArchiveListBody(`${y}年${m}月`, undefined, monthArticles);
       const monthOutRel = `archive/${ym}.html`;
+      const bodyHtml = renderArchiveListBody(`${y}年${m}月`, undefined, monthArticles, {
+        fromRel: monthOutRel,
+      });
       const monthConcept = syntheticConcept(`${y}年${m}月`);
       const monthFontCss = await fontCssFor(monthConcept, rootPrefixFromRel(monthOutRel), bodyHtml);
       emitPage({
@@ -572,8 +574,10 @@ export async function runBuild(opts: BuildOptions): Promise<BuildResult> {
     const byTag = groupByTag(articleSummaries);
     for (const [tagSlug, tagged] of byTag) {
       const label = tagged[0]?.tags?.find((t) => slugifyTag(t) === tagSlug) ?? tagSlug;
-      const bodyHtml = renderArchiveListBody(`タグ: ${label}`, undefined, tagged);
       const tagOutRel = `tag/${tagSlug}.html`;
+      const bodyHtml = renderArchiveListBody(`タグ: ${label}`, undefined, tagged, {
+        fromRel: tagOutRel,
+      });
       const tagConcept = syntheticConcept(`タグ: ${label}`);
       const tagFontCss = await fontCssFor(tagConcept, rootPrefixFromRel(tagOutRel), bodyHtml);
       emitPage({

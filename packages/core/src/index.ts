@@ -7,6 +7,7 @@ export {
   renderArticleBody,
   renderIndexBody,
   rootPrefixFromRel,
+  relLinkFrom,
   buildSearchMount,
   buildSearchHead,
   isSearchView,

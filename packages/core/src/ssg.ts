@@ -1,3 +1,4 @@
+import { dirname, relative } from "node:path";
 import type { OkfConcept } from "@sorane/okf";
 import { escapeHtml, renderMarkdown, stripDuplicateTitleHeading } from "./render.ts";
 import { siteLabels, type SiteLabels } from "./site-labels.ts";
@@ -470,4 +471,12 @@ export function renderIndexBody(
 export function rootPrefixFromRel(relPath: string): string {
   const depth = relPath.replace(/\\/g, "/").split("/").length - 1;
   return depth > 0 ? "../".repeat(depth) : "./";
+}
+
+/** dist ルート基準のパス同士から、from ページ向けの相対リンクを作る。 */
+export function relLinkFrom(fromRel: string, toRel: string): string {
+  const from = fromRel.replace(/\\/g, "/");
+  const to = toRel.replace(/\\/g, "/");
+  const rel = relative(dirname(from), to).split("\\").join("/");
+  return rel.length > 0 ? rel : "./";
 }
