@@ -22,6 +22,7 @@ export interface EmitPageOptions {
   readonly pageKind?: "website" | "article";
   readonly docsLayout?: boolean;
   readonly docsSidebarHtml?: string;
+  readonly headerSearchHtml?: string;
 }
 
 export function emitPage(opts: EmitPageOptions): { mdOutRel: string; canonicalUrl?: string } {
@@ -62,6 +63,7 @@ export function emitPage(opts: EmitPageOptions): { mdOutRel: string; canonicalUr
     extraHead: extraHead.length > 0 ? extraHead : undefined,
     docsLayout: opts.docsLayout,
     docsSidebarHtml: opts.docsSidebarHtml,
+    headerSearchHtml: opts.headerSearchHtml,
   });
   writeFileSync(outAbs, html, "utf8");
 

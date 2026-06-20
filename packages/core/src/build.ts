@@ -334,10 +334,23 @@ export async function runBuild(opts: BuildOptions): Promise<BuildResult> {
     }
     probe.close();
   }
-  const embedSearchOnIndex =
-    docsMode && Boolean(indexParsed) && searchIndexReady;
-  const searchNavPath =
-    embedSearchOnIndex || !searchIndexReady ? undefined : searchPageRel;
+  const headerSearchEnabled = docsMode && searchIndexReady;
+  const searchNavPath = headerSearchEnabled || !searchIndexReady ? undefined : searchPageRel;
+
+  function headerSearchFor(
+    rootPrefix: string,
+    page: { readonly docsLayout?: boolean; readonly isSearch?: boolean },
+  ): { readonly headerSearchHtml?: string; readonly extraHead?: string[] } {
+    if (!headerSearchEnabled || !page.docsLayout || page.isSearch) return {};
+    return {
+      headerSearchHtml: buildSearchMount(rootPrefix, {
+        assetBaseUrl: config.search.asset_base_url,
+        mode: searchMode,
+        variant: "header",
+      }),
+      extraHead: buildSearchHead(rootPrefix, searchMode),
+    };
+  }
 
   const siteEntries: SiteEntry[] = [];
   const catalogInputs: Array<{
@@ -417,11 +430,16 @@ export async function runBuild(opts: BuildOptions): Promise<BuildResult> {
         });
 
     const fontCss = await fontCssFor(p.concept, rootPrefix, bodyHtml);
+    const headerSearch = headerSearchFor(rootPrefix, {
+      docsLayout: isDocsPage,
+      isSearch,
+    });
     const extraHead = isSearch
       ? buildSearchHead(rootPrefix, searchMode)
-      : jsonLd
-        ? [jsonLd]
-        : undefined;
+      : [
+          ...(jsonLd ? [jsonLd] : []),
+          ...(headerSearch.extraHead ?? []),
+        ];
     emitPage({
       cwd,
       config,
@@ -431,11 +449,12 @@ export async function runBuild(opts: BuildOptions): Promise<BuildResult> {
       bodyHtml,
       baseUrl,
       fontCss,
-      extraHead,
+      extraHead: extraHead.length > 0 ? extraHead : undefined,
       showArchiveNav: Boolean(indexParsed) && blogOpts.archives,
       searchPath: searchNavPath,
       docsLayout: isDocsPage,
       docsSidebarHtml: isDocsPage ? docsSidebarHtml(docsNav, outRel, outRel) : undefined,
+      headerSearchHtml: headerSearch.headerSearchHtml,
     });
     builtPages += 1;
 
@@ -467,12 +486,6 @@ export async function runBuild(opts: BuildOptions): Promise<BuildResult> {
         profileUrl: frontmatterString(p.concept.frontmatter, "profileUrl"),
         githubUrl: frontmatterString(p.concept.frontmatter, "githubUrl"),
         introHtml: introHtmlFromBody(p.concept.body, p.concept.title || config.site.title),
-        searchHtml: embedSearchOnIndex
-          ? buildSearchMount("./", {
-              assetBaseUrl: config.search.asset_base_url,
-              mode: searchMode,
-            })
-          : undefined,
         docsNav,
         lang: config.site.lang,
       });
@@ -524,9 +537,10 @@ export async function runBuild(opts: BuildOptions): Promise<BuildResult> {
       url: indexCanonical,
       lang: config.site.lang,
     });
+    const indexHeaderSearch = headerSearchFor("./", { docsLayout: docsMode });
     const indexExtraHead = [
       indexJsonLd,
-      ...(embedSearchOnIndex ? buildSearchHead("./", searchMode) : []),
+      ...(indexHeaderSearch.extraHead ?? []),
     ];
     emitPage({
       cwd,
@@ -546,6 +560,7 @@ export async function runBuild(opts: BuildOptions): Promise<BuildResult> {
       docsSidebarHtml: docsMode
         ? docsSidebarHtml(docsNav, "index.html", "index.html")
         : undefined,
+      headerSearchHtml: indexHeaderSearch.headerSearchHtml,
     });
     builtPages += 1;
     siteEntries.push({ url: "index.html", lastmod: undefined, isIndex: true });

@@ -138,7 +138,6 @@ export function renderDocsIndexBody(opts: {
   readonly siteTitle: string;
   readonly description?: string;
   readonly introHtml?: string;
-  readonly searchHtml?: string;
   readonly docsNav: readonly DocsNavItem[];
   readonly profileUrl?: string;
   readonly githubUrl?: string;
@@ -165,9 +164,6 @@ export function renderDocsIndexBody(opts: {
         `</li>`,
     )
     .join("\n");
-  const search = opts.searchHtml
-    ? `<div class="docs-index-search">\n${opts.searchHtml}</div>\n`
-    : "";
   const navSection =
     items.length > 0
       ? `<section class="docs-index-nav">\n` +
@@ -183,7 +179,6 @@ export function renderDocsIndexBody(opts: {
     (profile ? `<div class="blog-profile">${profile}</div>\n` : "") +
     `${intro}` +
     `</header>\n` +
-    `${search}` +
     `${navSection}` +
     `</div>\n`
   );

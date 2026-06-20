@@ -97,6 +97,7 @@ export interface PageShellOptions {
   readonly pageKind?: "website" | "article";
   readonly docsLayout?: boolean;
   readonly docsSidebarHtml?: string;
+  readonly headerSearchHtml?: string;
 }
 
 export interface ArticleListEntry {
@@ -194,6 +195,10 @@ export function buildPage(opts: PageShellOptions): string {
     navParts.length > 0
       ? `<nav class="site-nav" aria-label="サイト">${navParts.join("")}</nav>`
       : "";
+  const headerEnd =
+    opts.headerSearchHtml || nav
+      ? `<div class="site-header-end">\n${opts.headerSearchHtml ?? ""}${nav}\n</div>\n`
+      : "";
   const skipLink = opts.docsLayout
     ? `<a href="#main" class="skip-link">${escapeHtml(labels.skipToContent)}</a>\n`
     : "";
@@ -220,7 +225,7 @@ export function buildPage(opts: PageShellOptions): string {
     `${skipLink}` +
     `<header class="site-header">\n` +
     `<a class="site-title" href="${escapeHtml(home)}">${escapeHtml(opts.siteTitle)}</a>\n` +
-    `${nav}\n` +
+    `${headerEnd}` +
     `</header>\n` +
     `${mainBlock}` +
     `<footer class="site-footer"><p><a href="${escapeHtml(home)}">${escapeHtml(opts.siteTitle)}</a></p></footer>\n` +
@@ -441,12 +446,18 @@ export function isSearchView(frontmatter: Record<string, unknown>): boolean {
 }
 
 export type SearchMountMode = "fts" | "hybrid";
+export type SearchMountVariant = "page" | "header";
 
 export function buildSearchMount(
   rootPrefix: string,
-  opts: { readonly assetBaseUrl?: string; readonly mode?: SearchMountMode } = {},
+  opts: {
+    readonly assetBaseUrl?: string;
+    readonly mode?: SearchMountMode;
+    readonly variant?: SearchMountVariant;
+  } = {},
 ): string {
   const mode = opts.mode ?? "fts";
+  const variant = opts.variant ?? "page";
   const facetOpts = [
     ["", "すべて"],
     ["article", "記事"],
@@ -455,10 +466,6 @@ export function buildSearchMount(
     .map(([v, l]) => `<option value="${escapeHtml(v!)}">${escapeHtml(l!)}</option>`)
     .join("");
   const indexUrl = `${rootPrefix}assets/search-index.json`;
-  const status =
-    mode === "hybrid"
-      ? "検索には JavaScript（と初回のみ埋め込みモデルの読み込み）が必要です。"
-      : "検索には JavaScript が必要です。";
   const hybridAttrs =
     mode === "hybrid"
       ? (() => {
@@ -472,14 +479,26 @@ export function buildSearchMount(
           );
         })()
       : ` data-mode="fts"`;
+  const searchClass = variant === "header" ? "search search--header" : "search";
+  const form =
+    variant === "header"
+      ? `<form class="search-form" role="search">` +
+        `<input type="search" name="q" class="search-input" placeholder="検索" autocomplete="off" aria-label="検索">` +
+        `<button type="submit" class="search-submit" aria-label="検索">検索</button>` +
+        `</form>`
+      : `<form class="search-form" role="search">` +
+        `<input type="search" name="q" class="search-input" placeholder="キーワードで検索" autocomplete="off" aria-label="検索キーワード">` +
+        `<select name="type" class="search-facet" aria-label="種別で絞り込み">${facetOpts}</select>` +
+        `<button type="submit" class="search-submit">検索</button>` +
+        `</form>`;
+  const status =
+    variant === "header"
+      ? ""
+      : `<p class="search-status" data-search-status></p>`;
   return (
-    `<div class="search" data-search data-index="${escapeHtml(indexUrl)}"${hybridAttrs}>` +
-    `<form class="search-form" role="search">` +
-    `<input type="search" name="q" class="search-input" placeholder="キーワードで検索" autocomplete="off" aria-label="検索キーワード">` +
-    `<select name="type" class="search-facet" aria-label="種別で絞り込み">${facetOpts}</select>` +
-    `<button type="submit" class="search-submit">検索</button>` +
-    `</form>` +
-    `<p class="search-status" data-search-status>${escapeHtml(status)}</p>` +
+    `<div class="${searchClass}" data-search data-index="${escapeHtml(indexUrl)}"${hybridAttrs}>` +
+    `${form}` +
+    `${status}` +
     `<ol class="search-results" data-search-results></ol>` +
     `</div>\n`
   );

@@ -98,6 +98,7 @@ function setup(root) {
   const mode = root.getAttribute("data-mode") || "fts";
   const modelBase = root.getAttribute("data-model-base");
   const libBase = root.getAttribute("data-lib-base");
+  const compact = root.classList.contains("search--header");
   if (!form || !input || !indexUrl) return;
 
   let index = null;
@@ -105,7 +106,8 @@ function setup(root) {
   let busy = false;
 
   const setStatus = (msg) => {
-    if (status) status.textContent = msg;
+    if (compact || !status) return;
+    status.textContent = msg;
   };
 
   async function loadIndex() {
