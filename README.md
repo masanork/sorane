@@ -60,10 +60,6 @@ Body markdown here.
 | `sitemap.xml` | URL index |
 | `okf/bundle.tar.gz` | OKF bundle `{type}/{slug}.md` |
 
-## Legacy Python SSG
-
-The original Python implementation lives in `legacy/python/`.
-
 ## Font subsetting
 
 bunsen WASM (allsorts) per-page WOFF2 subsetting. Configure in `sorane.yaml`:
@@ -80,5 +76,5 @@ Pages with `noFontEmbedding: true` in frontmatter use system fonts.
 
 ## Roadmap
 
-- FTS search
-- bunsen font-stack routing (multi-source)
+- `@sorane/search` — FTS5 + optional embeddings (port from mrlgss `rag/`)
+- Astro theme layer (reads sorane build output)
