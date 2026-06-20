@@ -8,6 +8,8 @@ All notable changes to sorane are documented here. Versioning follows [SemVer](h
 
 - Official docs site (`website/`) deployed to sorane.pages.dev
 - `excludeFromList` frontmatter to omit pages from blog index/archive lists
+- Docs UX: `docs.nav` sidebar, page TOC, prev/next pager, heading anchors
+- `sorane.yaml` `docs.nav` for documentation site navigation order
 
 ## [0.1.0] - 2026-06-20
 

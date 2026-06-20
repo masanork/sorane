@@ -95,6 +95,8 @@ export interface PageShellOptions {
   readonly showArchiveNav?: boolean;
   readonly searchPath?: string;
   readonly pageKind?: "website" | "article";
+  readonly docsLayout?: boolean;
+  readonly docsSidebarHtml?: string;
 }
 
 export interface ArticleListEntry {
@@ -195,16 +197,35 @@ export function buildPage(opts: PageShellOptions): string {
     navParts.length > 0
       ? `<nav class="site-nav" aria-label="サイト">${navParts.join("")}</nav>`
       : "";
+  const skipLink = opts.docsLayout
+    ? `<a href="#main" class="skip-link">${escapeHtml(labels.skipToContent)}</a>\n`
+    : "";
+  const bodyClass = opts.docsLayout ? ' class="docs-site"' : "";
+  let mainBlock = `<main id="main">\n${opts.bodyHtml}\n</main>\n`;
+  if (opts.docsLayout && opts.docsSidebarHtml) {
+    mainBlock =
+      `<div class="docs-layout">\n` +
+      `<aside class="docs-sidebar">\n` +
+      `<details class="docs-nav-toggle">\n` +
+      `<summary>${escapeHtml(labels.docsMenu)}</summary>\n` +
+      `${opts.docsSidebarHtml}` +
+      `</details>\n` +
+      `<div class="docs-sidebar-desktop">\n${opts.docsSidebarHtml}</div>\n` +
+      `</aside>\n` +
+      `<div class="docs-main" id="main">\n${opts.bodyHtml}\n</div>\n` +
+      `</div>\n`;
+  }
   return (
     "<!doctype html>\n" +
     `<html lang="${escapeHtml(lang)}">\n` +
     `<head>\n${head.join("\n")}\n</head>\n` +
-    "<body>\n" +
+    `<body${bodyClass}>\n` +
+    `${skipLink}` +
     `<header class="site-header">\n` +
     `<a class="site-title" href="${escapeHtml(home)}">${escapeHtml(opts.siteTitle)}</a>\n` +
     `${nav}\n` +
     `</header>\n` +
-    `<main>\n${opts.bodyHtml}\n</main>\n` +
+    `${mainBlock}` +
     `<footer class="site-footer"><p><a href="${escapeHtml(home)}">${escapeHtml(opts.siteTitle)}</a></p></footer>\n` +
     "</body>\n</html>\n"
   );

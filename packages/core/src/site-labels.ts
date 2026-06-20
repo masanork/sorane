@@ -6,6 +6,13 @@ export interface SiteLabels {
   readonly readMore: string;
   readonly pastArticles: string;
   readonly updated: string;
+  readonly toc: string;
+  readonly documentation: string;
+  readonly prevPage: string;
+  readonly nextPage: string;
+  readonly pageNav: string;
+  readonly skipToContent: string;
+  readonly docsMenu: string;
 }
 
 const JA: SiteLabels = {
@@ -16,6 +23,13 @@ const JA: SiteLabels = {
   readMore: "続きを読む →",
   pastArticles: "過去の記事",
   updated: "更",
+  toc: "目次",
+  documentation: "ドキュメント",
+  prevPage: "前へ",
+  nextPage: "次へ",
+  pageNav: "ページ",
+  skipToContent: "本文へスキップ",
+  docsMenu: "ドキュメントメニュー",
 };
 
 const EN: SiteLabels = {
@@ -26,6 +40,13 @@ const EN: SiteLabels = {
   readMore: "Read more →",
   pastArticles: "Archive",
   updated: "upd",
+  toc: "On this page",
+  documentation: "Documentation",
+  prevPage: "Previous",
+  nextPage: "Next",
+  pageNav: "Page",
+  skipToContent: "Skip to content",
+  docsMenu: "Documentation menu",
 };
 
 export function siteLabels(lang: string): SiteLabels {
@@ -43,6 +64,12 @@ export function siteChromeText(lang: string, siteTitle: string, includeSearch = 
     labels.readMore,
     labels.pastArticles,
     labels.updated,
+    labels.toc,
+    labels.documentation,
+    labels.prevPage,
+    labels.nextPage,
+    labels.skipToContent,
+    labels.docsMenu,
     "サイト",
   ];
   if (includeSearch) parts.push(labels.search);

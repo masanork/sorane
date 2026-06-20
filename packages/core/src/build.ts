@@ -59,6 +59,13 @@ import {
   type SiteEntry,
 } from "./site-meta.ts";
 import { renderMarkdown } from "./render.ts";
+import {
+  docsNavFor,
+  docsSidebarHtml,
+  renderDocsArticleFromConcept,
+  renderDocsIndexBody,
+  resolveDocsNav,
+} from "./docs.ts";
 
 export interface BuildOptions {
   readonly cwd: string;
@@ -265,6 +272,19 @@ export async function runBuild(opts: BuildOptions): Promise<BuildResult> {
     (p) => p.concept.type === "index" || slugFromRel(p.relPath) === "index",
   );
 
+  const titleByHref = new Map<string, string>();
+  for (const p of parsed) {
+    const slug = slugFromRel(p.relPath);
+    const outRel =
+      p.concept.type === "index" || slug === "index"
+        ? "index.html"
+        : resolvePermalink(config.build.permalink, slug, p.concept.timestamp);
+    titleByHref.set(outRel, p.concept.title);
+  }
+  const docsNav = resolveDocsNav(config.docs?.nav, titleByHref);
+  const docsMode = docsNav.length > 0;
+  const docsHrefSet = new Set(docsNav.map((item) => item.href));
+
   const fontProcessor = await createFontProcessor(cwd, config.fonts, outDir);
 
   const sourceToUrl = new Map<string, string>();
@@ -336,13 +356,20 @@ export async function runBuild(opts: BuildOptions): Promise<BuildResult> {
     const depth = outRel.replace(/\\/g, "/").split("/").length - 1;
     const rootPrefix = depth > 0 ? "../".repeat(depth) : "./";
     const isSearch = isSearchView(p.concept.frontmatter);
-    const nav = isSearch ? undefined : articleNavFor(outRel, articleSummaries);
+    const isDocsPage = docsMode && docsHrefSet.has(outRel);
+    const nav = isSearch
+      ? undefined
+      : isDocsPage
+        ? docsNavFor(outRel, docsNav)
+        : articleNavFor(outRel, articleSummaries);
     const bodyHtml = isSearch
       ? buildSearchMount(rootPrefix, config.search.asset_base_url) +
         (p.concept.body.trim()
           ? `<div class="search-intro">${renderMarkdown(p.concept.body)}</div>`
           : "")
-      : renderArticleBody(p.concept, nav);
+      : isDocsPage
+        ? renderDocsArticleFromConcept(p.concept, nav, config.site.lang)
+        : renderArticleBody(p.concept, nav);
 
     const updated = frontmatterString(p.concept.frontmatter, "updated");
     const author = frontmatterString(p.concept.frontmatter, "author");
@@ -378,6 +405,8 @@ export async function runBuild(opts: BuildOptions): Promise<BuildResult> {
       extraHead,
       showArchiveNav: Boolean(indexParsed) && blogOpts.archives,
       searchPath: searchNavPath,
+      docsLayout: isDocsPage,
+      docsSidebarHtml: isDocsPage ? docsSidebarHtml(docsNav, outRel, outRel) : undefined,
     });
     builtPages += 1;
 
@@ -402,7 +431,16 @@ export async function runBuild(opts: BuildOptions): Promise<BuildResult> {
     const useBlogLayout = p.concept.type === "index";
 
     let bodyHtml: string;
-    if (useBlogLayout) {
+    if (docsMode && useBlogLayout) {
+      bodyHtml = renderDocsIndexBody({
+        siteTitle: p.concept.title || config.site.title,
+        description: p.concept.description ?? config.site.description,
+        profileUrl: frontmatterString(p.concept.frontmatter, "profileUrl"),
+        introHtml: introHtmlFromBody(p.concept.body, p.concept.title || config.site.title),
+        docsNav,
+        lang: config.site.lang,
+      });
+    } else if (useBlogLayout) {
       const featuredMode = blogOpts.featured_mode;
       const featuredBody =
         latestParsed && featuredMode !== "off"
@@ -463,6 +501,10 @@ export async function runBuild(opts: BuildOptions): Promise<BuildResult> {
       extraHead: [indexJsonLd],
       showArchiveNav: blogOpts.archives,
       searchPath: searchNavPath,
+      docsLayout: docsMode,
+      docsSidebarHtml: docsMode
+        ? docsSidebarHtml(docsNav, "index.html", "index.html")
+        : undefined,
     });
     builtPages += 1;
     siteEntries.push({ url: "index.html", lastmod: undefined, isIndex: true });

@@ -1,17 +1,22 @@
 import type { Schema } from "hast-util-sanitize";
+import type { Root as HastRoot } from "hast";
+import rehypeAutolinkHeadings from "rehype-autolink-headings";
 import rehypeRaw from "rehype-raw";
 import rehypeSanitize, { defaultSchema } from "rehype-sanitize";
+import { SlugLedger } from "@sorane/search";
 import rehypeStringify from "rehype-stringify";
 import remarkGfm from "remark-gfm";
 import remarkParse from "remark-parse";
 import remarkRehype from "remark-rehype";
 import { unified } from "unified";
+import { visit } from "unist-util-visit";
 
 const schemaAttributes = defaultSchema.attributes ?? {};
 
 /** はてな移行記事の HTML を許可しつつ script 等は落とす。 */
 const sanitizeSchema: Schema = {
   ...defaultSchema,
+  clobberPrefix: "",
   attributes: {
     ...schemaAttributes,
     a: [
@@ -19,8 +24,14 @@ const sanitizeSchema: Schema = {
         (entry) => (typeof entry === "string" ? entry : entry[0]) !== "className",
       ),
       "title",
-      ["className", "data-footnote-backref", "keyword", "okeyword"],
+      ["className", "data-footnote-backref", "keyword", "okeyword", "heading-anchor"],
     ],
+    h1: [...(schemaAttributes.h1 ?? []), "id"],
+    h2: [...(schemaAttributes.h2 ?? []), "id"],
+    h3: [...(schemaAttributes.h3 ?? []), "id"],
+    h4: [...(schemaAttributes.h4 ?? []), "id"],
+    h5: [...(schemaAttributes.h5 ?? []), "id"],
+    h6: [...(schemaAttributes.h6 ?? []), "id"],
     blockquote: [
       ...(schemaAttributes.blockquote ?? []),
       ["className", "twitter-tweet"],
@@ -52,6 +63,76 @@ const sanitizeSchema: Schema = {
   ],
 };
 
+export interface TocEntry {
+  readonly depth: number;
+  readonly id: string;
+  readonly text: string;
+}
+
+export interface RenderedMarkdown {
+  readonly html: string;
+  readonly outline: readonly TocEntry[];
+}
+
+function hastToPlainText(node: { type?: string; value?: string; children?: unknown[] }): string {
+  if (node.type === "text" && typeof node.value === "string") return node.value;
+  if (!node.children) return "";
+  return node.children
+    .map((child) => hastToPlainText(child as { type?: string; value?: string; children?: unknown[] }))
+    .join("");
+}
+
+function rehypeHeadingIds() {
+  const ledger = new SlugLedger();
+  return (tree: HastRoot) => {
+    visit(tree, "element", (node) => {
+      const m = /^h([1-6])$/.exec(node.tagName);
+      if (!m) return;
+      const text = hastToPlainText(node).trim();
+      if (!text) return;
+      node.properties ??= {};
+      node.properties.id = ledger.next(text);
+    });
+  };
+}
+
+function rehypeCollectOutline(outline: TocEntry[]) {
+  return () => (tree: HastRoot) => {
+    visit(tree, "element", (node) => {
+      const m = /^h([2-4])$/.exec(node.tagName);
+      if (!m) return;
+      const id = node.properties?.id;
+      if (typeof id !== "string" || id.length === 0) return;
+      const text = hastToPlainText(node)
+        .replace(/\s*#\s*$/, "")
+        .trim();
+      if (!text) return;
+      outline.push({ depth: Number(m[1]), id, text });
+    });
+  };
+}
+
+function markdownPipeline(outline: TocEntry[]) {
+  return unified()
+    .use(remarkParse)
+    .use(remarkGfm)
+    .use(remarkRehype, { allowDangerousHtml: true })
+    .use(rehypeRaw)
+    .use(rehypeHeadingIds)
+    .use(rehypeAutolinkHeadings, {
+      behavior: "append",
+      properties: {
+        className: ["heading-anchor"],
+        ariaHidden: "true",
+        tabIndex: -1,
+      },
+      content: { type: "text", value: "#" },
+    })
+    .use(rehypeCollectOutline(outline))
+    .use(rehypeSanitize, sanitizeSchema)
+    .use(rehypeStringify);
+}
+
 /** 相対 .md リンクを .html に書き換える。 */
 export function rewriteLinks(markdown: string): string {
   return markdown.replace(
@@ -80,18 +161,23 @@ export function stripDuplicateTitleHeading(markdown: string, title: string): str
   return rest.join("\n");
 }
 
+/** Markdown 本文をサニタイズ済み HTML と見出し outline に変換する。 */
+export function renderMarkdownDocument(markdown: string): RenderedMarkdown {
+  const outline: TocEntry[] = [];
+  const html = markdownPipeline(outline)
+    .processSync(rewriteLinks(markdown))
+    .toString()
+    .replace(/\r\n?/g, "\n")
+    .trimEnd();
+  return {
+    html: html.length > 0 ? `${html}\n` : "",
+    outline,
+  };
+}
+
 /** Markdown 本文をサニタイズ済み HTML に変換する。 */
 export function renderMarkdown(markdown: string): string {
-  const html = unified()
-    .use(remarkParse)
-    .use(remarkGfm)
-    .use(remarkRehype, { allowDangerousHtml: true })
-    .use(rehypeRaw)
-    .use(rehypeSanitize, sanitizeSchema)
-    .use(rehypeStringify)
-    .processSync(rewriteLinks(markdown))
-    .toString();
-  return html.replace(/\r\n?/g, "\n").trimEnd() + "\n";
+  return renderMarkdownDocument(markdown).html;
 }
 
 export function escapeHtml(text: string): string {

@@ -20,6 +20,8 @@ export interface EmitPageOptions {
   readonly showArchiveNav?: boolean;
   readonly searchPath?: string;
   readonly pageKind?: "website" | "article";
+  readonly docsLayout?: boolean;
+  readonly docsSidebarHtml?: string;
 }
 
 export function emitPage(opts: EmitPageOptions): { mdOutRel: string; canonicalUrl?: string } {
@@ -58,6 +60,8 @@ export function emitPage(opts: EmitPageOptions): { mdOutRel: string; canonicalUr
     pageKind: opts.pageKind ?? (opts.isIndex ? "website" : "article"),
     machineSources: [{ href: mdOutRel, type: "text/markdown" }],
     extraHead: extraHead.length > 0 ? extraHead : undefined,
+    docsLayout: opts.docsLayout,
+    docsSidebarHtml: opts.docsSidebarHtml,
   });
   writeFileSync(outAbs, html, "utf8");
 

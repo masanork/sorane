@@ -40,7 +40,8 @@ describe("renderMarkdown", () => {
 
   test("通常の Markdown も描画する", () => {
     const html = renderMarkdown("# Hello\n\nPlain **text**.\n");
-    expect(html).toContain("<h1>Hello</h1>");
+    expect(html).toContain("<h1");
+    expect(html).toContain("Hello");
     expect(html).toContain("<strong>text</strong>");
   });
 });

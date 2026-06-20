@@ -14,5 +14,14 @@ build:
     tags: false
     featured_mode: off
 
+docs:
+  nav:
+    - getting-started.html
+    - cli.html
+    - configuration.html
+    - okf-profile.html
+    - deployment.html
+    - releases.html
+
 fonts:
   enabled: false

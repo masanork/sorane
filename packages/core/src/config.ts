@@ -42,6 +42,13 @@ export interface SearchConfig {
   readonly bundle_model?: boolean;
 }
 
+export type DocsNavSpec = string | { readonly href: string; readonly title?: string };
+
+export interface DocsConfig {
+  /** ドキュメントサイトのサイドバー順（href は dist 基準、例: getting-started.html） */
+  readonly nav?: readonly DocsNavSpec[];
+}
+
 export interface FontConfigInput {
   readonly enabled?: boolean;
   readonly family?: string;
@@ -84,6 +91,7 @@ export interface SoraneConfig {
     readonly model_id: string;
     readonly asset_base_url: string;
   };
+  readonly docs?: DocsConfig;
 }
 
 export const DEFAULT_CONFIG: SoraneConfig = {
@@ -134,6 +142,7 @@ export function mergeConfig(partial: Partial<SoraneConfig>): SoraneConfig {
     },
     fonts: { ...DEFAULT_CONFIG.fonts, ...partial.fonts },
     search: { ...DEFAULT_CONFIG.search, ...partial.search },
+    docs: partial.docs ? { nav: partial.docs.nav } : undefined,
   };
 }
 
