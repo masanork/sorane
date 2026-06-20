@@ -8,6 +8,7 @@
   "dependencies": {
     "@sorane/core": "0.1.0",
     "@sorane/okf": "0.1.0",
+    "@sorane/search": "0.1.0",
     "js-yaml": "^4.1.0"
   }
 }

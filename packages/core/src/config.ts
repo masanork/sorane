@@ -19,6 +19,11 @@ export interface BlogBuildConfig {
   readonly tags?: boolean;
 }
 
+export interface SearchConfig {
+  /** FTS インデックスの出力先（既定: .sorane/index.db） */
+  readonly index?: string;
+}
+
 export interface FontConfigInput {
   readonly enabled?: boolean;
   readonly family?: string;
@@ -55,6 +60,9 @@ export interface SoraneConfig {
     readonly roles?: FontRoles;
     readonly sources?: Readonly<Record<string, FontSourceSpec>>;
   };
+  readonly search: {
+    readonly index: string;
+  };
 }
 
 export const DEFAULT_CONFIG: SoraneConfig = {
@@ -82,6 +90,9 @@ export const DEFAULT_CONFIG: SoraneConfig = {
     weight: "450",
     skip_key: "noFontEmbedding",
   },
+  search: {
+    index: ".sorane/index.db",
+  },
 };
 
 export function mergeConfig(partial: Partial<SoraneConfig>): SoraneConfig {
@@ -93,6 +104,7 @@ export function mergeConfig(partial: Partial<SoraneConfig>): SoraneConfig {
       blog: { ...DEFAULT_CONFIG.build.blog, ...partial.build?.blog },
     },
     fonts: { ...DEFAULT_CONFIG.fonts, ...partial.fonts },
+    search: { ...DEFAULT_CONFIG.search, ...partial.search },
   };
 }
 

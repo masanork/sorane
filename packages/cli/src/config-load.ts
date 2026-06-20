@@ -17,6 +17,7 @@ export function loadSoraneConfig(cwd: string): SoraneConfig {
     site: doc.site as SoraneConfig["site"] | undefined,
     build: doc.build as SoraneConfig["build"] | undefined,
     fonts: doc.fonts as SoraneConfig["fonts"] | undefined,
+    search: doc.search as SoraneConfig["search"] | undefined,
   });
 }
 

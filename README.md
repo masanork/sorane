@@ -20,6 +20,8 @@ npm run build -- --cwd examples/minimal --clean
 npx sorane build [--cwd <dir>] [--clean]
 npx sorane validate [--cwd <dir>]
 npx sorane migrate [--cwd <dir>] [--dry-run]
+npx sorane index [--cwd <dir>] [--force]
+npx sorane search <query> [--cwd <dir>] [--type article] [--tag <slug>] [--json]
 ```
 
 Site projects keep content in a separate directory and configure the build with `sorane.yaml`.
@@ -74,7 +76,16 @@ fonts:
 
 Pages with `noFontEmbedding: true` in frontmatter use system fonts.
 
+## Search (FTS)
+
+Phase 1: SQLite FTS5 trigram index at `.sorane/index.db` (configurable via `search.index` in `sorane.yaml`).
+
+```bash
+npx sorane index --cwd examples/minimal
+npx sorane search "OKF" --cwd examples/minimal
+```
+
 ## Roadmap
 
-- `@sorane/search` — FTS5 + optional embeddings (port from mrlgss `rag/`)
+- Embeddings + hybrid search (port from mrlgss `rag/`)
 - Astro theme layer (reads sorane build output)
