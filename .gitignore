@@ -1,5 +1,7 @@
 node_modules/
 dist/
+website/dist/
+website/.sorane/
 .DS_Store
 .env
 *.log

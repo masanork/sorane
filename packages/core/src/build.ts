@@ -97,7 +97,8 @@ function isBlogArticle(concept: ParsedConcept["concept"]): boolean {
   return (
     concept.type === "article" &&
     !isSystemPage(concept) &&
-    !isSearchView(concept.frontmatter)
+    !isSearchView(concept.frontmatter) &&
+    concept.frontmatter.excludeFromList !== true
   );
 }
 
