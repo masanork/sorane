@@ -1,3 +1,4 @@
+import { buildCompactAiBadgeHtml } from "./ai-disclosure.ts";
 import type { ArticleListEntry } from "./ssg.ts";
 import { escapeHtml } from "./render.ts";
 import { relLinkFrom, renderBlogIndexBody, slugifyTag } from "./ssg.ts";
@@ -64,9 +65,16 @@ export function renderArchiveListBody(
   title: string,
   description: string | undefined,
   articles: readonly ArticleListEntry[],
-  opts?: { fromRel: string; page?: number; totalPages?: number },
+  opts?: {
+    fromRel: string;
+    page?: number;
+    totalPages?: number;
+    showOnLists?: boolean;
+    listRootPrefix?: string;
+  },
 ): string {
   const fromRel = opts?.fromRel ?? "index.html";
+  const listPrefix = opts?.listRootPrefix ?? relLinkFrom(fromRel, "index.html").replace(/index\.html$/, "");
   const items = articles
     .map((a) => {
       const date = a.timestamp?.slice(0, 10) ?? "";
@@ -74,9 +82,14 @@ export function renderArchiveListBody(
         ? `<time datetime="${escapeHtml(date)}">${escapeHtml(date)}</time> · `
         : "";
       const href = relLinkFrom(fromRel, a.href);
+      const badge =
+        opts?.showOnLists && a.aiDisclosure?.showBadge
+          ? buildCompactAiBadgeHtml(a.aiDisclosure, { rootPrefix: listPrefix })
+          : "";
       return (
         `<li class="blog-list-item">` +
         `${dateHtml}<a href="${escapeHtml(href)}" class="blog-list-title">${escapeHtml(a.title)}</a>` +
+        `${badge}` +
         `</li>`
       );
     })

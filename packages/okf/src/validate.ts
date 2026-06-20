@@ -3,18 +3,22 @@ import addFormats from "ajv-formats";
 import { readFileSync } from "node:fs";
 import { dirname, join } from "node:path";
 import { fileURLToPath } from "node:url";
+import { validateDisclosureFields } from "./digital-source-type.ts";
 import { extract } from "./extract.ts";
 import { normalizeConcept } from "./normalize.ts";
 import { parseYaml } from "./yaml.ts";
 
 const __dirname = dirname(fileURLToPath(import.meta.url));
 const REPO_ROOT = join(__dirname, "../../..");
-const SCHEMA_PATH = join(REPO_ROOT, "profile/sorane-okf-0.1.schema.json");
+const PROFILE_SCHEMA_DIR = join(REPO_ROOT, "profile");
+
+const SUPPORTED_PROFILE_RE = /^sorane-okf\/(0\.[12])$/;
+const DEFAULT_PROFILE = "sorane-okf/0.1";
 
 const SUPPORTED_TYPES = new Set(["article", "index"]);
 
 export interface ValidationIssue {
-  readonly where: "structure" | "frontmatter" | "type";
+  readonly where: "structure" | "frontmatter" | "type" | "profile";
   readonly message: string;
   readonly instancePath?: string;
 }
@@ -27,15 +31,39 @@ export interface ValidationResult {
   readonly warnings: readonly string[];
 }
 
-let compiledValidator: ReturnType<Ajv["compile"]> | null = null;
+const validatorCache = new Map<string, ReturnType<Ajv["compile"]>>();
 
-function getValidator(): ReturnType<Ajv["compile"]> {
-  if (compiledValidator) return compiledValidator;
-  const ajv = new Ajv({ allErrors: true, strict: false });
-  addFormats(ajv);
-  const schema = JSON.parse(readFileSync(SCHEMA_PATH, "utf8"));
-  compiledValidator = ajv.compile(schema);
-  return compiledValidator;
+export function validateProfileFormat(
+  profile: string | undefined,
+): ValidationIssue | null {
+  if (profile === undefined) return null;
+  if (!SUPPORTED_PROFILE_RE.test(profile)) {
+    return {
+      where: "profile",
+      message: `Unsupported profile "${profile}"; supported: sorane-okf/0.1, sorane-okf/0.2`,
+    };
+  }
+  return null;
+}
+
+export function resolveProfileSchema(profile: string): string {
+  const m = profile.match(SUPPORTED_PROFILE_RE);
+  if (!m) {
+    throw new Error(`unsupported profile: ${profile}`);
+  }
+  return join(PROFILE_SCHEMA_DIR, `sorane-okf-${m[1]}.schema.json`);
+}
+
+function getValidatorForProfile(profile: string): ReturnType<Ajv["compile"]> {
+  const path = resolveProfileSchema(profile);
+  let v = validatorCache.get(path);
+  if (!v) {
+    const ajv = new Ajv({ allErrors: true, strict: false });
+    addFormats(ajv);
+    v = ajv.compile(JSON.parse(readFileSync(path, "utf8")));
+    validatorCache.set(path, v);
+  }
+  return v;
 }
 
 function slugFromPath(filePath: string): string {
@@ -43,7 +71,7 @@ function slugFromPath(filePath: string): string {
   return base.replace(/\.md$/i, "");
 }
 
-/** 1 つの markdown ソースを sorane-okf/0.1 で検証する。 */
+/** 1 つの markdown ソースを sorane-okf プロファイルで検証する。 */
 export function validateSource(file: string, source: string): ValidationResult {
   const { frontmatter, body } = extract(source);
   const issues: ValidationIssue[] = [];
@@ -89,6 +117,13 @@ export function validateSource(file: string, source: string): ValidationResult {
     };
   }
 
+  const profileIssue = validateProfileFormat(
+    typeof raw.profile === "string" ? raw.profile : undefined,
+  );
+  if (profileIssue) {
+    issues.push(profileIssue);
+  }
+
   const concept = normalizeConcept(raw, body, slugFromPath(file));
   warnings.push(...concept.warnings);
 
@@ -104,26 +139,44 @@ export function validateSource(file: string, source: string): ValidationResult {
     });
   }
 
-  const validate = getValidator();
-  const fmForSchema: Record<string, unknown> = {
-    type: concept.type || "article",
-    title: concept.title,
-    ...concept.frontmatter,
-  };
-  if (concept.timestamp) fmForSchema.timestamp = concept.timestamp;
-  if (concept.description) fmForSchema.description = concept.description;
-  if (concept.tags) fmForSchema.tags = [...concept.tags];
-  if (concept.resource) fmForSchema.resource = concept.resource;
-  if (concept.profile) fmForSchema.profile = concept.profile;
+  const profile =
+    typeof concept.profile === "string" && SUPPORTED_PROFILE_RE.test(concept.profile)
+      ? concept.profile
+      : DEFAULT_PROFILE;
 
-  if (!validate(fmForSchema)) {
-    for (const err of validate.errors ?? []) {
-      issues.push({
-        where: "frontmatter",
-        instancePath: err.instancePath || "/",
-        message: err.message ?? "invalid",
-      });
+  if (issues.every((i) => i.where !== "profile")) {
+    const validate = getValidatorForProfile(profile);
+    const fmForSchema: Record<string, unknown> = {
+      type: concept.type || "article",
+      title: concept.title,
+      ...concept.frontmatter,
+    };
+    if (concept.timestamp) fmForSchema.timestamp = concept.timestamp;
+    if (concept.description) fmForSchema.description = concept.description;
+    if (concept.tags) fmForSchema.tags = [...concept.tags];
+    if (concept.resource) fmForSchema.resource = concept.resource;
+    if (concept.profile) fmForSchema.profile = concept.profile;
+
+    if (!validate(fmForSchema)) {
+      for (const err of validate.errors ?? []) {
+        issues.push({
+          where: "frontmatter",
+          instancePath: err.instancePath || "/",
+          message: err.message ?? "invalid",
+        });
+      }
     }
+  }
+
+  const strictDisclosure = profile === "sorane-okf/0.2";
+  const disclosure = validateDisclosureFields(concept.frontmatter, strictDisclosure);
+  warnings.push(...disclosure.warnings);
+  for (const d of disclosure.issues) {
+    issues.push({
+      where: "frontmatter",
+      instancePath: `/${d.path}`,
+      message: d.message,
+    });
   }
 
   return {

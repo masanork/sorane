@@ -13,6 +13,8 @@ export interface EmitSearchAssetsOptions {
   readonly bundleModel?: boolean;
   readonly assetBaseUrl?: string;
   readonly sourceToUrl: (source: string) => string;
+  readonly contentDir?: string;
+  readonly machineReadable?: boolean;
   readonly repoRoot?: string;
   readonly onProgress?: (message: string) => void;
 }
@@ -39,6 +41,10 @@ export async function emitSearchAssets(
     join(assetsDir, "search-index.json"),
     opts.sourceToUrl,
     mode,
+    {
+      contentDir: opts.contentDir,
+      machineReadable: opts.machineReadable,
+    },
   );
 
   if (!webIdx.written) {

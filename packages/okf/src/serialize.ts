@@ -8,6 +8,10 @@ const KEY_ORDER = [
   "resource",
   "tags",
   "profile",
+  "digitalSourceType",
+  "euAiLabel",
+  "aiDisclosureNote",
+  "aiSystems",
 ] as const;
 
 function formatScalar(value: unknown): string {
@@ -23,6 +27,19 @@ function formatScalar(value: unknown): string {
   if (/^(true|false|null|yes|no|on|off|~)$/i.test(s)) return `'${s.replace(/'/g, "''")}'`;
   if (/^[+-]?(\d+\.?\d*|\.\d+)([eE][+-]?\d+)?$/.test(s)) return `'${s.replace(/'/g, "''")}'`;
   return s;
+}
+
+function appendAiSystemsEntry(
+  lines: string[],
+  key: string,
+  systems: readonly { name: string; version?: string; provider?: string }[],
+): void {
+  lines.push(`${key}:`);
+  for (const s of systems) {
+    lines.push(`  - name: ${formatScalar(s.name)}`);
+    if (s.version) lines.push(`    version: ${formatScalar(s.version)}`);
+    if (s.provider) lines.push(`    provider: ${formatScalar(s.provider)}`);
+  }
 }
 
 function appendYamlEntry(lines: string[], key: string, value: unknown): void {
@@ -59,6 +76,27 @@ export function toOkfFrontmatterLines(concept: OkfConcept): string[] {
   if (concept.resource) lines.push(`resource: ${formatScalar(concept.resource)}`);
   if (concept.tags && concept.tags.length > 0) appendYamlEntry(lines, "tags", [...concept.tags]);
   if (concept.profile) lines.push(`profile: ${formatScalar(concept.profile)}`);
+
+  const fm = concept.frontmatter;
+  if (typeof fm.digitalSourceType === "string" && fm.digitalSourceType.length > 0) {
+    lines.push(`digitalSourceType: ${formatScalar(fm.digitalSourceType)}`);
+  }
+  if (typeof fm.euAiLabel === "string" && fm.euAiLabel.length > 0) {
+    lines.push(`euAiLabel: ${formatScalar(fm.euAiLabel)}`);
+  }
+  if (typeof fm.aiDisclosureNote === "string" && fm.aiDisclosureNote.length > 0) {
+    lines.push(`aiDisclosureNote: ${formatScalar(fm.aiDisclosureNote)}`);
+  }
+  if (Array.isArray(fm.aiSystems) && fm.aiSystems.length > 0) {
+    const parsed = fm.aiSystems.filter(
+      (s): s is { name: string; version?: string; provider?: string } =>
+        s !== null &&
+        typeof s === "object" &&
+        !Array.isArray(s) &&
+        typeof (s as { name?: unknown }).name === "string",
+    );
+    if (parsed.length > 0) appendAiSystemsEntry(lines, "aiSystems", parsed);
+  }
 
   const ordered = new Set(KEY_ORDER);
   const restKeys = Object.keys(concept.frontmatter)

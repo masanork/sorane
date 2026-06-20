@@ -53,6 +53,16 @@ export interface DocsConfig {
   readonly nav?: readonly DocsNavSpec[];
 }
 
+export interface AiDisclosureConfig {
+  readonly enabled?: boolean;
+  readonly badges?: boolean;
+  readonly json_ld?: boolean;
+  readonly machine_readable?: boolean;
+  readonly atom?: boolean;
+  readonly show_on_lists?: boolean;
+  readonly policy_url?: string;
+}
+
 export interface FontConfigInput {
   readonly enabled?: boolean;
   readonly family?: string;
@@ -78,6 +88,7 @@ export interface SoraneConfig {
     /** 存在すれば out_dir へ再帰コピーする静的資産ディレクトリ（例: static/）。 */
     readonly static_dir?: string;
     readonly blog?: BlogBuildConfig;
+    readonly ai_disclosure?: AiDisclosureConfig;
   };
   readonly fonts: {
     readonly enabled: boolean;
@@ -119,6 +130,7 @@ export const DEFAULT_CONFIG: SoraneConfig = {
       archives: true,
       tags: true,
     },
+    ai_disclosure: {},
   },
   fonts: {
     enabled: false,
@@ -145,6 +157,9 @@ export function mergeConfig(partial: Partial<SoraneConfig>): SoraneConfig {
       ...DEFAULT_CONFIG.build,
       ...partial.build,
       blog: { ...DEFAULT_CONFIG.build.blog, ...partial.build?.blog },
+      ai_disclosure: partial.build?.ai_disclosure
+        ? { ...DEFAULT_CONFIG.build.ai_disclosure, ...partial.build.ai_disclosure }
+        : DEFAULT_CONFIG.build.ai_disclosure,
     },
     fonts: { ...DEFAULT_CONFIG.fonts, ...partial.fonts },
     search: { ...DEFAULT_CONFIG.search, ...partial.search },

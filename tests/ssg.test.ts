@@ -20,8 +20,9 @@ import {
   buildWebSiteJsonLd,
   buildBlogPostingJsonLd,
 } from "../packages/core/src/ssg.ts";
+import { parseAiDisclosure } from "../packages/core/src/ai-disclosure.ts";
 import { normalizeConcept } from "../packages/okf/src/index.ts";
-import { buildAtomFeed } from "../packages/core/src/site-meta.ts";
+import { buildAtomFeed, buildLlmsTxt } from "../packages/core/src/site-meta.ts";
 import { migrateToOkf } from "../packages/core/src/migrate.ts";
 
 describe("extractDescription", () => {
@@ -69,6 +70,19 @@ describe("JSON-LD", () => {
       datePublished: "2025-01-01T00:00:00Z",
     });
     expect(post).toContain("BlogPosting");
+  });
+
+  test("BlogPosting に digitalSourceType を含める", () => {
+    const d = parseAiDisclosure({ digitalSourceType: "trainedAlgorithmicMedia" })!;
+    const post = buildBlogPostingJsonLd({
+      title: "T",
+      url: "https://ex.dev/t.html",
+      siteTitle: "S",
+      lang: "ja",
+      aiDisclosure: d,
+    });
+    expect(post).toContain("trainedAlgorithmicMedia");
+    expect(post).toContain("digitalSourceType");
   });
 });
 
@@ -172,6 +186,36 @@ describe("buildAtomFeed", () => {
     );
     expect(xml).toContain("<feed");
     expect(xml).toContain("https://ex.dev/a.html");
+  });
+
+  test("AI disclosure category term を含める", () => {
+    const xml = buildAtomFeed(
+      [
+        {
+          title: "AI",
+          url: "https://ex.dev/a.html",
+          id: "https://ex.dev/a.html",
+          updated: "2025-01-01T00:00:00Z",
+          digitalSourceCode: "trainedAlgorithmicMedia",
+        },
+      ],
+      { siteTitle: "S", siteDescription: "D", baseUrl: "https://ex.dev" },
+    );
+    expect(xml).toContain('term="ai-disclosure:trainedAlgorithmicMedia"');
+    expect(xml).toContain("digitalsourcetype");
+  });
+});
+
+describe("buildLlmsTxt", () => {
+  test("aiLabeledCount セクションを追加する", () => {
+    const txt = buildLlmsTxt({
+      siteTitle: "S",
+      siteDescription: "D",
+      baseUrl: "https://ex.dev",
+      aiLabeledCount: 2,
+    });
+    expect(txt).toContain("## AI content disclosure");
+    expect(txt).toContain("Labeled articles: 2");
   });
 });
 

@@ -54,4 +54,27 @@ describe("conceptToOkfMarkdown", () => {
     expect(md).not.toMatch(/layout:/);
     expect(md).not.toMatch(/date:/);
   });
+
+  test("AI disclosure フィールドを出力する", () => {
+    const c = normalizeConcept(
+      {
+        type: "article",
+        title: "AI",
+        profile: "sorane-okf/0.2",
+        digitalSourceType: "compositeWithTrainedAlgorithmicMedia",
+        euAiLabel: "partially-modified",
+        aiDisclosureNote: "Verified.",
+        aiSystems: [{ name: "Claude", provider: "Anthropic" }],
+      },
+      "Body\n",
+      "ai",
+    );
+    const md = conceptToOkfMarkdown(c);
+    expect(md).toContain("digitalSourceType: compositeWithTrainedAlgorithmicMedia");
+    expect(md).toContain("euAiLabel: partially-modified");
+    expect(md).toContain("aiDisclosureNote: Verified.");
+    expect(md).toContain("aiSystems:");
+    expect(md).toContain("name: Claude");
+    expect(md).toContain("provider: Anthropic");
+  });
 });

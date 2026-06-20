@@ -1,8 +1,8 @@
 import { Buffer } from "node:buffer";
 import type { ChunkRow } from "./store.ts";
 
-export const WEB_INDEX_SCHEMA_VERSION = 2;
-export const FTS_WEB_INDEX_SCHEMA_VERSION = 3;
+export const WEB_INDEX_SCHEMA_VERSION = 3;
+export const FTS_WEB_INDEX_SCHEMA_VERSION = 4;
 export const INT8_SCALE = 127;
 export const SNIPPET_LEN = 220;
 
@@ -15,6 +15,7 @@ export interface WebChunk {
   readonly title: string;
   readonly tags: string;
   readonly snippet: string;
+  readonly digital_source_type?: string;
 }
 
 export interface WebIndex {
@@ -51,12 +52,26 @@ export function defaultSourceUrl(source: string): string {
   return source.replace(/\.md$/i, ".html");
 }
 
+function disclosureForSource(
+  source: string,
+  disclosureMap: ReadonlyMap<string, string> | undefined,
+  machineReadable: boolean,
+): string | undefined {
+  if (!machineReadable || !disclosureMap) return undefined;
+  return disclosureMap.get(source);
+}
+
 export function buildWebIndex(
   rows: ChunkRow[],
   vectors: number[][],
   meta: Record<string, string>,
   sourceToUrl: (source: string) => string = defaultSourceUrl,
+  opts?: {
+    readonly disclosureMap?: ReadonlyMap<string, string>;
+    readonly machineReadable?: boolean;
+  },
 ): WebIndex {
+  const machineReadable = opts?.machineReadable !== false;
   const dim = Number(meta.dim) || (vectors[0]?.length ?? 0);
   if (rows.length !== vectors.length) {
     throw new Error(`row/vector count mismatch: ${rows.length} != ${vectors.length}`);
@@ -80,16 +95,21 @@ export function buildWebIndex(
   }
   const vectors_b64 = Buffer.from(buf.buffer, buf.byteOffset, buf.byteLength).toString("base64");
 
-  const chunks: WebChunk[] = kept.map(({ row: r }) => ({
-    source: r.source,
-    url: sourceToUrl(r.source),
-    heading_slug: r.headingSlug,
-    heading_path: r.headingPath,
-    doc_type: r.docType,
-    title: r.title,
-    tags: r.tags,
-    snippet: toSnippet(r.text),
-  }));
+  const chunks: WebChunk[] = kept.map(({ row: r }) => {
+    const chunk: WebChunk = {
+      source: r.source,
+      url: sourceToUrl(r.source),
+      heading_slug: r.headingSlug,
+      heading_path: r.headingPath,
+      doc_type: r.docType,
+      title: r.title,
+      tags: r.tags,
+      snippet: toSnippet(r.text),
+    };
+    const dst = disclosureForSource(r.source, opts?.disclosureMap, machineReadable);
+    if (dst) return { ...chunk, digital_source_type: dst };
+    return chunk;
+  });
 
   return {
     schema_version: WEB_INDEX_SCHEMA_VERSION,
@@ -109,18 +129,28 @@ export function buildWebIndex(
 export function buildFtsWebIndex(
   rows: ChunkRow[],
   sourceToUrl: (source: string) => string = defaultSourceUrl,
+  opts?: {
+    readonly disclosureMap?: ReadonlyMap<string, string>;
+    readonly machineReadable?: boolean;
+  },
 ): FtsWebIndex {
-  const chunks: FtsWebChunk[] = rows.map((r) => ({
-    source: r.source,
-    url: sourceToUrl(r.source),
-    heading_slug: r.headingSlug,
-    heading_path: r.headingPath,
-    doc_type: r.docType,
-    title: r.title,
-    tags: r.tags,
-    snippet: toSnippet(r.text),
-    text: r.text,
-  }));
+  const machineReadable = opts?.machineReadable !== false;
+  const chunks: FtsWebChunk[] = rows.map((r) => {
+    const chunk: FtsWebChunk = {
+      source: r.source,
+      url: sourceToUrl(r.source),
+      heading_slug: r.headingSlug,
+      heading_path: r.headingPath,
+      doc_type: r.docType,
+      title: r.title,
+      tags: r.tags,
+      snippet: toSnippet(r.text),
+      text: r.text,
+    };
+    const dst = disclosureForSource(r.source, opts?.disclosureMap, machineReadable);
+    if (dst) return { ...chunk, digital_source_type: dst };
+    return chunk;
+  });
   return {
     schema_version: FTS_WEB_INDEX_SCHEMA_VERSION,
     mode: "fts",

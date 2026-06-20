@@ -7,9 +7,25 @@ export {
 } from "./serialize.ts";
 export {
   validateSource,
+  validateProfileFormat,
+  resolveProfileSchema,
   type ValidationResult,
   type ValidationIssue,
 } from "./validate.ts";
+export {
+  IPTC_BASE,
+  resolveDigitalSourceType,
+  inferEuLabel,
+  showsEuBadge,
+  parseEuAiLabel,
+  parseAiSystems,
+  validateDisclosureFields,
+  hasDisclosureKeys,
+  PHASE1_CODES,
+  type EuAiLabel,
+  type AiSystemRef,
+  type ResolvedDigitalSourceType,
+} from "./digital-source-type.ts";
 export { parseConcept, type ParsedConcept } from "./parse.ts";
 export {
   buildBundleEntries,

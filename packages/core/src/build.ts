@@ -18,6 +18,11 @@ import {
 } from "node:fs";
 import { gzipSync } from "node:zlib";
 import { dirname, join, relative, resolve } from "node:path";
+import {
+  buildAiBadgeHtml,
+  parseAiDisclosure,
+  resolveAiDisclosureFlags,
+} from "./ai-disclosure.ts";
 import { buildCatalogJsonLd } from "./catalog.ts";
 import { mergeConfig, resolvePermalink, type SoraneConfig } from "./config.ts";
 import {
@@ -59,6 +64,7 @@ import {
   type SiteEntry,
 } from "./site-meta.ts";
 import { renderMarkdown } from "./render.ts";
+import { resolveThemeAssetDir } from "./theme-assets.ts";
 import {
   docsNavFor,
   docsSidebarHtml,
@@ -245,6 +251,14 @@ export async function runBuild(opts: BuildOptions): Promise<BuildResult> {
 
   const baseUrl = config.site.base_url.replace(/\/$/, "");
 
+  const hasAnyDisclosure = parsed.some(
+    (p) => parseAiDisclosure(p.concept.frontmatter) !== null,
+  );
+  const siteAiFlags = resolveAiDisclosureFlags(
+    config.build.ai_disclosure,
+    hasAnyDisclosure,
+  );
+
   const blogOpts = {
     page_size: config.build.blog?.page_size ?? 50,
     index_archive_limit: config.build.blog?.index_archive_limit ?? 15,
@@ -262,6 +276,7 @@ export async function runBuild(opts: BuildOptions): Promise<BuildResult> {
       const outRel = resolvePermalink(config.build.permalink, slug, p.concept.timestamp);
       const rawDesc =
         p.concept.description ?? extractDescription(p.concept.body) ?? undefined;
+      const aiDisclosure = parseAiDisclosure(p.concept.frontmatter) ?? undefined;
       return {
         title: p.concept.title,
         href: outRel,
@@ -270,6 +285,7 @@ export async function runBuild(opts: BuildOptions): Promise<BuildResult> {
         author: frontmatterString(p.concept.frontmatter, "author"),
         description: rawDesc ? sanitizeListDescription(rawDesc) : undefined,
         tags: p.concept.tags,
+        aiDisclosure,
       };
     })
     .sort((a, b) => (b.timestamp ?? "").localeCompare(a.timestamp ?? ""));
@@ -401,6 +417,19 @@ export async function runBuild(opts: BuildOptions): Promise<BuildResult> {
       : isDocsPage
         ? docsNavFor(outRel, docsNav)
         : articleNavFor(outRel, articleSummaries);
+    const aiDisclosure = parseAiDisclosure(p.concept.frontmatter);
+    const pageAiFlags = resolveAiDisclosureFlags(
+      config.build.ai_disclosure,
+      aiDisclosure !== null,
+    );
+    const badgeHtml =
+      pageAiFlags.badges && aiDisclosure
+        ? buildAiBadgeHtml(aiDisclosure, {
+            lang: config.site.lang,
+            rootPrefix,
+            policyUrl: pageAiFlags.policyUrl,
+          })
+        : "";
     const bodyHtml = isSearch
       ? buildSearchMount(rootPrefix, {
           assetBaseUrl: config.search.asset_base_url,
@@ -410,8 +439,10 @@ export async function runBuild(opts: BuildOptions): Promise<BuildResult> {
           ? `<div class="search-intro">${renderMarkdown(p.concept.body)}</div>`
           : "")
       : isDocsPage
-        ? renderDocsArticleFromConcept(p.concept, nav, config.site.lang)
-        : renderArticleBody(p.concept, nav);
+        ? renderDocsArticleFromConcept(p.concept, nav, config.site.lang, {
+            badgeHtml,
+          })
+        : renderArticleBody(p.concept, nav, { badgeHtml });
 
     const updated = frontmatterString(p.concept.frontmatter, "updated");
     const author = frontmatterString(p.concept.frontmatter, "author");
@@ -427,6 +458,8 @@ export async function runBuild(opts: BuildOptions): Promise<BuildResult> {
           author,
           siteTitle: config.site.title,
           lang: config.site.lang,
+          aiDisclosure:
+            pageAiFlags.jsonLd && aiDisclosure ? aiDisclosure : undefined,
         });
 
     const fontCss = await fontCssFor(p.concept, rootPrefix, bodyHtml);
@@ -514,11 +547,14 @@ export async function runBuild(opts: BuildOptions): Promise<BuildResult> {
                 updated: frontmatterString(latestParsed.concept.frontmatter, "updated"),
                 author: frontmatterString(latestParsed.concept.frontmatter, "author"),
                 bodyHtml: featuredBody,
+                aiDisclosure: latest.aiDisclosure,
               }
             : undefined,
         articles: archivePages[0] ?? [],
         archiveLimit: blogOpts.index_archive_limit,
         showListDescriptions: blogOpts.show_list_descriptions,
+        showOnLists: siteAiFlags.showOnLists,
+        listRootPrefix: "./",
       });
       if (archivePages.length > 1) {
         bodyHtml +=
@@ -575,7 +611,12 @@ export async function runBuild(opts: BuildOptions): Promise<BuildResult> {
         `${config.site.title} — ページ ${pageNum}`,
         undefined,
         archivePages[i]!,
-        { fromRel: outRel, page: pageNum, totalPages: archivePages.length },
+        {
+          fromRel: outRel,
+          page: pageNum,
+          totalPages: archivePages.length,
+          showOnLists: siteAiFlags.showOnLists,
+        },
       );
       const concept = syntheticConcept(`${config.site.title} — ページ ${pageNum}`);
       const fontCss = await fontCssFor(concept, rootPrefixFromRel(outRel), bodyHtml);
@@ -650,6 +691,7 @@ export async function runBuild(opts: BuildOptions): Promise<BuildResult> {
       const monthOutRel = `archive/${ym}.html`;
       const bodyHtml = renderArchiveListBody(`${y}年${m}月`, undefined, monthArticles, {
         fromRel: monthOutRel,
+        showOnLists: siteAiFlags.showOnLists,
       });
       const monthConcept = syntheticConcept(`${y}年${m}月`);
       const monthFontCss = await fontCssFor(monthConcept, rootPrefixFromRel(monthOutRel), bodyHtml);
@@ -676,6 +718,7 @@ export async function runBuild(opts: BuildOptions): Promise<BuildResult> {
       const tagOutRel = `tag/${tagSlug}.html`;
       const bodyHtml = renderArchiveListBody(`タグ: ${label}`, undefined, tagged, {
         fromRel: tagOutRel,
+        showOnLists: siteAiFlags.showOnLists,
       });
       const tagConcept = syntheticConcept(`タグ: ${label}`);
       const tagFontCss = await fontCssFor(tagConcept, rootPrefixFromRel(tagOutRel), bodyHtml);
@@ -695,15 +738,24 @@ export async function runBuild(opts: BuildOptions): Promise<BuildResult> {
     }
   }
 
+  const aiLabeledCount = articleSummaries.filter((a) => a.aiDisclosure).length;
   const feedEntries: FeedEntry[] = articleSummaries.slice(0, 30).map((a) => {
     const absUrl = baseUrl.length > 0 ? `${baseUrl}/${a.href}` : a.href;
     const ts = a.timestamp ?? new Date().toISOString();
+    const pageFlags = resolveAiDisclosureFlags(
+      config.build.ai_disclosure,
+      a.aiDisclosure !== undefined,
+    );
     return {
       title: a.title,
       url: absUrl,
       id: absUrl,
       updated: ts.includes("T") ? ts : `${ts}T00:00:00Z`,
       summary: a.description,
+      digitalSourceCode:
+        pageFlags.atom && a.aiDisclosure
+          ? a.aiDisclosure.digitalSourceCode
+          : undefined,
     };
   });
   writeFileSync(
@@ -728,14 +780,22 @@ export async function runBuild(opts: BuildOptions): Promise<BuildResult> {
       siteTitle: config.site.title,
       siteDescription: config.site.description,
       baseUrl,
+      aiLabeledCount: siteAiFlags.machineReadable ? aiLabeledCount : undefined,
     }),
     "utf8",
   );
   writeFileSync(
     join(outDir, "catalog.jsonld"),
-    buildCatalogJsonLd(catalogInputs, config.site.title, baseUrl),
+    buildCatalogJsonLd(catalogInputs, config.site.title, baseUrl, {
+      machineReadable: siteAiFlags.machineReadable,
+    }),
     "utf8",
   );
+  if (aiLabeledCount > 0) {
+    process.stdout.write(
+      `[sorane] AI disclosure: ${aiLabeledCount} labeled article(s)\n`,
+    );
+  }
 
   const bundleEntries = buildBundleEntries(
     parsed
@@ -754,6 +814,11 @@ export async function runBuild(opts: BuildOptions): Promise<BuildResult> {
     writeFileSync(join(outDir, "assets/main.css"), DEFAULT_CSS, "utf8");
   }
 
+  const aiLabelsSrc = resolveThemeAssetDir(cwd, "ai-labels");
+  if (aiLabelsSrc) {
+    cpSync(aiLabelsSrc, join(outDir, "assets/ai-labels"), { recursive: true });
+  }
+
   const staticDirName = config.build.static_dir ?? "static";
   const staticSrc = resolve(cwd, staticDirName);
   if (existsSync(staticSrc)) {
@@ -769,6 +834,8 @@ export async function runBuild(opts: BuildOptions): Promise<BuildResult> {
     modelId: config.search.model_id,
     bundleModel: config.search.bundle_model,
     assetBaseUrl: config.search.asset_base_url || undefined,
+    contentDir,
+    machineReadable: siteAiFlags.machineReadable,
     sourceToUrl: (source) => sourceToUrl.get(source) ?? source.replace(/\.md$/i, ".html"),
     onProgress: (message) => process.stdout.write(`[sorane] ${message}\n`),
   });

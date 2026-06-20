@@ -1,7 +1,9 @@
 import { Buffer } from "node:buffer";
 import { describe, expect, test } from "./_expect.ts";
 import {
+  buildFtsWebIndex,
   buildWebIndex,
+  FTS_WEB_INDEX_SCHEMA_VERSION,
   INT8_SCALE,
   toSnippet,
   type WebIndex,
@@ -69,5 +71,49 @@ describe("buildWebIndex", () => {
 
   test("行数とベクトル数が不一致なら投げる", () => {
     expect(threw(() => buildWebIndex([row()], [[0.1, 0.2], [0.3, 0.4]], meta(2)))).toBe(true);
+  });
+
+  test("disclosure map で digital_source_type を付与する", () => {
+    const map = new Map([
+      [
+        "article/hello.md",
+        "http://cv.iptc.org/newscodes/digitalsourcetype/trainedAlgorithmicMedia",
+      ],
+    ]);
+    const idx = buildWebIndex([row()], [[0.1, 0.2]], meta(2), () => "hello.html", {
+      disclosureMap: map,
+      machineReadable: true,
+    });
+    expect(idx.chunks[0]!.digital_source_type).toContain("trainedAlgorithmicMedia");
+  });
+
+  test("machine_readable: false では digital_source_type を付けない", () => {
+    const map = new Map([
+      [
+        "article/hello.md",
+        "http://cv.iptc.org/newscodes/digitalsourcetype/trainedAlgorithmicMedia",
+      ],
+    ]);
+    const idx = buildWebIndex([row()], [[0.1, 0.2]], meta(2), () => "hello.html", {
+      disclosureMap: map,
+      machineReadable: false,
+    });
+    expect(idx.chunks[0]!.digital_source_type).toBe(undefined);
+  });
+});
+
+describe("buildFtsWebIndex", () => {
+  test("schema version 4 と digital_source_type", () => {
+    const map = new Map([
+      [
+        "article/hello.md",
+        "http://cv.iptc.org/newscodes/digitalsourcetype/humanEdits",
+      ],
+    ]);
+    const idx = buildFtsWebIndex([row()], () => "hello.html", {
+      disclosureMap: map,
+    });
+    expect(idx.schema_version).toBe(FTS_WEB_INDEX_SCHEMA_VERSION);
+    expect(idx.chunks[0]!.digital_source_type).toContain("humanEdits");
   });
 });

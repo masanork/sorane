@@ -17,6 +17,20 @@ describe("mergeConfig", () => {
     expect(cfg.site.title).toBe("X");
     expect(cfg.site.lang).toBe("en");
   });
+
+  test("ai_disclosure を deep merge する", () => {
+    const cfg = mergeConfig({
+      build: {
+        content_dir: "content",
+        out_dir: "dist",
+        permalink: "{{slug}}.html",
+        ai_disclosure: { show_on_lists: true, json_ld: false },
+      },
+    });
+    expect(cfg.build.ai_disclosure?.show_on_lists).toBe(true);
+    expect(cfg.build.ai_disclosure?.json_ld).toBe(false);
+    expect(cfg.build.ai_disclosure?.enabled).toBe(undefined);
+  });
 });
 
 describe("resolvePermalink", () => {

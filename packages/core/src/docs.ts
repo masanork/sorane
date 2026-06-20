@@ -9,6 +9,10 @@ import {
 } from "./render.ts";
 import { siteLabels } from "./site-labels.ts";
 
+export interface DocsArticleRenderOpts {
+  readonly badgeHtml?: string;
+}
+
 export interface ArticleNav {
   readonly prev?: { href: string; title: string };
   readonly next?: { href: string; title: string };
@@ -121,8 +125,10 @@ export function renderDocsArticleBody(
   rendered: RenderedMarkdown,
   nav: ArticleNav | undefined,
   lang: string,
+  opts?: DocsArticleRenderOpts,
 ): string {
-  const header = `<header>\n<h1>${escapeHtml(concept.title)}</h1>\n</header>\n`;
+  const badge = opts?.badgeHtml ?? "";
+  const header = `<header>\n<h1>${escapeHtml(concept.title)}</h1>\n${badge}</header>\n`;
   const toc = pageTocHtml(rendered.outline, lang);
   return (
     `<article class="article-page docs-page${articleFontClass(concept)}">\n` +
@@ -203,8 +209,9 @@ export function renderDocsArticleFromConcept(
   concept: OkfConcept,
   nav: ArticleNav | undefined,
   lang: string,
+  opts?: DocsArticleRenderOpts,
 ): string {
   const body = stripDuplicateTitleHeading(concept.body, concept.title);
   const rendered = renderMarkdownDocument(body);
-  return renderDocsArticleBody(concept, rendered, nav, lang);
+  return renderDocsArticleBody(concept, rendered, nav, lang, opts);
 }

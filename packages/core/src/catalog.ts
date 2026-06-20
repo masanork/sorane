@@ -1,4 +1,5 @@
 import type { OkfConcept } from "@sorane/okf";
+import { parseAiDisclosure } from "./ai-disclosure.ts";
 
 export interface CatalogEntry {
   readonly slug: string;
@@ -10,7 +11,9 @@ export function buildCatalogJsonLd(
   entries: readonly CatalogEntry[],
   siteTitle: string,
   baseUrl: string,
+  opts?: { readonly machineReadable?: boolean },
 ): string {
+  const machineReadable = opts?.machineReadable !== false;
   const graph = entries.map((e) => {
     const dataset: Record<string, unknown> = {
       "@type": "Dataset",
@@ -27,6 +30,19 @@ export function buildCatalogJsonLd(
     };
     if (e.concept.description) dataset.description = e.concept.description;
     if (e.concept.timestamp) dataset.dateModified = e.concept.timestamp;
+    const disclosure = machineReadable
+      ? parseAiDisclosure(e.concept.frontmatter)
+      : null;
+    if (disclosure) {
+      dataset.digitalSourceType = disclosure.digitalSourceType;
+      if (disclosure.systems?.length) {
+        const kw = dataset.keywords as string[];
+        dataset.keywords = [
+          ...kw,
+          ...disclosure.systems.map((s) => `ai-system:${s.name}`),
+        ];
+      }
+    }
     return dataset;
   });
 

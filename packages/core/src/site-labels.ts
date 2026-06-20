@@ -14,6 +14,8 @@ export interface SiteLabels {
   readonly pageNav: string;
   readonly skipToContent: string;
   readonly docsMenu: string;
+  readonly aiDisclosureAria: string;
+  readonly aiPolicyLink: string;
 }
 
 const JA: SiteLabels = {
@@ -32,6 +34,8 @@ const JA: SiteLabels = {
   pageNav: "ページ",
   skipToContent: "本文へスキップ",
   docsMenu: "ドキュメントメニュー",
+  aiDisclosureAria: "AI コンテンツ開示",
+  aiPolicyLink: "AI 開示ポリシー",
 };
 
 const EN: SiteLabels = {
@@ -50,6 +54,8 @@ const EN: SiteLabels = {
   pageNav: "Page",
   skipToContent: "Skip to content",
   docsMenu: "Documentation menu",
+  aiDisclosureAria: "AI content disclosure",
+  aiPolicyLink: "AI disclosure policy",
 };
 
 export function siteLabels(lang: string): SiteLabels {
@@ -74,6 +80,8 @@ export function siteChromeText(lang: string, siteTitle: string, includeSearch = 
     labels.nextPage,
     labels.skipToContent,
     labels.docsMenu,
+    labels.aiDisclosureAria,
+    labels.aiPolicyLink,
     "サイト",
   ];
   if (includeSearch) parts.push(labels.search);

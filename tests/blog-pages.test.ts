@@ -5,6 +5,7 @@ import {
   renderYearArchiveIndexBody,
   blogPaginationRel,
 } from "../packages/core/src/blog-pages.ts";
+import { parseAiDisclosure } from "../packages/core/src/ai-disclosure.ts";
 import { relLinkFrom } from "../packages/core/src/ssg.ts";
 
 describe("relLinkFrom", () => {
@@ -69,5 +70,18 @@ describe("renderArchiveListBody", () => {
     expect(html).toContain('href="../2015-05-17.html"');
     expect(html).toContain('href="../index.html" rel="prev"');
     expect(html).toContain('href="3.html" rel="next"');
+  });
+
+  test("showOnLists でコンパクトバッジを出す", () => {
+    const d = parseAiDisclosure({
+      digitalSourceType: "trainedAlgorithmicMedia",
+    })!;
+    const html = renderArchiveListBody(
+      "Tagged",
+      undefined,
+      [{ title: "AI Post", href: "ai.html", timestamp: "2025-01-01", aiDisclosure: d }],
+      { fromRel: "tag/ai.html", showOnLists: true },
+    );
+    expect(html).toContain("ai-disclosure-compact");
   });
 });

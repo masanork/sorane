@@ -75,6 +75,18 @@ describe("renderDocsArticleFromConcept", () => {
     expect(html).toContain("前へ");
     expect(html).toContain("次へ");
   });
+
+  test("badgeHtml をヘッダに挿入する", () => {
+    const concept = normalizeConcept(
+      { type: "article", title: "Test" },
+      "Body\n",
+      "test",
+    );
+    const html = renderDocsArticleFromConcept(concept, undefined, "ja", {
+      badgeHtml: '<aside class="ai-disclosure">badge</aside>',
+    });
+    expect(html).toContain('class="ai-disclosure"');
+  });
 });
 
 describe("buildPage docs layout", () => {

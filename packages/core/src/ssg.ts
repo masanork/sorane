@@ -1,5 +1,7 @@
 import { dirname, relative } from "node:path";
 import type { OkfConcept } from "@sorane/okf";
+import type { AiDisclosure } from "./ai-disclosure.ts";
+import { aiDisclosureJsonLdFields, buildCompactAiBadgeHtml } from "./ai-disclosure.ts";
 import { escapeHtml, renderMarkdown, stripDuplicateTitleHeading } from "./render.ts";
 import { siteLabels, type SiteLabels } from "./site-labels.ts";
 
@@ -108,6 +110,7 @@ export interface ArticleListEntry {
   readonly author?: string;
   readonly description?: string;
   readonly tags?: readonly string[];
+  readonly aiDisclosure?: AiDisclosure;
 }
 
 export interface ArticleNav {
@@ -130,12 +133,15 @@ export interface BlogIndexOptions {
     readonly updated?: string;
     readonly author?: string;
     readonly bodyHtml: string;
+    readonly aiDisclosure?: AiDisclosure;
   };
   readonly articles: readonly ArticleListEntry[];
   readonly archiveLimit?: number;
   readonly showListDescriptions?: boolean;
   readonly lang?: string;
   readonly labels?: SiteLabels;
+  readonly showOnLists?: boolean;
+  readonly listRootPrefix?: string;
 }
 
 export function buildPage(opts: PageShellOptions): string {
@@ -308,6 +314,7 @@ export function buildBlogPostingJsonLd(opts: {
   author?: string;
   siteTitle: string;
   lang: string;
+  aiDisclosure?: AiDisclosure;
 }): string {
   const data: Record<string, unknown> = {
     "@context": "https://schema.org",
@@ -323,6 +330,9 @@ export function buildBlogPostingJsonLd(opts: {
   if (opts.author) {
     data.author = { "@type": "Person", name: opts.author };
   }
+  if (opts.aiDisclosure) {
+    Object.assign(data, aiDisclosureJsonLdFields(opts.aiDisclosure));
+  }
   return `<script type="application/ld+json">${JSON.stringify(data)}</script>`;
 }
 
@@ -335,7 +345,11 @@ export function articleFontClass(concept: OkfConcept): string {
   return SERIF_FONT_STYLES.has(font) ? " font-serif" : "";
 }
 
-export function renderArticleBody(concept: OkfConcept, nav?: ArticleNav): string {
+export function renderArticleBody(
+  concept: OkfConcept,
+  nav?: ArticleNav,
+  opts?: { readonly badgeHtml?: string },
+): string {
   const updated =
     typeof concept.frontmatter.updated === "string"
       ? concept.frontmatter.updated
@@ -344,11 +358,13 @@ export function renderArticleBody(concept: OkfConcept, nav?: ArticleNav): string
         : undefined;
   const author =
     typeof concept.frontmatter.author === "string" ? concept.frontmatter.author : undefined;
+  const badge = opts?.badgeHtml ?? "";
   const header = [
     "<header>",
     `<h1>${escapeHtml(concept.title)}</h1>`,
     articleMetaHtml({ timestamp: concept.timestamp, updated, author }),
     tagsHtml(concept.tags),
+    badge,
     "</header>",
   ].join("\n");
   return (
@@ -377,9 +393,16 @@ export function renderBlogIndexBody(opts: BlogIndexOptions): string {
     ? `<div class="blog-intro">${opts.introHtml}</div>`
     : "";
 
+  const listPrefix = opts.listRootPrefix ?? "./";
+  const compactBadge = (d?: AiDisclosure) =>
+    opts.showOnLists && d?.showBadge
+      ? buildCompactAiBadgeHtml(d, { rootPrefix: listPrefix })
+      : "";
+
   let featured = "";
   if (opts.latestArticle) {
     const la = opts.latestArticle;
+    const badge = compactBadge(la.aiDisclosure);
     featured =
       `<article class="blog-featured">\n` +
       `<header>\n` +
@@ -389,6 +412,7 @@ export function renderBlogIndexBody(opts: BlogIndexOptions): string {
         updated: la.updated,
         author: la.author,
       }) +
+      badge +
       `</header>\n` +
       `<div class="article-body">\n${la.bodyHtml}\n</div>\n` +
       `<p class="blog-permalink"><a href="${escapeHtml(la.href)}">${escapeHtml(labels.readMore)}</a></p>\n` +
@@ -411,10 +435,12 @@ export function renderBlogIndexBody(opts: BlogIndexOptions): string {
       if (opts.showListDescriptions && a.description) {
         meta.push(`<span class="blog-list-desc">${escapeHtml(a.description)}</span>`);
       }
+      const badge = compactBadge(a.aiDisclosure);
       const metaHtml = meta.length > 0 ? `<div class="blog-list-meta">${meta.join(" · ")}</div>` : "";
       return (
         `<li class="blog-list-item">\n` +
         `<a href="${escapeHtml(a.href)}" class="blog-list-title">${escapeHtml(a.title)}</a>\n` +
+        `${badge}` +
         `${metaHtml}\n` +
         `</li>`
       );

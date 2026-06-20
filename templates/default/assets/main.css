@@ -473,3 +473,35 @@ body.docs-site .site-footer {
   z-index: 10;
   background: #fff;
 }
+
+.ai-disclosure {
+  display: flex;
+  gap: 0.75rem;
+  align-items: flex-start;
+  margin: 1rem 0 0;
+  padding: 0.75rem 1rem;
+  border: 1px solid var(--border);
+  border-radius: 4px;
+  font-size: 0.9rem;
+}
+
+.ai-disclosure-icon {
+  flex-shrink: 0;
+}
+
+.ai-disclosure-title {
+  font-weight: var(--weight-emphasis);
+  margin: 0;
+}
+
+.ai-disclosure-detail,
+.ai-disclosure-meta,
+.ai-disclosure-policy {
+  color: var(--muted);
+  margin: 0.25rem 0 0;
+}
+
+.ai-disclosure-compact {
+  vertical-align: middle;
+  margin-left: 0.35rem;
+}

@@ -40,6 +40,7 @@ export interface LlmsTxtOptions {
   readonly siteTitle: string;
   readonly siteDescription: string;
   readonly baseUrl: string;
+  readonly aiLabeledCount?: number;
 }
 
 export interface FeedEntry {
@@ -48,6 +49,7 @@ export interface FeedEntry {
   readonly id: string;
   readonly updated: string;
   readonly summary?: string;
+  readonly digitalSourceCode?: string;
 }
 
 export function buildAtomFeed(
@@ -67,12 +69,16 @@ export function buildAtomFeed(
       const summary = e.summary
         ? `<summary>${escapeXml(e.summary)}</summary>`
         : "";
+      const category = e.digitalSourceCode
+        ? `    <category term="ai-disclosure:${escapeXml(e.digitalSourceCode)}" scheme="http://cv.iptc.org/newscodes/digitalsourcetype" />\n`
+        : "";
       return (
         `  <entry>\n` +
         `    <title>${escapeXml(e.title)}</title>\n` +
         `    <link href="${escapeXml(e.url)}" />\n` +
         `    <id>${escapeXml(e.id)}</id>\n` +
         `    <updated>${escapeXml(e.updated)}</updated>\n` +
+        `${category}` +
         `${summary}\n` +
         `  </entry>`
       );
@@ -95,7 +101,7 @@ export function buildAtomFeed(
 export function buildLlmsTxt(opts: LlmsTxtOptions): string {
   const abs = (u: string) =>
     /^https?:/.test(u) || opts.baseUrl.length === 0 ? u : `${opts.baseUrl}/${u}`;
-  return [
+  const lines = [
     `# ${opts.siteTitle}`,
     "",
     `> ${opts.siteDescription}`,
@@ -105,6 +111,20 @@ export function buildLlmsTxt(opts: LlmsTxtOptions): string {
     `- [OKF bundle](${abs("okf/bundle.tar.gz")}): all concepts as {type}/{slug}.md`,
     `- [DCAT catalog](${abs("catalog.jsonld")})`,
     `- [Sitemap](${abs("sitemap.xml")})`,
-    "",
-  ].join("\n");
+  ];
+  if (opts.aiLabeledCount !== undefined && opts.aiLabeledCount > 0) {
+    lines.push(
+      "",
+      "## AI content disclosure",
+      "",
+      "Articles may declare `digitalSourceType` (IPTC NewsCodes / schema.org) in OKF frontmatter.",
+      "Published HTML includes JSON-LD `digitalSourceType` and optional EU transparency badges.",
+      "Search index (`assets/search-index.json`) exposes `digital_source_type` per chunk when set.",
+      "Atom feed (`feed.xml`) includes `category term` when disclosure is present.",
+      "",
+      `Labeled articles: ${opts.aiLabeledCount}`,
+    );
+  }
+  lines.push("");
+  return lines.join("\n");
 }
