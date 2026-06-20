@@ -38,6 +38,8 @@ export interface SearchConfig {
   readonly model_id?: string;
   /** 大容量検索資産の配信元（R2 等）。末尾 "/" 推奨。空なら同一オリジン。 */
   readonly asset_base_url?: string;
+  /** dist に ONNX モデルを同梱する（Pages 25MiB 制限のため本番では false 推奨） */
+  readonly bundle_model?: boolean;
 }
 
 export interface FontConfigInput {
@@ -76,7 +78,7 @@ export interface SoraneConfig {
     readonly roles?: FontRoles;
     readonly sources?: Readonly<Record<string, FontSourceSpec>>;
   };
-  readonly search: {
+  readonly search: SearchConfig & {
     readonly index: string;
     readonly model: string;
     readonly model_id: string;
@@ -118,6 +120,7 @@ export const DEFAULT_CONFIG: SoraneConfig = {
     model: "vendor/models",
     model_id: "ruri-v3-30m",
     asset_base_url: "",
+    bundle_model: true,
   },
 };
 

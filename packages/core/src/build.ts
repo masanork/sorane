@@ -630,6 +630,7 @@ export async function runBuild(opts: BuildOptions): Promise<BuildResult> {
     indexPath: indexDbPath,
     modelRoot: config.search.model,
     modelId: config.search.model_id,
+    bundleModel: config.search.bundle_model,
     assetBaseUrl: config.search.asset_base_url || undefined,
     sourceToUrl: (source) => sourceToUrl.get(source) ?? source.replace(/\.md$/i, ".html"),
     onProgress: (message) => process.stdout.write(`[sorane] ${message}\n`),

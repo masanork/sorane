@@ -9,6 +9,7 @@ export interface EmitSearchAssetsOptions {
   readonly indexPath: string;
   readonly modelRoot: string;
   readonly modelId: string;
+  readonly bundleModel?: boolean;
   readonly assetBaseUrl?: string;
   readonly sourceToUrl: (source: string) => string;
   readonly repoRoot?: string;
@@ -42,7 +43,8 @@ export async function emitSearchAssets(
   }
 
   const modelRoot = resolve(opts.cwd, opts.modelRoot);
-  const okModel = vendorModel(modelRoot, opts.modelId, opts.outDir);
+  const okModel =
+    opts.bundleModel !== false && vendorModel(modelRoot, opts.modelId, opts.outDir);
   const okRuntime = vendorRuntime(opts.outDir, opts.repoRoot);
   const okScript = copySearchScript(opts.outDir, opts.repoRoot);
 
