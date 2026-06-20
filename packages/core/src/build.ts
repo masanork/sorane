@@ -359,7 +359,7 @@ export async function runBuild(opts: BuildOptions): Promise<BuildResult> {
           lang: config.site.lang,
         });
 
-    const fontCss = await fontCssFor(p.concept, rootPrefix, isSearch ? bodyHtml : undefined);
+    const fontCss = await fontCssFor(p.concept, rootPrefix, bodyHtml);
     const extraHead = isSearch
       ? buildSearchHead(rootPrefix)
       : jsonLd
@@ -459,7 +459,7 @@ export async function runBuild(opts: BuildOptions): Promise<BuildResult> {
       fontCss,
       isIndex: true,
       pageKind: "website",
-      extraHead: [indexJsonLd, ...(fontCss ? [fontCss] : [])],
+      extraHead: [indexJsonLd],
       showArchiveNav: blogOpts.archives,
       searchPath: searchNavPath,
     });

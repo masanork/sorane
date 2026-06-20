@@ -39,6 +39,11 @@ export function emitPage(opts: EmitPageOptions): { mdOutRel: string; canonicalUr
   const mdOutRel = opts.outRel.replace(/\.html$/, ".md");
   writeFileSync(join(opts.outDir, mdOutRel), conceptToOkfMarkdown(opts.concept), "utf8");
 
+  const extraHead = [
+    ...(opts.extraHead ?? []),
+    ...(opts.fontCss ? [opts.fontCss] : []),
+  ];
+
   const html = buildPage({
     title: opts.concept.title,
     siteTitle: opts.config.site.title,
@@ -52,7 +57,7 @@ export function emitPage(opts: EmitPageOptions): { mdOutRel: string; canonicalUr
     searchPath: opts.searchPath,
     pageKind: opts.pageKind ?? (opts.isIndex ? "website" : "article"),
     machineSources: [{ href: mdOutRel, type: "text/markdown" }],
-    extraHead: opts.extraHead ?? (opts.fontCss ? [opts.fontCss] : undefined),
+    extraHead: extraHead.length > 0 ? extraHead : undefined,
   });
   writeFileSync(outAbs, html, "utf8");
 

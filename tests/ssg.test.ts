@@ -3,6 +3,7 @@ import { join } from "node:path";
 import { tmpdir } from "node:os";
 import { describe, expect, test } from "./_expect.ts";
 import { runBuild } from "../packages/core/src/build.ts";
+import { emitPage } from "../packages/core/src/emit-page.ts";
 import {
   extractDescription,
   sanitizeListDescription,
@@ -114,6 +115,34 @@ describe("buildAtomFeed", () => {
     );
     expect(xml).toContain("<feed");
     expect(xml).toContain("https://ex.dev/a.html");
+  });
+});
+
+describe("emitPage", () => {
+  test("extraHead と fontCss を両方 head に出す", () => {
+    const tmp = mkdtempSync(join(tmpdir(), "sorane-emit-"));
+    try {
+      const concept = normalizeConcept({ type: "article", title: "T" }, "Body", "t");
+      emitPage({
+        cwd: tmp,
+        config: {
+          site: { title: "Site", lang: "ja" },
+          build: { content_dir: "content", out_dir: join(tmp, "dist") },
+        },
+        outDir: join(tmp, "dist"),
+        outRel: "t.html",
+        concept,
+        bodyHtml: "<p>Body</p>",
+        baseUrl: "",
+        extraHead: ['<script type="application/ld+json">{}</script>'],
+        fontCss: "<style>@font-face { font-family: 'X'; }</style>",
+      });
+      const html = readFileSync(join(tmp, "dist/t.html"), "utf8");
+      expect(html).toContain("application/ld+json");
+      expect(html).toContain("@font-face");
+    } finally {
+      rmSync(tmp, { recursive: true, force: true });
+    }
   });
 });
 
