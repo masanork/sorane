@@ -7,7 +7,7 @@ excludeFromList: true
 
 ## Cloudflare Pages（推奨）
 
-本番例は [sorane 公式サイト](https://sorane.pages.dev/) です。リポジトリ内の `website/` を sorane 自身でビルドし、CI から `website/dist` をデプロイしています（dogfooding）。
+本番例は [sorane 公式サイト](https://sorane.dev/) です。リポジトリ内の `website/` を sorane 自身でビルドし、CI から `website/dist` をデプロイしています（dogfooding）。
 
 ```yaml
 # .github/workflows/pages.yml（概要）
@@ -43,8 +43,8 @@ excludeFromList: true
 - **標準（FTS）**: モデル不要。`search-index.json` のみ dist に含まれる
 - **experimental（hybrid）**: `search.mode: hybrid` + `bundle_model: false` で ONNX を R2 等から配信（Pages 25MiB 制限）
 
-## カスタムドメイン（未着手）
+## カスタムドメイン
 
-現時点の本番 URL は `sorane.pages.dev` です。`sorane.dev` はまだ取得していません。
+`sorane.dev` を Cloudflare Domains で取得済みです。Pages プロジェクト `sorane` にカスタムドメインを追加し、`sorane.yaml` の `base_url` を `https://sorane.dev` に揃えています（OKF schema の `$id` と一致）。
 
-ドメインを取れたら Cloudflare Pages で CNAME を設定し、OKF schema の `$id`（`https://sorane.dev/profile/...`）と揃える想定です。
+初回はダッシュボードの **Workers & Pages → sorane → Custom domains** で `sorane.dev` の DNS / SSL が `Active` になるまで数分かかることがあります。反映前は `sorane.pages.dev` でもアクセスできます。
