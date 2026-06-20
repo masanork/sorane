@@ -120,6 +120,7 @@ export interface BlogIndexOptions {
   /** false のとき blog-header の h1 を出さない（site-header と重複させない） */
   readonly showHeaderTitle?: boolean;
   readonly profileUrl?: string;
+  readonly githubUrl?: string;
   readonly introHtml?: string;
   readonly latestArticle?: {
     readonly title: string;
@@ -360,9 +361,17 @@ export function renderArticleBody(concept: OkfConcept, nav?: ArticleNav): string
 
 export function renderBlogIndexBody(opts: BlogIndexOptions): string {
   const labels = opts.labels ?? siteLabels(opts.lang ?? "ja");
-  const profile = opts.profileUrl
-    ? `<a href="${escapeHtml(opts.profileUrl)}" class="blog-profile-link">${escapeHtml(labels.profile)}</a>`
-    : "";
+  const links = [
+    opts.profileUrl
+      ? `<a href="${escapeHtml(opts.profileUrl)}" class="blog-profile-link">${escapeHtml(labels.profile)}</a>`
+      : "",
+    opts.githubUrl
+      ? `<a href="${escapeHtml(opts.githubUrl)}" class="blog-profile-link">${escapeHtml(labels.github)}</a>`
+      : "",
+  ]
+    .filter(Boolean)
+    .join(" ");
+  const profile = links ? links : "";
   const intro = opts.introHtml
     ? `<div class="blog-intro">${opts.introHtml}</div>`
     : "";
@@ -435,35 +444,55 @@ export function isSearchView(frontmatter: Record<string, unknown>): boolean {
   return frontmatter.view === "search";
 }
 
-export function buildSearchMount(rootPrefix: string, assetBaseUrl = ""): string {
-  const opts = [
+export type SearchMountMode = "fts" | "hybrid";
+
+export function buildSearchMount(
+  rootPrefix: string,
+  opts: { readonly assetBaseUrl?: string; readonly mode?: SearchMountMode } = {},
+): string {
+  const mode = opts.mode ?? "fts";
+  const facetOpts = [
     ["", "すべて"],
     ["article", "記事"],
     ["index", "トップ"],
   ]
     .map(([v, l]) => `<option value="${escapeHtml(v!)}">${escapeHtml(l!)}</option>`)
     .join("");
-  const assetBase = assetBaseUrl.length > 0 ? assetBaseUrl : rootPrefix;
-  const indexUrl =
-    assetBaseUrl.length > 0
-      ? `${assetBase}search-index.json`
-      : `${rootPrefix}assets/search-index.json`;
-  const modelBase = `${assetBase}models/`;
+  const indexUrl = `${rootPrefix}assets/search-index.json`;
+  const status =
+    mode === "hybrid"
+      ? "検索には JavaScript（と初回のみ埋め込みモデルの読み込み）が必要です。"
+      : "検索には JavaScript が必要です。";
+  const hybridAttrs =
+    mode === "hybrid"
+      ? (() => {
+          const assetBaseUrl = opts.assetBaseUrl ?? "";
+          const modelBase =
+            assetBaseUrl.length > 0 ? `${assetBaseUrl}models/` : `${rootPrefix}models/`;
+          return (
+            ` data-mode="hybrid"` +
+            ` data-model-base="${escapeHtml(modelBase)}"` +
+            ` data-lib-base="${escapeHtml(rootPrefix)}assets/search/lib/"`
+          );
+        })()
+      : ` data-mode="fts"`;
   return (
-    `<div class="search" data-search data-index="${escapeHtml(indexUrl)}"` +
-    ` data-model-base="${escapeHtml(modelBase)}" data-lib-base="${escapeHtml(rootPrefix)}assets/search/lib/">` +
+    `<div class="search" data-search data-index="${escapeHtml(indexUrl)}"${hybridAttrs}>` +
     `<form class="search-form" role="search">` +
-    `<input type="search" name="q" class="search-input" placeholder="キーワードや自然文で検索" autocomplete="off" aria-label="検索キーワード">` +
-    `<select name="type" class="search-facet" aria-label="種別で絞り込み">${opts}</select>` +
+    `<input type="search" name="q" class="search-input" placeholder="キーワードで検索" autocomplete="off" aria-label="検索キーワード">` +
+    `<select name="type" class="search-facet" aria-label="種別で絞り込み">${facetOpts}</select>` +
     `<button type="submit" class="search-submit">検索</button>` +
     `</form>` +
-    `<p class="search-status" data-search-status>検索には JavaScript（と初回のみ埋め込みモデルの読み込み）が必要です。</p>` +
+    `<p class="search-status" data-search-status>${escapeHtml(status)}</p>` +
     `<ol class="search-results" data-search-results></ol>` +
     `</div>\n`
   );
 }
 
-export function buildSearchHead(rootPrefix: string): string[] {
+export function buildSearchHead(rootPrefix: string, mode: SearchMountMode = "fts"): string[] {
+  if (mode === "fts") {
+    return [`<script type="module" src="${rootPrefix}assets/search.mjs"></script>`];
+  }
   const libBase = `${rootPrefix || "./"}assets/search/lib/`;
   return [
     `<script type="importmap">${JSON.stringify({

@@ -140,12 +140,21 @@ export function renderDocsIndexBody(opts: {
   readonly introHtml?: string;
   readonly docsNav: readonly DocsNavItem[];
   readonly profileUrl?: string;
+  readonly githubUrl?: string;
   readonly lang?: string;
 }): string {
   const labels = siteLabels(opts.lang ?? "ja");
-  const profile = opts.profileUrl
-    ? `<a href="${escapeHtml(opts.profileUrl)}" class="blog-profile-link">${escapeHtml(labels.profile)}</a>`
-    : "";
+  const links = [
+    opts.profileUrl
+      ? `<a href="${escapeHtml(opts.profileUrl)}" class="blog-profile-link">${escapeHtml(labels.profile)}</a>`
+      : "",
+    opts.githubUrl
+      ? `<a href="${escapeHtml(opts.githubUrl)}" class="blog-profile-link">${escapeHtml(labels.github)}</a>`
+      : "",
+  ]
+    .filter(Boolean)
+    .join(" ");
+  const profile = links ? links : "";
   const intro = opts.introHtml ? `<div class="docs-intro">${opts.introHtml}</div>` : "";
   const items = opts.docsNav
     .map(

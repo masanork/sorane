@@ -1,11 +1,23 @@
-// Browser-side vector search (sorane SSG).
+// Browser-side search (sorane SSG).
 //
-// Mount: <div data-search data-index=".../assets/search-index.json"
-//             data-model-base=".../models/" data-lib-base=".../assets/search/lib/">
+// FTS mount:  <div data-search data-mode="fts" data-index=".../assets/search-index.json">
+// Hybrid:     + data-model-base, data-lib-base
 
 const MODEL_ID = "ruri-v3-30m";
 const QUERY_PREFIX = "検索クエリ: ";
 const TOP_K = 10;
+
+function tokenizeQuery(query) {
+  const segs = query
+    .split(/[぀-ゟ]+|[\s、。・，．:：;；!！?？()（）「」『』【】\[\]]+/)
+    .map((s) => s.trim())
+    .filter((s) => s.length >= 2);
+  if (segs.length === 0) {
+    const flat = query.trim();
+    return flat.length >= 1 ? [flat] : [];
+  }
+  return segs;
+}
 
 function decodeVectors(b64, dim) {
   const binary = atob(b64);
@@ -35,6 +47,47 @@ function topK(query, vectors, dim, k, allow) {
   return heap.sort((a, b) => b.score - a.score);
 }
 
+function ftsSearch(index, query, type, k = TOP_K) {
+  const terms = tokenizeQuery(query);
+  if (terms.length === 0) return [];
+  const hits = [];
+  for (let i = 0; i < index.chunks.length; i++) {
+    const chunk = index.chunks[i];
+    if (type && chunk.doc_type !== type) continue;
+    const hay = [
+      chunk.text || "",
+      chunk.title || "",
+      chunk.heading_path || "",
+      chunk.tags || "",
+    ]
+      .join(" ")
+      .toLowerCase();
+    let score = 0;
+    for (const term of terms) {
+      const needle = term.toLowerCase();
+      if (hay.includes(needle)) score += 1;
+      if ((chunk.title || "").toLowerCase().includes(needle)) score += 2;
+      if ((chunk.heading_path || "").toLowerCase().includes(needle)) score += 1;
+    }
+    if (score > 0) hits.push({ index: i, score, chunk });
+  }
+  return hits.sort((a, b) => b.score - a.score).slice(0, k);
+}
+
+function makeSnippet(text, query, max = 160) {
+  const flat = text.replace(/\s+/g, " ").trim();
+  if (flat.length <= max) return flat;
+  const q = query.trim();
+  let start = 0;
+  if (q) {
+    const idx = flat.indexOf(q);
+    if (idx >= 0) start = Math.max(0, idx - Math.floor(max / 4));
+  }
+  const end = Math.min(flat.length, start + max);
+  const body = flat.slice(start, end);
+  return (start > 0 ? "…" : "") + body + (end < flat.length ? "…" : "");
+}
+
 function setup(root) {
   const form = root.querySelector(".search-form");
   const input = root.querySelector(".search-input");
@@ -42,6 +95,7 @@ function setup(root) {
   const status = root.querySelector("[data-search-status]");
   const resultsEl = root.querySelector("[data-search-results]");
   const indexUrl = root.getAttribute("data-index");
+  const mode = root.getAttribute("data-mode") || "fts";
   const modelBase = root.getAttribute("data-model-base");
   const libBase = root.getAttribute("data-lib-base");
   if (!form || !input || !indexUrl) return;
@@ -60,8 +114,13 @@ function setup(root) {
     const res = await fetch(indexUrl);
     if (!res.ok) throw new Error(`failed to fetch search-index.json (${res.status})`);
     const json = await res.json();
-    const dim = json.embeddings.dim;
-    index = { ...json, vectors: decodeVectors(json.embeddings.vectors_b64, dim) };
+    const resolvedMode = json.mode === "hybrid" && json.embeddings ? "hybrid" : "fts";
+    if (resolvedMode === "hybrid") {
+      const dim = json.embeddings.dim;
+      index = { ...json, mode: "hybrid", vectors: decodeVectors(json.embeddings.vectors_b64, dim) };
+    } else {
+      index = { ...json, mode: "fts" };
+    }
     return index;
   }
 
@@ -93,7 +152,7 @@ function setup(root) {
     return embed;
   }
 
-  function render(hits) {
+  function render(hits, query) {
     resultsEl.replaceChildren();
     if (hits.length === 0) {
       setStatus("該当なし。語を変えてお試しください。");
@@ -113,17 +172,45 @@ function setup(root) {
 
       const meta = document.createElement("p");
       meta.className = "search-hit-meta";
-      meta.textContent = `${chunk.doc_type || "-"} · ${chunk.source} · ${score.toFixed(3)}`;
+      const scoreLabel = typeof score === "number" && score % 1 !== 0 ? score.toFixed(3) : String(score);
+      meta.textContent = `${chunk.doc_type || "-"} · ${chunk.source} · ${scoreLabel}`;
       li.appendChild(meta);
 
-      if (chunk.snippet) {
+      const snippet = chunk.snippet || (chunk.text ? makeSnippet(chunk.text, query) : "");
+      if (snippet) {
         const snip = document.createElement("p");
         snip.className = "search-hit-snippet";
-        snip.textContent = chunk.snippet;
+        snip.textContent = snippet;
         li.appendChild(snip);
       }
       resultsEl.appendChild(li);
     }
+  }
+
+  async function runFts(query) {
+    const idx = await loadIndex();
+    setStatus("検索中…");
+    const type = facet ? facet.value : "";
+    const ranked = ftsSearch(idx, query, type);
+    render(
+      ranked.map((r) => ({ chunk: r.chunk, score: r.score })),
+      query,
+    );
+  }
+
+  async function runHybrid(query) {
+    const idx = await loadIndex();
+    const e = await loadEmbedder();
+    setStatus("検索中…");
+    const qv = await e(query);
+    const type = facet ? facet.value : "";
+    const allow = type ? (i) => idx.chunks[i].doc_type === type : null;
+    const ranked = topK(qv, idx.vectors, idx.embeddings.dim, TOP_K, allow);
+    const scale = idx.embeddings.scale || 1;
+    render(
+      ranked.map((r) => ({ chunk: idx.chunks[r.index], score: r.score / scale })),
+      query,
+    );
   }
 
   async function run(query) {
@@ -131,14 +218,9 @@ function setup(root) {
     busy = true;
     try {
       const idx = await loadIndex();
-      const e = await loadEmbedder();
-      setStatus("検索中…");
-      const qv = await e(query);
-      const type = facet ? facet.value : "";
-      const allow = type ? (i) => idx.chunks[i].doc_type === type : null;
-      const ranked = topK(qv, idx.vectors, idx.embeddings.dim, TOP_K, allow);
-      const scale = idx.embeddings.scale || 1;
-      render(ranked.map((r) => ({ chunk: idx.chunks[r.index], score: r.score / scale })));
+      const useHybrid = (idx.mode || mode) === "hybrid";
+      if (useHybrid) await runHybrid(query);
+      else await runFts(query);
     } catch (err) {
       setStatus(`エラー: ${err && err.message ? err.message : err}`);
     } finally {

@@ -320,10 +320,18 @@ export async function runBuild(opts: BuildOptions): Promise<BuildResult> {
 
   const indexDbPath = resolve(cwd, config.search.index);
   let searchNavPath: string | undefined;
+  const searchMode = config.search.mode ?? "fts";
   if (searchPageRel && existsSync(indexDbPath)) {
     const { IndexStore } = await import("@sorane/search");
     const probe = new IndexStore(indexDbPath);
-    if (probe.hasVectors()) searchNavPath = searchPageRel;
+    const { chunks } = probe.counts();
+    if (chunks > 0) {
+      if (searchMode === "hybrid") {
+        if (probe.hasVectors()) searchNavPath = searchPageRel;
+      } else {
+        searchNavPath = searchPageRel;
+      }
+    }
     probe.close();
   }
 
@@ -377,7 +385,10 @@ export async function runBuild(opts: BuildOptions): Promise<BuildResult> {
         ? docsNavFor(outRel, docsNav)
         : articleNavFor(outRel, articleSummaries);
     const bodyHtml = isSearch
-      ? buildSearchMount(rootPrefix, config.search.asset_base_url) +
+      ? buildSearchMount(rootPrefix, {
+          assetBaseUrl: config.search.asset_base_url,
+          mode: searchMode,
+        }) +
         (p.concept.body.trim()
           ? `<div class="search-intro">${renderMarkdown(p.concept.body)}</div>`
           : "")
@@ -403,7 +414,7 @@ export async function runBuild(opts: BuildOptions): Promise<BuildResult> {
 
     const fontCss = await fontCssFor(p.concept, rootPrefix, bodyHtml);
     const extraHead = isSearch
-      ? buildSearchHead(rootPrefix)
+      ? buildSearchHead(rootPrefix, searchMode)
       : jsonLd
         ? [jsonLd]
         : undefined;
@@ -450,6 +461,7 @@ export async function runBuild(opts: BuildOptions): Promise<BuildResult> {
         siteTitle: p.concept.title || config.site.title,
         description: p.concept.description ?? config.site.description,
         profileUrl: frontmatterString(p.concept.frontmatter, "profileUrl"),
+        githubUrl: frontmatterString(p.concept.frontmatter, "githubUrl"),
         introHtml: introHtmlFromBody(p.concept.body, p.concept.title || config.site.title),
         docsNav,
         lang: config.site.lang,
@@ -467,6 +479,7 @@ export async function runBuild(opts: BuildOptions): Promise<BuildResult> {
         description: p.concept.description ?? config.site.description,
         showHeaderTitle: false,
         profileUrl: frontmatterString(p.concept.frontmatter, "profileUrl"),
+        githubUrl: frontmatterString(p.concept.frontmatter, "githubUrl"),
         introHtml: introHtmlFromBody(p.concept.body, p.concept.title || config.site.title),
         lang: config.site.lang,
         latestArticle:
@@ -722,6 +735,7 @@ export async function runBuild(opts: BuildOptions): Promise<BuildResult> {
     cwd,
     outDir,
     indexPath: indexDbPath,
+    mode: searchMode,
     modelRoot: config.search.model,
     modelId: config.search.model_id,
     bundleModel: config.search.bundle_model,

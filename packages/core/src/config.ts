@@ -29,7 +29,11 @@ export interface BlogBuildConfig {
   readonly tags?: boolean;
 }
 
+export type SearchMode = "fts" | "hybrid";
+
 export interface SearchConfig {
+  /** fts（標準）| hybrid（experimental・要埋め込みモデル） */
+  readonly mode?: SearchMode;
   /** FTS インデックスの出力先（既定: .sorane/index.db） */
   readonly index?: string;
   /** 埋め込みモデル root（既定: vendor/models） */
@@ -86,6 +90,7 @@ export interface SoraneConfig {
     readonly sources?: Readonly<Record<string, FontSourceSpec>>;
   };
   readonly search: SearchConfig & {
+    readonly mode: SearchMode;
     readonly index: string;
     readonly model: string;
     readonly model_id: string;
@@ -124,6 +129,7 @@ export const DEFAULT_CONFIG: SoraneConfig = {
     skip_key: "noFontEmbedding",
   },
   search: {
+    mode: "fts",
     index: ".sorane/index.db",
     model: "vendor/models",
     model_id: "ruri-v3-30m",

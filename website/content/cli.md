@@ -35,13 +35,13 @@ sorane migrate [--cwd <dir>] [--dry-run]
 
 ## sorane index
 
-検索インデックス（SQLite FTS5 + 任意でベクトル）を構築します。
+検索インデックス（SQLite FTS5、任意でベクトル）を構築します。既定は FTS のみです。
 
 ```bash
-sorane index [--cwd <dir>] [--force] [--fts-only]
+sorane index [--cwd <dir>] [--force] [--hybrid] [--fts-only]
 ```
 
-ハイブリッド検索を使う場合は、先に `npm run fetch-model` で ruri-v3-30m を取得してください。
+ハイブリッド（experimental）を使う場合は `search.mode: hybrid` または `--hybrid` と、先に `npm run fetch-model` で ruri-v3-30m を取得してください。
 
 ## sorane search
 

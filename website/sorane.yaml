@@ -23,5 +23,8 @@ docs:
     - deployment.html
     - releases.html
 
+search:
+  index: .sorane/index.db
+
 fonts:
   enabled: false

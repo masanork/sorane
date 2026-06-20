@@ -7,7 +7,9 @@ export async function runIndexCmd(argv: string[]): Promise<void> {
   const cwd = parseCwdFlag(argv);
   const config = loadSoraneConfig(cwd);
   const force = argv.includes("--force");
-  const ftsOnly = argv.includes("--fts-only");
+  const configMode = config.search.mode ?? "fts";
+  const hybrid =
+    argv.includes("--hybrid") || (argv.includes("--fts-only") ? false : configMode === "hybrid");
   const get = (flag: string, def: string) => {
     const i = argv.indexOf(flag);
     return i >= 0 && argv[i + 1] ? argv[i + 1]! : def;
@@ -22,12 +24,12 @@ export async function runIndexCmd(argv: string[]): Promise<void> {
   const modelId = get("--model-id", config.search.model_id);
 
   let embeddings = null;
-  if (!ftsOnly) {
+  if (hybrid) {
     const modelDir = resolve(modelRoot, modelId);
     if (!existsSync(modelDir)) {
       process.stderr.write(
         `[sorane] model not found at ${modelDir}; indexing FTS-only\n` +
-          `  run: npm run fetch-model (or sorane index --fts-only)\n`,
+          `  run: npm run fetch-model (or sorane index without --hybrid)\n`,
       );
     } else {
       embeddings = new RuriEmbeddings({ modelRoot, modelId });

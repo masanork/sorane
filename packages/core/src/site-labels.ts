@@ -3,6 +3,7 @@ export interface SiteLabels {
   readonly search: string;
   readonly feed: string;
   readonly profile: string;
+  readonly github: string;
   readonly readMore: string;
   readonly pastArticles: string;
   readonly updated: string;
@@ -20,6 +21,7 @@ const JA: SiteLabels = {
   search: "検索",
   feed: "フィード",
   profile: "プロフィール",
+  github: "GitHub",
   readMore: "続きを読む →",
   pastArticles: "過去の記事",
   updated: "更",
@@ -37,6 +39,7 @@ const EN: SiteLabels = {
   search: "Search",
   feed: "Feed",
   profile: "Profile",
+  github: "GitHub",
   readMore: "Read more →",
   pastArticles: "Archive",
   updated: "upd",
@@ -61,6 +64,7 @@ export function siteChromeText(lang: string, siteTitle: string, includeSearch = 
     labels.archive,
     labels.feed,
     labels.profile,
+    labels.github,
     labels.readMore,
     labels.pastArticles,
     labels.updated,

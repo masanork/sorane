@@ -2,6 +2,7 @@ import { Buffer } from "node:buffer";
 import type { ChunkRow } from "./store.ts";
 
 export const WEB_INDEX_SCHEMA_VERSION = 2;
+export const FTS_WEB_INDEX_SCHEMA_VERSION = 3;
 export const INT8_SCALE = 127;
 export const SNIPPET_LEN = 220;
 
@@ -18,6 +19,7 @@ export interface WebChunk {
 
 export interface WebIndex {
   readonly schema_version: number;
+  readonly mode: "hybrid";
   readonly built_at: string;
   readonly model: { id: string; dim: number; quant: string; sha256: string };
   readonly chunks: WebChunk[];
@@ -27,6 +29,17 @@ export interface WebIndex {
     readonly scale: number;
     readonly vectors_b64: string;
   };
+}
+
+export interface FtsWebChunk extends WebChunk {
+  readonly text: string;
+}
+
+export interface FtsWebIndex {
+  readonly schema_version: number;
+  readonly mode: "fts";
+  readonly built_at: string;
+  readonly chunks: FtsWebChunk[];
 }
 
 export function toSnippet(text: string, max: number = SNIPPET_LEN): string {
@@ -80,6 +93,7 @@ export function buildWebIndex(
 
   return {
     schema_version: WEB_INDEX_SCHEMA_VERSION,
+    mode: "hybrid",
     built_at: new Date().toISOString(),
     model: {
       id: meta.model_id ?? "",
@@ -89,5 +103,28 @@ export function buildWebIndex(
     },
     chunks,
     embeddings: { dim, encoding: "int8", scale: INT8_SCALE, vectors_b64 },
+  };
+}
+
+export function buildFtsWebIndex(
+  rows: ChunkRow[],
+  sourceToUrl: (source: string) => string = defaultSourceUrl,
+): FtsWebIndex {
+  const chunks: FtsWebChunk[] = rows.map((r) => ({
+    source: r.source,
+    url: sourceToUrl(r.source),
+    heading_slug: r.headingSlug,
+    heading_path: r.headingPath,
+    doc_type: r.docType,
+    title: r.title,
+    tags: r.tags,
+    snippet: toSnippet(r.text),
+    text: r.text,
+  }));
+  return {
+    schema_version: FTS_WEB_INDEX_SCHEMA_VERSION,
+    mode: "fts",
+    built_at: new Date().toISOString(),
+    chunks,
   };
 }

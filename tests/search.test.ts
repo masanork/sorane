@@ -171,10 +171,45 @@ Full-text search uses SQLite FTS5 trigram tokenization for Japanese partial matc
       store.close();
 
       const webIndexPath = join(dir, "search-index.json");
-      const derived = await deriveWebIndex(indexPath, webIndexPath, () => "post.html");
+      const derived = await deriveWebIndex(indexPath, webIndexPath, () => "post.html", "hybrid");
       expect(derived.written).toBe(true);
       expect(derived.chunks > 0).toBe(true);
+      expect(derived.mode).toBe("hybrid");
       expect(existsSync(webIndexPath)).toBe(true);
+    } finally {
+      rmSync(dir, { recursive: true, force: true });
+    }
+  });
+
+  test("FTS のみでも web index を出す", async () => {
+    const dir = mkdtempSync(join(tmpdir(), "sorane-search-"));
+    const contentDir = join(dir, "content");
+    const indexPath = join(dir, "index.db");
+    try {
+      mkdirSync(contentDir, { recursive: true });
+      writeFileSync(
+        join(contentDir, "doc.md"),
+        `---
+type: article
+title: FTS Doc
+---
+Keyword matching works without embedding models in the browser search index export.
+`,
+      );
+
+      const built = await buildSearchIndex({
+        contentDir,
+        indexPath,
+        force: true,
+        embeddings: null,
+      });
+      expect(built.mode).toBe("fts-only");
+
+      const webIndexPath = join(dir, "search-index.json");
+      const derived = await deriveWebIndex(indexPath, webIndexPath, () => "doc.html", "fts");
+      expect(derived.written).toBe(true);
+      expect(derived.mode).toBe("fts");
+      expect(derived.chunks).toBe(built.chunks);
     } finally {
       rmSync(dir, { recursive: true, force: true });
     }

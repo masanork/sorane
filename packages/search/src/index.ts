@@ -34,15 +34,19 @@ export { walkMarkdown } from "./walk.ts";
 export { buildSearchIndex, type BuildIndexOptions, type BuildIndexResult } from "./build-index.ts";
 export {
   buildWebIndex,
+  buildFtsWebIndex,
   toSnippet,
   defaultSourceUrl,
   WEB_INDEX_SCHEMA_VERSION,
+  FTS_WEB_INDEX_SCHEMA_VERSION,
   INT8_SCALE,
   SNIPPET_LEN,
   type WebChunk,
   type WebIndex,
+  type FtsWebIndex,
+  type FtsWebChunk,
 } from "./web-export.ts";
-export { deriveWebIndex, type DeriveResult } from "./derive-web-index.ts";
+export { deriveWebIndex, type DeriveResult, type WebSearchMode } from "./derive-web-index.ts";
 export {
   vendorModel,
   vendorRuntime,
