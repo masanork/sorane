@@ -11,8 +11,7 @@ export const MIN_BODY_STRUCTURED = 12;
 export const MAX_BODY = 800;
 
 const STRUCTURED_DOC_TYPES = new Set(["faq", "glossary"]);
-const H2_SECTION_RE = /^##\s+(.+?)(?:\s*\{#([^}]+)\})?\s*$/;
-const FENCE_OPEN_RE = /^(```+|~~~+)/;
+const H2_ANCHOR_SUFFIX_RE = /\s*\{#([^}]+)\}\s*$/;
 
 export interface Chunk {
   readonly source: string;
@@ -52,6 +51,7 @@ function blockToText(node: RootContent): string {
     case "table":
       return tableToText(node);
     case "code":
+      return node.value ?? "";
     case "html":
     case "thematicBreak":
       return "";
@@ -196,54 +196,50 @@ interface H2Section {
   readonly slug: string;
 }
 
-function parseH2Sections(body: string): H2Section[] {
-  const lines = body.split(/\r?\n/);
-  let inFence = false;
-  let fenceMarker = "";
-  const sections: { heading: string; bodyLines: string[] }[] = [];
-  let current: { heading: string; bodyLines: string[] } | null = null;
+function parseH2HeadingLabel(node: Heading): string {
+  const raw = nodeToText(node).trim();
+  const m = H2_ANCHOR_SUFFIX_RE.exec(raw);
+  if (m === null) return raw;
+  return raw.slice(0, m.index).trim();
+}
+
+/** mdast `##` 分割（FAQ / glossary 索引; フェンス内 `##` は境界にしない）。 */
+function splitMdastH2Sections(body: string): H2Section[] {
+  const tree = unified().use(remarkParse).use(remarkGfm).parse(body) as Root;
   const ledger = new SlugLedger();
+  const sections: H2Section[] = [];
+  let current: { heading: string; body: RootContent[] } | null = null;
 
-  for (const line of lines) {
-    const fence = FENCE_OPEN_RE.exec(line);
-    if (fence) {
-      const marker = fence[1]!;
-      if (!inFence) {
-        inFence = true;
-        fenceMarker = marker;
-      } else if (line.startsWith(fenceMarker)) {
-        inFence = false;
-        fenceMarker = "";
+  for (const node of tree.children) {
+    if (node.type === "heading" && node.depth === 2) {
+      if (current !== null) {
+        const bodyText = current.body.map(blockToText).filter(Boolean).join("\n\n").trim();
+        sections.push({
+          heading: current.heading,
+          body: bodyText,
+          slug: ledger.next(current.heading),
+        });
       }
-      if (current) current.bodyLines.push(line);
+      current = { heading: parseH2HeadingLabel(node), body: [] };
       continue;
     }
-    if (inFence) {
-      if (current) current.bodyLines.push(line);
-      continue;
-    }
-    const hm = H2_SECTION_RE.exec(line);
-    if (hm) {
-      if (current) sections.push(current);
-      current = {
-        heading: hm[1]!.replace(/\s*\{#[^}]+\}\s*$/, "").trim(),
-        bodyLines: [],
-      };
-      continue;
-    }
-    if (current) current.bodyLines.push(line);
+    if (current !== null) current.body.push(node);
   }
-  if (current) sections.push(current);
 
-  return sections.map((s) => ({
-    heading: s.heading,
-    body: s.bodyLines.join("\n").trim(),
-    slug: ledger.next(s.heading),
-  }));
+  if (current !== null) {
+    const bodyText = current.body.map(blockToText).filter(Boolean).join("\n\n").trim();
+    sections.push({
+      heading: current.heading,
+      body: bodyText,
+      slug: ledger.next(current.heading),
+    });
+  }
+
+  return sections;
 }
 
 function chunkStructuredSections(body: string, meta: Meta): Chunk[] {
-  const sections = parseH2Sections(body);
+  const sections = splitMdastH2Sections(body);
   if (sections.length === 0) return [];
   const out: Chunk[] = [];
   let index = 0;

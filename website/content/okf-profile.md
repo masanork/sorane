@@ -136,6 +136,7 @@ profile: sorane-okf/0.3
 | `*.md` | OKF ネイティブ代替ソース |
 | `catalog.jsonld` | schema.org カタログ（`dataset[]` と `hasPart[]` を分離） |
 | `catalog-dcat.jsonld` | DCAT-AP JSON-LD（`type: dataset` のみ、opt-in） |
+| （運用） | [オープンデータのポータル連携](open-data-harvesting.html) — CKAN / data.europa.eu |
 | `llms.txt` | LLM 向けサイトガイド |
 | `okf/bundle.tar.gz` | `{type}/{slug}.md` のバンドル |
 

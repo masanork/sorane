@@ -37,4 +37,6 @@ npx @sorane/cli build --cwd examples/open-data --clean
 - `stops-csv-fields.html` — reference layout + `isBasedOn` JSON-LD
 - `assets/search-index.json` — after `index`; filter by `doc_type` or tags like `format:csv`
 
+Portal harvest (CKAN / data.europa.eu): [website/content/open-data-harvesting.md](../../website/content/open-data-harvesting.md).
+
 Agent instructions: [AGENTS.md](./AGENTS.md). Full OKF rules: [template/site/AGENTS.md](../../template/site/AGENTS.md).

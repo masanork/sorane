@@ -4,7 +4,7 @@
 |-------|-------|
 | **Author** | _(TBD)_ |
 | **Date** | 2026-06-21 |
-| **Status** | Draft (contract — implement after golden lock) |
+| **Status** | PR1–PR4 complete; PR5–PR6 shipped (docx / PDF sketch) |
 | **Profile target** | Body syntax only; OKF frontmatter unchanged (`sorane-okf/0.1`–`0.3`) |
 | **Prior art** | bunsen `specs/004-ruby-annotations`, `specs/023-kind-pandoc-filter` |
 
@@ -12,15 +12,7 @@
 
 ## Overview
 
-sorane today renders Markdown with a single path:
-
-```
-remark-parse → remark-gfm → remark-diagram-fences → remark-rehype → rehype-sanitize → HTML
-```
-
-Glossary / FAQ structure is extracted partly by **line parsers** (`glossary-page.ts`) and partly by **mdast** (`search/chunker.ts`). Ruby and glossary term autolinks are not supported.
-
-This design introduces a **format-neutral interchange hub** between mdast and final outputs:
+Build-time body rendering uses a **format-neutral interchange hub**:
 
 ```
 Markdown (OKF body, non-destructive)
@@ -100,13 +92,13 @@ export function processMarkdownToMdast(
 
 **Consumers (same tree):**
 
-| Consumer | Today | After |
-|----------|-------|-------|
-| `render.ts` | own `unified()` | `mdastToPandoc` → `pandocToHtml` |
-| `glossary-page.ts` | line parser | mdast heading boundaries + subtree plain text |
-| `faq-page.ts` | line parser | same pattern as bunsen `faq-extractor.ts` |
-| `@sorane/font` charset | `extraText` from HTML | `extractRubyCharset(mdast)` merged |
-| `search/chunker.ts` | separate parse | optional: reuse mdast (Phase 2) |
+| Consumer | Status |
+|----------|--------|
+| `render.ts` | `processMarkdownToMdast` → `mdastToPandoc` → `pandocToHtml` |
+| `glossary-page.ts` | `splitMarkdownOnH2` (mdast); line validators for warnings |
+| `faq-page.ts` | `splitMarkdownOnH2` (mdast); line validators for warnings |
+| `@sorane/font` charset | `extractRubyCharset(mdast)` |
+| `search/chunker.ts` | FAQ/glossary: `splitMdastH2Sections` (mdast); articles: existing mdast chunker |
 
 ---
 
@@ -318,14 +310,12 @@ Normalization rules for byte compare:
 
 | PR | Scope | Acceptance |
 |----|-------|------------|
-| **PR1** | `ast/pandoc-types.ts`, `mdast-to-pandoc`, `pandoc-to-html`; wire `render.ts` for **plain markdown only**; golden `1-article` parity with current HTML | Existing sites: no visual change |
-| **PR2** | Port bunsen `parse-ruby.ts` + charset extract; golden `1-ruby` | `<ruby><rt>`; font subset includes rt glyphs |
-| **PR3** | `GlossaryLinkIndex` + `parse-term-link.ts`; golden `2-term-link`, `3-combined`; CSS `.glossary-term-link` | `examples/open-data` links terms in prose |
-| **PR4** | mdast-first FAQ/glossary extractors (keep line validators for warnings) | Definition bodies with ruby survive extract |
-| **PR5** | `sorane export --format docx` (optional Pandoc CLI) | docx roundtrip smoke |
-| **PR6** | Vivliostyle doc + `sorane export --format pdf` sketch | PDF from `dist/`; out of default CI |
-
-**Do not start PR2–PR4 until PR1 golden passes.**
+| **PR1** | `ast/pandoc-types.ts`, `mdast-to-pandoc`, `pandoc-to-html`; golden `0-article` | ✅ |
+| **PR2** | `parse-ruby.ts` + charset extract; golden `1-ruby` | ✅ |
+| **PR3** | `GlossaryLinkIndex` + term links; golden `2-term-link`, `3-combined` | ✅ |
+| **PR4** | mdast FAQ/glossary extract + chunker mdast `##` split | ✅ |
+| **PR5** | `sorane export --format docx` (optional Pandoc CLI) | ✅ |
+| **PR6** | Vivliostyle + `print.css` / `prepareHtmlForPdf` | ✅ |
 
 ---
 

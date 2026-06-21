@@ -3,7 +3,7 @@
 | Field | Value |
 |-------|-------|
 | **Date** | 2026-06-21 |
-| **Status** | Sketch (PR6) |
+| **Status** | Implemented (print.css + chrome strip; diagrams deferred) |
 | **Related** | `design/markup-interchange.md` |
 
 ---
@@ -72,12 +72,20 @@ Vivliostyle runs with `cwd = dist/` so relative `./assets/main.css` links resolv
 
 ---
 
-## Known limitations (sketch)
+## PDF HTML preparation
 
-- **Site chrome in PDF**: header search UI, nav scripts, and missing `search.mjs` (404 in headless build) may appear in output; acceptable for smoke tests.
-- **No `print.css` yet**: future work can add `@media print` or a Vivliostyle-specific stylesheet under `static/`.
+`packages/core/src/export/pdf-html.ts` (`prepareHtmlForPdf`):
+
+- Injects `assets/print.css` after `main.css` on a temporary `.print.html` sibling (deleted after export)
+- Removes `search.mjs` module scripts
+
+`templates/default/assets/print.css` is copied to `dist/assets/print.css` on build.
+
+## Known limitations
+
 - **Interactive diagrams**: Mermaid/D2 client-rendered blocks may not match browser output without a pre-render pass.
 - **404 / search-only pages**: batch export skips HTML files that are not buildable content pages.
+- **Emergency banner**: hidden via `print.css` (content not duplicated in PDF body).
 
 ---
 

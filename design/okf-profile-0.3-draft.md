@@ -480,9 +480,9 @@ okf:
 
 ### Phase D — External interop (optional)
 
-- [ ] `catalog-dcat.jsonld` DCAT-AP JSON-LD export
-- [ ] CKAN harvest mapping doc (manual import steps)
-- [ ] data.europa.eu quality checklist crosswalk
+- [x] `catalog-dcat.jsonld` DCAT-AP JSON-LD export
+- [x] CKAN harvest mapping doc (manual import steps) — `website/content/open-data-harvesting.md`
+- [x] data.europa.eu quality checklist crosswalk — same doc
 
 ---
 

@@ -116,6 +116,25 @@ See the dataset page.
     expect(chunks[0]!.text.includes("License")).toBe(true);
   });
 
+  test("faq はコードフェンス内の ## を質問境界にしない", () => {
+    const source = `---
+type: faq
+title: FAQ
+---
+
+## Real question?
+
+\`\`\`
+## not a question
+\`\`\`
+
+Answer with enough text to exceed the structured minimum chunk size for indexing.
+`;
+    const chunks = chunkDocument(source, "faq-fence.md");
+    expect(chunks.length).toBe(1);
+    expect(chunks[0]!.text.includes("not a question")).toBe(true);
+  });
+
   test("glossary を ## 単位で索引する", () => {
     const source = `---
 type: glossary

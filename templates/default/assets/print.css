@@ -1,0 +1,44 @@
+/* PDF / Vivliostyle export — hide site chrome; tune page layout */
+
+@page {
+  size: A4;
+  margin: 18mm 16mm;
+}
+
+@media print {
+  .skip-link,
+  .site-header,
+  .site-footer,
+  .site-nav,
+  .search,
+  .search--header,
+  .emergency-banner,
+  .docs-sidebar,
+  .docs-nav-toggle,
+  .docs-sidebar-desktop {
+    display: none !important;
+  }
+}
+
+body {
+  max-width: none;
+  margin: 0;
+  padding: 0;
+}
+
+main,
+.docs-main {
+  max-width: none;
+  margin: 0;
+  padding: 0;
+}
+
+.docs-layout {
+  display: block;
+}
+
+.article-body img,
+main img {
+  max-width: 100%;
+  height: auto;
+}

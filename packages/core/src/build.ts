@@ -339,8 +339,8 @@ export function tarBytes(entries: Array<{ path: string; content: string }>): Buf
 }
 
 /** サイト cwd または親ディレクトリからテーマ CSS を探す（monorepo の website/ 等）。 */
-export function resolveThemeCss(cwd: string): string | null {
-  const rel = join("templates", "default", "assets", "main.css");
+function resolveThemeAssetFile(cwd: string, filename: string): string | null {
+  const rel = join("templates", "default", "assets", filename);
   let dir = resolve(cwd);
   for (let depth = 0; depth < 6; depth++) {
     const candidate = join(dir, rel);
@@ -350,6 +350,10 @@ export function resolveThemeCss(cwd: string): string | null {
     dir = parent;
   }
   return null;
+}
+
+export function resolveThemeCss(cwd: string): string | null {
+  return resolveThemeAssetFile(cwd, "main.css");
 }
 
 const DEFAULT_CSS = `/* sorane default */
@@ -1717,6 +1721,10 @@ export async function runBuild(opts: BuildOptions): Promise<BuildResult> {
     copyFileSync(templateCss, join(outDir, "assets/main.css"));
   } else {
     writeFileSync(join(outDir, "assets/main.css"), DEFAULT_CSS, "utf8");
+  }
+  const templatePrintCss = resolveThemeAssetFile(cwd, "print.css");
+  if (templatePrintCss) {
+    copyFileSync(templatePrintCss, join(outDir, "assets/print.css"));
   }
 
   if (hasAnyDisclosure) {

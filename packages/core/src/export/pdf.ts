@@ -1,4 +1,12 @@
-import { existsSync, mkdirSync, readdirSync, readFileSync, statSync } from "node:fs";
+import {
+  existsSync,
+  mkdirSync,
+  readdirSync,
+  readFileSync,
+  statSync,
+  unlinkSync,
+  writeFileSync,
+} from "node:fs";
 import { dirname, join, relative, resolve } from "node:path";
 import {
   isBuildableContentType,
@@ -8,6 +16,7 @@ import {
 import type { SoraneConfig } from "../config.ts";
 import { resolveI18nContext, resolvePageLocaleInfo } from "../i18n.ts";
 import { okfValidateOptions } from "../okf-config.ts";
+import { prepareHtmlForPdf } from "./pdf-html.ts";
 import {
   resolveVivliostyleInvocation,
   vivliostyleCliAvailable,
@@ -72,8 +81,16 @@ function exportHtmlToPdf(
   outPath: string,
   invocation: VivliostyleInvocation,
 ): void {
-  const htmlRel = relative(distDir, htmlAbs).replace(/\\/g, "/");
-  vivliostyleHtmlToPdf(htmlRel, outPath, { cwd: distDir, invocation });
+  const raw = readFileSync(htmlAbs, "utf8");
+  const prepared = prepareHtmlForPdf(raw);
+  const printHtmlAbs = htmlAbs.replace(/\.html$/i, ".print.html");
+  writeFileSync(printHtmlAbs, prepared, "utf8");
+  const printRel = relative(distDir, printHtmlAbs).replace(/\\/g, "/");
+  try {
+    vivliostyleHtmlToPdf(printRel, outPath, { cwd: distDir, invocation });
+  } finally {
+    unlinkSync(printHtmlAbs);
+  }
 }
 
 /** `dist/` のビルド済み HTML から PDF を export する（Vivliostyle CLI 必須）。 */
