@@ -2,6 +2,13 @@ export { runBuild, type BuildOptions, type BuildResult } from "./build.ts";
 export { mergeConfig, DEFAULT_CONFIG, resolvePermalink, type SoraneConfig } from "./config.ts";
 export { migrateToOkf, parseBumpProfileArg, type MigrateToOkfOptions } from "./migrate.ts";
 export { validateHeadingWarnings } from "./validate-heading-structure.ts";
+export {
+  validateSiteContent,
+  VALIDATE_JSON_SCHEMA_VERSION,
+  type ValidateSiteReport,
+  type ValidateFileReport,
+  type ValidateFinding,
+} from "./validate-site.ts";
 export { processStaticAssets, type StaticAssetPassResult } from "./static-assets.ts";
 export {
   signRasterWithC2pa,

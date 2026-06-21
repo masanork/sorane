@@ -24,13 +24,20 @@ sorane watch [--cwd <dir>] [--clean]
 
 ## sorane validate
 
-frontmatter と OKF プロファイル（`sorane-okf/0.1`）を検証します。
+frontmatter と OKF プロファイル（`sorane-okf/0.1` / `0.2`）を検証します。
 
 ```bash
-sorane validate [--cwd <dir>]
+sorane validate [--cwd <dir>] [--json]
 ```
 
-図表の alt 欠落や見出し階層の飛び（h2 → h4 など）を **warning** で報告します（ビルドは継続）。
+`--json` は AI エージェント向けの構造化レポート（`schema_version: 1`）を stdout に出力します。`ok: false` のとき exit code は非ゼロです。
+
+| `findings[].severity` | 意味 |
+|-----------------------|------|
+| `error` | 修正必須（OKF / frontmatter） |
+| `warning` | 推奨修正（`diagram` alt、`heading` 階層） |
+
+`template/site/AGENTS.md` と `.grok/skills/sorane-content/SKILL.md` がこの JSON 契約を前提にしています。
 
 ## sorane migrate
 

@@ -1,58 +1,40 @@
-import { existsSync, readdirSync, readFileSync, statSync } from "node:fs";
-import { join, relative, resolve } from "node:path";
-import { validateDiagramAltWarnings, validateHeadingWarnings } from "@sorane/core";
-import { extract } from "@sorane/okf";
-import { validateSource } from "@sorane/okf";
+import { validateSiteContent } from "@sorane/core";
 import { loadSoraneConfig, parseCwdFlag } from "./config-load.ts";
 
-function walkMarkdown(root: string): string[] {
-  const out: string[] = [];
-  function visit(dir: string): void {
-    for (const name of readdirSync(dir).sort()) {
-      const abs = join(dir, name);
-      if (statSync(abs).isDirectory()) visit(abs);
-      else if (name.endsWith(".md")) out.push(abs);
+function parseValidateArgs(argv: string[]): { cwd: string; json: boolean } {
+  return {
+    cwd: parseCwdFlag(argv),
+    json: argv.includes("--json"),
+  };
+}
+
+function writeHumanReport(report: ReturnType<typeof validateSiteContent>): void {
+  for (const file of report.files) {
+    for (const f of file.findings) {
+      const label = f.severity === "error" ? "" : "warning: ";
+      process.stderr.write(`[sorane] ${file.file}: ${label}${f.message}\n`);
     }
   }
-  visit(root);
-  return out;
+  if (report.ok) {
+    process.stdout.write("[sorane] all concepts valid\n");
+    if (report.warning_count > 0) {
+      process.stderr.write(`[sorane] ${report.warning_count} warning(s)\n`);
+    }
+  }
 }
 
 export async function runValidateCmd(argv: string[]): Promise<void> {
-  const cwd = parseCwdFlag(argv);
+  const { cwd, json } = parseValidateArgs(argv);
   const config = loadSoraneConfig(cwd);
-  const contentDir = resolve(cwd, config.build.content_dir);
-  if (!existsSync(contentDir)) {
-    throw new Error(`content directory not found: ${contentDir}`);
+  const report = validateSiteContent(cwd, config);
+
+  if (json) {
+    process.stdout.write(JSON.stringify(report, null, 2) + "\n");
+  } else {
+    writeHumanReport(report);
   }
 
-  let errors = 0;
-  for (const abs of walkMarkdown(contentDir)) {
-    const rel = relative(contentDir, abs);
-    const source = readFileSync(abs, "utf8");
-    const result = validateSource(rel, source);
-    for (const w of result.warnings) {
-      process.stderr.write(`[sorane] ${rel}: warning: ${w}\n`);
-    }
-    const { body } = extract(source);
-    if (body !== null) {
-      for (const w of validateDiagramAltWarnings(body, config.build.diagrams ?? {})) {
-        process.stderr.write(`[sorane] ${rel}: warning: ${w}\n`);
-      }
-      for (const w of validateHeadingWarnings(body)) {
-        process.stderr.write(`[sorane] ${rel}: warning: ${w}\n`);
-      }
-    }
-    if (!result.ok) {
-      for (const issue of result.issues) {
-        process.stderr.write(`[sorane] ${rel}: ${issue.message}\n`);
-      }
-      errors += result.issues.length;
-    }
+  if (!report.ok) {
+    throw new Error(`${report.error_count} validation error(s)`);
   }
-
-  if (errors > 0) {
-    throw new Error(`${errors} validation error(s)`);
-  }
-  process.stdout.write("[sorane] all concepts valid\n");
 }

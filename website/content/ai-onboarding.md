@@ -7,6 +7,8 @@ excludeFromList: true
 
 sorane サイトは **管理画面なし・GitHub 前提** です。ライトユーザーは Cursor、Claude Code、Antigravity などのエージェントに `content/` の編集を任せます。
 
+エージェント向けドキュメントでは **手順・規約・コマンド** を優先します。他ツールとの比較や個別プロダクト名の列挙は載せません（判断材料にならず、陳腐化しやすいため）。
+
 ## テンプレート
 
 リポジトリの [`template/site/`](https://github.com/masanork/sorane/tree/main/template/site) をベースに、コンテンツ用リポジトリを作ります。
@@ -38,19 +40,20 @@ template/site/
 ## エージェントの典型タスク
 
 1. `content/article/` に記事を追加（frontmatter 付き Markdown）
-2. `sorane validate --cwd .` で OKF を検証
+2. **`sorane validate --cwd . --json`** で OKF を検証（stdout をパースし `error` をすべて修正）
 3. 検索を使う場合は `sorane index --force`
 4. `sorane build --clean` で `dist/` を生成
 5. Git push → CI が Pages にデプロイ
 
-詳細な frontmatter 規則と禁止事項は `template/site/AGENTS.md` に書いてあります。
+詳細な frontmatter 規則・JSON 契約・禁止事項は `template/site/AGENTS.md` に書いてあります。Grok では `/sorane-content` スキル（`.grok/skills/sorane-content/SKILL.md`）を使えます。
 
 ## sorane 本体の置き方
 
-npm 未公開の間は、CI で sorane リポジトリを checkout する形が公式です（テンプレートの `pages.yml` 参照）。ローカルでは sorane を隣のディレクトリに clone し、`AGENTS.md` の `SORANE_ROOT` を使います。
+**推奨（npm）:**
 
-## 競合との違い（短く）
+```bash
+npx @sorane/cli@0.2.2 validate --cwd . --json
+npx @sorane/cli@0.2.2 build --cwd . --clean
+```
 
-- WordPress / しらさぎ … 管理画面・組織運用（非競合）
-- Tina / Decap … Git + GUI 編集（sorane はエディターを捨てる）
-- sorane … **エージェントが Markdown を編集し、OKF 副産物付き HTML を出す**
+CI ではテンプレートの `pages.yml` と同様に `npx @sorane/cli` を使えます。fork や monorepo で sorane ソースを pin する場合は、リポジトリ checkout + `SORANE_ROOT`（`AGENTS.md` 参照）でも構いません。

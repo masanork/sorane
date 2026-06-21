@@ -37,7 +37,7 @@ async function main(): Promise<void> {
         "usage: sorane <build|validate|migrate|index|search|watch> [options]\n" +
           "  build     --cwd <dir> [--clean] [--watch] [--skip-c2pa]\n" +
           "  watch     --cwd <dir> [--clean]\n" +
-          "  validate  --cwd <dir>\n" +
+          "  validate  --cwd <dir> [--json]\n" +
           "  migrate   --cwd <dir> [--dry-run] [--bump-profile 0.2]\n" +
           "  index     --cwd <dir> [--force] [--hybrid] [--fts-only] [--out <path>] [--model <dir>] [--model-id <id>]\n" +
           "  search    <query> [--cwd <dir>] [--type article] [--tag <slug>] [--k 10] [--json] [--fts-only]\n",

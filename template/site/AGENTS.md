@@ -2,29 +2,91 @@
 
 You edit a **sorane** static site: Markdown + YAML frontmatter in `content/`, configured by `sorane.yaml`. There is no admin UI. Humans and agents publish by committing to Git.
 
+**Core loop:** edit `content/` → `validate --json` → fix errors → `build --clean` → commit.
+
 ## Your role
 
 - Add and update pages under `content/`
-- Keep frontmatter valid for OKF profile `sorane-okf/0.1`
-- Run `validate` after content changes; run `build` before suggesting deploy
+- Keep frontmatter valid for OKF (`sorane-okf/0.1` or `0.2`)
+- Run **`validate --json`** after every content change; parse JSON and fix all `severity: "error"` findings
+- Run `build --clean` before suggesting deploy
 - Do **not** hand-edit `dist/` (generated)
 
 ## Repository layout
 
 ```
 .
-├── AGENTS.md          ← you are here (Cursor, Claude Code, Antigravity, Codex, …)
-├── sorane.yaml        ← site config
+├── AGENTS.md              ← you are here
+├── .grok/skills/sorane-content/SKILL.md   ← slash /sorane-content
+├── sorane.yaml
 ├── content/
-│   ├── index.md       ← landing (type: index)
-│   ├── article/       ← posts (type: article)
-│   └── search.md      ← optional FTS search UI (view: search)
-└── dist/              ← build output (gitignored)
+│   ├── index.md           ← landing (type: index)
+│   ├── article/           ← posts (type: article)
+│   └── search.md          ← optional FTS search UI (view: search)
+└── dist/                  ← build output (gitignored)
+```
+
+## Commands (preferred: npm)
+
+```bash
+npx @sorane/cli@0.2.2 validate --cwd . --json
+npx @sorane/cli@0.2.2 index --cwd . --force    # if content/search.md exists
+npx @sorane/cli@0.2.2 build --cwd . --clean
+```
+
+Fork / monorepo with sorane checkout: set `SORANE_ROOT` and use `node "$SORANE_ROOT/packages/cli/bin/sorane.mjs"` instead.
+
+## validate --json (agent contract)
+
+Always run with `--json`. Parse stdout as JSON.
+
+| Field | Meaning |
+|-------|---------|
+| `ok` | `true` only when `error_count === 0` (warnings allowed) |
+| `error_count` / `warning_count` | Totals across all files |
+| `files[].file` | Path relative to `content/` |
+| `files[].findings[]` | `{ severity, category, message, where?, instancePath? }` |
+
+**Severity**
+
+- `error` — must fix before commit (`category: "okf"` is frontmatter / profile)
+- `warning` — fix when practical (`diagram` = missing alt, `heading` = hierarchy)
+
+**Workflow**
+
+1. Run `validate --cwd . --json`
+2. If `!ok`, group findings by `files[].file` and fix each `error`
+3. Re-run until `ok === true`
+4. Optionally address `warning` findings (a11y / headings)
+
+Example (invalid type):
+
+```json
+{
+  "schema_version": 1,
+  "ok": false,
+  "error_count": 1,
+  "warning_count": 0,
+  "files": [
+    {
+      "file": "article/bad.md",
+      "ok": false,
+      "findings": [
+        {
+          "severity": "error",
+          "category": "okf",
+          "where": "type",
+          "message": "Unsupported concept type \"playbook\"; supported: article, index"
+        }
+      ]
+    }
+  ]
+}
 ```
 
 ## Content rules
 
-Every page is a Markdown file with YAML frontmatter (`---` … `---`).
+Every page is Markdown with YAML frontmatter (`---` … `---`).
 
 ### Required
 
@@ -32,18 +94,18 @@ Every page is a Markdown file with YAML frontmatter (`---` … `---`).
 |-------|------|
 | `type` | `article` or `index` |
 | `title` | Non-empty string |
-| `profile` | `sorane-okf/0.1` |
+| `profile` | `sorane-okf/0.1` or `sorane-okf/0.2` |
 
 ### Common optional fields
 
 | Field | Use |
 |-------|-----|
-| `timestamp` | ISO 8601 (`2025-01-01T00:00:00Z`) for articles |
+| `timestamp` | ISO 8601 for articles |
 | `tags` | `[tag1, tag2]` |
 | `description` | Short summary |
-| `excludeFromList` | `true` — hide from blog lists (docs, search page) |
+| `excludeFromList` | `true` — hide from blog lists |
 | `view` | `search` — search UI page |
-| `githubUrl` | External link on index |
+| `digitalSourceType` | AI disclosure (`0.2` only) — see sorane.dev/ai-disclosure.html |
 
 ### Article example
 
@@ -56,58 +118,31 @@ tags: [notes]
 profile: sorane-okf/0.1
 ---
 
-Body in Markdown.
+Body in Markdown. Start headings at `##` (page title is already h1).
 ```
 
-### Index example
+## Agent workflow (checklist)
 
-```markdown
----
-type: index
-title: Site name
-description: One-line lead
-profile: sorane-okf/0.1
----
-
-Optional intro paragraph.
-```
-
-## Commands
-
-Set `SORANE_ROOT` to a local clone of [masanork/sorane](https://github.com/masanork/sorane) (sibling directory `../sorane` is typical).
-
-```bash
-export SORANE_ROOT=../sorane
-CLI="node $SORANE_ROOT/packages/cli/src/main.ts"
-
-$CLI validate --cwd .
-$CLI index --cwd . --force    # if search.md exists
-$CLI build --cwd . --clean
-```
-
-CI usually checks out sorane and runs the same commands (see `.github/workflows/pages.yml`).
-
-## Workflow for agents
-
-1. Read `sorane.yaml` and nearby `content/**/*.md` before editing.
-2. Create or update Markdown under `content/` only.
-3. Run `validate --cwd .`. Fix all reported frontmatter / OKF issues.
-4. If the site has `content/search.md`, run `index --cwd . --force`.
-5. Run `build --cwd . --clean`. Confirm `dist/` looks correct.
-6. Summarize changes for the human commit message.
+1. Read `sorane.yaml` and target `content/**/*.md`
+2. Edit Markdown under `content/` only
+3. `validate --cwd . --json` → fix all errors
+4. If `content/search.md` exists: `index --cwd . --force`
+5. `build --cwd . --clean`
+6. Summarize changes for the human commit message
 
 ## Do not
 
-- Add WordPress-style plugins, databases, or server-side runtime
-- Invent frontmatter keys that break `sorane-okf/0.1` without user approval
+- Invent unsupported `type` values or unknown `profile` strings
+- Add server-side runtime, databases, or CMS plugins
 - Commit `dist/`, `.sorane/`, or `node_modules/`
-- Replace the whole site generator; this repo is **content**, sorane is the **tool**
+- Hand-edit generated `dist/`
 
 ## Machine-readable outputs (after build)
 
-sorane emits agent-friendly artifacts in `dist/`: `llms.txt`, `catalog.jsonld`, `okf/bundle.tar.gz`, per-page `.md` alternates. Point other agents at those when answering questions about the live site.
+`dist/llms.txt`, `catalog.jsonld`, `okf/bundle.tar.gz`, per-page `.md` alternates — use these to answer questions about the **published** site.
 
 ## Docs
 
 - https://sorane.dev/
+- AI onboarding: https://sorane.dev/ai-onboarding.html
 - OKF profile: https://sorane.dev/okf-profile.html
