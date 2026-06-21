@@ -1,6 +1,6 @@
 {
   "name": "sorane",
-  "version": "0.2.6",
+  "version": "0.2.7",
   "description": "OKF-native static site generator (Rust/TypeScript)",
   "private": true,
   "type": "module",

@@ -5,15 +5,15 @@ profile: sorane-okf/0.1
 excludeFromList: true
 ---
 
-すべてのコマンドはプロジェクトルート（`sorane.yaml` があるディレクトリ）を `--cwd` で指定します。例では `npx @sorane/cli@0.2.6` を使います。
+すべてのコマンドはプロジェクトルート（`sorane.yaml` があるディレクトリ）を `--cwd` で指定します。例では `npx @sorane/cli@0.2.7` を使います。
 
 ## sorane build
 
 静的サイトを生成します。
 
 ```bash
-npx @sorane/cli@0.2.6 build [--cwd <dir>] [--clean] [--watch]
-npx @sorane/cli@0.2.6 watch [--cwd <dir>] [--clean]
+npx @sorane/cli@0.2.7 build [--cwd <dir>] [--clean] [--watch]
+npx @sorane/cli@0.2.7 watch [--cwd <dir>] [--clean]
 ```
 
 `--clean` は出力ディレクトリを削除してから再生成します。`--watch`（または `sorane watch`）は `content/` と `sorane.yaml` の変更を監視して再ビルドします（2回目以降は自動で `--clean`）。
@@ -27,7 +27,7 @@ npx @sorane/cli@0.2.6 watch [--cwd <dir>] [--clean]
 frontmatter と OKF プロファイル（`sorane-okf/0.1` / `0.2`）を検証します。
 
 ```bash
-npx @sorane/cli@0.2.6 validate [--cwd <dir>] [--json]
+npx @sorane/cli@0.2.7 validate [--cwd <dir>] [--json]
 ```
 
 `--json` は AI エージェント向けの構造化レポート（`schema_version: 1`）を stdout に出力します。`ok: false` のとき exit code は非ゼロです。
@@ -44,17 +44,17 @@ npx @sorane/cli@0.2.6 validate [--cwd <dir>] [--json]
 レガシー frontmatter を OKF 形式へ変換します。
 
 ```bash
-npx @sorane/cli@0.2.6 migrate [--cwd <dir>] [--dry-run] [--bump-profile 0.2]
+npx @sorane/cli@0.2.7 migrate [--cwd <dir>] [--dry-run] [--bump-profile 0.2|0.3]
 ```
 
-`--bump-profile 0.2` は `profile: sorane-okf/0.2` へ上げるだけで、AI 開示フィールドは追加しません。
+`--bump-profile` は `profile: sorane-okf/<version>` へ上げるだけで、AI 開示や dataset 用フィールドは追加しません。
 
 ## sorane index
 
 検索インデックス（SQLite FTS5、任意でベクトル）を構築します。既定は FTS のみです。
 
 ```bash
-npx @sorane/cli@0.2.6 index [--cwd <dir>] [--force] [--hybrid] [--fts-only]
+npx @sorane/cli@0.2.7 index [--cwd <dir>] [--force] [--hybrid] [--fts-only]
 ```
 
 ハイブリッド（experimental）を使う場合は `search.mode: hybrid` または `--hybrid` と、先に `npm run fetch-model` で ruri-v3-30m を取得してください。
@@ -64,5 +64,5 @@ npx @sorane/cli@0.2.6 index [--cwd <dir>] [--force] [--hybrid] [--fts-only]
 ローカルで検索を試します。
 
 ```bash
-npx @sorane/cli@0.2.6 search <query> [--cwd <dir>] [--type article] [--tag <slug>] [--k 10] [--json]
+npx @sorane/cli@0.2.7 search <query> [--cwd <dir>] [--type article] [--tag <slug>] [--k 10] [--json]
 ```

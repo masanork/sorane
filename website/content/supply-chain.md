@@ -31,7 +31,7 @@ npm から入れる場合は CI で provenance 付き publish します。認証
 2. **GitHub secret `NPM_TOKEN`** — npm の Granular Access Token（Publish 権限）
 
 ```bash
-npx @sorane/cli@0.2.6 validate --cwd . --json
+npx @sorane/cli@0.2.7 validate --cwd . --json
 ```
 
 ## 検証手順

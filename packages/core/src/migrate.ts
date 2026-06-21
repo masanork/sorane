@@ -10,7 +10,7 @@ function slugFromPath(filePath: string): string {
   return base.replace(/\.md$/i, "");
 }
 
-const SUPPORTED_BUMP_PROFILES = new Set(["0.1", "0.2"]);
+const SUPPORTED_BUMP_PROFILES = new Set(["0.1", "0.2", "0.3"]);
 
 export interface MigrateToOkfOptions {
   readonly bumpProfile?: string;
@@ -54,7 +54,7 @@ export function parseBumpProfileArg(argv: readonly string[]): string | undefined
   if (i < 0 || i + 1 >= argv.length) return undefined;
   const version = argv[i + 1]!.trim();
   if (!SUPPORTED_BUMP_PROFILES.has(version)) {
-    throw new Error(`unsupported --bump-profile version: ${version} (supported: 0.1, 0.2)`);
+    throw new Error(`unsupported --bump-profile version: ${version} (supported: 0.1, 0.2, 0.3)`);
   }
   return version;
 }

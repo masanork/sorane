@@ -32,7 +32,7 @@ go install github.com/slsa-framework/slsa-verifier/v2/cli/slsa-verifier@latest
 ## Step 1 — download the artifacts
 
 ```bash
-VERSION=0.2.6   # without the leading v
+VERSION=0.2.7   # without the leading v
 gh release download "v$VERSION" --repo github.com/masanork/sorane \
   --pattern 'sorane-cli-*.tgz' \
   --pattern 'cbom.json' \

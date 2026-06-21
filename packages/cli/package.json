@@ -1,6 +1,6 @@
 {
   "name": "@sorane/cli",
-  "version": "0.2.6",
+  "version": "0.2.7",
   "description": "OKF-native static site generator CLI",
   "type": "module",
   "license": "MIT",
@@ -36,9 +36,9 @@
   },
   "prepublishOnly": "cd ../.. && npm run typecheck && npm test",
   "dependencies": {
-    "@sorane/core": "0.2.6",
-    "@sorane/okf": "0.2.6",
-    "@sorane/search": "0.2.6",
+    "@sorane/core": "0.2.7",
+    "@sorane/okf": "0.2.7",
+    "@sorane/search": "0.2.7",
     "js-yaml": "^4.1.0",
     "tsx": "^4.19.0"
   }

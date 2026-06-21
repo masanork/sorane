@@ -32,7 +32,7 @@ Copy [`template/site/`](template/site/) into your own GitHub repo. It includes *
 npx @sorane/cli build [--cwd <dir>] [--clean] [--watch] [--skip-c2pa]
 npx @sorane/cli watch [--cwd <dir>] [--clean]
 npx @sorane/cli validate [--cwd <dir>]
-npx @sorane/cli migrate [--cwd <dir>] [--dry-run] [--bump-profile 0.2]
+npx @sorane/cli migrate [--cwd <dir>] [--dry-run] [--bump-profile 0.2|0.3]
 npx @sorane/cli index [--cwd <dir>] [--force]
 npx @sorane/cli search <query> [--cwd <dir>] [--type article] [--tag <slug>] [--json]
 ```
@@ -41,7 +41,7 @@ Site projects keep content in a separate directory and configure the build with 
 
 ## OKF profile
 
-sorane implements [Open Knowledge Format (OKF)](https://cloud.google.com/blog/products/data-analytics/how-the-open-knowledge-format-can-improve-data-sharing) with profiles `sorane-okf/0.1` and `sorane-okf/0.2`.
+sorane implements [Open Knowledge Format (OKF)](https://cloud.google.com/blog/products/data-analytics/how-the-open-knowledge-format-can-improve-data-sharing) with profiles `sorane-okf/0.1` through `0.3` (extended types and open-data metadata in `0.3`).
 
 Supported concept types:
 
@@ -151,7 +151,7 @@ Cloudflare Pages deploys `website/dist` to **sorane.dev** on push to `main` (see
 | Method | Status |
 |--------|--------|
 | `git clone` + `npm ci` | Available |
-| `npx @sorane/cli` | Published (`@sorane/cli@0.2.6`) |
+| `npx @sorane/cli` | Published (`@sorane/cli@0.2.7`) |
 | GitHub Release tags | Planned (`v0.2.0` + fonts tarball) |
 
 Publish workspace packages (maintainers):

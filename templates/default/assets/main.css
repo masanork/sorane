@@ -565,3 +565,73 @@ figure.diagram img {
 .not-found-page .article-body > :first-child {
   margin-top: 0;
 }
+
+/* Dataset landing (sorane-okf/0.3 type: dataset) */
+.dataset-landing {
+  margin: 1.25rem 0 1.75rem;
+  padding: 1rem 1.25rem;
+  border: 1px solid var(--border);
+  border-radius: 4px;
+  background: #fafafa;
+}
+
+.dataset-meta {
+  margin: 0.35rem 0;
+  font-size: 0.95rem;
+  color: var(--muted);
+}
+
+.dataset-meta strong {
+  color: var(--text);
+  font-weight: var(--weight-emphasis);
+}
+
+.dataset-distributions {
+  margin-top: 1.25rem;
+}
+
+.dataset-distributions h2 {
+  font-size: 1.05rem;
+  margin: 0 0 0.75rem;
+}
+
+.dataset-table {
+  width: 100%;
+  border-collapse: collapse;
+  font-size: 0.92rem;
+}
+
+.dataset-table th,
+.dataset-table td {
+  border: 1px solid var(--border);
+  padding: 0.45rem 0.6rem;
+  text-align: left;
+  vertical-align: top;
+}
+
+.dataset-table th {
+  font-weight: var(--weight-emphasis);
+  background: #f0f0f2;
+}
+
+.dataset-table code {
+  font-size: 0.88em;
+}
+
+.dataset-table a {
+  word-break: break-all;
+}
+
+.dataset-size {
+  color: var(--muted);
+  font-size: 0.88em;
+}
+
+.dataset-checksum {
+  margin-top: 0.25rem;
+  font-size: 0.85em;
+}
+
+.dataset-body {
+  margin-top: 1.5rem;
+}

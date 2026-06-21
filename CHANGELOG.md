@@ -4,18 +4,27 @@ All notable changes to sorane are documented here. Versioning follows [SemVer](h
 
 ## [Unreleased]
 
+## [0.2.7] - 2026-06-21
+
 ### Added
 
 - `sorane-okf/0.3` profile: `dataset`, `reference`, `glossary`, `faq` concept types
 - Open-data frontmatter (`license`, `publisher`, `distributions`, …) and dataset landing page template
+- Default theme CSS for `.dataset-*` landing layout
 - `examples/open-data/` minimal dataset site
 - Profile helpers in `@sorane/okf` (`resolveEffectiveType`, `isBuildableContentType`, …)
+- `sorane migrate --bump-profile 0.3`
 
 ### Changed
 
 - **`catalog.jsonld` breaking:** `type: dataset` pages go to `dataset[]`; other content pages go to `hasPart[]` as `BlogPosting` / `TechArticle` / `FAQPage` / `DefinedTermSet` (no legacy combined shape)
 - Page JSON-LD: docs → `TechArticle`, blog → `BlogPosting`, `reference` → `TechArticle`, overridable via `creativeWorkType`
 - `sorane-okf/0.3`: unknown `type` → warning + build treats as `article` (0.1/0.2 unchanged: error)
+- Workspace packages aligned to `0.2.7`
+
+### Fixed
+
+- `@sorane/font` republished with npm provenance (Trusted Publisher + Node 24 publish job)
 
 ## [0.2.6] - 2026-06-21
 
@@ -91,7 +100,8 @@ All notable changes to sorane are documented here. Versioning follows [SemVer](h
 - Blog layout: archives, tags, pagination
 - Test infrastructure with coverage gate (~90% lines)
 
-[Unreleased]: https://github.com/masanork/sorane/compare/v0.2.6...main
+[Unreleased]: https://github.com/masanork/sorane/compare/v0.2.7...main
+[0.2.7]: https://github.com/masanork/sorane/compare/v0.2.6...v0.2.7
 [0.2.6]: https://github.com/masanork/sorane/compare/v0.2.5...v0.2.6
 [0.2.5]: https://github.com/masanork/sorane/compare/v0.2.4...v0.2.5
 [0.2.4]: https://github.com/masanork/sorane/compare/v0.2.0...v0.2.4

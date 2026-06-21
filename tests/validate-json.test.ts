@@ -42,6 +42,26 @@ describe("validateSiteContent", () => {
     assert.equal(typeErr!.category, "okf");
   });
 
+  test("0.3 unknown type is warning only", () => {
+    const root = mkdtempSync(join(tmpdir(), "sorane-validate-03-"));
+    const contentDir = join(root, "content");
+    mkdirSync(contentDir, { recursive: true });
+    writeFileSync(
+      join(contentDir, "playbook.md"),
+      "---\ntype: playbook\ntitle: Ops\nprofile: sorane-okf/0.3\n---\n\nBody\n",
+      "utf8",
+    );
+    const report = validateSiteContent(
+      root,
+      mergeConfig({ build: { content_dir: "content" } } as Partial<SoraneConfig>),
+    );
+    assert.equal(report.ok, true);
+    assert.equal(report.error_count, 0);
+    assert.ok(report.warning_count >= 1);
+    const file = report.files.find((f) => f.file === "playbook.md");
+    assert.ok(file?.findings.some((f) => f.severity === "warning" && f.category === "okf"));
+  });
+
   test("heading warnings are categorized", () => {
     const root = mkdtempSync(join(tmpdir(), "sorane-validate-"));
     const contentDir = join(root, "content");

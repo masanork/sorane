@@ -14,8 +14,8 @@ excludeFromList: true
 sorane は npm で公開されています。`sorane.yaml` があるディレクトリで次を実行します。
 
 ```bash
-npx @sorane/cli@0.2.6 validate --cwd .
-npx @sorane/cli@0.2.6 build --cwd . --clean
+npx @sorane/cli@0.2.7 validate --cwd .
+npx @sorane/cli@0.2.7 build --cwd . --clean
 ```
 
 ## サイトを作る

@@ -19,7 +19,7 @@ You maintain a **sorane** site: `content/` + `sorane.yaml`. No admin UI.
 ## After every edit
 
 ```bash
-npx @sorane/cli@0.2.6 validate --cwd . --json
+npx @sorane/cli@0.2.7 validate --cwd . --json
 ```
 
 Parse JSON stdout:
@@ -31,15 +31,15 @@ Parse JSON stdout:
 ## Full publish loop
 
 ```bash
-npx @sorane/cli@0.2.6 validate --cwd . --json
-npx @sorane/cli@0.2.6 index --cwd . --force    # only if content/search.md exists
-npx @sorane/cli@0.2.6 build --cwd . --clean
+npx @sorane/cli@0.2.7 validate --cwd . --json
+npx @sorane/cli@0.2.7 index --cwd . --force    # only if content/search.md exists
+npx @sorane/cli@0.2.7 build --cwd . --clean
 ```
 
 ## Content rules (short)
 
 - Edit only `content/` and `sorane.yaml`; never `dist/`
-- Required frontmatter: `type` (`article`|`index`), `title`, `profile` (`sorane-okf/0.1` or `0.2`)
+- Required frontmatter: `type`, `title`, `profile` (`sorane-okf/0.1`|`0.2`|`0.3`; `0.3` adds `dataset`, `reference`, `glossary`, `faq`)
 - Body headings start at `##` (title is already h1)
 - Mermaid/diagram fences need alt text when diagrams are enabled
 

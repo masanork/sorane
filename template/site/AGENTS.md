@@ -7,7 +7,7 @@ You edit a **sorane** static site: Markdown + YAML frontmatter in `content/`, co
 ## Your role
 
 - Add and update pages under `content/`
-- Keep frontmatter valid for OKF (`sorane-okf/0.1` or `0.2`)
+- Keep frontmatter valid for OKF (`sorane-okf/0.1`, `0.2`, or `0.3`)
 - Run **`validate --json`** after every content change; parse JSON and fix all `severity: "error"` findings
 - Run `build --clean` before suggesting deploy
 - Do **not** hand-edit `dist/` (generated)
@@ -29,9 +29,9 @@ You edit a **sorane** static site: Markdown + YAML frontmatter in `content/`, co
 ## Commands (preferred: npm)
 
 ```bash
-npx @sorane/cli@0.2.6 validate --cwd . --json
-npx @sorane/cli@0.2.6 index --cwd . --force    # if content/search.md exists
-npx @sorane/cli@0.2.6 build --cwd . --clean
+npx @sorane/cli@0.2.7 validate --cwd . --json
+npx @sorane/cli@0.2.7 index --cwd . --force    # if content/search.md exists
+npx @sorane/cli@0.2.7 build --cwd . --clean
 ```
 
 Fork / monorepo with sorane checkout: set `SORANE_ROOT` and use `node "$SORANE_ROOT/packages/cli/bin/sorane.mjs"` instead.
@@ -92,9 +92,9 @@ Every page is Markdown with YAML frontmatter (`---` … `---`).
 
 | Field | Rule |
 |-------|------|
-| `type` | `article` or `index` |
+| `type` | `article` or `index` (`0.3` also: `dataset`, `reference`, `glossary`, `faq`) |
 | `title` | Non-empty string |
-| `profile` | `sorane-okf/0.1` or `sorane-okf/0.2` |
+| `profile` | `sorane-okf/0.1`, `0.2`, or `0.3` |
 
 ### Common optional fields
 
@@ -132,7 +132,7 @@ Body in Markdown. Start headings at `##` (page title is already h1).
 
 ## Do not
 
-- Invent unsupported `type` values or unknown `profile` strings
+- Invent unknown `profile` strings; on `0.1`/`0.2` only `article` and `index` are valid types
 - Add server-side runtime, databases, or CMS plugins
 - Commit `dist/`, `.sorane/`, or `node_modules/`
 - Hand-edit generated `dist/`

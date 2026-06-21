@@ -6,7 +6,7 @@
     "component": {
       "type": "application",
       "name": "sorane",
-      "version": "0.2.6",
+      "version": "0.2.7",
       "description": "OKF-native static site generator. C2PA signing is optional and delegated to external c2patool."
     },
     "properties": [

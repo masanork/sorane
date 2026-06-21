@@ -19,8 +19,22 @@ Body
     expect(out).not.toContain("digitalSourceType");
   });
 
+  test("0.3 に上げる", () => {
+    const source = `---
+type: article
+title: T
+profile: sorane-okf/0.2
+---
+
+Body
+`;
+    const out = migrateToOkf(source, "post.md", { bumpProfile: "0.3" });
+    expect(out).toContain("profile: sorane-okf/0.3");
+  });
+
   test("parseBumpProfileArg", () => {
     expect(parseBumpProfileArg(["--bump-profile", "0.2"])).toBe("0.2");
+    expect(parseBumpProfileArg(["--bump-profile", "0.3"])).toBe("0.3");
   });
 
   test("未知バージョンはエラー", () => {
