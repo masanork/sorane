@@ -9,32 +9,33 @@ excludeFromList: true
 
 - Node.js 23.6 以上
 
-## インストール
+## クイックスタート
 
-現時点（v0.1）では npm パッケージとしては未公開です。リポジトリを clone して依存関係を入れます。
+sorane は npm で公開されています。`sorane.yaml` があるディレクトリで次を実行します。
+
+```bash
+npx @sorane/cli@0.2.4 validate --cwd .
+npx @sorane/cli@0.2.4 build --cwd . --clean
+```
+
+## サイトを作る
+
+**おすすめ:** [`template/site/`](https://github.com/masanork/sorane/tree/main/template/site) をコピーするか GitHub テンプレートとして使います。`AGENTS.md` 付きで AI アシスタントとすぐ始められます。
+
+1. `template/site/` を新しいリポジトリに置く
+2. 記事を `content/` に追加
+3. `validate --json` → `build --clean`
+4. `dist/` を Cloudflare Pages 等にデプロイ
+
+AI 向けの詳細は [AI アシスタント向けオンボーディング](ai-onboarding.html)。設定は [設定（sorane.yaml）](configuration.html)。
+
+## sorane 本体の開発
+
+monorepo 全体を扱う場合はリポジトリを clone します。
 
 ```bash
 git clone https://github.com/masanork/sorane.git
 cd sorane
 npm ci
-```
-
-## 最初のビルド
-
-同梱の minimal 例で動作確認できます。
-
-```bash
 npm run build -- --cwd examples/minimal --clean
-# → examples/minimal/dist/ に HTML が出力される
 ```
-
-## 自分のサイトを作る
-
-**おすすめ:** [`template/site/`](https://github.com/masanork/sorane/tree/main/template/site) をコピーするか GitHub テンプレートとして使う。`AGENTS.md` 付きで Cursor / Claude / Antigravity 向けにすぐ始められます。
-
-1. `template/site/` を新しいリポジトリに置く（`sorane.yaml` + `content/` + `AGENTS.md`）
-2. 記事を `content/` に追加（または AI アシスタントに任せる）
-3. `sorane validate` → `sorane build --cwd . --clean`
-4. `dist/` を Cloudflare Pages 等にデプロイ
-
-AI 向けの詳細は [AI アシスタント向けオンボーディング](ai-onboarding.html) を参照してください。設定は [設定（sorane.yaml）](configuration.html) を参照してください。
