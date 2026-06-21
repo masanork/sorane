@@ -25,6 +25,15 @@ export interface ValidationIssue {
   readonly instancePath?: string;
 }
 
+export type UnknownTypePolicy = "warn" | "error";
+
+export interface ValidateOptions {
+  /** `sorane.yaml` `okf.default_profile` — used when frontmatter omits `profile` */
+  readonly defaultProfile?: string;
+  /** `sorane.yaml` `okf.unknown_type` — 0.3 unknown types (default: warn) */
+  readonly unknownType?: UnknownTypePolicy;
+}
+
 export interface ValidationResult {
   readonly file: string;
   readonly ok: boolean;
@@ -78,6 +87,7 @@ function validateTypeForProfile(
   profile: string,
   issues: ValidationIssue[],
   warnings: string[],
+  unknownType: UnknownTypePolicy = "warn",
 ): void {
   if (!type) {
     issues.push({
@@ -89,9 +99,12 @@ function validateTypeForProfile(
 
   if (isProfile03(profile)) {
     if (!TYPES_03.has(type)) {
-      warnings.push(
-        `unknown type "${type}" (sorane-okf/0.3); build treats as article`,
-      );
+      const message = `unknown type "${type}" (sorane-okf/0.3); build treats as article`;
+      if (unknownType === "error") {
+        issues.push({ where: "type", message });
+      } else {
+        warnings.push(message);
+      }
     }
     return;
   }
@@ -105,7 +118,11 @@ function validateTypeForProfile(
 }
 
 /** 1 つの markdown ソースを sorane-okf プロファイルで検証する。 */
-export function validateSource(file: string, source: string): ValidationResult {
+export function validateSource(
+  file: string,
+  source: string,
+  options?: ValidateOptions,
+): ValidationResult {
   const { frontmatter, body } = extract(source);
   const issues: ValidationIssue[] = [];
   const warnings: string[] = [];
@@ -164,9 +181,16 @@ export function validateSource(file: string, source: string): ValidationResult {
     typeof concept.profile === "string" && SUPPORTED_PROFILE_RE.test(concept.profile)
       ? concept.profile
       : undefined,
+    options?.defaultProfile,
   );
 
-  validateTypeForProfile(concept.type, profile, issues, warnings);
+  validateTypeForProfile(
+    concept.type,
+    profile,
+    issues,
+    warnings,
+    options?.unknownType ?? "warn",
+  );
 
   if (issues.every((i) => i.where !== "profile")) {
     const validate = getValidatorForProfile(profile);

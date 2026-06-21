@@ -1,5 +1,13 @@
 export { runBuild, type BuildOptions, type BuildResult } from "./build.ts";
-export { mergeConfig, DEFAULT_CONFIG, resolvePermalink, type SoraneConfig } from "./config.ts";
+export {
+  mergeConfig,
+  DEFAULT_CONFIG,
+  resolvePermalink,
+  type SoraneConfig,
+  type OkfConfig,
+  type UnknownTypePolicy,
+} from "./config.ts";
+export { normalizeOkfConfig, okfValidateOptions } from "./okf-config.ts";
 export { migrateToOkf, parseBumpProfileArg, type MigrateToOkfOptions } from "./migrate.ts";
 export { validateHeadingWarnings } from "./validate-heading-structure.ts";
 export {

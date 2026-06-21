@@ -445,7 +445,7 @@ site:
 
 **Decision (2026-06-21):** Default `unknown_type: warn` with `article` fallback—preserves OKF spirit (tolerate unknown types) while keeping sorane layouts predictable.
 
-Per-file `profile:` selects schema; missing profile defaults to `0.1` behaviour. Site-wide `sorane.yaml`:
+Per-file `profile:` selects schema; missing profile defaults to `0.1` behaviour unless `sorane.yaml` sets `okf.default_profile`. Site-wide `sorane.yaml` (**shipped**):
 
 ```yaml
 okf:

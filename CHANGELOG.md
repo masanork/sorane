@@ -14,6 +14,7 @@ All notable changes to sorane are documented here. Versioning follows [SemVer](h
 - `examples/open-data/` polish: README, AGENTS.md, landing index, `search.md`, and agent doc updates (`template/site/AGENTS.md`, sorane-content skill)
 - Opt-in `catalog-dcat.jsonld` DCAT-AP export (`site.open_data.dcat_catalog`) for `type: dataset` pages; `llms.txt` link when enabled
 - **i18n Phase 2:** per-locale blog archives, tags, and pagination (`en/archive/`, `en/tag/`, etc.); `validate --json` category `i18n` for `translation_key` warnings
+- **`okf` site config:** `okf.default_profile` and `okf.unknown_type` (`warn` | `error`) in `sorane.yaml` for site-wide OKF validation and build defaults
 
 ## [0.2.8] - 2026-06-21
 

@@ -150,6 +150,7 @@ import {
   translationGroupKey,
   type I18nContext,
 } from "./i18n.ts";
+import { okfValidateOptions } from "./okf-config.ts";
 
 export interface BuildOptions {
   readonly cwd: string;
@@ -356,6 +357,7 @@ export async function runBuild(opts: BuildOptions): Promise<BuildResult> {
   const startedAt = performance.now();
   const { cwd } = opts;
   const config = mergeConfig(opts.config);
+  const okfOpts = okfValidateOptions(config);
   const contentDir = resolve(cwd, config.build.content_dir);
   const outDir = resolve(cwd, config.build.out_dir);
 
@@ -376,7 +378,7 @@ export async function runBuild(opts: BuildOptions): Promise<BuildResult> {
   for (const abs of mdFiles) {
     const rel = relative(contentDir, abs);
     const source = readFileSync(abs, "utf8");
-    const p = parseConcept(abs, rel, source);
+    const p = parseConcept(abs, rel, source, okfOpts);
     parsed.push(p);
     if (!p.validation.ok) {
       errors += p.validation.issues.length;

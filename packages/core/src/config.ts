@@ -156,6 +156,10 @@ export type {
   SiteHostingLogpushConfig,
 } from "./hosting-cloudflare.ts";
 
+import type { OkfConfig } from "./okf-config.ts";
+
+export type { OkfConfig, UnknownTypePolicy } from "./okf-config.ts";
+
 export interface SiteOpenDataConfig {
   /** Emit `dist/catalog-dcat.jsonld` (DCAT-AP JSON-LD for `type: dataset` only). */
   readonly dcat_catalog?: boolean;
@@ -216,6 +220,8 @@ export interface SoraneConfig {
     readonly asset_base_url: string;
   };
   readonly docs?: DocsConfig;
+  /** OKF プロファイル既定・未知 type ポリシー */
+  readonly okf?: OkfConfig;
 }
 
 export const DEFAULT_CONFIG: SoraneConfig = {
@@ -303,6 +309,7 @@ export function mergeConfig(partial: Partial<SoraneConfig>): SoraneConfig {
     fonts: { ...DEFAULT_CONFIG.fonts, ...partial.fonts },
     search: { ...DEFAULT_CONFIG.search, ...partial.search },
     docs: partial.docs ? { nav: partial.docs.nav } : undefined,
+    okf: partial.okf,
   };
 }
 

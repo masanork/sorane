@@ -65,6 +65,20 @@ site:
 - `llms.txt` に DCAT カタログへのリンクが追加されます
 - 実例: [examples/open-data/](https://github.com/masanork/sorane/tree/main/examples/open-data)
 
+## OKF サイト既定（`okf`）
+
+全ページの frontmatter に `profile` を書かなくても、サイト既定の OKF プロファイルで検証・ビルドします。
+
+```yaml
+okf:
+  default_profile: sorane-okf/0.3
+  unknown_type: warn   # warn | error（0.3 の未知 type のみ）
+```
+
+- `default_profile` — frontmatter の `profile` 省略時に適用（未設定時は `sorane-okf/0.1`）
+- `unknown_type: warn` — 0.3 で未知 `type` は warning のみ（ビルドは `article` 扱い、既定）
+- `unknown_type: error` — 未知 `type` を validate エラーに（厳格サイト向け）
+
 ## 品質ゲート（validate）
 
 `validate --json` は OKF に加え、公的サイト向けの **warning** を出します（ビルドは継続）。

@@ -10,6 +10,8 @@ export {
   validateSource,
   validateProfileFormat,
   resolveProfileSchema,
+  type ValidateOptions,
+  type UnknownTypePolicy,
   type ValidationResult,
   type ValidationIssue,
 } from "./validate.ts";

@@ -1,7 +1,7 @@
 import { existsSync, readFileSync } from "node:fs";
 import { resolve } from "node:path";
 import yaml from "js-yaml";
-import { mergeConfig, type SoraneConfig } from "@sorane/core";
+import { mergeConfig, normalizeOkfConfig, type SoraneConfig } from "@sorane/core";
 
 export function loadSoraneConfig(cwd: string): SoraneConfig {
   const path = resolve(cwd, "sorane.yaml");
@@ -13,12 +13,14 @@ export function loadSoraneConfig(cwd: string): SoraneConfig {
     throw new Error("sorane.yaml must be a YAML mapping");
   }
   const doc = raw as Record<string, unknown>;
+  const okf = normalizeOkfConfig(doc.okf as SoraneConfig["okf"] | undefined);
   return mergeConfig({
     site: doc.site as SoraneConfig["site"] | undefined,
     build: doc.build as SoraneConfig["build"] | undefined,
     fonts: doc.fonts as SoraneConfig["fonts"] | undefined,
     search: doc.search as SoraneConfig["search"] | undefined,
     docs: doc.docs as SoraneConfig["docs"] | undefined,
+    okf,
   });
 }
 

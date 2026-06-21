@@ -33,9 +33,16 @@ export function isProfile03(profile: string | undefined): boolean {
 
 export function resolveProfileForValidation(
   profile: string | undefined,
+  siteDefaultProfile?: string,
 ): string {
   if (profile !== undefined && SUPPORTED_PROFILE_RE.test(profile)) {
     return profile;
+  }
+  if (
+    siteDefaultProfile !== undefined &&
+    SUPPORTED_PROFILE_RE.test(siteDefaultProfile)
+  ) {
+    return siteDefaultProfile;
   }
   return DEFAULT_PROFILE;
 }

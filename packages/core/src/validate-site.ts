@@ -11,6 +11,7 @@ import { validateHeadingWarnings } from "./validate-heading-structure.ts";
 import { validateContentQualityFindings } from "./validate-content-quality.ts";
 import { validateRevisionFindings } from "./revision-history.ts";
 import { validateI18nWarnings } from "./validate-i18n.ts";
+import { okfValidateOptions } from "./okf-config.ts";
 
 export const VALIDATE_JSON_SCHEMA_VERSION = 1 as const;
 
@@ -104,6 +105,7 @@ export function validateSiteContent(
     throw new Error(`content directory not found: ${contentDir}`);
   }
 
+  const okfOpts = okfValidateOptions(config);
   const files: ValidateFileReport[] = [];
   const i18nEntries: Array<{ rel: string; source: string }> = [];
   let errorCount = 0;
@@ -113,7 +115,7 @@ export function validateSiteContent(
     const rel = relative(contentDir, abs);
     const source = readFileSync(abs, "utf8");
     i18nEntries.push({ rel, source });
-    const result = validateSource(rel, source);
+    const result = validateSource(rel, source, okfOpts);
     const findings: ValidateFinding[] = [];
 
     for (const w of result.warnings) {

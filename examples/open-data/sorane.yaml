@@ -10,6 +10,10 @@ site:
   open_data:
     dcat_catalog: true
 
+okf:
+  default_profile: sorane-okf/0.3
+  unknown_type: warn
+
 build:
   content_dir: content
   out_dir: dist
