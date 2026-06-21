@@ -2,7 +2,7 @@
 
 | Field | Value |
 |-------|-------|
-| **Status** | Draft (discussion) |
+| **Status** | Draft (Phases A–D shipped) |
 | **Date** | 2026-06-21 |
 | **Base** | OKF v0.1 + sorane-okf/0.2 (AI disclosure) |
 | **Target profile** | `sorane-okf/0.3` (additive; `0.1` / `0.2` remain valid) |
@@ -460,17 +460,17 @@ okf:
 
 ### Phase A — Profile & validate only (smallest)
 
-- [ ] `profile/sorane-okf-0.3.schema.json`
-- [ ] `validate.ts` whitelist + `dataset` / `distributions` rules
-- [ ] Tests + `validate --json` messages
-- [ ] Unknown types warn + treat as `article` in build
+- [x] `profile/sorane-okf-0.3.schema.json`
+- [x] `validate.ts` whitelist + `dataset` / `distributions` rules
+- [x] Tests + `validate --json` messages
+- [x] Unknown types warn + treat as `article` in build
 
 ### Phase B — Dataset & catalog
 
-- [ ] `dataset` HTML template
-- [ ] `catalog.ts` mapping (licence, publisher, multi-distribution)
-- [ ] Example in `examples/open-data/`
-- [ ] `website/content/okf-profile.md` update
+- [x] `dataset` HTML template
+- [x] `catalog.ts` mapping (licence, publisher, multi-distribution)
+- [x] Example in `examples/open-data/`
+- [x] `website/content/okf-profile.md` update
 
 ### Phase C — FAQ / glossary / reference
 

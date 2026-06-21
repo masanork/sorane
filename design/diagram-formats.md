@@ -4,7 +4,7 @@
 |-------|-------|
 | **Author** | _(TBD)_ |
 | **Date** | 2026-06-20 |
-| **Status** | Draft |
+| **Status** | Phase 1–2 + Graphviz shipped (PR1–PR9, PR11) |
 | **Profile target** | None (body syntax only; `sorane-okf/0.1` and `0.2` unchanged) |
 
 ---
@@ -13,7 +13,7 @@
 
 sorane is an OKF-native static site generator. It deploys to Cloudflare Pages via GitHub Actions (`.github/workflows/pages.yml`: Node 23, `npm ci` → index → build → deploy). Today **diagram fences render as inert code blocks** — `packages/core/src/render.ts` uses `remark-gfm` only, so ` ```mermaid ` fences become plain `<pre><code class="language-mermaid">` with no SVG output and no client enhancement.
 
-This design adds **pluggable diagram rendering** informed by bunsen’s Strategy A (text source is canonical; render is presentation) and three-tier model (① pure text, ② lightweight client JS, ③ heavy build-time artifacts). Phase 1 ships **Mermaid client-side rendering** (bunsen 013 pattern, zero Chromium). Phase 2 adds **D2 build-time SVG** via CLI. Later phases may add Mermaid SSR (`mmdc`), Graphviz, or PlantUML/Kroki — all optional and CI-scoped.
+This design adds **pluggable diagram rendering** informed by bunsen’s Strategy A (text source is canonical; render is presentation) and three-tier model (① pure text, ② lightweight client JS, ③ heavy build-time artifacts). Phase 1 ships **Mermaid client-side rendering** (bunsen 013 pattern, zero Chromium). Phase 2 adds **D2 build-time SVG** via CLI. **Graphviz** (` ```graphviz ` / ` ```dot `) compiles via `dot` CLI when `graphviz.enabled: true` (build + PDF prerender). Later optional phases: Mermaid SSR (`mmdc`), PlantUML/Kroki — CI-scoped.
 
 **OKF principle preserved:** sibling `.md` alternates (`emitPage()` → `conceptToOkfMarkdown()`) keep raw fence source unchanged; HTML is a derived view.
 
@@ -88,7 +88,7 @@ This design adds **pluggable diagram rendering** informed by bunsen’s Strategy
 |----|----------|
 | NG1 | Mermaid SSR via `@mermaid-js/mermaid-cli` + Chromium in CI |
 | NG2 | PlantUML / Kroki integration |
-| NG3 | Graphviz / `viz.js` WASM |
+| NG3 | Graphviz `viz.js` WASM (`dot` CLI is opt-in when `graphviz.enabled: true`; see PR11) |
 | NG4 | OKF profile schema changes for diagrams |
 | NG5 | Search index ingestion of full diagram source (optional future; agents use `.md`) |
 | NG6 | Live diagram editing in browser |
@@ -516,7 +516,7 @@ PR4’s render inventory applies equally to Phase 2 — D2 fences must compile i
 | Backend | Approach | CI impact | Notes |
 |---------|----------|-----------|-------|
 | Mermaid `build` mode | `@mermaid-js/mermaid-cli` + Chromium | **High** — Puppeteer cache, +1–3 min, flaky | bunsen 012 retired this path |
-| Graphviz | `viz.js` WASM or `dot` CLI | Medium | Academic diagrams |
+| Graphviz | `dot` CLI (build + PDF prerender) | Optional binary on PATH | ✅ shipped (PR11); WASM not pursued |
 | PlantUML | Kroki HTTP API | External dep + network | Deferred in bunsen |
 
 ---
@@ -800,7 +800,7 @@ No new commands. `sorane build` respects `sorane.yaml` `build.diagrams`. No root
 12. **Config merge:** `DEFAULT_DIAGRAMS_CONFIG` with deep merge for `mermaid` / `d2` nested keys in `mergeConfig()`.
 13. **Search/catalog:** No schema changes; diagram source remains in OKF outputs; search chunker continues to skip code bodies.
 14. **Profile:** No `sorane-okf/0.3` for diagrams — body syntax only.
-15. **Deferred:** PlantUML/Kroki, Graphviz, Mermaid SSR (`mmdc`), Playwright client-render CI — optional follow-up.
+15. **Deferred:** PlantUML/Kroki, Mermaid SSR (`mmdc`), Playwright client-render CI — optional follow-up. **Graphviz** (`dot` CLI) shipped in PR11.
 16. **Naming:** `data-sorane-alt` and `sorane-mermaid-loader.mjs` (not bunsen-prefixed) for sorane dist output.
 17. **Demo content:** PR5 adds first mermaid fences to `website/content/`; mirror one diagram from `design/ai-content-disclosure.md`; register `diagrams.html` in `docs.nav`.
 18. **Phase 2 wiring:** PR7 updates the same render surfaces as PR4 to async when `d2.enabled` — D2 SVG in full `sorane build` output, not render-unit tests only.
@@ -828,7 +828,7 @@ No new commands. `sorane build` respects `sorane.yaml` `build.diagrams`. No root
 | # | Title | Notes |
 |---|-------|-------|
 | PR10 | `feat(core): mermaid build mode via mmdc` | Opt-in; Chromium CI job; content-hashed SVG |
-| PR11 | `feat(core): graphviz fence via viz.js or dot CLI` | Evaluate WASM size vs CLI |
+| PR11 | `feat(core): graphviz fence via dot CLI` | ✅ `compile-graphviz.ts`; build SVG + PDF prerender; opt-in `graphviz.enabled` |
 | PR12 | `feat(core): plantuml via Kroki (opt-in URL)` | Site config `kroki_url`; network dependency |
 
 ---
