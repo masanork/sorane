@@ -53,9 +53,10 @@ jobs:
     steps:
       - uses: actions/checkout@v4
 
+      # Trusted Publisher requires npm CLI >= 11.5.1 (Node 23 ships npm 10.x).
       - uses: actions/setup-node@v4
         with:
-          node-version: "23"
+          node-version: "24"
           registry-url: https://registry.npmjs.org
 
       - name: Install dependencies
@@ -70,8 +71,13 @@ jobs:
           set -euo pipefail
           if [[ -n "${NPM_TOKEN:-}" ]]; then
             export NODE_AUTH_TOKEN="$NPM_TOKEN"
-          else
-            unset NODE_AUTH_TOKEN
+          fi
+          node --version
+          npm --version
+          npm_version="$(npm --version)"
+          if ! printf '%s\n' "$npm_version" | awk -F. '$1>11 || ($1==11 && $2>=5) || ($1==11 && $2==5 && $3>=1)'; then
+            echo "::error::npm $npm_version is too old for Trusted Publisher (need >= 11.5.1)"
+            exit 1
           fi
           for ws in @sorane/font @sorane/okf @sorane/search @sorane/core @sorane/cli; do
             published="$(npm view "$ws" version 2>/dev/null || true)"
@@ -80,7 +86,7 @@ jobs:
               echo "skip ${ws}@${target} (already on npm)"
               continue
             fi
-            npm publish -w "$ws" --provenance --access public --registry https://registry.npmjs.org
+            npm publish -w "$ws" --provenance --access public
           done
 
   pack:
