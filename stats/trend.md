@@ -6,8 +6,8 @@ Auto-generated from `stats/history.jsonl` on each CI run on `main`.
 
 | Field | Value |
 |-------|-------|
-| Timestamp | 2026-06-21T10:37:47.510Z |
-| Commit | `871eb49` |
+| Timestamp | 2026-06-21T10:56:14.483Z |
+| Commit | `ffe397f` |
 | Version | `0.4.0` |
 | Packages LOC | 19,281 |
 | Test functions | 608 |
@@ -18,12 +18,12 @@ Auto-generated from `stats/history.jsonl` on each CI run on `main`.
 
 | Metric | Δ |
 |--------|---|
-| Packages LOC | +221 |
-| Test functions | +7 |
-| Total LOC | +324 |
-| Coverage | +0.2% |
+| Packages LOC | — |
+| Test functions | — |
+| Total LOC | — |
+| Coverage | 0.0% |
 
-## Δ vs oldest in window (18 runs)
+## Δ vs oldest in window (19 runs)
 
 | Metric | Start | Latest | Δ |
 |--------|-------|--------|---|
@@ -53,6 +53,7 @@ Auto-generated from `stats/history.jsonl` on each CI run on `main`.
 | 2026-06-21 09:07 | `14a46f9` | 0.4.0 | 18,371 | 589 | 35,285 | 66.4 | +278 |
 | 2026-06-21 10:29 | `2388c21` | 0.4.0 | 19,060 | 601 | 36,436 | 66.0 | +689 |
 | 2026-06-21 10:37 | `871eb49` | 0.4.0 | 19,281 | 608 | 36,760 | 66.2 | +221 |
+| 2026-06-21 10:56 | `ffe397f` | 0.4.0 | 19,281 | 608 | 36,760 | 66.2 | — |
 
 ## Workspace LOC (latest)
 
