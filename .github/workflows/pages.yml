@@ -8,6 +8,9 @@ on:
       - "packages/**"
       - "templates/**"
       - "profile/**"
+      - "scripts/supply-chain-status.ts"
+      - "cbom.json"
+      - "package.json"
       - ".github/workflows/pages.yml"
   workflow_dispatch:
 
@@ -37,6 +40,9 @@ jobs:
         run: |
           curl -fsSL https://d2lang.com/install.sh | sh -s -- --version v0.7.1 --prefix "$HOME/.local"
           echo "$HOME/.local/bin" >> "$GITHUB_PATH"
+
+      - name: Update supply chain status
+        run: npm run supply-chain:status
 
       - name: Build search index
         run: node packages/cli/src/main.ts index --cwd website --force

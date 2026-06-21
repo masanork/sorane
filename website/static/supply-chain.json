@@ -1,0 +1,39 @@
+{
+  "schema_version": 1,
+  "generated_at": "2026-06-21T05:10:42.788Z",
+  "version": "0.2.8",
+  "release": {
+    "tag": "v0.2.8",
+    "url": "https://github.com/masanork/sorane/releases/tag/v0.2.8",
+    "assets_url": "https://github.com/masanork/sorane/releases/latest",
+    "slsa_level": "Build-L3",
+    "npm_publish_provenance": true
+  },
+  "npm_packages": [
+    "@sorane/cli",
+    "@sorane/core",
+    "@sorane/font",
+    "@sorane/okf",
+    "@sorane/search"
+  ],
+  "cbom": {
+    "path": "/cbom.json",
+    "drift_gate": "npm run cbom-check",
+    "algorithms": [
+      {
+        "name": "SHA-256",
+        "oid": "2.16.840.1.101.3.4.2.1",
+        "role": "integrity",
+        "description": "Node.js crypto.createHash('sha256') for font subset cache keys and search incremental hashes."
+      }
+    ],
+    "c2pa_note": "Optional C2PA signing is delegated to external c2patool; sorane does not hold signing keys."
+  },
+  "sbom": {
+    "release_asset": "sbom.json (GitHub Release v0.2.8)",
+    "scope": "Third-party npm packages from package-lock.json"
+  },
+  "verification": {
+    "doc": "https://github.com/masanork/sorane/blob/main/docs/release-verification.md"
+  }
+}

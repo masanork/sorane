@@ -6,7 +6,7 @@
     "component": {
       "type": "application",
       "name": "sorane",
-      "version": "0.2.7",
+      "version": "0.2.8",
       "description": "OKF-native static site generator. C2PA signing is optional and delegated to external c2patool."
     },
     "properties": [
@@ -27,13 +27,18 @@
         "algorithmProperties": {
           "primitive": "hash",
           "parameterSetIdentifier": "SHA-256",
-          "cryptoFunctions": ["digest"],
+          "cryptoFunctions": [
+            "digest"
+          ],
           "nistQuantumSecurityLevel": 0
         },
         "oid": "2.16.840.1.101.3.4.2.1"
       },
       "properties": [
-        { "name": "sorane:role", "value": "integrity" }
+        {
+          "name": "sorane:role",
+          "value": "integrity"
+        }
       ]
     }
   ]
