@@ -55,6 +55,32 @@ describe("buildAtomFeed", () => {
     expect(xml).not.toContain("<entry>");
   });
 
+  test("digitalSourceCode で category を出す", () => {
+    const xml = buildAtomFeed(
+      [
+        {
+          title: "AI",
+          url: "https://ex.dev/a.html",
+          id: "id",
+          updated: "2025-06-01T00:00:00Z",
+          digitalSourceCode: "trainedAlgorithmicMedia",
+        },
+      ],
+      { siteTitle: "S", siteDescription: "D", baseUrl: "https://ex.dev" },
+    );
+    expect(xml).toContain('term="ai-disclosure:trainedAlgorithmicMedia"');
+  });
+
+  test("base_url 無しは相対 feed URL", () => {
+    const xml = buildAtomFeed([], {
+      siteTitle: "S",
+      siteDescription: "D",
+      baseUrl: "",
+      feedPath: "atom.xml",
+    });
+    expect(xml).toContain('href="atom.xml"');
+  });
+
   test("summary と feedPath を反映", () => {
     const xml = buildAtomFeed(
       [
@@ -89,6 +115,19 @@ describe("buildLlmsTxt", () => {
     expect(txt).toContain("> Desc");
     expect(txt).toContain("okf/bundle.tar.gz");
     expect(txt).toContain("catalog.jsonld");
+  });
+
+  test("diagramsEnabled と aiLabeledCount を反映", () => {
+    const txt = buildLlmsTxt({
+      siteTitle: "S",
+      siteDescription: "D",
+      baseUrl: "https://ex.dev",
+      diagramsEnabled: true,
+      aiLabeledCount: 3,
+    });
+    expect(txt).toContain("Diagram fences");
+    expect(txt).toContain("## AI content disclosure");
+    expect(txt).toContain("Labeled articles: 3");
   });
 
   test("aiLabeledCount 0 では AI セクションを出さない", () => {

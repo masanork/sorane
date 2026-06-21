@@ -103,6 +103,24 @@ describe("remarkDiagramFences", () => {
     );
   });
 
+  test("graphviz は enabled 時のみ注釈する", () => {
+    const tree = parseMarkdown("```dot\na -> b\n```");
+    unified()
+      .use(remarkDiagramFences({ ...DEFAULT_DIAGRAMS_CONFIG, graphviz: { enabled: true } }))
+      .runSync(tree);
+    const code = firstCode(tree);
+    const meta = (code.data as { soraneDiagram?: { lang?: string; kind?: string } }).soraneDiagram;
+    expect(meta?.lang).toBe("graphviz");
+    expect(meta?.kind).toBe("graphviz");
+  });
+
+  test("graphviz disabled では注釈しない", () => {
+    const tree = parseMarkdown("```dot\na -> b\n```");
+    unified().use(remarkDiagramFences(DEFAULT_DIAGRAMS_CONFIG)).runSync(tree);
+    const code = firstCode(tree);
+    expect((code.data as { soraneDiagram?: unknown } | undefined)?.soraneDiagram).toBe(undefined);
+  });
+
   test("d2 は enabled 時のみ注釈する", () => {
     const tree = parseMarkdown("```d2\nx -> y\n```");
     unified()

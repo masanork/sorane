@@ -6,7 +6,11 @@ import { describe, expect, test } from "./_expect.ts";
 import { renderMarkdownDocument } from "../packages/core/src/render.ts";
 import { renderBodySection } from "../packages/core/src/diagrams/render-body-section.ts";
 import { renderMarkdownDocumentAsync } from "../packages/core/src/diagrams/render-async.ts";
+import { rehypeDiagramPre } from "../packages/core/src/diagrams/rehype-diagram-pre.ts";
 import { DEFAULT_DIAGRAMS_CONFIG } from "../packages/core/src/config.ts";
+import rehypeStringify from "rehype-stringify";
+import { unified } from "unified";
+import type { Element, Root as HastRoot } from "hast";
 
 function d2Available(): boolean {
   try {
@@ -57,6 +61,95 @@ describe("renderBodySection", () => {
     expect(section.diagrams.mermaid).toBe(1);
     expect(section.html).toContain("language-mermaid");
     expect(section.outline.length).toBe(0);
+  });
+});
+
+function diagramPreTree(codeClass: string, alt: string): HastRoot {
+  const code: Element = {
+    type: "element",
+    tagName: "code",
+    properties: { className: codeClass.split(" "), dataSoraneAlt: alt },
+    children: [{ type: "text", value: "diagram" }],
+  };
+  return {
+    type: "root",
+    children: [
+      {
+        type: "element",
+        tagName: "pre",
+        properties: {},
+        children: [code],
+      },
+    ],
+  };
+}
+
+describe("rehypeDiagramPre", () => {
+  test("data-sorane-alt を pre へ移す", () => {
+    const tree = diagramPreTree("language-mermaid", "Alt text");
+    unified().use(rehypeDiagramPre).runSync(tree);
+    const html = unified().use(rehypeStringify).stringify(tree);
+    expect(html).toContain('data-sorane-alt="Alt text"');
+    expect(html.includes('code data-sorane-alt')).toBe(false);
+  });
+
+  test("graphviz code も対象", () => {
+    const tree = diagramPreTree("language-dot", "G");
+    unified().use(rehypeDiagramPre).runSync(tree);
+    const html = unified().use(rehypeStringify).stringify(tree);
+    expect(html).toContain('data-sorane-alt="G"');
+  });
+});
+
+describe("renderMarkdownDocumentAsync (build backends)", () => {
+  test("見出し outline と id を付与", async () => {
+    const md = "## Section\n\nBody.\n";
+    const { html, outline } = await renderMarkdownDocumentAsync(md);
+    expect(outline.length).toBe(1);
+    expect(outline[0]!.text).toBe("Section");
+    expect(html).toContain('id="');
+    expect(html).toContain("heading-anchor");
+  });
+
+  test("mermaid build 失敗は警告して PE フォールバック", async () => {
+    const md = '```mermaid\nflowchart LR\n  A --> B\n```\n';
+    const tmp = mkdtempSync(join(tmpdir(), "sorane-mmd-render-"));
+    const warnings: string[] = [];
+    try {
+      const { html, diagrams } = await renderMarkdownDocumentAsync(md, {
+        diagrams: {
+          ...DEFAULT_DIAGRAMS_CONFIG,
+          mermaid: { mode: "build", mmdc: "/nonexistent/mmdc" },
+        },
+        mermaidOutDir: join(tmp, "mermaid"),
+        onDiagramWarning: (m) => warnings.push(m),
+      });
+      expect(diagrams?.mermaid).toBe(1);
+      expect(warnings.some((w) => w.includes("mermaid build failed"))).toBe(true);
+      expect(html).toContain("language-mermaid");
+    } finally {
+      rmSync(tmp, { recursive: true, force: true });
+    }
+  });
+
+  test("graphviz build 失敗は警告", async () => {
+    const md = '```dot\na -> b\n```\n';
+    const tmp = mkdtempSync(join(tmpdir(), "sorane-gv-render-"));
+    const warnings: string[] = [];
+    try {
+      const { diagrams } = await renderMarkdownDocumentAsync(md, {
+        diagrams: {
+          ...DEFAULT_DIAGRAMS_CONFIG,
+          graphviz: { enabled: true, binary: "/nonexistent/dot" },
+        },
+        graphvizOutDir: join(tmp, "graphviz"),
+        onDiagramWarning: (m) => warnings.push(m),
+      });
+      expect(diagrams?.graphviz).toBe(1);
+      expect(warnings.some((w) => w.includes("graphviz compile failed"))).toBe(true);
+    } finally {
+      rmSync(tmp, { recursive: true, force: true });
+    }
   });
 });
 

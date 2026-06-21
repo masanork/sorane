@@ -1,5 +1,5 @@
 import { describe, expect, test } from "./_expect.ts";
-import { parseSearchQuery } from "../packages/cli/src/search-cmd.ts";
+import { parseSearchArgs, parseSearchQuery } from "../packages/cli/src/search-cmd.ts";
 
 describe("parseSearchQuery", () => {
   test("--type の値を query と誤認しない", () => {
@@ -12,5 +12,19 @@ describe("parseSearchQuery", () => {
 
   test("フラグのみは空", () => {
     expect(parseSearchQuery(["--json", "--fts-only"])).toBe("");
+  });
+});
+
+describe("parseSearchArgs", () => {
+  test("--out で index パスを上書き", () => {
+    const args = parseSearchArgs([
+      "q",
+      "--cwd",
+      "/tmp/site",
+      "--out",
+      "custom/index.db",
+    ]);
+    expect(args.indexPath.endsWith("custom/index.db")).toBe(true);
+    expect(args.query).toBe("q");
   });
 });

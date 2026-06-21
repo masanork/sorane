@@ -24,7 +24,49 @@ describe("isC2paRasterPath", () => {
   });
 });
 
+describe("c2patoolAvailable", () => {
+  test("存在しないバイナリは false", () => {
+    expect(c2patoolAvailable("__sorane_no_such_c2patool__")).toBe(false);
+  });
+});
+
+describe("probeC2paManifest", () => {
+  test("存在しないファイルは false", () => {
+    expect(probeC2paManifest("/nonexistent/sorane-c2pa.png")).toBe(false);
+  });
+});
+
+describe("signRasterWithC2pa failure", () => {
+  test("不正バイナリは ok: false", () => {
+    const root = mkdtempSync(join(tmpdir(), "sorane-c2pa-fail-"));
+    try {
+      const input = join(root, "in.png");
+      const output = join(root, "out.png");
+      writeFileSync(input, TINY_PNG);
+      const result = signRasterWithC2pa(input, output, {
+        binary: "__sorane_no_such_c2patool__",
+        createIntent: "digitalCapture",
+        credentials: { signCert: C2PA_TEST_CERT, privateKey: C2PA_TEST_KEY },
+      });
+      expect(result.ok).toBe(false);
+      expect((result.message?.length ?? 0) > 0).toBe(true);
+    } finally {
+      rmSync(root, { recursive: true, force: true });
+    }
+  });
+});
+
 describe("resolveC2paCredentials", () => {
+  test("有効なパスで credentials を返す", () => {
+    expect(
+      resolveC2paCredentials({
+        enabled: true,
+        certificate_path: C2PA_TEST_CERT,
+        private_key_path: C2PA_TEST_KEY,
+      }),
+    ).not.toBe(null);
+  });
+
   test("enabled だが cred 無しは null", () => {
     const prevCert = process.env.SORANE_C2PA_CERT;
     const prevKey = process.env.SORANE_C2PA_KEY;

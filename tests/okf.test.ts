@@ -3,6 +3,8 @@ import {
   conceptToOkfMarkdown,
   normalizeConcept,
   resolveEffectiveType,
+  resolveProfileSchema,
+  validateProfileFormat,
   validateSource,
 } from "../packages/okf/src/index.ts";
 
@@ -74,6 +76,61 @@ describe("validateSource", () => {
   test("frontmatter 無しはエラー", () => {
     const r = validateSource("a.md", "no frontmatter\n");
     expect(r.ok).toBe(false);
+  });
+
+  test("不正 YAML はエラー", () => {
+    const r = validateSource("a.md", "---\n: bad\n  yaml\n---\n\nbody\n");
+    expect(r.ok).toBe(false);
+    expect(r.issues[0]?.where).toBe("frontmatter");
+  });
+
+  test("未サポート profile はエラー", () => {
+    const r = validateSource(
+      "a.md",
+      "---\ntype: article\ntitle: T\nprofile: sorane-okf/9.9\n---\n\nbody\n",
+    );
+    expect(r.ok).toBe(false);
+    expect(r.issues.some((i) => i.where === "profile")).toBe(true);
+  });
+
+  test("type 無しはエラー", () => {
+    const r = validateSource("a.md", "---\ntitle: T\n---\n\nbody\n");
+    expect(r.ok).toBe(false);
+    expect(r.issues.some((i) => i.where === "type")).toBe(true);
+  });
+
+  test("0.2 で不正 disclosure は error", () => {
+    const r = validateSource(
+      "a.md",
+      "---\ntype: article\ntitle: T\nprofile: sorane-okf/0.2\ndigitalSourceType: not-a-real-code\n---\n\nbody\n",
+    );
+    expect(r.ok).toBe(false);
+  });
+});
+
+describe("validateProfileFormat", () => {
+  test("supported / unsupported", () => {
+    expect(validateProfileFormat("sorane-okf/0.3")).toBe(null);
+    expect(validateProfileFormat("bad/profile")?.where).toBe("profile");
+    expect(validateProfileFormat(undefined)).toBe(null);
+  });
+});
+
+describe("resolveProfileSchema", () => {
+  test("0.3 スキーマパス", () => {
+    expect(resolveProfileSchema("sorane-okf/0.3").endsWith("sorane-okf-0.3.schema.json")).toBe(
+      true,
+    );
+  });
+
+  test("未サポートは throw", () => {
+    let threw = false;
+    try {
+      resolveProfileSchema("sorane-okf/9.9");
+    } catch {
+      threw = true;
+    }
+    expect(threw).toBe(true);
   });
 });
 

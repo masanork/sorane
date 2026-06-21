@@ -8,7 +8,8 @@ All notable changes to sorane are documented here. Versioning follows [SemVer](h
 
 - `npm run stats` / `stats:json` — monorepo LOC, test ratio, workspace breakdown (`scripts/project-stats.ts`)
 - CI `project-stats` job: append `stats/history.jsonl`, regenerate `stats/trend.md` on `main` (`[skip ci]` bot commit)
-- Broad unit/integration test suite; `npm run test:coverage` line gate raised to **90%**
+- Broad unit/integration test suite; `npm run test:coverage` line gate raised to **90%** (overall ~98% with `--test-isolation=none` so coverage merges across test files)
+- Per-file line coverage brought to ~90%+ across `packages/**/*.ts` (excluding `watch.ts` main loop and `packages/search/**`)
 
 ### Fixed
 

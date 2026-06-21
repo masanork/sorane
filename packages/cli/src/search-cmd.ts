@@ -28,7 +28,8 @@ export function parseSearchQuery(argv: readonly string[]): string {
   return parts.join(" ");
 }
 
-function parseSearchArgs(argv: string[]): {
+/** @internal Exported for unit tests. */
+export function parseSearchArgs(argv: string[]): {
   cwd: string;
   query: string;
   indexPath: string;
