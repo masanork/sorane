@@ -117,6 +117,18 @@ build:
 
 `profile: sorane-okf/0.2` と frontmatter で IPTC / schema.org 準拠の開示ができます。詳細は [AI コンテンツ開示](ai-disclosure.html) を参照してください。
 
+## 静的画像 IPTC XMP
+
+```yaml
+build:
+  image_metadata:
+    enabled: false
+    exiftool: exiftool
+    manifest: asset-provenance.yaml   # content/ からの相対（既定）
+```
+
+`content/asset-provenance.yaml` と組み合わせて `static/` 内の JPEG/PNG/WebP に IPTC Extension XMP を埋め込みます。詳細は [AI コンテンツ開示](ai-disclosure.html) を参照してください。
+
 ## 静的画像 C2PA
 
 ```yaml

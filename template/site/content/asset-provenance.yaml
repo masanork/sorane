@@ -2,4 +2,8 @@
 # assets:
 #   hero.jpg:
 #     digitalSourceType: trainedAlgorithmicMedia
-#     aiDisclosureNote: Describe how the image was produced.
+#     aiDisclosureNote: Describe how the image was produced (no PII).
+#     aiSystems:
+#       - name: Example Model
+#         version: "1"
+#         provider: Example Inc.

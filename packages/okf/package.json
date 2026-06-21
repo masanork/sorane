@@ -1,9 +1,27 @@
 {
   "name": "@sorane/okf",
-  "version": "0.1.0",
+  "version": "0.2.0",
+  "description": "Open Knowledge Format parsing, validation, and serialization for sorane",
   "type": "module",
+  "license": "MIT",
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/masanork/sorane.git",
+    "directory": "packages/okf"
+  },
+  "homepage": "https://sorane.dev",
+  "bugs": "https://github.com/masanork/sorane/issues",
+  "files": [
+    "src"
+  ],
   "exports": {
     ".": "./src/index.ts"
+  },
+  "engines": {
+    "node": ">=23.6"
+  },
+  "publishConfig": {
+    "access": "public"
   },
   "dependencies": {
     "ajv": "^8.17.1",

@@ -72,6 +72,26 @@ describe("JSON-LD", () => {
     expect(post).toContain("BlogPosting");
   });
 
+  test("BlogPosting に associatedMedia を含める", () => {
+    const post = buildBlogPostingJsonLd({
+      title: "T",
+      url: "https://ex.dev/t.html",
+      siteTitle: "S",
+      lang: "ja",
+      associatedMedia: [
+        {
+          contentUrl: "https://ex.dev/static/hero.png",
+          digitalSourceType:
+            "http://cv.iptc.org/newscodes/digitalsourcetype/trainedAlgorithmicMedia",
+          name: "Hero",
+        },
+      ],
+    });
+    expect(post).toContain("associatedMedia");
+    expect(post).toContain("ImageObject");
+    expect(post).toContain("hero.png");
+  });
+
   test("BlogPosting に digitalSourceType を含める", () => {
     const d = parseAiDisclosure({ digitalSourceType: "trainedAlgorithmicMedia" })!;
     const post = buildBlogPostingJsonLd({

@@ -93,6 +93,12 @@ import {
   resolveDocsNav,
 } from "./docs.ts";
 import type { DiagramRenderMeta } from "./diagrams/diagram-meta.ts";
+import { buildAssociatedMediaForArticle } from "./associated-media.ts";
+import { loadAssetProvenance } from "./asset-provenance.ts";
+import {
+  collectMarkdownImageRefs,
+  dedupeMarkdownImageRefs,
+} from "./markdown-image-refs.ts";
 import { processStaticAssets } from "./static-assets.ts";
 import {
   isNotFoundSource,
@@ -132,6 +138,12 @@ function walkMarkdown(root: string): string[] {
 function slugFromRel(relPath: string): string {
   const base = relPath.replace(/\\/g, "/").split("/").pop() ?? relPath;
   return base.replace(/\.md$/i, "");
+}
+
+function outHtmlRelForParsed(p: ParsedConcept, config: SoraneConfig): string {
+  const slug = slugFromRel(p.relPath);
+  if (p.concept.type === "index" || slug === "index") return "index.html";
+  return resolvePermalink(config.build.permalink, slug, p.concept.timestamp);
 }
 
 function isSystemPage(concept: ParsedConcept["concept"]): boolean {
@@ -460,6 +472,12 @@ export async function runBuild(opts: BuildOptions): Promise<BuildResult> {
     });
   }
 
+  const assetProvenance = loadAssetProvenance(
+    contentDir,
+    config.build.image_metadata?.manifest,
+  );
+  const staticDirName = config.build.static_dir ?? "static";
+
   // --- Phase A: articles（SSG の核）---
   for (const p of parsed) {
     if (
@@ -535,6 +553,23 @@ export async function runBuild(opts: BuildOptions): Promise<BuildResult> {
     const updated = frontmatterString(p.concept.frontmatter, "updated");
     const author = frontmatterString(p.concept.frontmatter, "author");
     const canonicalUrl = baseUrl.length > 0 ? `${baseUrl}/${outRel}` : undefined;
+    const pageImageRefs = collectMarkdownImageRefs({
+      body: p.concept.body,
+      sourceMdRel: p.relPath,
+      outHtmlRel: outRel,
+      contentDir,
+      cwd,
+      staticDirName,
+    });
+    const associatedMedia =
+      pageAiFlags.jsonLd && !isSearch
+        ? buildAssociatedMediaForArticle({
+            refs: pageImageRefs,
+            provenance: assetProvenance,
+            baseUrl,
+          })
+        : [];
+
     const jsonLd = isSearch
       ? ""
       : buildBlogPostingJsonLd({
@@ -548,6 +583,7 @@ export async function runBuild(opts: BuildOptions): Promise<BuildResult> {
           lang: config.site.lang,
           aiDisclosure:
             pageAiFlags.jsonLd && aiDisclosure ? aiDisclosure : undefined,
+          associatedMedia: associatedMedia.length > 0 ? associatedMedia : undefined,
         });
 
     const fontCss = await fontCssFor(p.concept, rootPrefix, bodyHtml);
@@ -973,7 +1009,6 @@ export async function runBuild(opts: BuildOptions): Promise<BuildResult> {
 
   // --- 404.html（Cloudflare Pages 等のエラーページ）---
   const notFoundParsed = parsed.find((p) => isNotFoundSource(p.relPath));
-  const staticDirName = config.build.static_dir ?? "static";
   const staticSrc = resolve(cwd, staticDirName);
   const staticNotFoundHtml = join(staticSrc, "404.html");
 
@@ -1029,6 +1064,18 @@ export async function runBuild(opts: BuildOptions): Promise<BuildResult> {
     builtPages += 1;
   }
 
+  const inlineImageCandidates = parsed.flatMap((p) =>
+    collectMarkdownImageRefs({
+      body: p.concept.body,
+      sourceMdRel: p.relPath,
+      outHtmlRel: outHtmlRelForParsed(p, config),
+      contentDir,
+      cwd,
+      staticDirName,
+    }),
+  );
+  const inlineImages = dedupeMarkdownImageRefs(inlineImageCandidates);
+
   await processStaticAssets({
     cwd,
     staticSrc,
@@ -1038,6 +1085,7 @@ export async function runBuild(opts: BuildOptions): Promise<BuildResult> {
     c2pa: config.build.c2pa,
     imageMetadata: config.build.image_metadata,
     skipC2pa: opts.skipC2pa,
+    inlineImages,
     onWarning: (message) => process.stderr.write(`[sorane] ${message}\n`),
     onProgress: (message) => process.stdout.write(`[sorane] ${message}\n`),
   });

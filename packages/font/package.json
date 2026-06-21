@@ -1,8 +1,27 @@
 {
   "name": "@sorane/font",
-  "version": "0.1.0",
+  "version": "0.2.0",
+  "description": "Per-page WOFF2 font subsetting for sorane (bunsen WASM)",
   "type": "module",
+  "license": "MIT",
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/masanork/sorane.git",
+    "directory": "packages/font"
+  },
+  "homepage": "https://sorane.dev",
+  "bugs": "https://github.com/masanork/sorane/issues",
+  "files": [
+    "src",
+    "wasm"
+  ],
   "exports": {
     ".": "./src/index.ts"
+  },
+  "engines": {
+    "node": ">=23.6"
+  },
+  "publishConfig": {
+    "access": "public"
   }
 }

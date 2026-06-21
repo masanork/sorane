@@ -1,9 +1,15 @@
 {
   "name": "sorane",
-  "version": "0.1.0",
+  "version": "0.2.0",
   "description": "OKF-native static site generator (Rust/TypeScript)",
   "private": true,
   "type": "module",
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/masanork/sorane.git"
+  },
+  "homepage": "https://sorane.dev",
+  "bugs": "https://github.com/masanork/sorane/issues",
   "workspaces": [
     "packages/*"
   ],
@@ -22,7 +28,10 @@
     "test:coverage:lcov": "c8 --include='packages/**' --exclude='packages/**/wasm/**' --reporter=text-summary --reporter=lcov --report-dir=coverage node --test 'tests/**/*.test.ts'",
     "test:e2e": "playwright test",
     "test:c2pa": "node --test tests/c2pa-pass.test.ts tests/static-assets.test.ts tests/asset-provenance.test.ts",
-    "typecheck": "tsc --noEmit"
+    "test:image-metadata": "node --test tests/iptc-xmp-pass.test.ts tests/static-assets.test.ts tests/asset-provenance.test.ts",
+    "typecheck": "tsc --noEmit",
+    "pack:cli": "npm pack -w @sorane/cli",
+    "publish:workspaces": "npm publish -w @sorane/font --access public && npm publish -w @sorane/okf --access public && npm publish -w @sorane/search --access public && npm publish -w @sorane/core --access public && npm publish -w @sorane/cli --access public"
   },
   "engines": {
     "node": ">=23.6"

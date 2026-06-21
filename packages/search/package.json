@@ -1,13 +1,32 @@
 {
   "name": "@sorane/search",
-  "version": "0.1.0",
+  "version": "0.2.0",
+  "description": "FTS and hybrid search indexing for sorane sites",
   "type": "module",
+  "license": "MIT",
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/masanork/sorane.git",
+    "directory": "packages/search"
+  },
+  "homepage": "https://sorane.dev",
+  "bugs": "https://github.com/masanork/sorane/issues",
+  "files": [
+    "src",
+    "assets"
+  ],
   "exports": {
     ".": "./src/index.ts"
   },
+  "engines": {
+    "node": ">=23.6"
+  },
+  "publishConfig": {
+    "access": "public"
+  },
   "dependencies": {
     "@huggingface/transformers": "^4.2.0",
-    "@sorane/okf": "0.1.0",
+    "@sorane/okf": "0.2.0",
     "better-sqlite3": "^12.11.1",
     "remark-gfm": "^4.0.1",
     "remark-parse": "^11.0.0",

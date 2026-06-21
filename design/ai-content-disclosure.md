@@ -4,8 +4,18 @@
 |-------|-------|
 | **Author** | _(TBD)_ |
 | **Date** | 2026-06-20 |
-| **Status** | Draft |
+| **Status** | **Implemented** (Phase 1–3.1 complete) |
 | **Profile target** | `sorane-okf/0.2` (additive; `0.1` remains valid) |
+
+### Implementation status (2026-06-21)
+
+| Phase | Scope | Status |
+|-------|-------|--------|
+| **1** | Article frontmatter → badges, JSON-LD, catalog, search, Atom, OKF bundle | ✅ Shipped |
+| **2** | `static/` IPTC XMP via ExifTool + `asset-provenance.yaml` | ✅ Shipped |
+| **2.5** | Markdown inline image path → provenance map + `content/` raster copy | ✅ Shipped |
+| **3 MVP** | `static/` JPEG/PNG C2PA embed (`build.c2pa`, `--skip-c2pa`) | ✅ Shipped |
+| **3.1** | JSON-LD `associatedMedia` for provenance-tagged inline images | ✅ Shipped |
 
 ---
 
@@ -17,8 +27,8 @@ This design adds AI disclosure end-to-end using **widely adopted standards only*
 
 1. **[schema.org `digitalSourceType`](https://schema.org/digitalSourceType)** on `CreativeWork` / `BlogPosting`, valued with **[IPTC Digital Source Type](https://cv.iptc.org/newscodes/digitalsourcetype/)** NewsCodes URIs.
 2. **[EU AI Act transparency icons](https://digital-strategy.ec.europa.eu/en/policies/eu-icons-labelling-ai-generated-content)** (Basic, Fully AI-Generated, Partially AI-Modified) for human-facing badges—free to use, mapped from IPTC codes.
-3. **IPTC Photo Metadata 2025.1** fields for raster assets in a later phase (build-time XMP via ExifTool).
-4. **[C2PA](https://c2pa.org/)** content credentials for signed image/video/audio in a planned phase—not phase 1, but hooks are specified now.
+3. **IPTC Photo Metadata 2025.1** fields for raster assets in `static/` (build-time XMP via ExifTool; opt-in `build.image_metadata`).
+4. **[C2PA](https://c2pa.org/)** content credentials for `static/` JPEG/PNG (opt-in `build.c2pa`; video/audio out of MVP scope).
 
 Phase 1 ships author-controlled frontmatter → HTML badges + JSON-LD + catalog/search/OKF propagation. No proprietary `sorane:*` metadata scheme.
 
@@ -26,27 +36,23 @@ Phase 1 ships author-controlled frontmatter → HTML badges + JSON-LD + catalog/
 
 ## Background & Motivation
 
-### Current state (verified in repo)
+### Current state (verified in repo, 2026-06-21)
 
 | Area | Location | Behavior today |
 |------|----------|----------------|
-| OKF profile | `profile/sorane-okf-0.1.schema.json` | `article` / `index`; no AI fields |
-| Normalization | `packages/okf/src/normalize.ts` | Unknown frontmatter keys land in `concept.frontmatter` |
-| Serialization | `packages/okf/src/serialize.ts` | `KEY_ORDER` + sorted `frontmatter` → `.md` alternates & bundle |
-| Article HTML | `renderArticleBody()` in `packages/core/src/ssg.ts` | Header: title, meta, tags—no disclosure |
-| JSON-LD | `buildBlogPostingJsonLd()` in `packages/core/src/ssg.ts` | `BlogPosting` without `digitalSourceType` |
-| Page emit | `emitPage()` in `packages/core/src/emit-page.ts` | Writes `.html` + sibling `.md` |
-| Catalog | `buildCatalogJsonLd()` in `packages/core/src/catalog.ts` | DCAT `DataCatalog` / `Dataset` per article |
-| Search export | `packages/search/src/web-export.ts` | `FtsWebChunk` / `WebChunk`: title, tags, snippet—no provenance |
-| Static assets | `runBuild()` ~L757–761 in `packages/core/src/build.ts` | `cpSync(static/)` — **no** metadata mutation |
-| Agent guide | `buildLlmsTxt()` in `packages/core/src/site-meta.ts` | Lists bundle, catalog, sitemap only |
+| OKF profile | `profile/sorane-okf-0.2.schema.json` | Disclosure fields + profile-aware AJV |
+| Article HTML | `renderArticleBody()` / `renderDocsArticleBody()` | EU badges when `build.ai_disclosure` + frontmatter |
+| JSON-LD | `buildBlogPostingJsonLd()` + `aiDisclosureJsonLdFields()` | `digitalSourceType`, `contributor`, `disambiguatingDescription` |
+| Catalog / search / Atom | `catalog.ts`, `web-export.ts`, `blog-pages.ts` | `digital_source_type` propagation |
+| Static assets | `processStaticAssets()` in `static-assets.ts` | Copy → optional IPTC XMP (`iptc-xmp-pass.ts`) → optional C2PA (`c2pa-pass.ts`) |
+| Asset manifest | `content/asset-provenance.yaml` | Per-file `digitalSourceType`, `aiSystems`, `aiDisclosureNote` |
+| Agent guide | `buildLlmsTxt()` | Labeled article count when disclosures present |
+| E2E | `tests/e2e/*.spec.ts` | a11y, 404, OG meta, search `aria-live`, diagram smoke |
 
-### Pain points
+### Remaining gaps
 
-- Authors cannot declare AI involvement in a validated, portable way.
-- Agents reading `catalog.jsonld`, `search-index.json`, or `.md` alternates cannot filter or rank by provenance.
-- EU-facing publishers risk non-compliance without visible labels.
-- Future C2PA work would require ad-hoc retrofit without a static-asset hook.
+- External hotlink images (no local file) are not tagged.
+- Video/audio C2PA out of scope.
 
 ### Motivation
 
@@ -74,8 +80,8 @@ Phase 1 ships author-controlled frontmatter → HTML badges + JSON-LD + catalog/
 | ID | Non-goal |
 |----|----------|
 | NG1 | Automatic AI detection / classification |
-| NG2 | C2PA signing or manifest embedding |
-| NG3 | Per-image inline markdown syntax (deferred to phase 2) |
+| NG2 | _(was phase 1)_ C2PA signing — **shipped** as opt-in phase 3 MVP |
+| NG3 | _(was phase 2.5)_ Per-image inline markdown path map — **shipped** via `markdown-image-refs.ts` |
 | NG4 | Video/audio C2PA |
 | NG5 | Custom proprietary metadata namespaces |
 | NG6 | Requiring disclosure on every page (opt-in per article) |
@@ -808,13 +814,11 @@ if (aiLabelsSrc) {
 
 ### Static image pipeline (phase 2–3 hooks)
 
-Today (`build.ts` L757–761):
+Implemented in `packages/core/src/static-assets.ts` (replaces raw `cpSync` in `runBuild()`):
 
-```typescript
-if (existsSync(staticSrc)) {
-  cpSync(staticSrc, join(outDir, staticDirName), { recursive: true });
-}
-```
+1. `cpSync(static/)` → `dist/static/`
+2. If `build.image_metadata.enabled`: ExifTool embeds IPTC XMP per `asset-provenance.yaml` entry
+3. If `build.c2pa.enabled` (and not `--skip-c2pa`): c2patool signs JPEG/PNG
 
 **Out of scope (all phases unless noted):** inline markdown images under `content/`, favicons, font binaries, external hotlinks, `website/static/` paths outside `build.static_dir`.
 
@@ -838,7 +842,7 @@ export async function processStaticAssets(opts: StaticAssetPassOptions): Promise
   - Write XMP: `AI System Used`, `AI Prompt Information` (optional), `Digital Source Type`.
 - **No-op default**; copy-only behavior preserved.
 
-**Phase 2.5 (deferred):** map markdown image paths (`![](../static/foo.jpg)`) → provenance entries; typical author workflow not covered in phase 2. Document manual ExifTool workflow for `content/`-embedded images until 2.5.
+**Phase 2.5 (shipped):** `markdown-image-refs.ts` scans `![](path)` in all content; resolves to `static/` or `content/` rasters; `lookupAssetProvenance` accepts markdown/public/content aliases; `content/` images copy into matching `dist/` paths before XMP/C2PA.
 
 #### Phase 3 — C2PA MVP (narrow scope)
 
@@ -858,7 +862,7 @@ export interface C2paPassConfig {
 | Reproducible builds | Signing is inherently non-reproducible; document `--skip-c2pa` for deterministic CI snapshots |
 | Cert provisioning | Manual setup doc: local dev key + GitHub Actions / Cloudflare Pages secrets; no hosted CA |
 | Cloudflare Pages | Note Pages 25 MiB asset limit—`c2patool` binary may require pre-install in build image, not bundled in dist |
-| JSON-LD linkage | **Deferred to phase 3.1** — MVP signs assets only; no `associatedMedia` assertion wiring yet |
+| JSON-LD linkage | **Phase 3.1 shipped** — `associated-media.ts` emits `associatedMedia` `ImageObject` entries for inline images with provenance when `json_ld` enabled |
 
 ```mermaid
 flowchart TB
@@ -872,7 +876,7 @@ flowchart TB
 |--------------|---------|---------|---------|
 | Markdown/HTML articles | JSON-LD + EU badge | — | — |
 | Raster in `static/` | Copied verbatim | XMP metadata | C2PA embed |
-| Markdown inline images | — | Manual / 2.5 | Out of scope MVP |
+| Markdown inline images | — | XMP + copy (`content/`) | C2PA when raster + creds |
 | External hotlinks | — | — | Out of scope |
 
 **Credential storage:** CI secret / local dev key—not committed. `sorane build` warns if `c2pa.enabled` without cert path or env.
@@ -1094,7 +1098,7 @@ No PII in logs.
 5. **Propagation surfaces:** HTML badge (article + docs), `BlogPosting` JSON-LD (+ `contributor`, `disambiguatingDescription`), `catalog.jsonld`, `.md` alternates, OKF bundle, `search-index.json`, `feed.xml`, `llms.txt`.
 6. **Search index:** `digital_source_type` at web-export (schema v4 FTS / v3 hybrid); `contentDir` threaded through `emitSearchAssets` → `deriveWebIndex`.
 7. **Config flags:** separate `badges`, `json_ld`, `machine_readable`, `atom`—`enabled: false` does not suppress JSON-LD.
-8. **C2PA:** not phase 1; phase 3 MVP = opt-in `static/` JPEG/PNG embed only; JSON-LD linkage phase 3.1.
+8. **C2PA:** phase 3 MVP shipped — opt-in `static/` JPEG/PNG embed; phase 3.1 `associatedMedia` JSON-LD shipped.
 9. **No auto-detection:** disclosure is author-declared only.
 10. **i18n:** badge strings via extended `siteLabels()` (JA default + EN).
 11. **IPTC resolver:** `packages/okf/src/digital-source-type.ts`; normalize `https` → `http`; retired `digitalArt` → `digitalCreation` with warning.
@@ -1106,17 +1110,19 @@ No PII in logs.
 
 | # | Title | Files (primary) | Deps | Description / acceptance |
 |---|-------|-----------------|------|--------------------------|
-| **PR1** | `feat(okf): digital-source-type resolver, 0.2 schema, profile-aware validation` | `packages/okf/src/digital-source-type.ts`, `packages/okf/src/validate.ts` (`resolveProfileSchema`, cache), `packages/okf/src/index.ts`, `profile/sorane-okf-0.2.schema.json`, `website/static/profile/sorane-okf-0.2.schema.json`, `tests/okf-digital-source.test.ts` | — | IPTC allowlist (no `digitalArt`; `digitalCreation` no-badge); `https`→`http` normalization; retired alias warnings; profile-dispatched AJV. **Accept:** `resolveDigitalSourceType("https://cv.iptc.org/.../trainedAlgorithmicMedia")` → canonical URI. |
-| **PR2** | `feat(okf): cross-field disclosure validation` | `packages/okf/src/validate.ts`, `tests/okf-validate-disclosure.test.ts` | PR1 | `validateProfileFormat()` before schema dispatch; R1–R4 cross-field rules; `0.1`+disclosure keys → warn on bad codes; `0.2` → error. **Accept:** `sorane-okf/9.9` fails with supported-profile message; `euAiLabel` / `aiDisclosureNote` without `digitalSourceType` fails. |
-| **PR3** | `feat(core): parse AiDisclosure and extend JSON-LD` | `packages/core/src/ai-disclosure.ts`, `packages/core/src/ssg.ts`, `tests/ai-disclosure.test.ts`, `tests/ssg.test.ts` | PR1 | `parseAiDisclosure`, `aiDisclosureJsonLdFields` (`digitalSourceType`, `disambiguatingDescription`, `contributor`). **Accept:** JSON-LD includes `contributor` when `aiSystems` set. |
-| **PR4** | `feat(templates): EU badges, CSS, theme asset copy` | `templates/default/assets/main.css`, `templates/default/assets/ai-labels/*.svg`, `packages/core/src/site-labels.ts`, `packages/core/src/ai-disclosure.ts`, `packages/core/src/theme-assets.ts`, `packages/core/src/build.ts`, `tests/theme-assets.test.ts` | PR3 | `buildAiBadgeHtml` with `${rootPrefix}`; `resolveThemeAssetDir` + `cpSync` for `ai-labels/`. **Accept:** `dist/assets/ai-labels/partially-modified.svg` exists after build. |
-| **PR5** | `feat(core): wire badges, docs mode, config flags, Atom feed` | `packages/core/src/ssg.ts`, `packages/core/src/blog-pages.ts`, `packages/core/src/docs.ts`, `packages/core/src/build.ts`, `packages/core/src/config.ts`, `packages/core/src/site-meta.ts`, `packages/core/src/ai-disclosure.ts` (`buildCompactAiBadgeHtml`), `tests/blog-pages.test.ts`, `tests/docs.test.ts`, `tests/config.test.ts` | PR4 | Badges in `renderArticleBody` + `renderDocsArticleBody`; `show_on_lists` on featured + archive/tag/year/month lists; `resolveAiDisclosureFlags`; Atom `category`; `aiLabeledCount` aggregate. **Accept:** docs-layout page with disclosure renders badge; featured + tag list show compact badge when `show_on_lists: true`; `feed.xml` has `category term`. |
-| **PR6** | `feat(okf): serialize disclosure fields + catalog propagation` | `packages/okf/src/serialize.ts`, `packages/core/src/catalog.ts`, `tests/okf-serialize-disclosure.test.ts`, `tests/catalog.test.ts`, `tests/okf-bundle.test.ts`, `tests/migrate-disclosure.test.ts` | PR3 | Explicit `toOkfFrontmatterLines()` emission + `appendAiSystemsEntry()`; catalog `digitalSourceType`; `migrateToOkf()` round-trip preserves disclosure keys. **Accept:** round-trip preserves all 4 fields incl. multi-system `aiSystems`; migrate output retains `digitalSourceType`. |
-| **PR7** | `feat(search): digital_source_type in FTS + hybrid export` | `packages/search/src/disclosure-map.ts`, `packages/search/src/web-export.ts`, `packages/search/src/derive-web-index.ts`, `packages/search/src/emit-search-assets.ts`, `packages/core/src/build.ts`, `tests/web-export.test.ts` | PR1, **PR5** | `contentDir` plumbing; `machineReadable` flag gating; bump FTS v4 / hybrid v3; both builders. **Accept:** hybrid + FTS chunks include `digital_source_type` when frontmatter set and `machine_readable` true; field omitted (not `null`) when `machine_readable: false`. |
-| **PR8** | `docs: AI disclosure guide, migrate flag, template example` | `website/content/ai-disclosure.md`, `website/content/okf-profile.md`, `website/content/configuration.md`, `template/site/content/article/*`, `packages/core/src/site-meta.ts`, `packages/cli/src/migrate.ts`, `packages/core/src/migrate.ts` | PR5, PR6, PR7 | Author guide (EN/JA); `okf-profile.md` documents `0.2` extension-key policy + disclosure validation; `sorane migrate --bump-profile 0.2`; flag matrix in configuration.md. **Accept:** `llms.txt` lists labeled article count; `--bump-profile 0.2` sets profile without adding disclosure fields. |
-| **PR9** | `feat(core): static asset pipeline hook (stub)` | `packages/core/src/static-assets.ts`, `packages/core/src/build.ts`, `packages/core/src/config.ts` | PR5 | Refactor `cpSync` into `processStaticAssets`; no-op default. **Accept:** default build identical to today. |
-| **PR10** | `feat(core): IPTC XMP for static/ images` | `packages/core/src/static-assets.ts`, `content/asset-provenance.yaml` (schema + example), `scripts/embed-iptc.sh`, docs | PR9 | Opt-in XMP; manifest file design; documents inline-image gap (phase 2.5). **Accept:** provenance YAML entry → XMP on `static/` image. |
-| **PR11** | `feat(core): C2PA signing MVP for static/ raster` | `packages/core/src/c2pa-pass.ts`, `packages/core/src/static-assets.ts`, CI docs | PR10 | Opt-in embed signing; env-based certs; no JSON-LD linkage (3.1). **Accept:** signed JPEG in dist when enabled + cert present. |
+| **PR1** | `feat(okf): digital-source-type resolver, 0.2 schema, profile-aware validation` | `packages/okf/src/digital-source-type.ts`, … | — | IPTC allowlist; profile-dispatched AJV. | ✅ |
+| **PR2** | `feat(okf): cross-field disclosure validation` | `packages/okf/src/validate.ts`, … | PR1 | R1–R4 cross-field rules; mixed-profile warn/error. | ✅ |
+| **PR3** | `feat(core): parse AiDisclosure and extend JSON-LD` | `packages/core/src/ai-disclosure.ts`, … | PR1 | `parseAiDisclosure`, `aiDisclosureJsonLdFields`. | ✅ |
+| **PR4** | `feat(templates): EU badges, CSS, theme asset copy` | `templates/default/assets/ai-labels/*.svg`, … | PR3 | Badge HTML + theme asset copy. | ✅ |
+| **PR5** | `feat(core): wire badges, docs mode, config flags, Atom feed` | `packages/core/src/ssg.ts`, … | PR4 | Badges, flags, Atom category, list compact badges. | ✅ |
+| **PR6** | `feat(okf): serialize disclosure fields + catalog propagation` | `packages/okf/src/serialize.ts`, … | PR3 | Round-trip + catalog `digitalSourceType`. | ✅ |
+| **PR7** | `feat(search): digital_source_type in FTS + hybrid export` | `packages/search/src/web-export.ts`, … | PR1, PR5 | FTS v4 / hybrid v3 export field. | ✅ |
+| **PR8** | `docs: AI disclosure guide, migrate flag, template example` | `website/content/ai-disclosure.md`, … | PR5–7 | Author guide + `--bump-profile 0.2`. | ✅ |
+| **PR9** | `feat(core): static asset pipeline hook (stub)` | `packages/core/src/static-assets.ts`, `packages/core/src/build.ts`, `packages/core/src/config.ts` | PR5 | Refactor `cpSync` into `processStaticAssets`; no-op default. **Accept:** default build identical to today. | ✅ |
+| **PR10** | `feat(core): IPTC XMP for static/ images` | `packages/core/src/iptc-xmp-pass.ts`, `static-assets.ts`, `asset-provenance.yaml` | PR9 | Opt-in XMP via ExifTool; manifest schema; inline-image gap documented (2.5). **Accept:** YAML entry → XMP on `static/` image. | ✅ |
+| **PR11** | `feat(core): C2PA signing MVP for static/ raster` | `packages/core/src/c2pa-pass.ts`, `static-assets.ts`, CI | PR10 | Opt-in embed signing; PEM env vars. **Accept:** signed raster in dist when enabled + cert present. | ✅ |
+| **PR12** | `feat(core): markdown image provenance map (2.5)` | `markdown-image-refs.ts`, `asset-provenance.ts`, `static-assets.ts`, `build.ts` | PR10 | Inline `![](path)` → manifest aliases; `content/` raster copy. **Accept:** YAML key `../static/x.png` tags referenced asset. | ✅ |
+| **PR13** | `feat(core): associatedMedia JSON-LD (3.1)` | `associated-media.ts`, `ssg.ts`, `build.ts` | PR12 | `BlogPosting.associatedMedia` for provenance-tagged inline images. **Accept:** JSON-LD includes `ImageObject` with `digitalSourceType`. | ✅ |
 
 ---
 

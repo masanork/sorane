@@ -2,6 +2,10 @@ import { dirname, relative } from "node:path";
 import type { OkfConcept } from "@sorane/okf";
 import type { AiDisclosure } from "./ai-disclosure.ts";
 import { aiDisclosureJsonLdFields, buildCompactAiBadgeHtml } from "./ai-disclosure.ts";
+import {
+  associatedMediaJsonLdFields,
+  type AssociatedMediaItem,
+} from "./associated-media.ts";
 import type { DiagramsConfig } from "./config.ts";
 import {
   renderBodySection,
@@ -340,6 +344,7 @@ export function buildBlogPostingJsonLd(opts: {
   siteTitle: string;
   lang: string;
   aiDisclosure?: AiDisclosure;
+  associatedMedia?: readonly AssociatedMediaItem[];
 }): string {
   const data: Record<string, unknown> = {
     "@context": "https://schema.org",
@@ -358,6 +363,8 @@ export function buildBlogPostingJsonLd(opts: {
   if (opts.aiDisclosure) {
     Object.assign(data, aiDisclosureJsonLdFields(opts.aiDisclosure));
   }
+  const mediaFields = associatedMediaJsonLdFields(opts.associatedMedia ?? []);
+  if (mediaFields) Object.assign(data, mediaFields);
   return `<script type="application/ld+json">${JSON.stringify(data)}</script>`;
 }
 

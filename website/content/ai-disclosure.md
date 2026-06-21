@@ -7,7 +7,7 @@ excludeFromList: true
 
 記事の frontmatter で、生成 AI の関与を **IPTC / schema.org 準拠**の機械可読フィールドとして宣言できます。人向けには EU 透明性アイコン（任意）も表示されます。
 
-**テキスト記事**の開示は frontmatter で完結します。**`static/` 配下の JPEG/PNG** はオプションで [C2PA](https://c2pa.org/) 署名できます（下記）。画像 XMP（ExifTool）は今後の拡張です。
+**テキスト記事**の開示は frontmatter で完結します。**`static/` 配下のラスタ画像**は `content/asset-provenance.yaml` と組み合わせて、オプションで IPTC XMP（ExifTool）埋め込みと [C2PA](https://c2pa.org/) 署名ができます（下記）。
 
 ## いつ付けるか
 
@@ -82,17 +82,42 @@ flowchart LR
 
 またはフェンス内の `%% alt: 認証フロー` コメントでも構いません。詳細は [図表（Mermaid / D2）](diagrams.html) を参照してください。
 
-## 静的画像の C2PA（`static/` の JPEG/PNG）
+## 静的画像の IPTC XMP（`static/` の JPEG/PNG/WebP）
 
-`content/asset-provenance.yaml` で画像ごとの `digitalSourceType` を宣言し、ビルド時に **c2patool** で manifest を埋め込みます（オプトイン）。
+`build.image_metadata.enabled: true` のとき、**ExifTool** が PATH にあれば `asset-provenance.yaml` の内容を XMP に書き込みます（`Digital Source Type` / `AI System Used` / `AI Prompt Information`）。
 
 ```yaml
 # content/asset-provenance.yaml
 assets:
   hero.jpg:
     digitalSourceType: trainedAlgorithmicMedia
-    aiDisclosureNote: Generated with Example Model; author reviewed.
+    aiDisclosureNote: Prompt and review notes (no secrets / PII)
+    aiSystems:
+      - name: Example Model
+        version: "1"
+        provider: Example Inc.
 ```
+
+```yaml
+# sorane.yaml
+build:
+  image_metadata:
+    enabled: true
+    exiftool: exiftool   # 省略時は PATH の exiftool
+```
+
+- マニフェストにエントリが無い画像はコピーのみ
+- `exiftool` 無しのときは **警告のうえコピーのみ**（ビルドは継続）
+- Markdown の `![](path)` 参照も解決します。`static/` 参照は `../static/hero.png` のようなパスで `asset-provenance.yaml` にキーを書けます
+- `content/` 内のインライン画像（例: `article/assets/fig.png`）はビルド時に `dist/` へコピーされ、同じマニフェストでタグ付けできます
+
+## JSON-LD `associatedMedia`（Phase 3.1）
+
+記事本文のインライン画像のうち、`asset-provenance.yaml` に `digitalSourceType` があるものは `BlogPosting` JSON-LD の `associatedMedia`（`ImageObject`）として出力されます（`build.ai_disclosure.json_ld: true` 時）。`site.base_url` があると `contentUrl` は絶対 URL になります。
+
+## 静的画像の C2PA（`static/` の JPEG/PNG）
+
+XMP 埋め込みのあと、**c2patool** で manifest を署名できます（オプトイン）。同じ `asset-provenance.yaml` の `digitalSourceType` が C2PA `create` intent にも使われます。
 
 ```yaml
 # sorane.yaml

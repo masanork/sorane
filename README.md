@@ -6,7 +6,7 @@ OKF-native static site generator. Markdown concepts with YAML frontmatter become
 
 ## Requirements
 
-- Node.js >= 23.6
+- Node.js >= 23.6 (TypeScript sources run natively; no compile step)
 
 ## Quick start
 
@@ -16,6 +16,12 @@ npm test
 npm run build -- --cwd examples/minimal --clean
 ```
 
+Or install the CLI from npm (after publish):
+
+```bash
+npx @sorane/cli build --cwd ./my-site --clean
+```
+
 ## New site (AI-assisted)
 
 Copy [`template/site/`](template/site/) into your own GitHub repo. It includes **AGENTS.md** (Cursor, Claude Code, Antigravity, Codex, …), Cursor rules, and a sample CI workflow. See [AI onboarding](https://sorane.dev/ai-onboarding.html).
@@ -23,28 +29,28 @@ Copy [`template/site/`](template/site/) into your own GitHub repo. It includes *
 ## CLI
 
 ```bash
-npx sorane build [--cwd <dir>] [--clean] [--watch]
-npx sorane watch [--cwd <dir>] [--clean]
-npx sorane validate [--cwd <dir>]
-npx sorane migrate [--cwd <dir>] [--dry-run]
-npx sorane index [--cwd <dir>] [--force]
-npx sorane search <query> [--cwd <dir>] [--type article] [--tag <slug>] [--json]
+npx @sorane/cli build [--cwd <dir>] [--clean] [--watch] [--skip-c2pa]
+npx @sorane/cli watch [--cwd <dir>] [--clean]
+npx @sorane/cli validate [--cwd <dir>]
+npx @sorane/cli migrate [--cwd <dir>] [--dry-run] [--bump-profile 0.2]
+npx @sorane/cli index [--cwd <dir>] [--force]
+npx @sorane/cli search <query> [--cwd <dir>] [--type article] [--tag <slug>] [--json]
 ```
 
 Site projects keep content in a separate directory and configure the build with `sorane.yaml`.
 
 ## OKF profile
 
-sorane implements [Open Knowledge Format (OKF) v0.1](https://cloud.google.com/blog/products/data-analytics/how-the-open-knowledge-format-can-improve-data-sharing) with profile `sorane-okf/0.1`.
+sorane implements [Open Knowledge Format (OKF)](https://cloud.google.com/blog/products/data-analytics/how-the-open-knowledge-format-can-improve-data-sharing) with profiles `sorane-okf/0.1` and `sorane-okf/0.2`.
 
-Supported concept types in v0.1:
+Supported concept types:
 
 - `article` — blog posts
 - `index` — site landing page
 
 Required OKF field: `type`. Profile adds `title` for all supported types.
 
-Example article:
+Example article with AI disclosure (`0.2`):
 
 ```yaml
 ---
@@ -52,11 +58,15 @@ type: article
 title: Hello OKF
 timestamp: 2025-01-01T00:00:00Z
 tags: [sorane]
-profile: sorane-okf/0.1
+profile: sorane-okf/0.2
+digitalSourceType: compositeWithTrainedAlgorithmicMedia
+aiDisclosureNote: Draft edited with an LLM; facts verified by the author.
 ---
 
 Body markdown here.
 ```
+
+See [AI content disclosure](https://sorane.dev/ai-disclosure.html) for image provenance (IPTC XMP, C2PA) and `content/asset-provenance.yaml`.
 
 ## Build outputs
 
@@ -88,16 +98,16 @@ Pages with `noFontEmbedding: true` in frontmatter use system fonts.
 SQLite FTS5 trigram search is the default (lightweight, no model). Optional **hybrid** mode (experimental) adds ruri-v3-30m vectors for natural-language queries.
 
 ```bash
-npx sorane index --cwd examples/minimal --force
-npx sorane search "OKF" --cwd examples/minimal
-npx sorane build --cwd examples/minimal --clean
+npx @sorane/cli index --cwd examples/minimal --force
+npx @sorane/cli search "OKF" --cwd examples/minimal
+npx @sorane/cli build --cwd examples/minimal --clean
 ```
 
 Hybrid (experimental):
 
 ```bash
 npm run fetch-model
-npx sorane index --cwd examples/minimal --force --hybrid
+npx @sorane/cli index --cwd examples/minimal --force --hybrid
 ```
 
 Add a search page with `view: search` in frontmatter (see `examples/minimal/content/search.md`).
@@ -107,6 +117,24 @@ search:
   index: .sorane/index.db          # FTS (default)
   # mode: hybrid                   # experimental; needs model + R2 for Pages
 ```
+
+## Image metadata and C2PA
+
+Optional passes for raster images under `static/` and inline Markdown images:
+
+```yaml
+build:
+  image_metadata:
+    enabled: false
+    exiftool: exiftool
+    manifest: asset-provenance.yaml
+  c2pa:
+    enabled: false
+    embed: true
+    binary: c2patool
+```
+
+Requires `content/asset-provenance.yaml` and external tools (`exiftool`, `c2patool`) when enabled. Use `sorane build --skip-c2pa` to omit signing in CI snapshots.
 
 ## Docs site
 
@@ -122,12 +150,19 @@ Cloudflare Pages deploys `website/dist` to **sorane.dev** on push to `main` (see
 
 | Method | Status |
 |--------|--------|
-| `git clone` + `npm ci` | Available (see [releases](https://sorane.dev/releases.html)) |
-| GitHub Release tags | Planned |
-| npm package | Planned |
+| `git clone` + `npm ci` | Available |
+| `npx @sorane/cli` | Ready to publish (workspace packages) |
+| GitHub Release tags | Planned (`v0.2.0` + fonts tarball) |
+
+Publish workspace packages (maintainers):
+
+```bash
+npm run publish:workspaces
+```
+
+Packages: `@sorane/cli`, `@sorane/core`, `@sorane/okf`, `@sorane/search`, `@sorane/font`.
 
 ## Roadmap
 
 - SemVer tags and GitHub Releases (fonts tarball)
-- npm publish (`@sorane/cli`)
 - Astro theme layer (reads sorane build output)
