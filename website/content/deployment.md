@@ -35,9 +35,18 @@ excludeFromList: true
 
 `404.md` はサイトマップ・ブログ一覧・OKF バンドル・検索インデックスから除外されます。
 
-### D2 図表
+### 図表（D2 / Mermaid）
 
 `build.diagrams.d2.enabled: true` のサイトは CI で [d2](https://d2lang.com/) CLI をインストールしてください。sorane.dev は `v0.7.1` を使っています。
+
+Mermaid は次の 2 モードがあります。
+
+| モード | CI の追加要件 | sorane.dev |
+|--------|---------------|------------|
+| `mermaid.mode: client`（既定） | なし（`mermaid` npm パッケージのみ） | **採用** — Pages ビルドに Chromium 不要 |
+| `mermaid.mode: build` | `@mermaid-js/mermaid-cli`（mmdc）+ Chromium | 未使用 — 静的 SVG が必要なサイト向け |
+
+`mermaid.mode: build` を使うサイトは CI で Chromium を用意し、`PUPPETEER_EXECUTABLE_PATH` を設定してください。sorane リポジトリの `test.yml` `e2e` ジョブは Playwright の Chromium を mmdc に流用してビルドテストしています。
 
 ## 大規模サイト
 

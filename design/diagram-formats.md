@@ -4,7 +4,7 @@
 |-------|-------|
 | **Author** | _(TBD)_ |
 | **Date** | 2026-06-20 |
-| **Status** | Phase 1–2 + Graphviz shipped (PR1–PR9, PR11) |
+| **Status** | Phase 1–3 + Graphviz shipped (PR1–PR11; PR6 Playwright E2E in `test.yml`) |
 | **Profile target** | None (body syntax only; `sorane-okf/0.1` and `0.2` unchanged) |
 
 ---
@@ -13,7 +13,7 @@
 
 sorane is an OKF-native static site generator. It deploys to Cloudflare Pages via GitHub Actions (`.github/workflows/pages.yml`: Node 23, `npm ci` → index → build → deploy). Today **diagram fences render as inert code blocks** — `packages/core/src/render.ts` uses `remark-gfm` only, so ` ```mermaid ` fences become plain `<pre><code class="language-mermaid">` with no SVG output and no client enhancement.
 
-This design adds **pluggable diagram rendering** informed by bunsen’s Strategy A (text source is canonical; render is presentation) and three-tier model (① pure text, ② lightweight client JS, ③ heavy build-time artifacts). Phase 1 ships **Mermaid client-side rendering** (bunsen 013 pattern, zero Chromium). Phase 2 adds **D2 build-time SVG** via CLI. **Graphviz** (` ```graphviz ` / ` ```dot `) compiles via `dot` CLI when `graphviz.enabled: true` (build + PDF prerender). Later optional phases: Mermaid SSR (`mmdc`), PlantUML/Kroki — CI-scoped.
+This design adds **pluggable diagram rendering** informed by bunsen’s Strategy A (text source is canonical; render is presentation) and three-tier model (① pure text, ② lightweight client JS, ③ heavy build-time artifacts). Phase 1 ships **Mermaid client-side rendering** (bunsen 013 pattern, zero Chromium). Phase 2 adds **D2 build-time SVG** via CLI. Phase 3 adds **Mermaid build mode** (`mermaid.mode: build` → `mmdc` + content-hashed SVG). **Graphviz** (` ```graphviz ` / ` ```dot `) compiles via `dot` CLI when `graphviz.enabled: true` (build + PDF prerender). Later optional: PlantUML/Kroki — CI-scoped.
 
 **OKF principle preserved:** sibling `.md` alternates (`emitPage()` → `conceptToOkfMarkdown()`) keep raw fence source unchanged; HTML is a derived view.
 
@@ -195,7 +195,7 @@ build:
 | `mermaid.mode` | `client` | Zero Chromium; matches bunsen 013 |
 | `d2.enabled` | `false` | Opt-in when CI installs `d2` |
 
-`mermaid.mode: build` is reserved for Phase 3 (`mmdc`). **Until Phase 3 ships:** emit a **single build-summary warning** (counted in `[sorane] diagrams:` log line) and fall back to `client` behavior — do **not** silently pretend SSR is active. Document prominently in `website/content/configuration.md` that `build` mode does not yet produce server-baked SVG.
+`mermaid.mode: build` compiles fences to `assets/diagrams/mermaid/{hash}.svg` via `@mermaid-js/mermaid-cli` (`compile-mermaid.ts`, `render-async.ts`). Client loader and `mermaid.js` copy are skipped (`diagram-meta.ts`, `emit-diagram-assets.ts`). Missing `mmdc` / Chromium → per-fence warning + `<pre><code>` fallback; build continues.
 
 TypeScript additions in `packages/core/src/config.ts`:
 
@@ -511,11 +511,11 @@ PR4’s render inventory applies equally to Phase 2 — D2 fences must compile i
 
 ---
 
-### Phase 3+ (documented, not scheduled)
+### Phase 3+ (documented)
 
 | Backend | Approach | CI impact | Notes |
 |---------|----------|-----------|-------|
-| Mermaid `build` mode | `@mermaid-js/mermaid-cli` + Chromium | **High** — Puppeteer cache, +1–3 min, flaky | bunsen 012 retired this path |
+| Mermaid `build` mode | `@mermaid-js/mermaid-cli` + Chromium | Gated in `test.yml` `e2e` (Playwright Chromium → mmdc) | ✅ shipped (PR10); opt-in per site |
 | Graphviz | `dot` CLI (build + PDF prerender) | Optional binary on PATH | ✅ shipped (PR11); WASM not pursued |
 | PlantUML | Kroki HTTP API | External dep + network | Deferred in bunsen |
 
@@ -706,13 +706,13 @@ No new commands. `sorane build` respects `sorane.yaml` `build.diagrams`. No root
 | Signal | Implementation |
 |--------|----------------|
 | Build summary | `[sorane] diagrams: {pages_with_mermaid} pages, assets {size} MiB, warnings {n}` at end of `runBuild()` |
-| `mermaid.mode: build` | Increment warning counter: `mermaid.mode=build not implemented; using client render` |
+| `mermaid.mode: build` | Per-fence `diagrams: mermaid build failed (…)` on compile error; no client loader injected |
 | Asset copy skip | `[sorane] diagrams: no mermaid fences; skipping asset copy` when content scan finds zero fences |
 | D2 compile failure | `stderr` warning with fence location; build continues |
 | Mermaid client failure | Browser `console.error` only (bunsen pattern); no build failure |
 | Metrics (future) | `--json` build summary: `diagram_pages`, `d2_svgs_emitted`, `diagram_warnings` |
 
-**Phase 1 CI validation:** unit/HTML fixture tests prove `<script>` + `pre[data-sorane-alt]` in built HTML. Client `mermaid.render()` is **not** CI-gated (sorane has no Playwright today). Optional follow-up PR: Playwright smoke on `website/dist` after `pages.yml` build (non-blocking).
+**CI validation:** unit/HTML fixture tests prove `<script>` + `pre[data-sorane-alt]` in built HTML. **Playwright** (`tests/e2e/diagram-smoke.spec.ts`) gates client `mermaid.render()` in `test.yml` `e2e` job. **mmdc** build tests (`tests/mermaid-build.test.ts`, `tests/build-mermaid-build.test.ts`) run in the same job via Playwright’s Chromium (`PUPPETEER_EXECUTABLE_PATH`).
 
 ---
 
@@ -740,14 +740,14 @@ No new commands. `sorane build` respects `sorane.yaml` `build.diagrams`. No root
 
 **Failure mode:** Missing `d2` → stderr warning + code fallback; build succeeds.
 
-### Phase 3+: Mermaid SSR
+### Phase 3: Mermaid SSR (shipped)
 
 | Workflow | Change | Time / size impact |
 |----------|--------|-------------------|
-| `pages.yml` | `npx puppeteer browsers install chrome` or mmdc Docker | +60–180 s, cache recommended |
-| `test.yml` | Opt-in job `diagrams-ssr` | Separate from PR gate |
+| `test.yml` `e2e` | Mermaid build tests after Playwright Chromium install | Reuses browser; ~2 s per diagram |
+| `pages.yml` | **Not required** for sorane.dev (stays `mermaid.mode: client`) | Add mmdc + Chromium only when a site opts into `build` |
 
-**Not recommended** until explicit site owner opt-in.
+**sorane.dev decision:** keep **client** Mermaid (zero Chromium on Pages build); D2 remains build-time on Pages. Sites that want static SVG without client JS set `mermaid.mode: build` and install `mmdc` in their CI.
 
 ---
 
@@ -796,11 +796,11 @@ No new commands. `sorane build` respects `sorane.yaml` `build.diagrams`. No root
 8. **Static assets:** `emit-diagram-assets.ts` in `packages/core`; gated copy when disabled/off/no fences; `mermaid` in `@sorane/core` dependencies.
 9. **Loader paths:** Per-page `rootPrefix` only in `<script src>` (`buildSearchHead` pattern); mermaid ESM import via `import.meta.url` in a **single** loader file — no per-depth import URLs.
 10. **Phase 2 backend:** D2 compile at build time to content-hashed SVG; no hardcoded img dimensions; extend Hatena-restricted `figure` sanitize allowlist.
-11. **`mermaid.mode: build`:** Reserved; until Phase 3, fall back to client with **build-summary warning** (not silent).
+11. **`mermaid.mode: build`:** Opt-in SSR via `mmdc`; skips client loader and `mermaid.js` asset copy.
 12. **Config merge:** `DEFAULT_DIAGRAMS_CONFIG` with deep merge for `mermaid` / `d2` nested keys in `mergeConfig()`.
 13. **Search/catalog:** No schema changes; diagram source remains in OKF outputs; search chunker continues to skip code bodies.
 14. **Profile:** No `sorane-okf/0.3` for diagrams — body syntax only.
-15. **Deferred:** PlantUML/Kroki, Mermaid SSR (`mmdc`), Playwright client-render CI — optional follow-up. **Graphviz** (`dot` CLI) shipped in PR11.
+15. **Deferred:** PlantUML/Kroki only. **Shipped:** Mermaid SSR (`mmdc`, PR10), Graphviz (`dot` CLI, PR11), Playwright diagram smoke (PR6, `test.yml` `e2e`).
 16. **Naming:** `data-sorane-alt` and `sorane-mermaid-loader.mjs` (not bunsen-prefixed) for sorane dist output.
 17. **Demo content:** PR5 adds first mermaid fences to `website/content/`; mirror one diagram from `design/ai-content-disclosure.md`; register `diagrams.html` in `docs.nav`.
 18. **Phase 2 wiring:** PR7 updates the same render surfaces as PR4 to async when `d2.enabled` — D2 SVG in full `sorane build` output, not render-unit tests only.
@@ -818,7 +818,7 @@ No new commands. `sorane build` respects `sorane.yaml` `build.diagrams`. No root
 | **PR3** | `feat(core): mermaid static assets + loader template` | `templates/default/assets/diagrams/sorane-mermaid-loader.mjs`, `packages/core/src/diagrams/emit-diagram-assets.ts`, `packages/core/package.json` (`mermaid` dep), `packages/core/src/build.ts`, `tests/emit-diagram-assets.test.ts` | PR2 | Gated `emitDiagramAssets()`: skip when `enabled: false`, `mode: off`, or no mermaid fences in content. Loader: **single file**; mermaid import via `new URL('./mermaid-{{ MERMAID_VERSION }}/…', import.meta.url)`; alt fallback from `document.documentElement.lang`. **Accept:** one `sorane-mermaid-loader.mjs` in dist; `{{ MERMAID_VERSION }}` substituted; loader source contains `import.meta.url` (no per-page import paths). |
 | **PR4** | `feat(core): full render-surface wiring + config deep merge` (**critical path**) | `packages/core/src/diagrams/mermaid-head.ts`, `packages/core/src/config.ts`, `packages/core/src/ssg.ts`, `packages/core/src/docs.ts`, `packages/core/src/build.ts`, `tests/config.test.ts`, `tests/ssg-diagram.test.ts`, `tests/docs-diagram.test.ts`, `tests/build-diagram.test.ts` | PR3 | `DEFAULT_DIAGRAMS_CONFIG` + deep `mergeConfig()`; refactor `renderArticleBodyWithMeta`, `introHtmlFromBodyWithMeta`, docs meta return; aggregate index composite via `mergeDiagramMeta`. **Accept:** loader script on: (1) article with mermaid, (2) docs page, (3) search intro, (4) index intro-only, (5) index `featured_mode: full` + mermaid in latest article; **no** loader on diagram-free pages. `mermaid.mode: build` emits summary warning. |
 | **PR5** | `feat(website): diagram CSS, config, first mermaid fences, docs nav, llms.txt` | `templates/default/assets/main.css`, `website/sorane.yaml` (**add `diagrams.html` to `docs.nav`** after `configuration.html`), `website/content/diagrams.md` (**new fences**), `website/content/configuration.md`, `website/content/ai-onboarding.md`, `packages/core/src/site-meta.ts`, `template/site/sorane.yaml`, `tests/site-meta.test.ts` | PR4 | **Add** mermaid examples to `diagrams.md` (including mirrored flowchart from `design/ai-content-disclosure.md`). Document `mermaid.mode: build` not implemented. **Accept:** `website/sorane.yaml` `docs.nav` includes `diagrams.html` (sidebar link on sorane.dev); CI build produces `diagrams.html` with `<script …sorane-mermaid-loader.mjs>`; `llms.txt` mentions diagram fences in `.md` alternates. |
-| **PR6** | `test(optional): Playwright smoke for client mermaid render` | `.github/workflows/pages.yml` (optional non-blocking job), `tests/e2e/diagram-smoke.spec.ts` | PR5 | **Optional / non-blocking.** Deferred if no Playwright infra. Phase 1 acceptance is PR2 HTML fixtures + PR5 CI build. |
+| **PR6** | `test(e2e): Playwright smoke for client mermaid render` | `.github/workflows/test.yml` (`e2e` job), `tests/e2e/diagram-smoke.spec.ts`, `playwright.config.ts` | PR5 | ✅ Client loader renders accessible `<figure><svg>` on fixture server. |
 | **PR7** | `feat(core): D2 compile + render-surface async wiring + Phase 2 sanitize` (**Phase 2 critical path**) | `packages/core/src/diagrams/compile-d2.ts`, `packages/core/src/diagrams/render-async.ts`, `packages/core/src/diagrams/render-body-section.ts`, `packages/core/src/render.ts`, `packages/core/src/config.ts`, `packages/core/src/build.ts`, `packages/core/src/ssg.ts`, `packages/core/src/docs.ts`, `tests/render-diagram.test.ts`, `tests/d2-compile.test.ts`, `tests/build-d2.test.ts` | PR4 | `renderBodySectionAsync()` when `d2.enabled`; same surfaces as PR4 (articles, docs, search intro, index composite). Extend `figure` className allowlist for `diagram--d2`. **Accept:** full `sorane build` on fixture with ` ```d2 ` fence + `d2` on PATH → emitted HTML contains `<img src="…/assets/diagrams/d2/{hash}.svg">` surviving sanitize; missing binary warns, build succeeds. |
 | **PR8** | `ci: install d2 on Pages workflow (optional sorane.dev)` | `.github/workflows/pages.yml`, `website/sorane.yaml`, `website/content/deployment.md` | PR7 | Pin d2 version; document opt-in. **Accept:** pages workflow installs d2 when sorane.dev enables `d2.enabled: true`. |
 | **PR9** | `docs: mirror design doc to design/diagram-formats.md` | `design/diagram-formats.md` | PR5 | Optional repo-local design mirror for agents. **Accept:** file exists or explicitly skipped with PR5 covering public docs. |
@@ -827,7 +827,7 @@ No new commands. `sorane build` respects `sorane.yaml` `build.diagrams`. No root
 
 | # | Title | Notes |
 |---|-------|-------|
-| PR10 | `feat(core): mermaid build mode via mmdc` | Opt-in; Chromium CI job; content-hashed SVG |
+| PR10 | `feat(core): mermaid build mode via mmdc` | ✅ `compile-mermaid.ts` + async render; CI in `test.yml` `e2e`; PDF prerender uses same binary |
 | PR11 | `feat(core): graphviz fence via dot CLI` | ✅ `compile-graphviz.ts`; build SVG + PDF prerender; opt-in `graphviz.enabled` |
 | PR12 | `feat(core): plantuml via Kroki (opt-in URL)` | Site config `kroki_url`; network dependency |
 

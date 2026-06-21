@@ -144,6 +144,11 @@ jobs:
       - name: Install Playwright Chromium
         run: npx playwright install chromium --with-deps
 
+      - name: Mermaid build tests (mmdc)
+        run: |
+          export PUPPETEER_EXECUTABLE_PATH="$(node -e "const {chromium}=require('@playwright/test'); process.stdout.write(chromium.executablePath())")"
+          node --test tests/mermaid-build.test.ts tests/build-mermaid-build.test.ts
+
       - name: Playwright E2E
         run: npm run test:e2e
 

@@ -534,7 +534,7 @@ distributions:
 3. ~~`catalog.jsonld` articles in `dataset`?~~ → **No; `hasPart` for non-data** (decided, breaking).
 4. **OKF directory `index.md`:** generate automatically under `content/datasets/` etc.?
 5. **EU theme codes:** validate against EU vocabulary or free string + warn?
-6. **Search:** unified index with `type` facet vs dataset-only filter?
+6. ~~**Search:** unified index with `type` facet vs dataset-only filter?~~ → **unified index with `type` facet** (`packages/core/src/search-facets.ts`; search UI lists article / dataset / reference / glossary / glossary-term / faq).
 7. ~~**`article` JSON-LD type**~~ → docs = `TechArticle`, blog = `BlogPosting`, `creativeWorkType` override (decided).
 8. ~~**Legacy catalog**~~ → **hard break**, no legacy file (decided).
 

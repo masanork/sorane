@@ -27,6 +27,7 @@
     "test:coverage": "node --experimental-test-coverage --test-isolation=none --test-coverage-lines=90 --test-coverage-branches=65 --test-coverage-functions=60 --test-coverage-include='packages/**/*.ts' --test-coverage-exclude='packages/**/wasm/**' --test-coverage-exclude='packages/search/**' --test-coverage-exclude='packages/cli/src/watch.ts' --test 'tests/**/*.test.ts'",
     "test:coverage:lcov": "c8 --include='packages/**' --exclude='packages/**/wasm/**' --exclude='packages/search/**' --reporter=text-summary --reporter=lcov --report-dir=coverage node --test 'tests/**/*.test.ts'",
     "test:e2e": "playwright test",
+    "test:mermaid-build": "node --test tests/mermaid-build.test.ts tests/build-mermaid-build.test.ts",
     "test:c2pa": "node --test tests/c2pa-pass.test.ts tests/static-assets.test.ts tests/asset-provenance.test.ts",
     "test:image-metadata": "node --test tests/iptc-xmp-pass.test.ts tests/static-assets.test.ts tests/asset-provenance.test.ts",
     "typecheck": "tsc --noEmit",
