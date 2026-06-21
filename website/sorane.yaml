@@ -28,6 +28,7 @@ docs:
     - okf-profile.html
     - deployment.html
     - releases.html
+    - supply-chain.html
 
 search:
   index: .sorane/index.db

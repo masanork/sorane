@@ -1,6 +1,6 @@
 {
   "name": "@sorane/core",
-  "version": "0.2.3",
+  "version": "0.2.6",
   "description": "OKF-native static site build engine for sorane",
   "type": "module",
   "license": "MIT",
@@ -25,9 +25,9 @@
   },
   "dependencies": {
     "@mermaid-js/mermaid-cli": "~11.15.0",
-    "@sorane/font": "0.2.0",
-    "@sorane/okf": "0.2.1",
-    "@sorane/search": "0.2.1",
+    "@sorane/font": "0.2.6",
+    "@sorane/okf": "0.2.6",
+    "@sorane/search": "0.2.6",
     "mermaid": "~11.15.0",
     "rehype-autolink-headings": "^7.1.0",
     "rehype-raw": "^7.0.0",

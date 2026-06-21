@@ -99,11 +99,7 @@ jobs:
         run: npm ci
 
       - name: Install c2patool
-        run: |
-          C2PA_VER=0.26.67
-          curl -sL "https://github.com/contentauth/c2pa-rs/releases/download/c2patool-v${C2PA_VER}/c2patool-v${C2PA_VER}-x86_64-unknown-linux-gnu.tgz" | tar xz
-          sudo mv "c2patool-v${C2PA_VER}-x86_64-unknown-linux-gnu/c2patool" /usr/local/bin/c2patool
-          c2patool --version
+        run: bash scripts/install-c2patool.sh
 
       - name: C2PA unit + integration tests
         run: node --test tests/c2pa-pass.test.ts tests/static-assets.test.ts tests/asset-provenance.test.ts

@@ -2,6 +2,7 @@
 #
 # Job DAG:
 #   supply-chain-gate ─┬─> pack (npm pack ×5)
+#                      ├─> publish npm (--provenance)
 #                      ├─> source + cbom
 #                      └─> sbom
 #                              └─> compute-digests ─> provenance ─> release
@@ -40,6 +41,33 @@ jobs:
 
       - name: npm audit
         run: npm audit --audit-level=high
+
+  publish-npm:
+    name: publish npm
+    needs: supply-chain-gate
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+      id-token: write
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: "23"
+          registry-url: https://registry.npmjs.org
+
+      - name: Install dependencies
+        run: npm ci
+
+      - name: Publish workspaces with provenance
+        env:
+          NODE_AUTH_TOKEN: ${{ secrets.NPM_TOKEN }}
+        run: |
+          set -euo pipefail
+          for ws in @sorane/font @sorane/okf @sorane/search @sorane/core @sorane/cli; do
+            npm publish -w "$ws" --provenance --access public
+          done
 
   pack:
     name: npm pack

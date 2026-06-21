@@ -32,7 +32,7 @@ go install github.com/slsa-framework/slsa-verifier/v2/cli/slsa-verifier@latest
 ## Step 1 — download the artifacts
 
 ```bash
-VERSION=0.2.4   # without the leading v
+VERSION=0.2.6   # without the leading v
 gh release download "v$VERSION" --repo github.com/masanork/sorane \
   --pattern 'sorane-cli-*.tgz' \
   --pattern 'cbom.json' \
@@ -71,6 +71,5 @@ gh attestation verify sbom.json --repo masanork/sorane
 
 ## npm registry provenance
 
-Future releases may also publish to npm with `npm publish --provenance` from CI.
-GitHub Release artifacts above remain the canonical SLSA L3 bundle for the monorepo
-tag.
+Tagged releases also publish to npm with `npm publish --provenance` from CI.
+GitHub Release artifacts remain the canonical SLSA L3 bundle for verification.

@@ -5,7 +5,7 @@ profile: sorane-okf/0.1
 excludeFromList: true
 ---
 
-## 現状（v0.2.4）
+## 現状（v0.2.6）
 
 | 手段 | 状態 | 用途 |
 |------|------|------|
@@ -19,8 +19,8 @@ npm パッケージ: `@sorane/cli`, `@sorane/core`, `@sorane/okf`, `@sorane/sear
 ### 使い方
 
 ```bash
-npx @sorane/cli@0.2.4 validate --cwd ./my-site --json
-npx @sorane/cli@0.2.4 build --cwd ./my-site --clean
+npx @sorane/cli@0.2.6 validate --cwd ./my-site --json
+npx @sorane/cli@0.2.6 build --cwd ./my-site --clean
 ```
 
 パッケージ一覧: https://www.npmjs.com/org/sorane
@@ -48,10 +48,12 @@ masanork/sorane
 **コンテンツ分離** — サイト repo から npm で sorane を pin:
 
 ```yaml
-- run: npx @sorane/cli@0.2.4 build --cwd . --clean
+- run: npx @sorane/cli@0.2.6 build --cwd . --clean
 ```
 
-## サプライチェーン（v0.2.5+）
+## サプライチェーン
+
+詳細は [サプライチェーン](supply-chain.html) を参照してください。
 
 `v*` タグで GitHub Release に次を添付します。
 
@@ -67,7 +69,7 @@ masanork/sorane
 - [x] `CHANGELOG.md` と SemVer タグ
 - [x] npm 配布（`@sorane/cli` ほか）
 - [x] SLSA L3 + SBOM/CBOM（タグリリース workflow）
+- [x] CI から `npm publish --provenance`
 - [ ] GitHub Releases に Bunsen フォント資産
-- [ ] CI から `npm publish --provenance`
 - [ ] optional dependencies の整理
 - [ ] Homebrew formula / Docker image

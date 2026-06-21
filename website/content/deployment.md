@@ -13,9 +13,9 @@ excludeFromList: true
 # .github/workflows/pages.yml
 - checkout サイト repo
 - setup-node 23
-- npx @sorane/cli@0.2.4 validate --cwd . --json
-- npx @sorane/cli@0.2.4 index --cwd . --force   # 検索ページがある場合
-- npx @sorane/cli@0.2.4 build --cwd . --clean
+- npx @sorane/cli@0.2.6 validate --cwd . --json
+- npx @sorane/cli@0.2.6 index --cwd . --force   # 検索ページがある場合
+- npx @sorane/cli@0.2.6 build --cwd . --clean
 - wrangler pages deploy dist --project-name <name>
 ```
 
@@ -45,8 +45,8 @@ excludeFromList: true
 
 ```yaml
 - checkout コンテンツ repo
-- npx @sorane/cli@0.2.4 index --cwd . --force
-- npx @sorane/cli@0.2.4 build --cwd . --clean
+- npx @sorane/cli@0.2.6 index --cwd . --force
+- npx @sorane/cli@0.2.6 build --cwd . --clean
 - wrangler pages deploy dist --project-name <name>
 ```
 

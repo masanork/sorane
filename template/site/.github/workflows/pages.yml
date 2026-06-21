@@ -16,13 +16,13 @@ jobs:
           node-version: "23"
 
       - name: Validate content
-        run: npx @sorane/cli@0.2.4 validate --cwd . --json
+        run: npx @sorane/cli@0.2.6 validate --cwd . --json
 
       - name: Build search index
-        run: npx @sorane/cli@0.2.4 index --cwd . --force
+        run: npx @sorane/cli@0.2.6 index --cwd . --force
 
       - name: Build site
-        run: npx @sorane/cli@0.2.4 build --cwd . --clean
+        run: npx @sorane/cli@0.2.6 build --cwd . --clean
 
       - name: Deploy to Cloudflare Pages
         uses: cloudflare/wrangler-action@v3

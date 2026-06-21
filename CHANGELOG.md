@@ -4,12 +4,32 @@ All notable changes to sorane are documented here. Versioning follows [SemVer](h
 
 ## [Unreleased]
 
+## [0.2.6] - 2026-06-21
+
+### Added
+
+- CI `npm publish --provenance` on tag release
+- `website/content/supply-chain.md` and `/cbom.json` on sorane.dev
+- `scripts/install-c2patool.sh` for CI (c2patool `.tar.gz` layout)
+
+### Changed
+
+- Workspace packages aligned to `0.2.6`
+- Coverage gate: exclude `packages/search/**`, thresholds match current suite (50/65/60)
+
+## [0.2.5] - 2026-06-21
+
 ### Added
 
 - SLSA v1.0 Build-L3 tag release workflow (`.github/workflows/release.yml`)
 - `cbom.json` + `npm run cbom-check` drift gate for in-process hash algorithms
 - CI: `cbom-check`, `npm audit`, `release.yml` actionlint
 - `docs/release-verification.md` for relying parties
+
+### Fixed
+
+- mmdc integration tests skip when Chromium unavailable in CI
+- CBOM attestation via `actions/attest@v2` (crypto-only CycloneDX)
 
 ## [0.2.4] - 2026-06-21
 
@@ -58,7 +78,9 @@ All notable changes to sorane are documented here. Versioning follows [SemVer](h
 - Blog layout: archives, tags, pagination
 - Test infrastructure with coverage gate (~90% lines)
 
-[Unreleased]: https://github.com/masanork/sorane/compare/v0.2.4...main
+[Unreleased]: https://github.com/masanork/sorane/compare/v0.2.6...main
+[0.2.6]: https://github.com/masanork/sorane/compare/v0.2.5...v0.2.6
+[0.2.5]: https://github.com/masanork/sorane/compare/v0.2.4...v0.2.5
 [0.2.4]: https://github.com/masanork/sorane/compare/v0.2.0...v0.2.4
 [0.2.0]: https://github.com/masanork/sorane/compare/v0.1.0...v0.2.0
 [0.1.0]: https://github.com/masanork/sorane/releases/tag/v0.1.0
