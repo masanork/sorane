@@ -24,9 +24,9 @@ template/site/
 ## 典型タスク
 
 1. `content/article/` に記事を追加
-2. `npx @sorane/cli@0.2.7 validate --cwd . --json` で検証し、すべての `error` を修正
-3. 検索ページがある場合は `npx @sorane/cli@0.2.7 index --cwd . --force`
-4. `npx @sorane/cli@0.2.7 build --cwd . --clean` で `dist/` を生成
+2. `npx @sorane/cli validate --cwd . --json` で検証し、すべての `error` を修正
+3. 検索ページがある場合は `npx @sorane/cli index --cwd . --force`
+4. `npx @sorane/cli build --cwd . --clean` で `dist/` を生成
 5. Git push → CI が Pages にデプロイ
 
 ## validate --json

@@ -19,9 +19,11 @@ npm パッケージ: `@sorane/cli`, `@sorane/core`, `@sorane/okf`, `@sorane/sear
 ### 使い方
 
 ```bash
-npx @sorane/cli@0.2.7 validate --cwd ./my-site --json
-npx @sorane/cli@0.2.7 build --cwd ./my-site --clean
+npx @sorane/cli validate --cwd ./my-site --json
+npx @sorane/cli build --cwd ./my-site --clean
 ```
+
+本番 CI でビルドの再現性が必要なときだけ `@sorane/cli@x.y.z` で pin します（任意）。
 
 パッケージ一覧: https://www.npmjs.com/org/sorane
 
@@ -51,10 +53,11 @@ masanork/sorane
 └── website/
 ```
 
-**コンテンツ分離** — サイト repo から npm で sorane を pin:
+**コンテンツ分離** — サイト repo から npm で sorane を呼び出す:
 
 ```yaml
-- run: npx @sorane/cli@0.2.7 build --cwd . --clean
+- run: npx @sorane/cli build --cwd . --clean
+# 再現性が必要なら: npx @sorane/cli@0.2.7 build --cwd . --clean
 ```
 
 ## サプライチェーン

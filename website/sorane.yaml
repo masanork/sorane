@@ -25,6 +25,7 @@ build:
 
 docs:
   nav:
+    - features.html
     - getting-started.html
     - ai-onboarding.html
     - cli.html
