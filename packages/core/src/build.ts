@@ -1160,6 +1160,9 @@ export async function runBuild(opts: BuildOptions): Promise<BuildResult> {
         githubUrl: frontmatterString(p.concept.frontmatter, "githubUrl"),
         introHtml: intro.introHtml,
         docsNav,
+        recentArticles: articleSummaries,
+        newsLimit: blogOpts.index_archive_limit,
+        archiveHref: blogOpts.archives ? "archive/index.html" : undefined,
         lang: indexLang,
       });
     } else if (useBlogLayout) {

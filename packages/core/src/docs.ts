@@ -14,6 +14,7 @@ import {
   type AsyncRenderOptions,
 } from "./diagrams/render-async.ts";
 import { siteLabels } from "./site-labels.ts";
+import type { ArticleListEntry } from "./ssg.ts";
 import {
   parseRevisionHistory,
   revisionHistoryHtml,
@@ -161,11 +162,18 @@ export function renderDocsArticleBody(
   );
 }
 
+function formatNewsDate(iso?: string): string | undefined {
+  return iso?.slice(0, 10);
+}
+
 export function renderDocsIndexBody(opts: {
   readonly siteTitle: string;
   readonly description?: string;
   readonly introHtml?: string;
   readonly docsNav: readonly DocsNavItem[];
+  readonly recentArticles?: readonly ArticleListEntry[];
+  readonly newsLimit?: number;
+  readonly archiveHref?: string;
   readonly profileUrl?: string;
   readonly githubUrl?: string;
   readonly lang?: string;
@@ -198,6 +206,36 @@ export function renderDocsIndexBody(opts: {
         `<ul class="docs-index-list">\n${items}\n</ul>\n` +
         `</section>\n`
       : "";
+
+  const limit = opts.newsLimit ?? opts.recentArticles?.length ?? 0;
+  const newsItems = (opts.recentArticles ?? []).slice(0, limit);
+  const newsList = newsItems
+    .map((a) => {
+      const date = formatNewsDate(a.timestamp);
+      const dateHtml = date
+        ? `<time datetime="${escapeHtml(date)}" class="docs-news-date">${escapeHtml(date)}</time> `
+        : "";
+      return (
+        `<li class="docs-index-item">` +
+        `${dateHtml}` +
+        `<a href="${escapeHtml(a.href)}" class="docs-index-link">${escapeHtml(a.title)}</a>` +
+        `</li>`
+      );
+    })
+    .join("\n");
+  const newsArchive =
+    opts.archiveHref && newsItems.length > 0
+      ? `<p class="docs-news-more"><a href="${escapeHtml(opts.archiveHref)}">${escapeHtml(labels.allNews)}</a></p>\n`
+      : "";
+  const newsSection =
+    newsItems.length > 0
+      ? `<section class="docs-index-news">\n` +
+        `<h2>${escapeHtml(labels.news)}</h2>\n` +
+        `<ul class="docs-index-list docs-news-list">\n${newsList}\n</ul>\n` +
+        `${newsArchive}` +
+        `</section>\n`
+      : "";
+
   return (
     `<div class="docs-index">\n` +
     `<header class="docs-index-header">\n` +
@@ -206,6 +244,7 @@ export function renderDocsIndexBody(opts: {
     (profile ? `<div class="blog-profile">${profile}</div>\n` : "") +
     `${intro}` +
     `</header>\n` +
+    `${newsSection}` +
     `${navSection}` +
     `</div>\n`
   );

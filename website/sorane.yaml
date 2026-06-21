@@ -25,9 +25,10 @@ build:
     d2:
       enabled: true
   blog:
-    archives: false
+    archives: true
     tags: false
     featured_mode: off
+    index_archive_limit: 5
 
 docs:
   nav:

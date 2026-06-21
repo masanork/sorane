@@ -3,6 +3,7 @@ import {
   docsNavFor,
   docsSidebarHtml,
   renderDocsArticleFromConcept,
+  renderDocsIndexBody,
   resolveDocsNav,
 } from "../packages/core/src/docs.ts";
 import { buildPage } from "../packages/core/src/ssg.ts";
@@ -86,6 +87,33 @@ describe("renderDocsArticleFromConcept", () => {
       badgeHtml: '<aside class="ai-disclosure">badge</aside>',
     });
     expect(html).toContain('class="ai-disclosure"');
+  });
+});
+
+describe("renderDocsIndexBody", () => {
+  test("ニュース欄とドキュメント欄を出す", () => {
+    const html = renderDocsIndexBody({
+      siteTitle: "sorane",
+      description: "SSG",
+      docsNav: [{ href: "cli.html", title: "CLI" }],
+      recentArticles: [
+        {
+          title: "First post",
+          href: "blog/first.html",
+          timestamp: "2026-06-21T00:00:00+09:00",
+        },
+      ],
+      newsLimit: 5,
+      archiveHref: "archive/index.html",
+      lang: "ja",
+    });
+    expect(html).toContain("docs-index-news");
+    expect(html).toContain("ニュース");
+    expect(html).toContain("blog/first.html");
+    expect(html).toContain("2026-06-21");
+    expect(html).toContain("archive/index.html");
+    expect(html).toContain("ドキュメント");
+    expect(html).toContain("cli.html");
   });
 });
 

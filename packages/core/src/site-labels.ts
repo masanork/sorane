@@ -11,6 +11,8 @@ export interface SiteLabels {
   readonly updated: string;
   readonly toc: string;
   readonly documentation: string;
+  readonly news: string;
+  readonly allNews: string;
   readonly prevPage: string;
   readonly nextPage: string;
   readonly pageNav: string;
@@ -41,6 +43,8 @@ const JA: SiteLabels = {
   updated: "更",
   toc: "目次",
   documentation: "ドキュメント",
+  news: "ニュース",
+  allNews: "すべての記事 →",
   prevPage: "前へ",
   nextPage: "次へ",
   pageNav: "ページ",
@@ -71,6 +75,8 @@ const EN: SiteLabels = {
   updated: "upd",
   toc: "On this page",
   documentation: "Documentation",
+  news: "News",
+  allNews: "All posts →",
   prevPage: "Previous",
   nextPage: "Next",
   pageNav: "Page",
@@ -108,6 +114,8 @@ export function siteChromeText(lang: string, siteTitle: string, includeSearch = 
     labels.updated,
     labels.toc,
     labels.documentation,
+    labels.news,
+    labels.allNews,
     labels.prevPage,
     labels.nextPage,
     labels.skipToContent,
