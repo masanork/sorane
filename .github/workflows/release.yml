@@ -121,11 +121,13 @@ jobs:
             shasum -a 256 cbom.json > cbom.json.sha256
           fi
 
+      # CBOM is crypto-only CycloneDX; attest-sbom rejects it — use generic attest.
       - name: Attest CBOM (CycloneDX)
-        uses: actions/attest-sbom@v2
+        uses: actions/attest@v2
         with:
           subject-path: cbom.json
-          sbom-path: cbom.json
+          predicate-type: https://cyclonedx.org/bom
+          predicate-path: cbom.json
 
       - name: Upload source + cbom artifacts
         uses: actions/upload-artifact@v4
