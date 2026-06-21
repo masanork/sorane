@@ -43,6 +43,20 @@ preset: gov         # okf-site + 厳格な validate 品質ゲート
 
 既存の本番サイトで v0.4 以降に出力が減った場合は `preset: okf-site` を追加するか、下記 `build.outputs` で個別に有効化してください。
 
+### `build.redirects`（サイト移行）
+
+旧 URL から新 URL へ転送するルール。ビルド時に `dist/_redirects` を出力します（Cloudflare Pages / Netlify 互換）。詳細は [デプロイ](deployment.html#リダイレクトサイト移行) を参照してください。
+
+```yaml
+build:
+  redirects:
+    - from: /old-slug.html      # または old-slug.html
+      to: https://new.example/new-slug.html
+      status: 301               # 省略時 301
+```
+
+記事 frontmatter の `redirect` / `redirect_status` でも同様のルールを追加できます。同一 `from` が重なる場合は **後勝ち**（frontmatter が config より後）。`sorane validate` は重複を error にします。
+
 ### `build.outputs`（個別上書き）
 
 ```yaml

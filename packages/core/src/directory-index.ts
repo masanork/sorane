@@ -11,6 +11,7 @@ import { escapeHtml } from "./render.ts";
 import { relLinkFrom } from "./ssg.ts";
 import { isNotFoundSource } from "./not-found.ts";
 import { isSearchView } from "./ssg.ts";
+import { isRedirectPage } from "./redirects.ts";
 
 export interface DirectoryIndexEntry {
   readonly title: string;
@@ -53,6 +54,7 @@ function isEligibleForDirectoryListing(p: ParsedConcept): boolean {
   if (isSystemPage(p.concept)) return false;
   if (isNotFoundSource(p.relPath)) return false;
   if (isSearchView(p.concept.frontmatter)) return false;
+  if (isRedirectPage(p.concept.frontmatter)) return false;
   if (p.concept.type === "index") return false;
   const logical = normalizeRel(p.relPath);
   if (slugFromLogical(logical) === "index") return false;

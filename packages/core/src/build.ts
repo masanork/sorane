@@ -1,4 +1,9 @@
 import { plainTextFromHtml } from "./plain-text.ts";
+import {
+  collectAllRedirectRules,
+  formatRedirectsFile,
+  isRedirectPage,
+} from "./redirects.ts";
 import { resolveBuildOutputs } from "./presets.ts";
 import {
   parseConcept,
@@ -230,6 +235,7 @@ function isBlogArticle(concept: ParsedConcept["concept"], relPath: string): bool
     !isSystemPage(concept) &&
     !isNotFoundSource(relPath) &&
     !isSearchView(concept.frontmatter) &&
+    !isRedirectPage(concept.frontmatter) &&
     concept.frontmatter.excludeFromList !== true
   );
 }
@@ -694,6 +700,9 @@ export async function runBuild(opts: BuildOptions): Promise<BuildResult> {
       i18n,
     );
     const slug = slugFromRel(pageLocale.logicalRelPath);
+    if (isRedirectPage(p.concept.frontmatter)) {
+      continue;
+    }
     const depth = outRel.replace(/\\/g, "/").split("/").length - 1;
     const rootPrefix = depth > 0 ? "../".repeat(depth) : "./";
     const isSearch =
@@ -1941,6 +1950,12 @@ export async function runBuild(opts: BuildOptions): Promise<BuildResult> {
     onWarning: (message) => process.stderr.write(`[sorane] ${message}\n`),
     onProgress: (message) => process.stdout.write(`[sorane] ${message}\n`),
   });
+
+  const { rules: redirectRules } = collectAllRedirectRules(parsed, config, i18n);
+  if (redirectRules.length > 0) {
+    writeFileSync(join(outDir, "_redirects"), formatRedirectsFile(redirectRules), "utf8");
+    process.stdout.write(`[sorane] redirects: ${redirectRules.length} rule(s) → _redirects\n`);
+  }
 
   if (searchPageRel) {
     try {

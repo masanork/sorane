@@ -45,6 +45,42 @@ npx @sorane/cli preview --cwd website --watch
 
 `404.md` はサイトマップ・ブログ一覧・OKF バンドル・検索インデックスから除外されます。
 
+### リダイレクト（サイト移行）
+
+ビルドは [Cloudflare Pages `_redirects`](https://developers.cloudflare.com/pages/configuration/redirects/) 形式の `dist/_redirects` を出力できます。Netlify 互換の静的ホストでも同じファイル名を読むことが多いです。
+
+**1. サイト設定で一括指定**（`sorane.yaml`）:
+
+```yaml
+build:
+  redirects:
+    - from: /2025-12-23-srn.html
+      to: https://sorane.dev/2025-12-23-sorane-refactor.html
+      status: 301
+```
+
+**2. 記事 frontmatter で旧 URL を残す**（HTML は出さず `_redirects` のみ）:
+
+```yaml
+---
+type: article
+title: （移管済み）
+redirect: https://sorane.dev/2025-12-23-sorane-refactor.html
+redirect_status: 301
+excludeFromList: true
+profile: sorane-okf/0.2
+---
+```
+
+| 項目 | 挙動 |
+|------|------|
+| `from` | `permalink` から決まる出力パス（`/foo.html` または `foo.html`） |
+| `to` | 絶対 URL または同一サイト内パス（`/new.html`） |
+| `status` | 301（既定）/ 302 / 303 / 307 / 308 |
+| 出力 | `redirect` 付き記事は HTML・サイトマップ・feed・ブログ一覧から除外 |
+
+`static/_redirects` に置いても **効きません**（`dist/static/` 配下になるため）。必ず sorane の `build.redirects` か記事 `redirect` を使ってください。
+
 ### 図表（D2 / Mermaid）
 
 `build.diagrams.d2.enabled: true` のサイトは CI で [d2](https://d2lang.com/) CLI をインストールしてください。sorane.dev は `v0.7.1` を使っています。

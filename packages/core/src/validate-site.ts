@@ -19,6 +19,11 @@ import { validateContentQualityFindings } from "./validate-content-quality.ts";
 import { validateRevisionFindings } from "./revision-history.ts";
 import { validateI18nWarnings } from "./validate-i18n.ts";
 import { okfValidateOptions } from "./okf-config.ts";
+import {
+  validateRedirectCollisions,
+  validateRedirectConfigRules,
+  validateRedirectFrontmatter,
+} from "./redirects.ts";
 
 export const VALIDATE_JSON_SCHEMA_VERSION = 1 as const;
 
@@ -37,7 +42,8 @@ export type ValidateFindingCategory =
   | "reference"
   | "dataset"
   | "i18n"
-  | "lang";
+  | "lang"
+  | "redirect";
 
 export interface ValidateFinding {
   readonly severity: ValidateFindingSeverity;
@@ -233,6 +239,11 @@ export function validateSiteContent(
         findings.push(warningToFinding(f.category, f.message));
         warningCount++;
       }
+      for (const f of validateRedirectFrontmatter(fm)) {
+        findings.push(findingWithSeverity(f.severity, "redirect", f.message));
+        if (f.severity === "error") errorCount++;
+        else warningCount++;
+      }
     }
 
     if (!result.ok) {
@@ -267,6 +278,24 @@ export function validateSiteContent(
       ],
     });
     warningCount++;
+  }
+
+  const redirectConfigFindings = [
+    ...validateRedirectConfigRules(config.build.redirects),
+    ...validateRedirectCollisions(parsedConcepts, config, i18n),
+  ];
+  if (redirectConfigFindings.length > 0) {
+    const findings: ValidateFinding[] = [];
+    for (const f of redirectConfigFindings) {
+      findings.push(findingWithSeverity(f.severity, "redirect", f.message));
+      if (f.severity === "error") errorCount++;
+      else warningCount++;
+    }
+    files.push({
+      file: "sorane.yaml",
+      ok: !findings.some((x) => x.severity === "error"),
+      findings,
+    });
   }
 
   const i18nWarnings = validateI18nWarnings(i18nEntries, config.site);

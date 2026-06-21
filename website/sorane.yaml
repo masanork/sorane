@@ -22,6 +22,7 @@ build:
   permalink: "{{slug}}.html"
   static_dir: static
   diagrams:
+    enabled: true
     d2:
       enabled: true
   blog:

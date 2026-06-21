@@ -180,6 +180,15 @@ export interface SiteOpenDataConfig {
   readonly default_license?: string;
 }
 
+export interface RedirectRuleConfig {
+  /** 旧 URL パス（`/old.html` または `old.html`）。ホスト付き URL も可（Cloudflare Pages `_redirects`）。 */
+  readonly from: string;
+  /** 転送先（絶対 URL または `/new.html`）。 */
+  readonly to: string;
+  /** HTTP ステータス（既定 301）。301 / 302 / 303 / 307 / 308。 */
+  readonly status?: number;
+}
+
 export interface SoraneConfig {
   readonly site: {
     readonly title: string;
@@ -226,6 +235,11 @@ export interface SoraneConfig {
     readonly quality?: QualityGateConfig;
     /** 機械可読・フィード等の出力（`preset` と併用可） */
     readonly outputs?: BuildOutputsConfig;
+    /**
+     * サイト移行用リダイレクト。ビルド時に `dist/_redirects`（Cloudflare Pages / Netlify 形式）を出力する。
+     * 記事 frontmatter の `redirect` と併用可（同一 `from` は後勝ち）。
+     */
+    readonly redirects?: readonly RedirectRuleConfig[];
   };
   readonly fonts: {
     readonly enabled: boolean;

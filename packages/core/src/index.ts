@@ -1,5 +1,12 @@
 export { runBuild, type BuildOptions, type BuildResult } from "./build.ts";
 export {
+  collectAllRedirectRules,
+  formatRedirectsFile,
+  isRedirectPage,
+  type RedirectRule,
+} from "./redirects.ts";
+export type { RedirectRuleConfig } from "./config.ts";
+export {
   exportMarkdownBodyToDocx,
   runDocxExport,
   type ExportDocxBodyOptions,

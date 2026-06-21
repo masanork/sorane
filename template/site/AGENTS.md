@@ -110,6 +110,8 @@ Every page is Markdown with YAML frontmatter (`---` … `---`).
 | `tags` | `[tag1, tag2]` |
 | `description` | Short summary |
 | `excludeFromList` | `true` — hide from blog lists |
+| `redirect` | Absolute URL or site path — emit `dist/_redirects` entry; no HTML page |
+| `redirect_status` | HTTP status for `redirect` (default `301`) |
 | `view` | `search` — search UI page |
 | `digitalSourceType` | AI disclosure (`0.2` only) — see sorane.dev/ai-disclosure.html |
 | `translation_key` | Groups locale siblings when filenames differ (`site.i18n`) |
