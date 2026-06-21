@@ -924,10 +924,26 @@ span.glossary-term-unresolved {
   font-size: 1.05rem;
 }
 
+.reference-meta-block {
+  margin-top: 0.75rem;
+  padding: 0.75rem 1rem;
+  border: 1px solid var(--border);
+  border-radius: 6px;
+  background: #fafafa;
+}
+
 .reference-meta {
   margin: 0.35rem 0;
   font-size: 0.95rem;
   color: var(--muted);
+}
+
+.reference-meta-block > .reference-meta:first-child {
+  margin-top: 0;
+}
+
+.reference-meta-block > .reference-meta:last-child {
+  margin-bottom: 0;
 }
 
 .reference-meta strong {
@@ -942,6 +958,8 @@ span.glossary-term-unresolved {
 .reference-body {
   font-size: 0.98rem;
   line-height: 1.65;
+  overflow-x: auto;
+  -webkit-overflow-scrolling: touch;
 }
 
 .reference-body > :first-child {

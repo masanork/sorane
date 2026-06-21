@@ -104,7 +104,8 @@ function referenceMetaHtml(concept: OkfConcept): string {
       `<p class="reference-meta"><strong>Language:</strong> <code>${escapeHtml(language)}</code></p>`,
     );
   }
-  return meta.join("");
+  if (meta.length === 0) return "";
+  return `<div class="reference-meta-block">${meta.join("")}</div>`;
 }
 
 /** Reference ランディング: メタデータ + 本文（表向け）。 */

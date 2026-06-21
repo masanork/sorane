@@ -49,4 +49,23 @@ describe("prepareHtmlForPdfAsync diagram fallback", () => {
       rmSync(dir, { recursive: true, force: true });
     }
   });
+
+  test("client graphviz pre を fallback figure に差し替え", async () => {
+    const dir = mkdtempSync(join(tmpdir(), "sorane-pdf-gv-"));
+    try {
+      const html =
+        '<pre data-sorane-alt="Graph"><code class="language-dot">digraph { A -> B }</code></pre>';
+      const out = await prepareHtmlForPdfAsync(html, {
+        distDir: dir,
+        prerenderDiagrams: true,
+      });
+      expect(out.includes("language-dot")).toBe(false);
+      expect(
+        out.includes("diagram--graphviz") || out.includes("diagram--fallback"),
+      ).toBe(true);
+      expect(out).toContain("Graph");
+    } finally {
+      rmSync(dir, { recursive: true, force: true });
+    }
+  });
 });

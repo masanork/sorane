@@ -78,7 +78,7 @@ Vivliostyle runs with `cwd = dist/` so relative `./assets/main.css` links resolv
 
 - Injects `assets/print.css` after `main.css` on a temporary `.print.html` sibling (deleted after export)
 - Removes `search.mjs` and `sorane-mermaid-loader.mjs` scripts
-- **Diagram prerender**: client `pre[data-sorane-alt] > code.language-mermaid|d2` → inline SVG when `mmdc` / `d2` CLI available; otherwise static fallback figure with alt + source
+- **Diagram prerender**: client `pre[data-sorane-alt] > code.language-mermaid|d2|graphviz|dot` → inline SVG when `mmdc` / `d2` / `dot` CLI available (`d2` / `graphviz` require `build.diagrams.*.enabled`); otherwise static fallback figure with alt + source
 
 Build-mode diagrams (`<figure class="diagram"><img …>`) pass through unchanged.
 
@@ -86,7 +86,7 @@ Build-mode diagrams (`<figure class="diagram"><img …>`) pass through unchanged
 
 ## Known limitations
 
-- **Graphviz client fences**: not prerendered in PDF pass (use build mode or accept fallback).
+- **Graphviz client fences**: prerendered when `build.diagrams.graphviz.enabled: true` and `dot` is on PATH; otherwise fallback figure.
 - **404 / search-only pages**: batch export skips HTML files that are not buildable content pages.
 - **Emergency banner**: hidden via `print.css` (content not duplicated in PDF body).
 

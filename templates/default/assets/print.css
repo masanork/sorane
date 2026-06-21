@@ -64,3 +64,20 @@ figure.diagram--fallback pre {
   white-space: pre-wrap;
   word-break: break-word;
 }
+
+/* FAQ / reference (sorane-okf/0.3) */
+section.faq,
+.reference-meta-block,
+.reference-body table {
+  page-break-inside: avoid;
+}
+
+section.faq {
+  background: transparent;
+  border-color: #ccc;
+}
+
+.reference-meta-block {
+  background: transparent;
+  border-color: #ccc;
+}

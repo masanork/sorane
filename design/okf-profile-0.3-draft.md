@@ -474,9 +474,9 @@ okf:
 
 ### Phase C — FAQ / glossary / reference
 
-- [ ] `faq` heading validator
+- [x] `faq` heading validator
 - [x] `glossary-term` + tag-like index
-- [ ] `reference` layout tweaks
+- [x] `reference` layout tweaks
 
 ### Phase D — External interop (optional)
 

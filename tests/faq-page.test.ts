@@ -37,6 +37,19 @@ describe("validateFaqWarnings", () => {
     expect(warnings.some((w) => w.includes("before first question"))).toBe(true);
     expect(warnings.some((w) => w.includes('empty answer for "Q?"'))).toBe(true);
   });
+
+  test("### のみの FAQ は ## への置き換えを促す", () => {
+    const warnings = validateFaqWarnings("### Wrong?\nAnswer.\n");
+    expect(warnings.some((w) => w.includes("no ## question"))).toBe(true);
+    expect(warnings.some((w) => w.includes("### headings"))).toBe(true);
+  });
+
+  test("フェンス内の見出しは無視", () => {
+    const body = "## Real?\n\n```md\n## not a question\n```\n";
+    const warnings = validateFaqWarnings(body);
+    expect(warnings.some((w) => w.includes("not a question"))).toBe(false);
+    expect(warnings.length).toBe(0);
+  });
 });
 
 describe("renderFaqPageBody", () => {

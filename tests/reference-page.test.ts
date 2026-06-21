@@ -43,6 +43,7 @@ describe("renderReferencePageBody", () => {
     expect(html).toContain('class="reference-description"');
     expect(html).toContain("https://ex.dev/spec");
     expect(html).toContain('class="reference-body"');
+    expect(html).toContain('class="reference-meta-block"');
   });
 });
 

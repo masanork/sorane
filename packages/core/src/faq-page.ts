@@ -17,6 +17,32 @@ import { escapeHtml } from "./render.ts";
 const FENCE_OPEN_RE = /^(```+|~~~+)/;
 const OTHER_HEADING_RE = /^(#{1,6})\s+/;
 
+function findHeadingLinesOutsideFences(body: string, depth: number): number[] {
+  const lines = body.split(/\r?\n/);
+  const out: number[] = [];
+  let inFence = false;
+  let fenceMarker = "";
+  const re = new RegExp(`^#{${depth}}\\s+`);
+  for (let i = 0; i < lines.length; i++) {
+    const line = lines[i]!;
+    const fence = FENCE_OPEN_RE.exec(line);
+    if (fence) {
+      const marker = fence[1]!;
+      if (!inFence) {
+        inFence = true;
+        fenceMarker = marker;
+      } else if (line.startsWith(fenceMarker)) {
+        inFence = false;
+        fenceMarker = "";
+      }
+      continue;
+    }
+    if (inFence) continue;
+    if (re.test(line)) out.push(i + 1);
+  }
+  return out;
+}
+
 export interface FaqItem {
   readonly question: string;
   readonly answerMarkdown: string;
@@ -52,6 +78,12 @@ export function validateFaqWarnings(body: string): readonly string[] {
 
   if (items.length === 0) {
     warnings.push("faq: no ## question headings found; use ## for each question");
+    const h3Lines = findHeadingLinesOutsideFences(body, 3);
+    if (h3Lines.length > 0) {
+      warnings.push(
+        `faq: found ### headings (lines ${h3Lines.join(", ")}); use ## for each question`,
+      );
+    }
     return warnings;
   }
 
