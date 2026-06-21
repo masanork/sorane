@@ -35,6 +35,14 @@ import {
   type SoraneConfig,
 } from "./config.ts";
 import {
+  breadcrumbItemsForPage,
+  buildBreadcrumbJsonLd,
+  findabilityFlags,
+  llmsContactSection,
+  organizationFromSite,
+  resolveSitemapLastmod,
+} from "./findability.ts";
+import {
   buildCreativeWorkJsonLd,
   extractDescription,
   renderArticleBodyWithMetaForConfig,
@@ -311,6 +319,8 @@ export async function runBuild(opts: BuildOptions): Promise<BuildResult> {
   }
 
   const baseUrl = config.site.base_url.replace(/\/$/, "");
+  const siteOrganization = organizationFromSite(config.site);
+  const siteFindability = findabilityFlags(config.site);
   const diagramConfig = config.build.diagrams ?? DEFAULT_DIAGRAMS_CONFIG;
   const d2OutDir = join(outDir, "assets", "diagrams", "d2");
   const mermaidOutDir = join(outDir, "assets", "diagrams", "mermaid");
@@ -611,7 +621,24 @@ export async function runBuild(opts: BuildOptions): Promise<BuildResult> {
             aiDisclosure:
               pageAiFlags.jsonLd && aiDisclosure ? aiDisclosure : undefined,
             associatedMedia: associatedMedia.length > 0 ? associatedMedia : undefined,
+            organization: siteOrganization,
+            frontmatter: p.concept.frontmatter,
           });
+
+    const breadcrumbJsonLd =
+      siteFindability.breadcrumbs &&
+      !isSearch &&
+      effectiveType !== "index" &&
+      canonicalUrl
+        ? buildBreadcrumbJsonLd({
+            items: breadcrumbItemsForPage({
+              baseUrl,
+              homeTitle: config.site.title,
+              pageTitle: p.concept.title,
+              pageUrl: canonicalUrl,
+            }),
+          })
+        : "";
 
     const fontCss = await fontCssFor(p.concept, rootPrefix, bodyHtml);
     const headerSearch = headerSearchFor(rootPrefix, {
@@ -625,6 +652,7 @@ export async function runBuild(opts: BuildOptions): Promise<BuildResult> {
         ]
       : [
           ...(jsonLd ? [jsonLd] : []),
+          ...(breadcrumbJsonLd ? [breadcrumbJsonLd] : []),
           ...(headerSearch.extraHead ?? []),
           ...(diagramHead ? [diagramHead] : []),
         ];
@@ -646,7 +674,11 @@ export async function runBuild(opts: BuildOptions): Promise<BuildResult> {
     });
     builtPages += 1;
 
-    siteEntries.push({ url: outRel, lastmod: p.concept.timestamp, isIndex: false });
+    siteEntries.push({
+      url: outRel,
+      lastmod: resolveSitemapLastmod(p.concept.timestamp, updated),
+      isIndex: false,
+    });
     catalogInputs.push({
       slug,
       url: canonicalUrl ?? outRel,
@@ -739,11 +771,17 @@ export async function runBuild(opts: BuildOptions): Promise<BuildResult> {
     const fontCss = await fontCssFor(p.concept, "./", bodyHtml);
     const indexCanonical =
       baseUrl.length > 0 ? `${baseUrl}/index.html` : undefined;
+    const searchActionUrl =
+      siteFindability.searchAction && searchPageRel && baseUrl.length > 0
+        ? `${baseUrl}/${searchPageRel}`
+        : undefined;
     const indexJsonLd = buildWebSiteJsonLd({
       title: p.concept.title || config.site.title,
       description: p.concept.description ?? config.site.description,
       url: indexCanonical,
       lang: config.site.lang,
+      organization: siteOrganization,
+      searchUrl: searchActionUrl,
     });
     const indexHeaderSearch = headerSearchFor("./", { docsLayout: docsMode });
     const indexDiagramHead = diagramHeadForPage(
@@ -969,7 +1007,11 @@ export async function runBuild(opts: BuildOptions): Promise<BuildResult> {
     "utf8",
   );
 
-  writeFileSync(join(outDir, "robots.txt"), buildRobotsTxt(baseUrl), "utf8");
+  writeFileSync(
+    join(outDir, "robots.txt"),
+    buildRobotsTxt(baseUrl, { disallow: siteFindability.disallow }),
+    "utf8",
+  );
   writeFileSync(
     join(outDir, "sitemap.xml"),
     buildSitemapXml(siteEntries, baseUrl),
@@ -983,6 +1025,13 @@ export async function runBuild(opts: BuildOptions): Promise<BuildResult> {
       baseUrl,
       aiLabeledCount: siteAiFlags.machineReadable ? aiLabeledCount : undefined,
       diagramsEnabled: diagramConfig.enabled !== false,
+      extraSections: [
+        llmsContactSection({
+          contact: config.site.contact,
+          organization: siteOrganization,
+          baseUrl,
+        }).join("\n"),
+      ],
     }),
     "utf8",
   );
@@ -991,6 +1040,13 @@ export async function runBuild(opts: BuildOptions): Promise<BuildResult> {
     buildCatalogJsonLd(catalogInputs, config.site.title, baseUrl, {
       machineReadable: siteAiFlags.machineReadable,
       docsMode,
+      publisher: siteOrganization
+        ? {
+            name: siteOrganization.name,
+            url: siteOrganization.url,
+            type: siteOrganization.type,
+          }
+        : undefined,
     }),
     "utf8",
   );

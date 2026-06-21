@@ -52,5 +52,12 @@ export {
   buildLlmsTxt,
   type SiteEntry,
 } from "./site-meta.ts";
+export {
+  buildBreadcrumbJsonLd,
+  creativeWorkFindabilityFields,
+  organizationFromSite,
+  resolveSitemapLastmod,
+  type OrganizationSpec,
+} from "./findability.ts";
 export { validateDiagramAltWarnings } from "./diagrams/validate-diagram-alt.ts";
 export { resolveOgImageUrl, ogLocaleFromLang } from "./og-meta.ts";

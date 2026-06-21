@@ -232,4 +232,71 @@ Custom body only.
       rmSync(root, { recursive: true, force: true });
     }
   });
+
+  test("findability: organization, breadcrumb, search action, lastmod", async () => {
+    const root = mkdtempSync(join(tmpdir(), "sorane-find-"));
+    const outDir = join(root, "dist");
+    mkdirSync(join(root, "content"), { recursive: true });
+    writeFileSync(
+      join(root, "sorane.yaml"),
+      [
+        "site:",
+        "  title: Gov Site",
+        '  description: "d"',
+        '  base_url: "https://gov.ex"',
+        "  lang: ja",
+        "  organization:",
+        "    name: Example Agency",
+        '    url: "https://www.example.go.jp/"',
+        "    type: GovernmentOrganization",
+        "  contact:",
+        "    email: info@example.go.jp",
+        "build:",
+        "  content_dir: content",
+        "  out_dir: dist",
+        '  permalink: "{{slug}}.html"',
+        "search:",
+        "  index: .sorane/index.db",
+      ].join("\n"),
+      "utf8",
+    );
+    writeFileSync(
+      join(root, "content", "index.md"),
+      "---\ntype: index\ntitle: Home\nprofile: sorane-okf/0.1\n---\n\nHome.\n",
+      "utf8",
+    );
+    writeFileSync(
+      join(root, "content", "guide.md"),
+      "---\ntype: article\ntitle: Guide\ntimestamp: 2025-01-01T00:00:00Z\nupdated: 2025-06-15\nprofile: sorane-okf/0.1\nidentifier: GOV-1\n---\n\nGuide body.\n",
+      "utf8",
+    );
+    writeFileSync(
+      join(root, "content", "search.md"),
+      "---\ntype: article\ntitle: Search\nview: search\nprofile: sorane-okf/0.1\n---\n\nSearch.\n",
+      "utf8",
+    );
+    try {
+      const { runIndexCmd } = await import("../packages/cli/src/index-cmd.ts");
+      await runIndexCmd(["--cwd", root, "--force", "--fts-only"]);
+      await runBuild({
+        cwd: root,
+        config: loadSoraneConfig(root),
+        clean: true,
+        skipC2pa: true,
+      });
+      const indexHtml = readFileSync(join(outDir, "index.html"), "utf8");
+      expect(indexHtml).toContain("GovernmentOrganization");
+      expect(indexHtml).toContain("SearchAction");
+      const guideHtml = readFileSync(join(outDir, "guide.html"), "utf8");
+      expect(guideHtml).toContain("BreadcrumbList");
+      expect(guideHtml).toContain("GOV-1");
+      const sitemap = readFileSync(join(outDir, "sitemap.xml"), "utf8");
+      expect(sitemap).toContain("<lastmod>2025-06-15</lastmod>");
+      const llms = readFileSync(join(outDir, "llms.txt"), "utf8");
+      expect(llms).toContain("## Publisher");
+      expect(llms).toContain("info@example.go.jp");
+    } finally {
+      rmSync(root, { recursive: true, force: true });
+    }
+  });
 });

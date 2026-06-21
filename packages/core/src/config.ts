@@ -117,6 +117,19 @@ export interface FontConfigInput {
   readonly sources?: Readonly<Record<string, FontSourceSpec>>;
 }
 
+import type {
+  SiteContactConfig,
+  SiteFindabilityConfig,
+  SiteOrganizationConfig,
+} from "./findability.ts";
+
+export type {
+  OrganizationKind,
+  SiteContactConfig,
+  SiteFindabilityConfig,
+  SiteOrganizationConfig,
+} from "./findability.ts";
+
 export interface SoraneConfig {
   readonly site: {
     readonly title: string;
@@ -125,6 +138,10 @@ export interface SoraneConfig {
     readonly lang: string;
     /** 既定の OGP 画像（絶対 URL またはサイトルート相対パス。要 base_url） */
     readonly og_image?: string;
+    /** 発行主体（GovernmentOrganization 等）。JSON-LD / catalog / llms.txt に反映 */
+    readonly organization?: SiteOrganizationConfig;
+    readonly contact?: SiteContactConfig;
+    readonly findability?: SiteFindabilityConfig;
   };
   readonly build: {
     readonly content_dir: string;

@@ -234,6 +234,12 @@ function setup(root) {
     e.preventDefault();
     run(input.value);
   });
+
+  const initialQuery = new URLSearchParams(window.location.search).get("q");
+  if (initialQuery) {
+    input.value = initialQuery;
+    run(initialQuery);
+  }
 }
 
 for (const root of document.querySelectorAll("[data-search]")) setup(root);

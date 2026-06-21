@@ -6,6 +6,7 @@ All notable changes to sorane are documented here. Versioning follows [SemVer](h
 
 ### Added
 
+- **Findability pack (phase 1):** `site.organization`, `site.contact`, `site.findability` in `sorane.yaml`; `GovernmentOrganization` + `SearchAction` + `BreadcrumbList` JSON-LD; sitemap `lastmod` from `updated`; `robots.txt` `Disallow`; `llms.txt` publisher/contact; article fields `identifier` / `subject` / `audience` / `coverage`; search page `?q=` support for SearchAction
 - `npm run stats` / `stats:json` — monorepo LOC, test ratio, workspace breakdown (`scripts/project-stats.ts`)
 - CI `project-stats` job: append `stats/history.jsonl`, regenerate `stats/trend.md` on `main` (`[skip ci]` bot commit)
 - Broad unit/integration test suite; `npm run test:coverage` line gate raised to **90%** (overall ~98% with `--test-isolation=none` so coverage merges across test files)

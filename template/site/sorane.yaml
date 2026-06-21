@@ -3,6 +3,15 @@ site:
   description: A sorane site edited with AI assistants
   base_url: https://example.pages.dev
   lang: ja
+  # organization:
+  #   name: Example Agency
+  #   url: https://www.example.go.jp/
+  #   type: GovernmentOrganization
+  # contact:
+  #   page: contact.html
+  # findability:
+  #   breadcrumbs: true
+  #   search_action: true
 
 build:
   content_dir: content

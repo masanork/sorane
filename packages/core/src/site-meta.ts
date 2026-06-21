@@ -4,8 +4,15 @@ export interface SiteEntry {
   readonly isIndex: boolean;
 }
 
-export function buildRobotsTxt(baseUrl: string): string {
+export function buildRobotsTxt(
+  baseUrl: string,
+  opts: { readonly disallow?: readonly string[] } = {},
+): string {
   const lines = ["User-agent: *", "Allow: /"];
+  for (const path of opts.disallow ?? []) {
+    const p = path.startsWith("/") ? path : `/${path}`;
+    lines.push(`Disallow: ${p}`);
+  }
   if (baseUrl.length > 0) lines.push(`Sitemap: ${baseUrl}/sitemap.xml`);
   return lines.join("\n") + "\n";
 }
@@ -42,6 +49,7 @@ export interface LlmsTxtOptions {
   readonly baseUrl: string;
   readonly aiLabeledCount?: number;
   readonly diagramsEnabled?: boolean;
+  readonly extraSections?: readonly string[];
 }
 
 export interface FeedEntry {
@@ -132,6 +140,11 @@ export function buildLlmsTxt(opts: LlmsTxtOptions): string {
       "",
       `Labeled articles: ${opts.aiLabeledCount}`,
     );
+  }
+  if (opts.extraSections) {
+    for (const block of opts.extraSections) {
+      if (block.length > 0) lines.push(...block.split("\n"));
+    }
   }
   lines.push("");
   return lines.join("\n");

@@ -22,6 +22,7 @@ export interface CatalogEntry {
 export interface CatalogPublisher {
   readonly name: string;
   readonly url?: string;
+  readonly type?: "Organization" | "GovernmentOrganization";
 }
 
 export interface BuildCatalogOptions {
@@ -175,7 +176,7 @@ export function buildCatalogJsonLd(
 
   if (opts?.publisher) {
     const org: Record<string, unknown> = {
-      "@type": "Organization",
+      "@type": opts.publisher.type ?? "Organization",
       name: opts.publisher.name,
     };
     if (opts.publisher.url) org.url = opts.publisher.url;

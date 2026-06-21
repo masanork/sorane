@@ -3,6 +3,11 @@ import type { OkfConcept } from "@sorane/okf";
 import type { AiDisclosure } from "./ai-disclosure.ts";
 import { aiDisclosureJsonLdFields, buildCompactAiBadgeHtml } from "./ai-disclosure.ts";
 import {
+  buildOrganizationNode,
+  creativeWorkFindabilityFields,
+  type OrganizationSpec,
+} from "./findability.ts";
+import {
   associatedMediaJsonLdFields,
   type AssociatedMediaItem,
 } from "./associated-media.ts";
@@ -78,22 +83,8 @@ export function renderFeaturedExcerpt(
   return `<p>${escapeHtml(text)}</p>`;
 }
 
-export function buildWebSiteJsonLd(opts: {
-  readonly title: string;
-  readonly description?: string;
-  readonly url?: string;
-  readonly lang: string;
-}): string {
-  const data: Record<string, unknown> = {
-    "@context": "https://schema.org",
-    "@type": "WebSite",
-    name: opts.title,
-    inLanguage: opts.lang,
-  };
-  if (opts.description) data.description = opts.description;
-  if (opts.url) data.url = opts.url;
-  return `<script type="application/ld+json">${JSON.stringify(data)}</script>`;
-}
+export { buildWebSiteJsonLd } from "./findability.ts";
+export type { OrganizationSpec } from "./findability.ts";
 
 export interface PageShellOptions {
   readonly title: string;
@@ -352,6 +343,8 @@ export function buildCreativeWorkJsonLd(opts: {
   lang: string;
   aiDisclosure?: AiDisclosure;
   associatedMedia?: readonly AssociatedMediaItem[];
+  organization?: OrganizationSpec;
+  frontmatter?: Record<string, unknown>;
 }): string {
   const isPartOf =
     opts.workType === "BlogPosting"
@@ -372,6 +365,12 @@ export function buildCreativeWorkJsonLd(opts: {
   if (opts.dateModified) data.dateModified = opts.dateModified;
   if (opts.author) {
     data.author = { "@type": "Person", name: opts.author };
+  }
+  if (opts.organization) {
+    data.publisher = buildOrganizationNode(opts.organization);
+  }
+  if (opts.frontmatter) {
+    Object.assign(data, creativeWorkFindabilityFields(opts.frontmatter));
   }
   if (opts.aiDisclosure) {
     Object.assign(data, aiDisclosureJsonLdFields(opts.aiDisclosure));

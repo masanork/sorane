@@ -23,6 +23,33 @@ build:
 
 記事ごとに `og_image` frontmatter で上書きできます（絶対 URL またはサイトルート相対パス）。
 
+## 発見性（findability）
+
+公的サイト向けに JSON-LD・サイトマップ・`llms.txt` を強化します。
+
+```yaml
+site:
+  organization:
+    name: Example Agency
+    url: https://www.example.go.jp/
+    type: GovernmentOrganization
+  contact:
+    page: contact.html
+    email: info@example.go.jp
+  findability:
+    breadcrumbs: true
+    search_action: true
+    disallow:
+      - /assets/search/lib/
+```
+
+- `organization` … `WebSite` / 記事 JSON-LD / `catalog.jsonld` / `llms.txt` の発行主体
+- `contact` … `llms.txt` の問い合わせ先
+- `findability.search_action` … 検索ページがあるとき `SearchAction`（`search.html?q=`）を出力
+- 記事 frontmatter（任意）: `identifier`, `subject`, `audience`, `coverage`, `updated`（サイトマップ `lastmod` に反映）
+
+詳細: [design/findability-pack.md](https://github.com/masanork/sorane/blob/main/design/findability-pack.md)
+
 ## 404 ページ
 
 ビルドは常に `404.html` を `out_dir` 直下に出力します。`content/404.md` で本文をカスタムできます（詳細は [デプロイ](deployment.html)）。
