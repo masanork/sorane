@@ -51,11 +51,23 @@ masanork/sorane
 - run: npx @sorane/cli@0.2.4 build --cwd . --clean
 ```
 
+## サプライチェーン（v0.2.5+）
+
+`v*` タグで GitHub Release に次を添付します。
+
+- npm pack  tarball（`@sorane/*` ×5）
+- source tarball、`sbom.json`、`cbom.json`
+- SLSA Build-L3 provenance（`.intoto.jsonl`）
+
+検証手順はリポジトリの [`docs/release-verification.md`](https://github.com/masanork/sorane/blob/main/docs/release-verification.md) を参照してください。
+
 ## ロードマップ
 
 - [x] プロダクトサイト `sorane.dev`
 - [x] `CHANGELOG.md` と SemVer タグ
 - [x] npm 配布（`@sorane/cli` ほか）
-- [ ] GitHub Releases にソース tarball + Bunsen フォント資産
+- [x] SLSA L3 + SBOM/CBOM（タグリリース workflow）
+- [ ] GitHub Releases に Bunsen フォント資産
+- [ ] CI から `npm publish --provenance`
 - [ ] optional dependencies の整理
 - [ ] Homebrew formula / Docker image

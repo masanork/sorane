@@ -30,6 +30,7 @@
     "test:c2pa": "node --test tests/c2pa-pass.test.ts tests/static-assets.test.ts tests/asset-provenance.test.ts",
     "test:image-metadata": "node --test tests/iptc-xmp-pass.test.ts tests/static-assets.test.ts tests/asset-provenance.test.ts",
     "typecheck": "tsc --noEmit",
+    "cbom-check": "node scripts/cbom-check.ts",
     "pack:cli": "npm pack -w @sorane/cli",
     "publish:workspaces": "npm publish -w @sorane/font --access public && npm publish -w @sorane/okf --access public && npm publish -w @sorane/search --access public && npm publish -w @sorane/core --access public && npm publish -w @sorane/cli --access public"
   },

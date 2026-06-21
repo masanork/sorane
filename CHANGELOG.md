@@ -4,6 +4,13 @@ All notable changes to sorane are documented here. Versioning follows [SemVer](h
 
 ## [Unreleased]
 
+### Added
+
+- SLSA v1.0 Build-L3 tag release workflow (`.github/workflows/release.yml`)
+- `cbom.json` + `npm run cbom-check` drift gate for in-process hash algorithms
+- CI: `cbom-check`, `npm audit`, `release.yml` actionlint
+- `docs/release-verification.md` for relying parties
+
 ## [0.2.4] - 2026-06-21
 
 ### Added

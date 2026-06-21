@@ -1,0 +1,40 @@
+{
+  "bomFormat": "CycloneDX",
+  "specVersion": "1.6",
+  "version": 1,
+  "metadata": {
+    "component": {
+      "type": "application",
+      "name": "sorane",
+      "version": "0.0.0",
+      "description": "OKF-native static site generator. C2PA signing is optional and delegated to external c2patool."
+    },
+    "properties": [
+      {
+        "name": "sorane:cbom:scope",
+        "value": "Hash algorithms sorane dispatches in-process. Drift-gated by `npm run cbom-check`."
+      }
+    ]
+  },
+  "components": [
+    {
+      "bom-ref": "sorane-crypto-sha256",
+      "type": "cryptographic-asset",
+      "name": "SHA-256",
+      "description": "Node.js crypto.createHash('sha256') for font subset cache keys and search incremental hashes.",
+      "cryptoProperties": {
+        "assetType": "algorithm",
+        "algorithmProperties": {
+          "primitive": "hash",
+          "parameterSetIdentifier": "SHA-256",
+          "cryptoFunctions": ["digest"],
+          "nistQuantumSecurityLevel": 0
+        },
+        "oid": "2.16.840.1.101.3.4.2.1"
+      },
+      "properties": [
+        { "name": "sorane:role", "value": "integrity" }
+      ]
+    }
+  ]
+}

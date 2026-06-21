@@ -1,0 +1,259 @@
+# Tag-triggered SLSA v1.0 Build-L3 release (npm pack tarballs + source + SBOM + CBOM).
+#
+# Job DAG:
+#   supply-chain-gate ─┬─> pack (npm pack ×5)
+#                      ├─> source + cbom
+#                      └─> sbom
+#                              └─> compute-digests ─> provenance ─> release
+
+name: Release
+
+on:
+  push:
+    tags: ["v*"]
+
+permissions:
+  contents: read
+
+jobs:
+  supply-chain-gate:
+    name: supply-chain gate
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: "23"
+
+      - name: Install dependencies
+        run: npm ci
+
+      - name: Typecheck
+        run: npm run typecheck
+
+      - name: Test
+        run: npm test
+
+      - name: CBOM drift gate
+        run: npm run cbom-check
+
+      - name: npm audit
+        run: npm audit --audit-level=high
+
+  pack:
+    name: npm pack
+    needs: supply-chain-gate
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: "23"
+
+      - name: Install dependencies
+        run: npm ci
+
+      - name: Pack workspace tarballs + sha256
+        shell: bash
+        run: |
+          set -euo pipefail
+          mkdir -p packs
+          for ws in @sorane/font @sorane/okf @sorane/search @sorane/core @sorane/cli; do
+            npm pack -w "$ws" --pack-destination packs
+          done
+          if ! compgen -G "packs/*.tgz" > /dev/null; then
+            echo "::error::npm pack produced no tarballs"
+            exit 1
+          fi
+          if command -v sha256sum >/dev/null 2>&1; then
+            (cd packs && sha256sum -- ./*.tgz > checksums.sha256)
+          else
+            (cd packs && shasum -a 256 -- ./*.tgz > checksums.sha256)
+          fi
+          for tgz in ./packs/*.tgz; do
+            if command -v sha256sum >/dev/null 2>&1; then
+              sha256sum "$tgz" > "${tgz}.sha256"
+            else
+              shasum -a 256 "$tgz" > "${tgz}.sha256"
+            fi
+          done
+      - name: Upload npm pack artifacts
+        uses: actions/upload-artifact@v4
+        with:
+          name: npm-packs
+          path: |
+            packs/*.tgz
+            packs/*.tgz.sha256
+          if-no-files-found: error
+
+  source:
+    name: source + cbom
+    needs: supply-chain-gate
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+      id-token: write
+      attestations: write
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Build source archive + cbom inject + sha256
+        shell: bash
+        run: |
+          set -euo pipefail
+          tag="${GITHUB_REF_NAME}"
+          version="${tag#v}"
+          src="sorane-${tag}.tar.gz"
+          git archive --format=tar.gz --prefix="sorane-${version}/" -o "$src" HEAD
+          jq --arg v "$version" '.metadata.component.version=$v' cbom.json > cbom.tmp
+          if [[ ! -s cbom.tmp ]]; then
+            echo "::error::cbom.json version injection produced empty output"
+            exit 1
+          fi
+          mv cbom.tmp cbom.json
+          if command -v sha256sum >/dev/null 2>&1; then
+            sha256sum "$src" > "${src}.sha256"
+            sha256sum cbom.json > cbom.json.sha256
+          else
+            shasum -a 256 "$src" > "${src}.sha256"
+            shasum -a 256 cbom.json > cbom.json.sha256
+          fi
+
+      - name: Attest CBOM (CycloneDX)
+        uses: actions/attest-sbom@v2
+        with:
+          subject-path: cbom.json
+          sbom-path: cbom.json
+
+      - name: Upload source + cbom artifacts
+        uses: actions/upload-artifact@v4
+        with:
+          name: source-cbom
+          path: |
+            sorane-${{ github.ref_name }}.tar.gz
+            sorane-${{ github.ref_name }}.tar.gz.sha256
+            cbom.json
+            cbom.json.sha256
+          if-no-files-found: error
+
+  sbom:
+    name: sbom
+    needs: supply-chain-gate
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+      id-token: write
+      attestations: write
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: "23"
+
+      - name: Install dependencies
+        run: npm ci
+
+      - name: Generate SBOM + sha256
+        shell: bash
+        run: |
+          set -euo pipefail
+          npx --yes @cyclonedx/cdxgen@11.0.0 -t npm -o sbom.json --no-install
+          if [[ ! -s sbom.json ]]; then
+            echo "::error::SBOM generation produced empty output"
+            exit 1
+          fi
+          if command -v sha256sum >/dev/null 2>&1; then
+            sha256sum sbom.json > sbom.json.sha256
+          else
+            shasum -a 256 sbom.json > sbom.json.sha256
+          fi
+
+      - name: Attest SBOM (CycloneDX)
+        uses: actions/attest-sbom@v2
+        with:
+          subject-path: sbom.json
+          sbom-path: sbom.json
+
+      - name: Upload SBOM artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: sbom
+          path: |
+            sbom.json
+            sbom.json.sha256
+          if-no-files-found: error
+
+  compute-digests:
+    name: compute-digests
+    needs: [pack, source, sbom]
+    runs-on: ubuntu-latest
+    outputs:
+      hashes: ${{ steps.hash.outputs.hashes }}
+    steps:
+      - name: Download all artifacts
+        uses: actions/download-artifact@v4
+        with:
+          path: artifacts
+          merge-multiple: true
+
+      - name: Compute base64-encoded subject digests
+        id: hash
+        shell: bash
+        run: |
+          set -euo pipefail
+          cd artifacts
+          mapfile -t subjects < <(find . -maxdepth 1 \( -name '*.tgz' -o -name 'cbom.json' -o -name 'sbom.json' \) -type f | sort)
+          if [[ ${#subjects[@]} -lt 7 ]]; then
+            echo "::error::expected at least 7 release subjects, got ${#subjects[@]}: ${subjects[*]}"
+            exit 1
+          fi
+          if command -v sha256sum >/dev/null 2>&1; then
+            hashes="$(sha256sum "${subjects[@]}" | base64 -w0)"
+          else
+            hashes="$(shasum -a 256 "${subjects[@]}" | base64)"
+          fi
+          echo "hashes=${hashes}" >> "$GITHUB_OUTPUT"
+
+  provenance:
+    name: provenance
+    needs: compute-digests
+    permissions:
+      actions: read
+      id-token: write
+      contents: write
+    uses: slsa-framework/slsa-github-generator/.github/workflows/generator_generic_slsa3.yml@v2.1.0
+    with:
+      base64-subjects: ${{ needs.compute-digests.outputs.hashes }}
+      provenance-name: sorane-${{ github.ref_name }}.intoto.jsonl
+      upload-assets: true
+
+  release:
+    name: release
+    needs: [compute-digests, provenance]
+    permissions:
+      contents: write
+    runs-on: ubuntu-latest
+    steps:
+      - name: Download all artifacts
+        uses: actions/download-artifact@v4
+        with:
+          path: artifacts
+          merge-multiple: true
+
+      - name: Publish release
+        uses: softprops/action-gh-release@v2
+        with:
+          fail_on_unmatched_files: true
+          generate_release_notes: true
+          files: |
+            artifacts/*.tgz
+            artifacts/*.tgz.sha256
+            artifacts/sorane-*.tar.gz
+            artifacts/sorane-*.tar.gz.sha256
+            artifacts/cbom.json
+            artifacts/cbom.json.sha256
+            artifacts/sbom.json
+            artifacts/sbom.json.sha256
