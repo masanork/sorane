@@ -50,7 +50,7 @@ async function main(): Promise<void> {
           "  index     --cwd <dir> [--force] [--hybrid] [--fts-only] [--out <path>] [--model <dir>] [--model-id <id>]\n" +
           "  search    <query> [--cwd <dir>] [--type article|dataset|reference|glossary|glossary-term|faq] [--tag <slug>] [--k 10] [--json] [--fts-only]\n" +
           "  export    --format docx|pdf --cwd <dir> --out <file|dir> [--file <rel.md>] [--html <rel.html>]\n" +
-          "  import    --input <file> --cwd <dir> [--format auto|mt] [--out content/article] [--encoding auto] [--dry-run]\n",
+          "  import    --input <file> --cwd <dir> [--format auto|mt|hatena-diary] [--out content/article] [--encoding auto] [--dry-run]\n",
       );
       process.exit(command === undefined ? 0 : 1);
   }

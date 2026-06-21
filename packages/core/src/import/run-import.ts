@@ -1,5 +1,6 @@
 import { existsSync, mkdirSync, writeFileSync } from 'node:fs';
 import { dirname, join, resolve } from 'node:path';
+import { parseHatenaDiaryExport } from './adapters/hatena-diary.ts';
 import { parseMtExport } from './adapters/mt.ts';
 import { readImportFile, type EncodingHint } from './decode.ts';
 import { resolveImportFormat } from './detect-format.ts';
@@ -28,7 +29,7 @@ function parseEntries(format: ImportFormatId, text: string, skipDrafts: boolean)
     case 'mt':
       return parseMtExport(text, { skipDrafts });
     case 'hatena-diary':
-      throw new Error('hatena-diary import not implemented yet (use --format mt or wait for I3)');
+      return parseHatenaDiaryExport(text, { skipDrafts });
     case 'wordpress':
       throw new Error('wordpress import not implemented yet (use --format mt or wait for I4)');
     default:

@@ -1,0 +1,40 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<feed xmlns="http://www.w3.org/2005/Atom"
+      xmlns:app="http://www.w3.org/2007/app"
+      xmlns:hatena="http://www.hatena.ne.jp/info/xmlns#">
+  <title>Example Diary</title>
+  <generator uri="http://d.hatena.ne.jp/">Hatena::Diary</generator>
+  <entry>
+    <title>公開エントリ</title>
+    <link rel="alternate" type="text/html" href="http://d.hatena.ne.jp/example/2010-01-15/1263512400"/>
+    <id>tag:hatena.ne.jp,2010:diary-example-1263512400</id>
+    <published>2010-01-15T12:00:00+09:00</published>
+    <updated>2010-01-15T12:00:00+09:00</updated>
+    <category term="雑記"/>
+    <content type="text/html"><![CDATA[<p>fallback html</p>]]></content>
+    <hatena:formatted-content type="text/html">
+      <div class="section"><p>はてな本文</p></div>
+    </hatena:formatted-content>
+    <app:control>
+      <app:draft>no</app:draft>
+    </app:control>
+  </entry>
+  <entry>
+    <title>下書きエントリ</title>
+    <id>tag:hatena.ne.jp,2010:diary-example-draft</id>
+    <published>2010-01-16T09:00:00+09:00</published>
+    <content type="text/x-hatena-syntax">*下書き本文</content>
+    <app:control>
+      <app:draft>yes</app:draft>
+    </app:control>
+  </entry>
+  <entry>
+    <title>はてな記法のみ</title>
+    <id>tag:hatena.ne.jp,2010:diary-syntax-only</id>
+    <published>2010-01-17T18:30:00+09:00</published>
+    <hatena:syntax>*記法[[tag]]</hatena:syntax>
+    <app:control>
+      <app:draft>no</app:draft>
+    </app:control>
+  </entry>
+</feed>

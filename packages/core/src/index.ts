@@ -30,6 +30,7 @@ export {
 export { readImportFile, parseEncodingHint, type EncodingHint } from "./import/decode.ts";
 export { detectImportFormat } from "./import/detect-format.ts";
 export { parseMtExport } from "./import/adapters/mt.ts";
+export { parseHatenaDiaryExport } from "./import/adapters/hatena-diary.ts";
 export { runImport, type RunImportOptions, type RunImportResult } from "./import/run-import.ts";
 export {
   mergeConfig,

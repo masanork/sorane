@@ -3,7 +3,7 @@
 | Field | Value |
 |-------|-------|
 | **Date** | 2026-06-21 |
-| **Status** | Draft (I1–I2 in progress) |
+| **Status** | Draft (I3 complete) |
 | **Related** | `migrate` (in-repo OKF frontmatter only), srn `src/ssg/migrate.ts`, gjs `src/shared/txtbin/encoding-detect.ts` |
 
 ---
@@ -58,7 +58,7 @@ Import logs record `import_encoding` in `.sorane/import-manifest.json` per entry
 | ID | Format | Detection | PR |
 |----|--------|-----------|-----|
 | `mt` | Movable Type export | `--------` + `TITLE:` / `BODY:` | **I2** |
-| `hatena-diary` | はてなダイアリー Atom | Atom + hatena NS | I3 |
+| `hatena-diary` | はてなダイアリー Atom | Atom + hatena NS | **I3** |
 | `wordpress` | WordPress WXR | `<rss` + `wp:` | I4 |
 | `auto` | Sniff above | default | I2+ |
 
@@ -83,6 +83,15 @@ Ported from srn `src/ssg/migrate.ts` `importMT`:
 - Skip non-`Publish` when `--skip-drafts` (default on)
 - Output filename: `{YYYY-MM-DD}-{slug}.md` under `--out` (default `content/article`)
 
+### はてなダイアリー Atom adapter (I3)
+
+`packages/core/src/import/adapters/hatena-diary.ts` + `atom-parse.ts`:
+
+- Split `<entry>…</entry>` fragments (namespace-tolerant, no XML dependency)
+- Body priority: `hatena:formatted-content` → `content[@type=text/html]` → `hatena:syntax` → `content`
+- Draft: `app:draft` yes/no; categories from `category@term`
+- はてなブログ Atom export も同一アダプタで取り込み可（`Hatena::Blog` / `blog.hatena.ne.jp`）
+
 ---
 
 ## CLI
@@ -91,7 +100,7 @@ Ported from srn `src/ssg/migrate.ts` `importMT`:
 sorane import \
   --input ~/Downloads/blog.txt \
   --cwd <site> \
-  [--format auto|mt] \
+  [--format auto|mt|hatena-diary] \
   [--out content/article] \
   [--encoding auto|utf-8|shift_jis|euc-jp] \
   [--dry-run] \
@@ -117,7 +126,7 @@ Manifest: `.sorane/import-manifest.json` — `{ version, entries: [{ sourceId, r
 |----|-------|------------|
 | **I1** | gjs port + EUC-JP + iconv-lite + tests | Shift_JIS / EUC-JP fixtures decode correctly |
 | **I2** | MT adapter + `sorane import` + manifest | MT export → OKF articles; dry-run |
-| **I3** | はてなダイアリー Atom + auto sniff | Atom fixture smoke |
+| **I3** | はてなダイアリー Atom + auto sniff | Atom fixture smoke ✅ |
 | **I4** | WordPress WXR + `--fetch-images` sketch | — |
 | **I5** | HTML normalize (hatena keyword links), optional gjs glyph maps | — |
 
@@ -130,6 +139,7 @@ Out of default CI (one-shot migration tool).
 ```bash
 npm run typecheck && npm test
 sorane import --input tests/fixtures/import/sample-mt.txt --cwd examples/minimal --dry-run
+sorane import --input tests/fixtures/import/sample-hatena-diary.atom.xml --cwd examples/minimal --dry-run
 ```
 
 ---

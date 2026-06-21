@@ -14,9 +14,17 @@ function looksLikeMtExport(text: string): boolean {
 
 function looksLikeHatenaDiaryAtom(text: string): boolean {
   const t = text.trimStart();
+  if (!t.startsWith('<?xml') && !t.startsWith('<feed') && !t.startsWith('<entry')) {
+    return false;
+  }
   return (
-    (t.startsWith('<?xml') || t.startsWith('<feed')) &&
-    (text.includes('xmlns:hatena') || text.includes('hatena.ne.jp'))
+    text.includes('xmlns:hatena') ||
+    text.includes('hatena:formatted-content') ||
+    text.includes('hatena:syntax') ||
+    text.includes('d.hatena.ne.jp') ||
+    text.includes('blog.hatena.ne.jp') ||
+    text.includes('Hatena::Diary') ||
+    text.includes('Hatena::Blog')
   );
 }
 
@@ -39,5 +47,5 @@ export function resolveImportFormat(requested: string, text: string): ImportForm
   if (norm === 'mt' || norm === 'hatena-diary' || norm === 'wordpress') {
     return norm;
   }
-  throw new Error(`unsupported --format: ${requested} (supported: auto, mt)`);
+  throw new Error(`unsupported --format: ${requested} (supported: auto, mt, hatena-diary)`);
 }
