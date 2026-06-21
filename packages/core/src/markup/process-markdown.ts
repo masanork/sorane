@@ -5,6 +5,7 @@ import { unified } from "unified";
 import type { DiagramsConfig } from "../config.ts";
 import { DEFAULT_DIAGRAMS_CONFIG } from "../config.ts";
 import { remarkDiagramFences } from "../diagrams/parse-diagram-fence.ts";
+import { parseRubyPlugin } from "../ruby/parse-ruby.ts";
 
 export interface ProcessMarkdownOptions {
   readonly diagrams?: DiagramsConfig;
@@ -19,6 +20,7 @@ export function processMarkdownToMdast(
   const processor = unified()
     .use(remarkParse)
     .use(remarkGfm)
+    .use(parseRubyPlugin)
     .use(remarkDiagramFences(diagramConfig));
   const tree = processor.parse(markdown) as MdastRoot;
   return processor.runSync(tree) as MdastRoot;

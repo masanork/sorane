@@ -46,6 +46,7 @@ import {
   resolveGlossaryTermMeta,
   type GlossaryTermIndexEntry,
 } from "./glossary-term-page.ts";
+import { rubyCharsetExtraFromBody } from "./ruby/ruby-font-extra.ts";
 import {
   buildReferencePageJsonLd,
   renderReferencePageBody,
@@ -560,7 +561,9 @@ export async function runBuild(opts: BuildOptions): Promise<BuildResult> {
       Boolean(searchNavPath),
     );
     const extraText =
-      (renderedHtml ? plainTextFromHtml(renderedHtml) : "") + chrome;
+      (renderedHtml ? plainTextFromHtml(renderedHtml) : "") +
+      chrome +
+      rubyCharsetExtraFromBody(concept.body);
     return fontProcessor.fontCssForPage({
       body: concept.body,
       title: concept.title,

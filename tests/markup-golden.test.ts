@@ -7,8 +7,10 @@ import { processMarkdownToMdast } from "../packages/core/src/markup/process-mark
 
 const GOLDEN_DIR = join(import.meta.dirname, "../design/golden/markup");
 
-/** PR2/PR3 までスキップする fixture（ruby / termLink 未実装）。 */
-const SKIP_BASES = new Set(["1-ruby", "2-term-link", "3-combined"]);
+/** PR3 までスキップする fixture（termLink 未実装）。 */
+const SKIP_BASES = new Set(["2-term-link", "3-combined"]);
+
+const ACTIVE_GOLDEN_BASES = ["0-article", "1-ruby"];
 
 function normalizeGoldenHtml(html: string): string {
   return html.replace(/\r\n?/g, "\n").trimEnd();
@@ -36,22 +38,23 @@ describe("markup golden fixtures", () => {
     }
   });
 
-  test("mdast → pandoc → html matches golden HTML (0-article)", () => {
-    const base = "0-article";
-    const md = readFileSync(join(GOLDEN_DIR, `${base}.md`), "utf8");
-    const expected = normalizeGoldenHtml(
-      readFileSync(join(GOLDEN_DIR, `${base}.html`), "utf8"),
-    );
-    expect(renderPandocPipeline(md)).toBe(expected);
-  });
+  for (const base of ACTIVE_GOLDEN_BASES) {
+    test(`mdast → pandoc → html matches golden HTML (${base})`, () => {
+      const md = readFileSync(join(GOLDEN_DIR, `${base}.md`), "utf8");
+      const expected = normalizeGoldenHtml(
+        readFileSync(join(GOLDEN_DIR, `${base}.html`), "utf8"),
+      );
+      expect(renderPandocPipeline(md)).toBe(expected);
+    });
+  }
 
-  test("skipped fixtures documented until PR2/PR3", () => {
+  test("skipped fixtures documented until PR3", () => {
     const files = readdirSync(GOLDEN_DIR).filter(
       (f) => f.endsWith(".md") && !f.startsWith("README"),
     );
     for (const md of files) {
       const base = md.replace(/\.md$/, "");
-      if (base === "0-article") continue;
+      if (ACTIVE_GOLDEN_BASES.includes(base)) continue;
       expect(SKIP_BASES.has(base)).toBe(true);
     }
   });
