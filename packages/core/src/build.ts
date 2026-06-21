@@ -43,6 +43,10 @@ import {
   resolveSitemapLastmod,
 } from "./findability.ts";
 import {
+  buildCloudflareOpsManifest,
+  llmsHostingSection,
+} from "./hosting-cloudflare.ts";
+import {
   buildCreativeWorkJsonLd,
   extractDescription,
   renderArticleBodyWithMetaForConfig,
@@ -1215,6 +1219,14 @@ export async function runBuild(opts: BuildOptions): Promise<BuildResult> {
     buildSitemapXml(siteEntries, baseUrl),
     "utf8",
   );
+  const llmsExtraSections = [
+    llmsContactSection({
+      contact: config.site.contact,
+      organization: siteOrganization,
+      baseUrl,
+    }).join("\n"),
+    llmsHostingSection(config.site, baseUrl).join("\n"),
+  ].filter((s) => s.length > 0);
   writeFileSync(
     join(outDir, "llms.txt"),
     buildLlmsTxt({
@@ -1223,16 +1235,21 @@ export async function runBuild(opts: BuildOptions): Promise<BuildResult> {
       baseUrl,
       aiLabeledCount: siteAiFlags.machineReadable ? aiLabeledCount : undefined,
       diagramsEnabled: diagramConfig.enabled !== false,
-      extraSections: [
-        llmsContactSection({
-          contact: config.site.contact,
-          organization: siteOrganization,
-          baseUrl,
-        }).join("\n"),
-      ],
+      extraSections: llmsExtraSections,
     }),
     "utf8",
   );
+
+  const cloudflareOps = buildCloudflareOpsManifest(config.site);
+  if (cloudflareOps) {
+    const opsDir = join(outDir, "ops");
+    mkdirSync(opsDir, { recursive: true });
+    writeFileSync(
+      join(opsDir, "cloudflare.json"),
+      `${JSON.stringify(cloudflareOps, null, 2)}\n`,
+      "utf8",
+    );
+  }
   writeFileSync(
     join(outDir, "catalog.jsonld"),
     buildCatalogJsonLd(catalogInputs, config.site.title, baseUrl, {

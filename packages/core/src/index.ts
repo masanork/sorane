@@ -79,3 +79,12 @@ export {
   validateRevisionFindings,
   type RevisionEntry,
 } from "./revision-history.ts";
+export {
+  buildCloudflareOpsManifest,
+  llmsHostingSection,
+  isCloudflareHostingEnabled,
+  RECOMMENDED_LOGPUSH_FIELDS,
+  CLOUDFLARE_OPS_SCHEMA_VERSION,
+  type CloudflareOpsManifest,
+  type SiteHostingConfig,
+} from "./hosting-cloudflare.ts";

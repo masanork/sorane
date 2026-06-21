@@ -12,6 +12,15 @@ site:
   # findability:
   #   breadcrumbs: true
   #   search_action: true
+  # hosting:
+  #   provider: cloudflare
+  #   cloudflare:
+  #     pages_project: my-site
+  #     zone_name: www.example.go.jp
+  #     web_analytics: true
+  #     logpush:
+  #       destination: r2
+  #       r2_bucket: my-site-access-logs
 
 build:
   content_dir: content

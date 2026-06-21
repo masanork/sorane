@@ -66,3 +66,12 @@ sorane ソースを checkout する構成も可能です。`AGENTS.md` の `SORA
 | `sorane.pages.dev` | Pages 既定 URL |
 
 `sorane.yaml` の `base_url` を本番ホストに揃えてください。
+
+## アクセスログ（Cloudflare）
+
+HTML にアナリティクス JS を埋め込まず、Cloudflare ゾーンの **Logpush**（`http_requests`）でエッジのアクセスログを収集できます。
+
+1. `sorane.yaml` で `site.hosting.provider: cloudflare` を設定し、`sorane build` で `dist/ops/cloudflare.json` を出力する
+2. `templates/cloudflare/` の手順で R2 バケットと Logpush ジョブを作成する（`logpush/setup-r2.sh`）
+
+詳細: [design/access-logs.md](https://github.com/masanork/sorane/blob/main/design/access-logs.md)

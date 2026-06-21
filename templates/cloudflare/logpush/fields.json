@@ -1,0 +1,13 @@
+[
+  "EdgeStartTimestamp",
+  "RayID",
+  "ClientIP",
+  "ClientCountry",
+  "ClientRequestHost",
+  "ClientRequestMethod",
+  "ClientRequestPath",
+  "ClientRequestURI",
+  "ClientRequestUserAgent",
+  "EdgeResponseStatus",
+  "CacheCacheStatus"
+]

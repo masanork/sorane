@@ -51,4 +51,4 @@ revisions:
 
 See [findability-pack.md](./findability-pack.md):
 
-5. **Access logs** — Cloudflare stack templates + sorane hooks
+5. **Access logs** — see [access-logs.md](./access-logs.md)

@@ -51,4 +51,4 @@ updated: 2025-06-01
 2. **validate** public quality gates — see [quality-gates.md](./quality-gates.md)
 3. **Multilingual / hreflang** — see [i18n.md](./i18n.md)
 4. **Emergency banner + revision history** — see [emergency-revision.md](./emergency-revision.md)
-5. **Access logs** — Cloudflare stack templates + sorane hooks
+5. **Access logs** — see [access-logs.md](./access-logs.md) (Cloudflare stack templates + sorane hooks)

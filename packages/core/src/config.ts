@@ -135,6 +135,7 @@ import type {
 } from "./findability.ts";
 import type { SiteI18nConfig } from "./i18n.ts";
 import type { SiteEmergencyConfig } from "./emergency-banner.ts";
+import type { SiteHostingConfig } from "./hosting-cloudflare.ts";
 
 export type {
   OrganizationKind,
@@ -149,6 +150,11 @@ export type {
   SiteEmergencyConfig,
 } from "./emergency-banner.ts";
 export type { RevisionEntry } from "./revision-history.ts";
+export type {
+  SiteHostingConfig,
+  SiteHostingCloudflareConfig,
+  SiteHostingLogpushConfig,
+} from "./hosting-cloudflare.ts";
 
 export interface SoraneConfig {
   readonly site: {
@@ -166,6 +172,8 @@ export interface SoraneConfig {
     readonly i18n?: SiteI18nConfig;
     /** 全ページ上部の緊急告知バナー */
     readonly emergency?: SiteEmergencyConfig;
+    /** ホスティング連携（Cloudflare Logpush 等） */
+    readonly hosting?: SiteHostingConfig;
   };
   readonly build: {
     readonly content_dir: string;

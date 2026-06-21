@@ -30,4 +30,4 @@ build:
 2. **Quality gates** — this doc
 3. Multilingual / hreflang — see [i18n.md](./i18n.md)
 4. Emergency banner + revision history — see [emergency-revision.md](./emergency-revision.md)
-5. Access logs — Cloudflare templates
+5. Access logs — see [access-logs.md](./access-logs.md)
