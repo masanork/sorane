@@ -133,6 +133,7 @@ import type {
   SiteFindabilityConfig,
   SiteOrganizationConfig,
 } from "./findability.ts";
+import type { SiteI18nConfig } from "./i18n.ts";
 
 export type {
   OrganizationKind,
@@ -140,6 +141,7 @@ export type {
   SiteFindabilityConfig,
   SiteOrganizationConfig,
 } from "./findability.ts";
+export type { LocaleConfig, SiteI18nConfig } from "./i18n.ts";
 
 export interface SoraneConfig {
   readonly site: {
@@ -153,6 +155,8 @@ export interface SoraneConfig {
     readonly organization?: SiteOrganizationConfig;
     readonly contact?: SiteContactConfig;
     readonly findability?: SiteFindabilityConfig;
+    /** 多言語（hreflang）。`locales` があるときのみ有効 */
+    readonly i18n?: SiteI18nConfig;
   };
   readonly build: {
     readonly content_dir: string;

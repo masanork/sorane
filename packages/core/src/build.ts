@@ -119,6 +119,16 @@ import {
   renderCustomNotFoundBody,
   renderDefaultNotFoundBody,
 } from "./not-found.ts";
+import {
+  buildTranslationMap,
+  hreflangAlternatesForPage,
+  localeIdFromRelPath,
+  ogLocaleAlternatesForPage,
+  resolveI18nContext,
+  resolvePageLocaleInfo,
+  translationGroupKey,
+  type I18nContext,
+} from "./i18n.ts";
 
 export interface BuildOptions {
   readonly cwd: string;
@@ -152,10 +162,16 @@ function slugFromRel(relPath: string): string {
   return base.replace(/\.md$/i, "");
 }
 
-function outHtmlRelForParsed(p: ParsedConcept, config: SoraneConfig): string {
-  const slug = slugFromRel(p.relPath);
-  if (p.concept.type === "index" || slug === "index") return "index.html";
-  return resolvePermalink(config.build.permalink, slug, p.concept.timestamp);
+function isIndexPage(p: ParsedConcept): boolean {
+  return p.concept.type === "index" || slugFromRel(p.relPath) === "index";
+}
+
+function outHtmlRelForParsed(
+  p: ParsedConcept,
+  config: SoraneConfig,
+  i18n: I18nContext,
+): string {
+  return resolvePageLocaleInfo(p, config, i18n).outRel;
 }
 
 function isSystemPage(concept: ParsedConcept["concept"]): boolean {
@@ -319,6 +335,8 @@ export async function runBuild(opts: BuildOptions): Promise<BuildResult> {
   }
 
   const baseUrl = config.site.base_url.replace(/\/$/, "");
+  const i18n = resolveI18nContext(config.site);
+  const translationMap = buildTranslationMap(parsed, config, i18n);
   const siteOrganization = organizationFromSite(config.site);
   const siteFindability = findabilityFlags(config.site);
   const diagramConfig = config.build.diagrams ?? DEFAULT_DIAGRAMS_CONFIG;
@@ -356,10 +374,13 @@ export async function runBuild(opts: BuildOptions): Promise<BuildResult> {
   };
 
   const articleSummaries: ArticleListEntry[] = parsed
-    .filter((p) => isBlogArticle(p.concept, p.relPath))
+    .filter(
+      (p) =>
+        isBlogArticle(p.concept, p.relPath) &&
+        localeIdFromRelPath(p.relPath, i18n) === "default",
+    )
     .map((p) => {
-      const slug = slugFromRel(p.relPath);
-      const outRel = resolvePermalink(config.build.permalink, slug, p.concept.timestamp);
+      const outRel = resolvePageLocaleInfo(p, config, i18n).outRel;
       const rawDesc =
         p.concept.description ?? extractDescription(p.concept.body) ?? undefined;
       const aiDisclosure = parseAiDisclosure(p.concept.frontmatter) ?? undefined;
@@ -379,23 +400,17 @@ export async function runBuild(opts: BuildOptions): Promise<BuildResult> {
   const parsedByHref = new Map<string, ParsedConcept>();
   for (const p of parsed) {
     if (!isBlogArticle(p.concept, p.relPath)) continue;
-    const slug = slugFromRel(p.relPath);
-    const outRel = resolvePermalink(config.build.permalink, slug, p.concept.timestamp);
-    parsedByHref.set(outRel, p);
+    if (localeIdFromRelPath(p.relPath, i18n) !== "default") continue;
+    parsedByHref.set(resolvePageLocaleInfo(p, config, i18n).outRel, p);
   }
 
   const indexParsed = parsed.find(
-    (p) => p.concept.type === "index" || slugFromRel(p.relPath) === "index",
+    (p) => isIndexPage(p) && localeIdFromRelPath(p.relPath, i18n) === "default",
   );
 
   const titleByHref = new Map<string, string>();
   for (const p of parsed) {
-    const slug = slugFromRel(p.relPath);
-    const outRel =
-      p.concept.type === "index" || slug === "index"
-        ? "index.html"
-        : resolvePermalink(config.build.permalink, slug, p.concept.timestamp);
-    titleByHref.set(outRel, p.concept.title);
+    titleByHref.set(resolvePageLocaleInfo(p, config, i18n).outRel, p.concept.title);
   }
   const docsNav = resolveDocsNav(config.docs?.nav, titleByHref);
   const docsMode = docsNav.length > 0;
@@ -407,11 +422,7 @@ export async function runBuild(opts: BuildOptions): Promise<BuildResult> {
   let searchPageRel: string | undefined;
   for (const p of parsed) {
     const rel = p.relPath.replace(/\\/g, "/");
-    const slug = slugFromRel(p.relPath);
-    const outRel =
-      p.concept.type === "index" || slug === "index"
-        ? "index.html"
-        : resolvePermalink(config.build.permalink, slug, p.concept.timestamp);
+    const outRel = resolvePageLocaleInfo(p, config, i18n).outRel;
     if (!isSystemPage(p.concept) && !isNotFoundSource(rel)) {
       sourceToUrl.set(rel, outRel);
     }
@@ -467,11 +478,12 @@ export async function runBuild(opts: BuildOptions): Promise<BuildResult> {
   async function fontCssFor(
     concept: ParsedConcept["concept"],
     rootPrefix: string,
+    pageLang: string,
     renderedHtml?: string,
   ): Promise<string | undefined> {
     if (!fontProcessor) return undefined;
     const chrome = siteChromeText(
-      config.site.lang,
+      pageLang,
       config.site.title,
       Boolean(searchNavPath),
     );
@@ -507,8 +519,23 @@ export async function runBuild(opts: BuildOptions): Promise<BuildResult> {
     }
 
     const effectiveType = resolveEffectiveType(p.concept.type, p.concept.profile);
-    const slug = slugFromRel(p.relPath);
-    const outRel = resolvePermalink(config.build.permalink, slug, p.concept.timestamp);
+    const pageLocale = resolvePageLocaleInfo(p, config, i18n);
+    const { outRel, lang: pageLang } = pageLocale;
+    const groupKey = translationGroupKey(p, i18n);
+    const pageHreflang = hreflangAlternatesForPage(
+      groupKey,
+      pageLocale.localeId,
+      translationMap,
+      baseUrl,
+      i18n,
+    );
+    const pageOgLocaleAlternates = ogLocaleAlternatesForPage(
+      groupKey,
+      pageLang,
+      translationMap,
+      i18n,
+    );
+    const slug = slugFromRel(pageLocale.logicalRelPath);
     const depth = outRel.replace(/\\/g, "/").split("/").length - 1;
     const rootPrefix = depth > 0 ? "../".repeat(depth) : "./";
     const isSearch =
@@ -527,7 +554,7 @@ export async function runBuild(opts: BuildOptions): Promise<BuildResult> {
     const badgeHtml =
       pageAiFlags.badges && aiDisclosure
         ? buildAiBadgeHtml(aiDisclosure, {
-            lang: config.site.lang,
+            lang: pageLang,
             rootPrefix,
             policyUrl: pageAiFlags.policyUrl,
           })
@@ -562,7 +589,7 @@ export async function runBuild(opts: BuildOptions): Promise<BuildResult> {
       const doc = await renderDocsArticleFromConceptWithMetaForConfig(
         p.concept,
         nav,
-        config.site.lang,
+        pageLang,
         { badgeHtml, ...bodySectionOpts(rootPrefix) },
       );
       bodyHtml = doc.bodyHtml;
@@ -617,7 +644,7 @@ export async function runBuild(opts: BuildOptions): Promise<BuildResult> {
             dateModified: updated ?? p.concept.timestamp,
             author,
             siteTitle: config.site.title,
-            lang: config.site.lang,
+            lang: pageLang,
             aiDisclosure:
               pageAiFlags.jsonLd && aiDisclosure ? aiDisclosure : undefined,
             associatedMedia: associatedMedia.length > 0 ? associatedMedia : undefined,
@@ -640,7 +667,7 @@ export async function runBuild(opts: BuildOptions): Promise<BuildResult> {
           })
         : "";
 
-    const fontCss = await fontCssFor(p.concept, rootPrefix, bodyHtml);
+    const fontCss = await fontCssFor(p.concept, rootPrefix, pageLang, bodyHtml);
     const headerSearch = headerSearchFor(rootPrefix, {
       docsLayout: isDocsPage,
       isSearch,
@@ -665,6 +692,10 @@ export async function runBuild(opts: BuildOptions): Promise<BuildResult> {
       bodyHtml,
       baseUrl,
       fontCss,
+      lang: pageLang,
+      hreflangAlternates: pageHreflang.length > 0 ? pageHreflang : undefined,
+      ogLocaleAlternates:
+        pageOgLocaleAlternates.length > 0 ? pageOgLocaleAlternates : undefined,
       extraHead: extraHead.length > 0 ? extraHead : undefined,
       showArchiveNav: showArchiveInHeader,
       searchPath: searchNavPath,
@@ -694,6 +725,22 @@ export async function runBuild(opts: BuildOptions): Promise<BuildResult> {
 
   if (indexParsed) {
     const p = indexParsed;
+    const indexLocale = resolvePageLocaleInfo(p, config, i18n);
+    const indexLang = indexLocale.lang;
+    const indexGroupKey = translationGroupKey(p, i18n);
+    const indexHreflang = hreflangAlternatesForPage(
+      indexGroupKey,
+      indexLocale.localeId,
+      translationMap,
+      baseUrl,
+      i18n,
+    );
+    const indexOgLocaleAlternates = ogLocaleAlternatesForPage(
+      indexGroupKey,
+      indexLang,
+      translationMap,
+      i18n,
+    );
     const latest = articleSummaries[0];
     const latestParsed = latest ? parsedByHref.get(latest.href) : undefined;
     const useBlogLayout = p.concept.type === "index";
@@ -716,7 +763,7 @@ export async function runBuild(opts: BuildOptions): Promise<BuildResult> {
         githubUrl: frontmatterString(p.concept.frontmatter, "githubUrl"),
         introHtml: intro.introHtml,
         docsNav,
-        lang: config.site.lang,
+        lang: indexLang,
       });
     } else if (useBlogLayout) {
       const featuredMode = blogOpts.featured_mode;
@@ -743,7 +790,7 @@ export async function runBuild(opts: BuildOptions): Promise<BuildResult> {
         profileUrl: frontmatterString(p.concept.frontmatter, "profileUrl"),
         githubUrl: frontmatterString(p.concept.frontmatter, "githubUrl"),
         introHtml: intro.introHtml,
-        lang: config.site.lang,
+        lang: indexLang,
         latestArticle:
           latestParsed && featuredMode !== "off" && featuredBody
             ? {
@@ -768,7 +815,7 @@ export async function runBuild(opts: BuildOptions): Promise<BuildResult> {
       bodyHtml = renderIndexBody(config.site.title, archivePages[0] ?? articleSummaries);
     }
 
-    const fontCss = await fontCssFor(p.concept, "./", bodyHtml);
+    const fontCss = await fontCssFor(p.concept, "./", indexLang, bodyHtml);
     const indexCanonical =
       baseUrl.length > 0 ? `${baseUrl}/index.html` : undefined;
     const searchActionUrl =
@@ -779,7 +826,7 @@ export async function runBuild(opts: BuildOptions): Promise<BuildResult> {
       title: p.concept.title || config.site.title,
       description: p.concept.description ?? config.site.description,
       url: indexCanonical,
-      lang: config.site.lang,
+      lang: indexLang,
       organization: siteOrganization,
       searchUrl: searchActionUrl,
     });
@@ -798,11 +845,15 @@ export async function runBuild(opts: BuildOptions): Promise<BuildResult> {
       cwd,
       config,
       outDir,
-      outRel: "index.html",
+      outRel: indexLocale.outRel,
       concept: p.concept,
       bodyHtml,
       baseUrl,
       fontCss,
+      lang: indexLang,
+      hreflangAlternates: indexHreflang.length > 0 ? indexHreflang : undefined,
+      ogLocaleAlternates:
+        indexOgLocaleAlternates.length > 0 ? indexOgLocaleAlternates : undefined,
       isIndex: true,
       pageKind: "website",
       extraHead: indexExtraHead,
@@ -810,12 +861,139 @@ export async function runBuild(opts: BuildOptions): Promise<BuildResult> {
       searchPath: searchNavPath,
       docsLayout: docsMode,
       docsSidebarHtml: docsMode
-        ? docsSidebarHtml(docsNav, "index.html", "index.html")
+        ? docsSidebarHtml(docsNav, indexLocale.outRel, indexLocale.outRel)
         : undefined,
       headerSearchHtml: indexHeaderSearch.headerSearchHtml,
     });
     builtPages += 1;
-    siteEntries.push({ url: "index.html", lastmod: undefined, isIndex: true });
+    siteEntries.push({ url: indexLocale.outRel, lastmod: undefined, isIndex: true });
+  }
+
+  // --- Phase B2: 非既定ロケールの index（content/en/index.md 等）---
+  if (i18n.enabled) {
+    for (const localeId of Object.keys(i18n.locales)) {
+      const localeIndex = parsed.find(
+        (p) => isIndexPage(p) && localeIdFromRelPath(p.relPath, i18n) === localeId,
+      );
+      if (!localeIndex) continue;
+
+      const pageLocale = resolvePageLocaleInfo(localeIndex, config, i18n);
+      const localeArticles: ArticleListEntry[] = parsed
+        .filter(
+          (p) =>
+            isBlogArticle(p.concept, p.relPath) &&
+            localeIdFromRelPath(p.relPath, i18n) === localeId,
+        )
+        .map((p) => {
+          const outRel = resolvePageLocaleInfo(p, config, i18n).outRel;
+          const rawDesc =
+            p.concept.description ?? extractDescription(p.concept.body) ?? undefined;
+          const aiDisclosure = parseAiDisclosure(p.concept.frontmatter) ?? undefined;
+          return {
+            title: p.concept.title,
+            href: outRel,
+            timestamp: p.concept.timestamp,
+            updated: frontmatterString(p.concept.frontmatter, "updated"),
+            author: frontmatterString(p.concept.frontmatter, "author"),
+            description: rawDesc ? sanitizeListDescription(rawDesc) : undefined,
+            tags: p.concept.tags,
+            aiDisclosure,
+          };
+        })
+        .sort((a, b) => (b.timestamp ?? "").localeCompare(a.timestamp ?? ""));
+
+      const rootPrefix = rootPrefixFromRel(pageLocale.outRel);
+      const indexTitle = localeIndex.concept.title || config.site.title;
+      const intro = await introHtmlFromBodyWithMeta(
+        localeIndex.concept.body,
+        indexTitle,
+        bodySectionOpts(rootPrefix),
+      );
+      const useBlogLayout = localeIndex.concept.type === "index";
+      let bodyHtml: string;
+      if (useBlogLayout) {
+        bodyHtml = renderBlogIndexBody({
+          siteTitle: indexTitle,
+          description: localeIndex.concept.description ?? config.site.description,
+          showHeaderTitle: false,
+          introHtml: intro.introHtml,
+          lang: pageLocale.lang,
+          articles: localeArticles.slice(0, blogOpts.index_archive_limit),
+          archiveLimit: blogOpts.index_archive_limit,
+          showListDescriptions: blogOpts.show_list_descriptions,
+          showOnLists: siteAiFlags.showOnLists,
+          listRootPrefix: rootPrefix,
+        });
+      } else {
+        bodyHtml = renderIndexBody(indexTitle, localeArticles);
+      }
+
+      const groupKey = translationGroupKey(localeIndex, i18n);
+      const localeHreflang = hreflangAlternatesForPage(
+        groupKey,
+        pageLocale.localeId,
+        translationMap,
+        baseUrl,
+        i18n,
+      );
+      const localeOgAlternates = ogLocaleAlternatesForPage(
+        groupKey,
+        pageLocale.lang,
+        translationMap,
+        i18n,
+      );
+      const localeCanonical =
+        baseUrl.length > 0 ? `${baseUrl}/${pageLocale.outRel}` : undefined;
+      const localeJsonLd = buildWebSiteJsonLd({
+        title: localeIndex.concept.title || config.site.title,
+        description: localeIndex.concept.description ?? config.site.description,
+        url: localeCanonical,
+        lang: pageLocale.lang,
+        organization: siteOrganization,
+      });
+      const localeDiagramHead = diagramHeadForPage(
+        intro.diagrams,
+        rootPrefix,
+        diagramConfig,
+      );
+      const localeHeaderSearch = headerSearchFor(rootPrefix, { docsLayout: false });
+      const localeFontCss = await fontCssFor(
+        localeIndex.concept,
+        rootPrefix,
+        pageLocale.lang,
+        bodyHtml,
+      );
+      emitPage({
+        cwd,
+        config,
+        outDir,
+        outRel: pageLocale.outRel,
+        concept: localeIndex.concept,
+        bodyHtml,
+        baseUrl,
+        fontCss: localeFontCss,
+        lang: pageLocale.lang,
+        hreflangAlternates: localeHreflang.length > 0 ? localeHreflang : undefined,
+        ogLocaleAlternates:
+          localeOgAlternates.length > 0 ? localeOgAlternates : undefined,
+        isIndex: true,
+        pageKind: "website",
+        extraHead: [
+          localeJsonLd,
+          ...(localeHeaderSearch.extraHead ?? []),
+          ...(localeDiagramHead ? [localeDiagramHead] : []),
+        ],
+        showArchiveNav: false,
+        searchPath: searchNavPath,
+        headerSearchHtml: localeHeaderSearch.headerSearchHtml,
+      });
+      builtPages += 1;
+      siteEntries.push({
+        url: pageLocale.outRel,
+        lastmod: undefined,
+        isIndex: true,
+      });
+    }
   }
 
   // --- Phase C: 派生ブログページ（index がある場合）---
@@ -836,7 +1014,7 @@ export async function runBuild(opts: BuildOptions): Promise<BuildResult> {
       );
       const concept = syntheticConcept(`${config.site.title} — ページ ${pageNum}`);
       const rootPrefix = rootPrefixFromRel(outRel);
-      const fontCss = await fontCssFor(concept, rootPrefix, bodyHtml);
+      const fontCss = await fontCssFor(concept, rootPrefix, i18n.defaultLang, bodyHtml);
       const pageChrome = headerSearchFor(rootPrefix, { isSearch: false });
       emitPage({
         cwd,
@@ -870,6 +1048,7 @@ export async function runBuild(opts: BuildOptions): Promise<BuildResult> {
     const archiveIndexFontCss = await fontCssFor(
       archiveIndexConcept,
       rootPrefixFromRel("archive/index.html"),
+      i18n.defaultLang,
       archiveIndexHtml,
     );
     const archiveIndexChrome = headerSearchFor(rootPrefixFromRel("archive/index.html"), {
@@ -896,7 +1075,12 @@ export async function runBuild(opts: BuildOptions): Promise<BuildResult> {
       const yearOutRel = `archive/${year}.html`;
       const yearHtml = renderMonthListForYear(year, byMonth, yearOutRel);
       const yearConcept = syntheticConcept(`${year}年`);
-      const yearFontCss = await fontCssFor(yearConcept, rootPrefixFromRel(yearOutRel), yearHtml);
+      const yearFontCss = await fontCssFor(
+        yearConcept,
+        rootPrefixFromRel(yearOutRel),
+        i18n.defaultLang,
+        yearHtml,
+      );
       const yearChrome = headerSearchFor(rootPrefixFromRel(yearOutRel), { isSearch: false });
       emitPage({
         cwd,
@@ -925,7 +1109,12 @@ export async function runBuild(opts: BuildOptions): Promise<BuildResult> {
         showOnLists: siteAiFlags.showOnLists,
       });
       const monthConcept = syntheticConcept(`${y}年${m}月`);
-      const monthFontCss = await fontCssFor(monthConcept, rootPrefixFromRel(monthOutRel), bodyHtml);
+      const monthFontCss = await fontCssFor(
+        monthConcept,
+        rootPrefixFromRel(monthOutRel),
+        i18n.defaultLang,
+        bodyHtml,
+      );
       const monthChrome = headerSearchFor(rootPrefixFromRel(monthOutRel), { isSearch: false });
       emitPage({
         cwd,
@@ -956,7 +1145,12 @@ export async function runBuild(opts: BuildOptions): Promise<BuildResult> {
         showOnLists: siteAiFlags.showOnLists,
       });
       const tagConcept = syntheticConcept(`タグ: ${label}`);
-      const tagFontCss = await fontCssFor(tagConcept, rootPrefixFromRel(tagOutRel), bodyHtml);
+      const tagFontCss = await fontCssFor(
+        tagConcept,
+        rootPrefixFromRel(tagOutRel),
+        i18n.defaultLang,
+        bodyHtml,
+      );
       const tagChrome = headerSearchFor(rootPrefixFromRel(tagOutRel), { isSearch: false });
       emitPage({
         cwd,
@@ -1107,7 +1301,12 @@ export async function runBuild(opts: BuildOptions): Promise<BuildResult> {
       section.html,
       config.site.lang,
     );
-    const fontCss = await fontCssFor(notFoundParsed.concept, rootPrefix, bodyHtml);
+    const fontCss = await fontCssFor(
+      notFoundParsed.concept,
+      rootPrefix,
+      i18n.defaultLang,
+      bodyHtml,
+    );
     const notFoundChrome = headerSearchFor("./", { isSearch: false });
     emitPage({
       cwd,
@@ -1156,7 +1355,7 @@ export async function runBuild(opts: BuildOptions): Promise<BuildResult> {
     collectMarkdownImageRefs({
       body: p.concept.body,
       sourceMdRel: p.relPath,
-      outHtmlRel: outHtmlRelForParsed(p, config),
+      outHtmlRel: outHtmlRelForParsed(p, config, i18n),
       contentDir,
       cwd,
       staticDirName,

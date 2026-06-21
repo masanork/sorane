@@ -6,6 +6,7 @@ import { buildPage } from "./ssg.ts";
 import type { SoraneConfig } from "./config.ts";
 import { resolveOgImageUrl } from "./og-meta.ts";
 import { extractDescription } from "./ssg.ts";
+import type { HreflangAlternate } from "./i18n.ts";
 
 function pageOgImage(
   frontmatter: Record<string, unknown>,
@@ -38,6 +39,9 @@ export interface EmitPageOptions {
   readonly docsLayout?: boolean;
   readonly docsSidebarHtml?: string;
   readonly headerSearchHtml?: string;
+  readonly lang?: string;
+  readonly hreflangAlternates?: readonly HreflangAlternate[];
+  readonly ogLocaleAlternates?: readonly string[];
 }
 
 export function emitPage(opts: EmitPageOptions): { mdOutRel: string; canonicalUrl?: string } {
@@ -69,7 +73,9 @@ export function emitPage(opts: EmitPageOptions): { mdOutRel: string; canonicalUr
     rootPrefix,
     description,
     canonicalUrl,
-    lang: opts.config.site.lang,
+    lang: opts.lang ?? opts.config.site.lang,
+    hreflangAlternates: opts.hreflangAlternates,
+    ogLocaleAlternates: opts.ogLocaleAlternates,
     feedPath: "feed.xml",
     showArchiveNav: opts.showArchiveNav,
     searchPath: opts.searchPath,

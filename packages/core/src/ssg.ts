@@ -95,6 +95,8 @@ export interface PageShellOptions {
   readonly canonicalUrl?: string;
   readonly machineSources?: ReadonlyArray<{ href: string; type: string }>;
   readonly lang?: string;
+  readonly hreflangAlternates?: ReadonlyArray<{ readonly hreflang: string; readonly href: string }>;
+  readonly ogLocaleAlternates?: readonly string[];
   readonly extraHead?: ReadonlyArray<string>;
   readonly feedPath?: string;
   readonly showArchiveNav?: boolean;
@@ -180,6 +182,20 @@ export function buildPage(opts: PageShellOptions): string {
   }
   const lang = opts.lang ?? "ja";
   head.push(`<meta property="og:locale" content="${escapeHtml(ogLocaleFromLang(lang))}">`);
+  if (opts.ogLocaleAlternates) {
+    for (const alt of opts.ogLocaleAlternates) {
+      head.push(
+        `<meta property="og:locale:alternate" content="${escapeHtml(alt)}">`,
+      );
+    }
+  }
+  if (opts.hreflangAlternates) {
+    for (const alt of opts.hreflangAlternates) {
+      head.push(
+        `<link rel="alternate" hreflang="${escapeHtml(alt.hreflang)}" href="${escapeHtml(alt.href)}">`,
+      );
+    }
+  }
   if (opts.ogImageUrl) {
     const img = escapeHtml(opts.ogImageUrl);
     head.push(`<meta property="og:image" content="${img}">`);

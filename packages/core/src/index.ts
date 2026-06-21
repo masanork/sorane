@@ -61,3 +61,10 @@ export {
 } from "./findability.ts";
 export { validateDiagramAltWarnings } from "./diagrams/validate-diagram-alt.ts";
 export { resolveOgImageUrl, ogLocaleFromLang } from "./og-meta.ts";
+export {
+  resolveI18nContext,
+  resolvePageLocaleInfo,
+  hreflangAlternatesForPage,
+  type I18nContext,
+  type SiteI18nConfig,
+} from "./i18n.ts";
