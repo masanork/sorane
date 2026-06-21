@@ -7,6 +7,8 @@ import { readImportFile, type EncodingHint } from './decode.ts';
 import { resolveImportFormat } from './detect-format.ts';
 import { importEntryRelPath, importEntryToOkfMarkdown } from './okf-writer.ts';
 import { loadImportManifest, saveImportManifest, upsertManifestEntry } from './manifest.ts';
+import { loadGlyphSubstitutionMap, type GlyphSubstitutionMap } from './glyph-map.ts';
+import { normalizeImportBody } from './normalize-body.ts';
 import type { ImportEntry, ImportFormatId } from './types.ts';
 
 export interface RunImportOptions {
@@ -17,6 +19,10 @@ export interface RunImportOptions {
   readonly encoding?: EncodingHint;
   readonly dryRun?: boolean;
   readonly skipDrafts?: boolean;
+  /** Strip はてな keyword links in bodies (default on). */
+  readonly normalizeHtml?: boolean;
+  /** Apply gjs substitute map from `--glyph-map` (off unless path set). */
+  readonly glyphMapPath?: string;
 }
 
 export interface RunImportResult {
@@ -57,6 +63,14 @@ export function runImport(opts: RunImportOptions): RunImportResult {
   const manifest = loadImportManifest(cwd);
   let nextManifest = manifest;
   const files: string[] = [];
+  let glyphMap: GlyphSubstitutionMap | undefined;
+  if (opts.glyphMapPath !== undefined) {
+    const mapPath = resolve(opts.glyphMapPath);
+    if (!existsSync(mapPath)) {
+      throw new Error(`glyph map not found: ${mapPath}`);
+    }
+    glyphMap = loadGlyphSubstitutionMap(mapPath);
+  }
 
   for (const entry of entries) {
     const rel = join(opts.out ?? 'content/article', importEntryRelPath(entry)).replace(/\\/g, '/');
@@ -66,7 +80,11 @@ export function runImport(opts: RunImportOptions): RunImportResult {
     if (opts.dryRun) continue;
 
     mkdirSync(dirname(abs), { recursive: true });
-    writeFileSync(abs, importEntryToOkfMarkdown(entry), 'utf8');
+    const body = normalizeImportBody(entry.body, {
+      normalizeHtml: opts.normalizeHtml,
+      glyphMap,
+    });
+    writeFileSync(abs, importEntryToOkfMarkdown({ ...entry, body }), 'utf8');
     nextManifest = upsertManifestEntry(nextManifest, {
       sourceId: entry.sourceId,
       relPath: rel,

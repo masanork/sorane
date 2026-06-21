@@ -3,7 +3,7 @@
 | Field | Value |
 |-------|-------|
 | **Date** | 2026-06-21 |
-| **Status** | Draft (I4 complete) |
+| **Status** | Draft (I5 complete) |
 | **Related** | `migrate` (in-repo OKF frontmatter only), srn `src/ssg/migrate.ts`, gjs `src/shared/txtbin/encoding-detect.ts` |
 
 ---
@@ -102,6 +102,17 @@ Ported from srn `src/ssg/migrate.ts` `importMT`:
 - Draft: `wp:status` (`publish` vs other); categories/tags from `<category domain="category|post_tag">`
 - `--fetch-images` (CLI): `fetch-images.ts` downloads external `![](url)` / `src="url"` into `{static_dir}/images/imported/`, rewrites to `/images/imported/…` (srn `rescue-images.ts` prior art; skipped on `--dry-run`)
 
+### Import body normalize (I5)
+
+`normalize-body.ts` runs on each entry before OKF write:
+
+| Step | Module | Default |
+|------|--------|---------|
+| はてな keyword / okeyword links → inner text | `normalize-html.ts` | on (`--no-normalize-html` to skip) |
+| gjs MJ substitute map (戸籍文字正規化) | `glyph-map.ts` | off; `--glyph-map <substitute_jisx0213_mj_1.0.tsv>` |
+
+Glyph map format: gjs `substitute_jisx0213_mj_1.0.txt` TSV (types `1`/`2` applied; IVS/GJ rows skipped).
+
 ---
 
 ## CLI
@@ -115,7 +126,9 @@ sorane import \
   [--encoding auto|utf-8|shift_jis|euc-jp] \
   [--dry-run] \
   [--skip-drafts] \
-  [--fetch-images]
+  [--fetch-images] \
+  [--glyph-map <gjs-substitute.tsv>] \
+  [--no-normalize-html]
 ```
 
 | Flag | Meaning |
@@ -127,6 +140,8 @@ sorane import \
 | `--dry-run` | List would-write paths only |
 | `--skip-drafts` | Skip non-published MT entries (default) |
 | `--fetch-images` | Download external images in imported bodies to `static/images/imported/` |
+| `--glyph-map` | Apply gjs MJ/JIS substitute TSV to imported bodies |
+| `--no-normalize-html` | Keep legacy はてな keyword `<a>` wrappers |
 
 Manifest: `.sorane/import-manifest.json` — `{ version, entries: [{ sourceId, relPath, encoding, importedAt }] }`.
 
@@ -140,7 +155,7 @@ Manifest: `.sorane/import-manifest.json` — `{ version, entries: [{ sourceId, r
 | **I2** | MT adapter + `sorane import` + manifest | MT export → OKF articles; dry-run |
 | **I3** | はてなダイアリー Atom + auto sniff | Atom fixture smoke ✅ |
 | **I4** | WordPress WXR + `--fetch-images` sketch | WXR fixture smoke ✅ |
-| **I5** | HTML normalize (hatena keyword links), optional gjs glyph maps | — |
+| **I5** | HTML normalize (hatena keyword links), optional gjs glyph maps | normalize + glyph-map fixture ✅ |
 
 Out of default CI (one-shot migration tool).
 

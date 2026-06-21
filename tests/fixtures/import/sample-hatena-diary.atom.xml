@@ -13,7 +13,7 @@
     <category term="雑記"/>
     <content type="text/html"><![CDATA[<p>fallback html</p>]]></content>
     <hatena:formatted-content type="text/html">
-      <div class="section"><p>はてな本文</p></div>
+      <div class="section"><p>はてな本文と<a class="keyword" href="http://d.hatena.ne.jp/keyword/test">キーワード</a></p></div>
     </hatena:formatted-content>
     <app:control>
       <app:draft>no</app:draft>

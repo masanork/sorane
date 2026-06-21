@@ -27,6 +27,12 @@ function parseEncodingFlag(argv: string[]): string | undefined {
   return argv[i + 1]!;
 }
 
+function parseGlyphMapFlag(argv: string[]): string | undefined {
+  const i = argv.indexOf("--glyph-map");
+  if (i < 0 || !argv[i + 1]) return undefined;
+  return argv[i + 1]!;
+}
+
 export async function runImportCmd(argv: string[]): Promise<void> {
   const cwd = parseCwdFlag(argv);
   const dryRun = argv.includes("--dry-run");
@@ -39,6 +45,8 @@ export async function runImportCmd(argv: string[]): Promise<void> {
     encoding: encodingRaw !== undefined ? parseEncodingHint(encodingRaw) : 'auto',
     dryRun,
     skipDrafts: !argv.includes("--include-drafts"),
+    normalizeHtml: !argv.includes("--no-normalize-html"),
+    glyphMapPath: parseGlyphMapFlag(argv),
   });
 
   const mode = dryRun ? "would import" : "imported";

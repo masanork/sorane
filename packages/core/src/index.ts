@@ -39,6 +39,14 @@ export {
   type FetchImportImagesOptions,
   type FetchImportImagesResult,
 } from "./import/fetch-images.ts";
+export { normalizeHatenaKeywordLinks } from "./import/normalize-html.ts";
+export {
+  parseGjsSubstituteMap,
+  loadGlyphSubstitutionMap,
+  applyGlyphSubstitution,
+  type GlyphSubstitutionMap,
+} from "./import/glyph-map.ts";
+export { normalizeImportBody, type NormalizeImportBodyOptions } from "./import/normalize-body.ts";
 export { runImport, type RunImportOptions, type RunImportResult } from "./import/run-import.ts";
 export {
   mergeConfig,
