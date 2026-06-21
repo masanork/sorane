@@ -1,0 +1,1 @@
+{"at":"2026-06-21T02:41:32.098Z","commit":"7e32adb","branch":"main","version":"0.2.7","packagesLines":8914,"packagesFiles":79,"testFunctions":261,"testLines":4298,"implLines":10174,"totalLoc":17869,"dependencies":594,"todoCount":0,"workspaces":{"@sorane/core":5891,"@sorane/search":1350,"@sorane/okf":900,"@sorane/cli":419,"@sorane/font":354}}

@@ -7,6 +7,7 @@ All notable changes to sorane are documented here. Versioning follows [SemVer](h
 ### Added
 
 - `npm run stats` / `stats:json` — monorepo LOC, test ratio, workspace breakdown (`scripts/project-stats.ts`)
+- CI `project-stats` job: append `stats/history.jsonl`, regenerate `stats/trend.md` on `main` (`[skip ci]` bot commit)
 
 ## [0.2.7] - 2026-06-21
 

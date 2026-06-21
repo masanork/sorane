@@ -22,7 +22,11 @@ npm run stats:json             # machine-readable snapshot
 
 Optional: `npm run stats -- --save out` writes `out/project-stats.{json,md}`.
 Coverage overlay: `npm run test:coverage:lcov` then
-`npm run stats -- --coverage coverage/lcov.info`.
+`node scripts/project-stats.ts --coverage coverage/lcov.info`.
+
+CI on `main` appends to `stats/history.jsonl` and updates `stats/trend.md`
+(committed by github-actions). Local: `node scripts/project-stats.ts --json > stats/latest.json`
+then `npm run stats:history -- append` / `npm run stats:trend`.
 
 Agent-facing features to keep aligned:
 
