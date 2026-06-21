@@ -115,7 +115,11 @@ title: FAQ
 profile: sorane-okf/0.3
 ---
 
-Questions.
+## First?
+Answer one.
+
+## Second?
+Answer two.
 `,
         "glossary.md": `---
 type: glossary
@@ -167,6 +171,11 @@ Search intro.
 
       const searchHtml = readFileSync(join(outDir, "search.html"), "utf8");
       expect(searchHtml).toContain('class="search"');
+
+      const faqHtml = readFileSync(join(outDir, "faq.html"), "utf8");
+      expect(faqHtml).toContain('class="faq-page"');
+      expect(faqHtml).toContain("mainEntity");
+      expect(faqHtml).toContain("First?");
 
       const catalog = readFileSync(join(outDir, "catalog.jsonld"), "utf8");
       expect(catalog).toContain("FAQPage");

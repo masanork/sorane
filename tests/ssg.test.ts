@@ -422,7 +422,12 @@ describe("runBuild", () => {
         hasPart?: { "@type": string }[];
       };
       expect(parsed.dataset?.length).toBe(1);
-      expect((parsed.hasPart ?? []).length).toBe(0);
+      expect((parsed.hasPart ?? []).length).toBe(1);
+      expect(parsed.hasPart?.[0]?.["@type"]).toBe("FAQPage");
+
+      const faqHtml = readFileSync(join(tmp, "dist/faq.html"), "utf8");
+      expect(faqHtml).toContain('class="faq-page"');
+      expect(faqHtml).toContain("mainEntity");
     } finally {
       rmSync(tmp, { recursive: true, force: true });
     }

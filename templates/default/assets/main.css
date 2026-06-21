@@ -701,3 +701,59 @@ figure.diagram img {
 .dataset-body {
   margin-top: 1.5rem;
 }
+
+/* FAQ page (sorane-okf/0.3 type: faq) */
+.faq-page {
+  margin: 0 auto;
+  max-width: var(--content-width, 42rem);
+}
+
+.faq-header {
+  margin-bottom: 1.5rem;
+}
+
+.faq-header h1 {
+  margin: 0 0 0.5rem;
+}
+
+.faq-description {
+  margin: 0;
+  color: var(--muted);
+  font-size: 1.05rem;
+}
+
+.faq-intro {
+  margin-bottom: 1.5rem;
+}
+
+.faq-list {
+  display: flex;
+  flex-direction: column;
+  gap: 1.25rem;
+}
+
+section.faq {
+  padding: 1rem 1.25rem;
+  border: 1px solid var(--border);
+  border-radius: 6px;
+  background: #fafafa;
+}
+
+.faq-question {
+  margin: 0 0 0.75rem;
+  font-size: 1.1rem;
+  line-height: 1.4;
+}
+
+.faq-answer {
+  font-size: 0.98rem;
+  line-height: 1.65;
+}
+
+.faq-answer > :first-child {
+  margin-top: 0;
+}
+
+.faq-answer > :last-child {
+  margin-bottom: 0;
+}

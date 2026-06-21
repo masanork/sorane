@@ -4,6 +4,12 @@ All notable changes to sorane are documented here. Versioning follows [SemVer](h
 
 ## [Unreleased]
 
+### Added
+
+- FAQ page template (`type: faq`): `##` Q/A sections, `.faq-*` CSS, `FAQPage` JSON-LD with `mainEntity`
+- `validate --json` category `faq` for FAQ body structure warnings
+- `examples/open-data/content/faq.md` demo page
+
 ## [0.2.8] - 2026-06-21
 
 ### Added

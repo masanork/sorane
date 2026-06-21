@@ -80,6 +80,24 @@ describe("validateSiteContent", () => {
     const file = report.files.find((f) => f.file === "headings.md");
     assert.ok(file?.findings.some((f) => f.category === "heading" && f.severity === "warning"));
   });
+
+  test("faq warnings are categorized", () => {
+    const root = mkdtempSync(join(tmpdir(), "sorane-validate-"));
+    const contentDir = join(root, "content");
+    mkdirSync(contentDir, { recursive: true });
+    writeFileSync(
+      join(contentDir, "faq.md"),
+      "---\ntype: faq\ntitle: FAQ\nprofile: sorane-okf/0.3\n---\n\nPreamble.\n\n## Q?\n\n## Q2?\nA.\n",
+      "utf8",
+    );
+    const report = validateSiteContent(
+      root,
+      mergeConfig({ build: { content_dir: "content" } } as Partial<SoraneConfig>),
+    );
+    assert.equal(report.ok, true);
+    const file = report.files.find((f) => f.file === "faq.md");
+    assert.ok(file?.findings.some((f) => f.category === "faq" && f.severity === "warning"));
+  });
 });
 
 describe("validate CLI --json", () => {

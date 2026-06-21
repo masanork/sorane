@@ -3,6 +3,7 @@ import { join, relative, resolve } from "node:path";
 import { extract, parseYaml, validateSource, type ValidationIssue } from "@sorane/okf";
 import type { SoraneConfig } from "./config.ts";
 import { validateDiagramAltWarnings } from "./diagrams/validate-diagram-alt.ts";
+import { validateFaqWarnings } from "./faq-page.ts";
 import { validateHeadingWarnings } from "./validate-heading-structure.ts";
 import { validateContentQualityFindings } from "./validate-content-quality.ts";
 import { validateRevisionFindings } from "./revision-history.ts";
@@ -18,7 +19,8 @@ export type ValidateFindingCategory =
   | "link"
   | "table"
   | "date"
-  | "revision";
+  | "revision"
+  | "faq";
 
 export interface ValidateFinding {
   readonly severity: ValidateFindingSeverity;
@@ -118,6 +120,12 @@ export function validateSiteContent(
       for (const w of validateHeadingWarnings(body)) {
         findings.push(warningToFinding("heading", w));
         warningCount++;
+      }
+      if (result.type === "faq") {
+        for (const w of validateFaqWarnings(body)) {
+          findings.push(warningToFinding("faq", w));
+          warningCount++;
+        }
       }
       const fm = frontmatterRecord(source);
       for (const f of validateContentQualityFindings(body, fm, config.build.quality)) {

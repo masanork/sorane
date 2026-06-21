@@ -29,6 +29,11 @@ import { buildCatalogJsonLd, buildDatasetPageJsonLd } from "./catalog.ts";
 import { resolveCatalogCreativeWorkType } from "./creative-work-type.ts";
 import { renderDatasetPageBody } from "./dataset-page.ts";
 import {
+  buildFaqPageJsonLd,
+  parseFaqBody,
+  renderFaqPageBody,
+} from "./faq-page.ts";
+import {
   DEFAULT_DIAGRAMS_CONFIG,
   mergeConfig,
   resolvePermalink,
@@ -565,6 +570,8 @@ export async function runBuild(opts: BuildOptions): Promise<BuildResult> {
         : "";
     let pageDiagrams = emptyDiagramMeta();
     let bodyHtml: string;
+    let faqJsonLdItems: ReturnType<typeof parseFaqBody> | undefined;
+    let faqAnswerHtmls: string[] | undefined;
     const canonicalUrl = baseUrl.length > 0 ? `${baseUrl}/${outRel}` : undefined;
     if (effectiveType === "dataset") {
       const section = await renderBodySectionForConfig(
@@ -576,6 +583,36 @@ export async function runBuild(opts: BuildOptions): Promise<BuildResult> {
         pageUrl: canonicalUrl ?? outRel,
         baseUrl,
       });
+    } else if (effectiveType === "faq") {
+      const parsedFaq = parseFaqBody(p.concept.body);
+      faqJsonLdItems = parsedFaq;
+      const answerSections = await Promise.all(
+        parsedFaq.items.map((item) =>
+          item.answerMarkdown.length > 0
+            ? renderBodySectionForConfig(item.answerMarkdown, bodySectionOpts(rootPrefix))
+            : Promise.resolve({ html: "", diagrams: emptyDiagramMeta() }),
+        ),
+      );
+      for (const s of answerSections) {
+        pageDiagrams = mergeDiagramMeta(pageDiagrams, s.diagrams);
+      }
+      faqAnswerHtmls = answerSections.map((s) => s.html);
+      const introSection =
+        parsedFaq.preambleMarkdown.length > 0
+          ? await renderBodySectionForConfig(
+              parsedFaq.preambleMarkdown,
+              bodySectionOpts(rootPrefix),
+            )
+          : undefined;
+      if (introSection) {
+        pageDiagrams = mergeDiagramMeta(pageDiagrams, introSection.diagrams);
+      }
+      bodyHtml = renderFaqPageBody(
+        p.concept,
+        parsedFaq.items,
+        faqAnswerHtmls,
+        introSection?.html,
+      );
     } else if (isSearch) {
       const searchIntro = p.concept.body.trim()
         ? await renderBodySectionForConfig(p.concept.body, bodySectionOpts(rootPrefix))
@@ -639,7 +676,26 @@ export async function runBuild(opts: BuildOptions): Promise<BuildResult> {
             { slug, url: canonicalUrl ?? outRel, concept: p.concept },
             pageAiFlags.jsonLd,
           )
-        : buildCreativeWorkJsonLd({
+        : effectiveType === "faq" && faqJsonLdItems && faqAnswerHtmls
+          ? buildFaqPageJsonLd({
+              title: p.concept.title,
+              description:
+                p.concept.description ?? extractDescription(p.concept.body) ?? undefined,
+              url: canonicalUrl ?? outRel,
+              datePublished: p.concept.timestamp,
+              dateModified: updated ?? p.concept.timestamp,
+              author,
+              siteTitle: config.site.title,
+              lang: pageLang,
+              items: faqJsonLdItems.items,
+              answerHtmls: faqAnswerHtmls,
+              aiDisclosure:
+                pageAiFlags.jsonLd && aiDisclosure ? aiDisclosure : undefined,
+              associatedMedia: associatedMedia.length > 0 ? associatedMedia : undefined,
+              organization: siteOrganization,
+              frontmatter: p.concept.frontmatter,
+            })
+          : buildCreativeWorkJsonLd({
             workType: resolveCatalogCreativeWorkType(p.concept, docsMode),
             title: p.concept.title,
             description:
