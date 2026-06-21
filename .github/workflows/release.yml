@@ -56,7 +56,6 @@ jobs:
       - uses: actions/setup-node@v4
         with:
           node-version: "23"
-          registry-url: https://registry.npmjs.org
 
       - name: Install dependencies
         run: npm ci
@@ -72,13 +71,13 @@ jobs:
             export NODE_AUTH_TOKEN="$NPM_TOKEN"
           fi
           for ws in @sorane/font @sorane/okf @sorane/search @sorane/core @sorane/cli; do
-            published="$(npm view "${ws#@}" version 2>/dev/null || true)"
+            published="$(npm view "$ws" version 2>/dev/null || true)"
             target="$(node -p "require('./packages/${ws#@sorane/}/package.json').version")"
             if [[ "$published" == "$target" ]]; then
               echo "skip ${ws}@${target} (already on npm)"
               continue
             fi
-            npm publish -w "$ws" --provenance --access public
+            npm publish -w "$ws" --provenance --access public --registry https://registry.npmjs.org
           done
 
   pack:
