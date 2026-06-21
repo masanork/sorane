@@ -90,7 +90,12 @@ Search the E2E fixture for Welcome and Mermaid keywords.
         lang: "en",
         og_image: "/static/pixel.png",
       },
-      build: { content_dir: "content", out_dir: outDir, static_dir: "static" },
+      build: {
+        content_dir: "content",
+        out_dir: outDir,
+        static_dir: "static",
+        diagrams: { enabled: true },
+      },
       search: { index: ".sorane/index.db", mode: "fts" },
     }),
     clean: true,

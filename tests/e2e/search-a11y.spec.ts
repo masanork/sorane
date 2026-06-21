@@ -18,7 +18,10 @@ test("header search updates aria-live on query", async ({ page }) => {
     (form as HTMLFormElement).requestSubmit();
   });
 
-  await expect(status).toContainText(/\d+ 件|該当するページは見つかりません/, { timeout: 15_000 });
+  await expect(status).toContainText(
+    /\d+ 件|\d+ results?|該当するページは見つかりません|No matching pages/,
+    { timeout: 15_000 },
+  );
 });
 
 test("header search shows visible empty state when no hits", async ({ page }) => {
