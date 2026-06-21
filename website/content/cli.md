@@ -24,7 +24,7 @@ npx @sorane/cli watch [--cwd <dir>] [--clean]
 
 ## sorane validate
 
-frontmatter と OKF プロファイル（`sorane-okf/0.1` / `0.2`）を検証します。
+frontmatter と OKF プロファイル（`sorane-okf/0.1` / `0.2` / `0.3`）を検証します。
 
 ```bash
 npx @sorane/cli validate [--cwd <dir>] [--json]

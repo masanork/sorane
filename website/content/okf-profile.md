@@ -5,33 +5,38 @@ profile: sorane-okf/0.1
 excludeFromList: true
 ---
 
-sorane は [Open Knowledge Format (OKF) v0.1](https://cloud.google.com/blog/products/data-analytics/how-the-open-knowledge-format-can-improve-data-sharing) を実装し、プロファイル `sorane-okf/0.1`〜`0.3` で検証します。
+sorane は [Open Knowledge Format (OKF) v0.1](https://cloud.google.com/blog/products/data-analytics/how-the-open-knowledge-format-can-improve-data-sharing) を実装します。各ページの frontmatter に `profile: sorane-okf/<version>` を書き、JSON Schema で検証します。
 
 ## サポートする concept 型
 
-### sorane-okf/0.1・0.2
-
-| type | 用途 |
-|------|------|
-| `article` | ブログ記事・ドキュメントページ |
-| `index` | サイトトップ |
-
-必須フィールドは `type` と `title` です。`0.2` では AI 開示フィールド（`digitalSourceType` など）が追加されます。
-
-### sorane-okf/0.3（拡張型）
-
-| type | 用途 | catalog.jsonld |
-|------|------|----------------|
-| `article` | ブログ・ドキュメント | `hasPart`（`BlogPosting` / `TechArticle`） |
+| type | 用途 | `catalog.jsonld` |
+|------|------|------------------|
+| `article` | ブログ記事・ドキュメント | `hasPart`（`BlogPosting` / `TechArticle`） |
 | `index` | サイトトップ | （カタログに含めない） |
 | `dataset` | オープンデータのランディング | `dataset`（`Dataset` + `distribution`） |
 | `reference` | コード一覧・仕様参照 | `hasPart`（`TechArticle`） |
 | `glossary` | 分野別用語集（1 ファイル複数語） | `hasPart`（`DefinedTermSet`） |
 | `faq` | Q&A ページ | `hasPart`（`FAQPage`） |
 
-未知の `type` は **warning** のみ（ビルドは `article` として扱う）。`0.1` / `0.2` では従来どおり未知 type は **error** です。
+すべての型で `type` と `title` が必須です。
 
-`dataset` の必須フィールド: `title`, `description`, `resource`, `license`, `publisher`, `distributions`（各要素に `title`, `format`, `accessURL`）。
+`dataset` では次も必須です: `description`, `resource`, `license`, `publisher`, `distributions`（各要素に `title`, `format`, `accessURL`）。
+
+## プロファイル文字列
+
+frontmatter の `profile` で、検証の厳しさと使える `type` を選びます。
+
+| `profile` | 使える `type` | 未知の `type` | AI 開示フィールド |
+|-----------|---------------|---------------|-------------------|
+| `sorane-okf/0.1` | `article`, `index` | **error** | 任意（形状は緩い） |
+| `sorane-okf/0.2` | `article`, `index` | **error** | 厳密検証（[AI 開示](ai-disclosure.html)） |
+| `sorane-okf/0.3` | 上表の 6 型 | **warning**（ビルドは `article` 扱い） | 厳密検証 |
+
+新規サイトは用途に応じて `sorane-okf/0.3`（拡張型・オープンデータ）または `sorane-okf/0.2`（記事のみ + AI 開示）を選ぶのが一般的です。既存サイトは `migrate --bump-profile` で上げられます。
+
+```bash
+npx @sorane/cli migrate --cwd . --bump-profile 0.3
+```
 
 ## 記事の例
 
@@ -41,13 +46,13 @@ type: article
 title: Hello OKF
 timestamp: 2025-01-01T00:00:00Z
 tags: [sorane]
-profile: sorane-okf/0.1
+profile: sorane-okf/0.3
 ---
 
 本文（Markdown）
 ```
 
-## データセットの例（0.3）
+## データセットの例
 
 ```yaml
 ---
@@ -69,13 +74,15 @@ distributions:
 本文（データの説明・更新履歴など）
 ```
 
+実例: [examples/open-data/](https://github.com/masanork/sorane/tree/main/examples/open-data)
+
 ## ビルド出力
 
 | パス | 内容 |
 |------|------|
 | `*.html` | 人間向けページ |
 | `*.md` | OKF ネイティブ代替ソース |
-| `catalog.jsonld` | DCAT 形式カタログ（0.3: `dataset[]` と `hasPart[]` を分離） |
+| `catalog.jsonld` | DCAT 形式カタログ（`dataset[]` と `hasPart[]` を分離） |
 | `llms.txt` | LLM 向けサイトガイド |
 | `okf/bundle.tar.gz` | `{type}/{slug}.md` のバンドル |
 
@@ -87,4 +94,4 @@ distributions:
 | `sorane-okf/0.2` | [sorane-okf-0.2.schema.json](profile/sorane-okf-0.2.schema.json) |
 | `sorane-okf/0.3` | [sorane-okf-0.3.schema.json](profile/sorane-okf-0.3.schema.json) |
 
-`$id` は公式サイトの本番 URL `sorane.dev` を指します。
+`$id` は本番 URL `sorane.dev` を指します。
