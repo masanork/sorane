@@ -27,7 +27,7 @@ npx @sorane/cli@0.2.7 build --cwd . --clean
 3. `validate --json` → `build --clean`
 4. `dist/` を Cloudflare Pages 等にデプロイ
 
-AI 向けの詳細は [AI アシスタント向けオンボーディング](ai-onboarding.html)。設定は [設定（sorane.yaml）](configuration.html)。
+AI 向けの詳細は [AI 向け解説](ai-onboarding.html)。設定は [設定（YAML）](configuration.html)。
 
 ## sorane 本体の開発
 

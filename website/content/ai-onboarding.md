@@ -1,6 +1,6 @@
 ---
 type: article
-title: AI アシスタント向けオンボーディング
+title: AI 向け解説
 profile: sorane-okf/0.1
 excludeFromList: true
 ---

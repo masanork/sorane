@@ -1,6 +1,6 @@
 ---
 type: article
-title: 設定（sorane.yaml）
+title: 設定（YAML）
 profile: sorane-okf/0.1
 excludeFromList: true
 ---
@@ -85,7 +85,7 @@ search:
 
 検索 UI は `view: search` を持つ記事ページで有効になります。
 
-## 図表（Mermaid / D2）
+## 図表
 
 Markdown のコードフェンスで図を書けます。ソースは `.md` 代替ファイルと OKF バンドルにそのまま残ります。
 
@@ -113,9 +113,9 @@ build:
 
 詳細と例は [図表](diagrams.html) を参照してください。`sorane validate` は alt 欠落の図表フェンスを warning で報告します。
 
-## AI コンテンツ開示
+## AI 開示
 
-`profile: sorane-okf/0.2` と frontmatter で IPTC / schema.org 準拠の開示ができます。詳細は [AI コンテンツ開示](ai-disclosure.html) を参照してください。
+`profile: sorane-okf/0.2` と frontmatter で IPTC / schema.org 準拠の開示ができます。詳細は [AI 開示](ai-disclosure.html) を参照してください。
 
 ## 静的画像 IPTC XMP
 
@@ -127,7 +127,7 @@ build:
     manifest: asset-provenance.yaml   # content/ からの相対（既定）
 ```
 
-`content/asset-provenance.yaml` と組み合わせて `static/` 内の JPEG/PNG/WebP に IPTC Extension XMP を埋め込みます。詳細は [AI コンテンツ開示](ai-disclosure.html) を参照してください。
+`content/asset-provenance.yaml` と組み合わせて `static/` 内の JPEG/PNG/WebP に IPTC Extension XMP を埋め込みます。詳細は [AI 開示](ai-disclosure.html) を参照してください。
 
 ## 静的画像 C2PA
 

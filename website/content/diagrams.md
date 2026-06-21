@@ -1,13 +1,13 @@
 ---
 type: article
-title: 図表（Mermaid / D2 / Graphviz）
+title: 図表（Mermaid 他）
 profile: sorane-okf/0.1
 excludeFromList: true
 ---
 
 sorane は Markdown のコードフェンスで書いた図を HTML で表示します。ソースは `.md` 代替ファイルと OKF バンドルにそのまま残ります（bunsen Strategy A）。
 
-## Mermaid（クライアント描画）
+## Mermaid（クライアント）
 
 ` ```mermaid ` フェンスを使います。`alt` は info string または `%% alt:` コメントで指定できます。
 
@@ -31,7 +31,7 @@ sequenceDiagram
   BUILD->>DIST: HTML + assets/diagrams/
 ```
 
-## Mermaid（ビルド時 SVG）
+## Mermaid（ビルド時）
 
 `mermaid.mode: build` にすると `@mermaid-js/mermaid-cli`（mmdc）で SVG を生成します。クライアント loader は不要です。
 
@@ -43,7 +43,7 @@ build:
       mmdc: mmdc
 ```
 
-## Graphviz（ビルド時 SVG）
+## Graphviz（ビルド時）
 
 `build.diagrams.graphviz.enabled: true` と Graphviz `dot` CLI が必要です。
 
@@ -54,7 +54,7 @@ digraph G {
 }
 ```
 
-## D2（ビルド時 SVG）
+## D2（ビルド時）
 
 ` ```d2 ` フェンスはビルド時に SVG へコンパイルします（`build.diagrams.d2.enabled: true` と `d2` CLI が必要）。
 

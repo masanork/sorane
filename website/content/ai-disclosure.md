@@ -1,6 +1,6 @@
 ---
 type: article
-title: AI コンテンツ開示
+title: AI 開示
 profile: sorane-okf/0.1
 excludeFromList: true
 ---
@@ -46,7 +46,7 @@ aiSystems:
 - `catalog.jsonld` / `search-index.json` / `feed.xml`
 - `llms.txt` の開示記事カウント
 
-## 設定（sorane.yaml）
+## 設定（YAML）
 
 ```yaml
 build:
@@ -69,7 +69,7 @@ sorane validate --cwd .
 
 `sorane-okf/0.2` では未知の `digitalSourceType` や、`euAiLabel` だけで `digitalSourceType` が無い場合はエラーになります。
 
-## 図表のアクセシビリティ
+## 図表の alt
 
 図表フェンス（mermaid / d2 等）には代替テキストを付けてください。`validate` は alt 欠落を **warning** で知らせます（ビルドは継続）。
 
@@ -80,9 +80,9 @@ flowchart LR
 ```
 ````
 
-またはフェンス内の `%% alt: 認証フロー` コメントでも構いません。詳細は [図表（Mermaid / D2）](diagrams.html) を参照してください。
+またはフェンス内の `%% alt: 認証フロー` コメントでも構いません。詳細は [図表（Mermaid 他）](diagrams.html) を参照してください。
 
-## 静的画像の IPTC XMP（`static/` の JPEG/PNG/WebP）
+## 静的画像 IPTC XMP
 
 `build.image_metadata.enabled: true` のとき、**ExifTool** が PATH にあれば `asset-provenance.yaml` の内容を XMP に書き込みます（`Digital Source Type` / `AI System Used` / `AI Prompt Information`）。
 
@@ -111,11 +111,11 @@ build:
 - Markdown の `![](path)` 参照も解決します。`static/` 参照は `../static/hero.png` のようなパスで `asset-provenance.yaml` にキーを書けます
 - `content/` 内のインライン画像（例: `article/assets/fig.png`）はビルド時に `dist/` へコピーされ、同じマニフェストでタグ付けできます
 
-## JSON-LD `associatedMedia`（Phase 3.1）
+## associatedMedia
 
 記事本文のインライン画像のうち、`asset-provenance.yaml` に `digitalSourceType` があるものは `BlogPosting` JSON-LD の `associatedMedia`（`ImageObject`）として出力されます（`build.ai_disclosure.json_ld: true` 時）。`site.base_url` があると `contentUrl` は絶対 URL になります。
 
-## 静的画像の C2PA（`static/` の JPEG/PNG）
+## 静的画像 C2PA
 
 XMP 埋め込みのあと、**c2patool** で manifest を署名できます（オプトイン）。同じ `asset-provenance.yaml` の `digitalSourceType` が C2PA `create` intent にも使われます。
 
