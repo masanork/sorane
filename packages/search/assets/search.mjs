@@ -7,6 +7,31 @@ const MODEL_ID = "ruri-v3-30m";
 const QUERY_PREFIX = "検索クエリ: ";
 const TOP_K = 10;
 
+const LABELS = {
+  ja: {
+    loadingIndex: "検索インデックスを読み込み中…",
+    loadingModel: "埋め込みモデルを読み込み中…（初回のみ）",
+    searching: "検索中…",
+    noResults: "該当するページは見つかりませんでした。キーワードを変えてお試しください。",
+    emptyQuery: "検索キーワードを入力してください。",
+    resultCount: (n) => `${n} 件`,
+    error: (msg) => `エラー: ${msg}`,
+  },
+  en: {
+    loadingIndex: "Loading search index…",
+    loadingModel: "Loading embedding model… (first time only)",
+    searching: "Searching…",
+    noResults: "No matching pages. Try different keywords.",
+    emptyQuery: "Enter a search keyword.",
+    resultCount: (n) => `${n} result${n === 1 ? "" : "s"}`,
+    error: (msg) => `Error: ${msg}`,
+  },
+};
+
+function labelsFor(lang) {
+  return lang && lang.startsWith("ja") ? LABELS.ja : LABELS.en;
+}
+
 function tokenizeQuery(query) {
   const segs = query
     .split(/[぀-ゟ]+|[\s、。・，．:：;；!！?？()（）「」『』【】\[\]]+/)
@@ -88,6 +113,16 @@ function makeSnippet(text, query, max = 160) {
   return (start > 0 ? "…" : "") + body + (end < flat.length ? "…" : "");
 }
 
+function showEmptyState(resultsEl, root, message, labels) {
+  resultsEl.replaceChildren();
+  const empty = document.createElement("li");
+  empty.className = "search-empty";
+  empty.setAttribute("role", "status");
+  empty.textContent = message;
+  resultsEl.appendChild(empty);
+  root.setAttribute("aria-expanded", "true");
+}
+
 function setup(root) {
   const form = root.querySelector(".search-form");
   const input = root.querySelector(".search-input");
@@ -98,8 +133,8 @@ function setup(root) {
   const mode = root.getAttribute("data-mode") || "fts";
   const modelBase = root.getAttribute("data-model-base");
   const libBase = root.getAttribute("data-lib-base");
-  const compact = root.classList.contains("search--header");
-  if (!form || !input || !indexUrl) return;
+  const labels = labelsFor(root.getAttribute("data-lang"));
+  if (!form || !input || !indexUrl || !resultsEl) return;
 
   let index = null;
   let embed = null;
@@ -112,7 +147,7 @@ function setup(root) {
 
   async function loadIndex() {
     if (index) return index;
-    setStatus("検索インデックスを読み込み中…");
+    setStatus(labels.loadingIndex);
     const res = await fetch(indexUrl);
     if (!res.ok) throw new Error(`failed to fetch search-index.json (${res.status})`);
     const json = await res.json();
@@ -128,7 +163,7 @@ function setup(root) {
 
   async function loadEmbedder() {
     if (embed) return embed;
-    setStatus("埋め込みモデルを読み込み中…（初回のみ）");
+    setStatus(labels.loadingModel);
     const libUrl = new URL(libBase, document.baseURI).href;
     const tjs = await import(`${libUrl}transformers.web.js`);
     const { env, pipeline } = tjs;
@@ -157,10 +192,12 @@ function setup(root) {
   function render(hits, query) {
     resultsEl.replaceChildren();
     if (hits.length === 0) {
-      setStatus("該当なし。語を変えてお試しください。");
+      showEmptyState(resultsEl, root, labels.noResults, labels);
+      setStatus(labels.noResults);
       return;
     }
-    setStatus(`${hits.length} 件`);
+    root.setAttribute("aria-expanded", "true");
+    setStatus(labels.resultCount(hits.length));
     for (const { chunk, score } of hits) {
       const li = document.createElement("li");
       li.className = "search-hit";
@@ -191,7 +228,7 @@ function setup(root) {
 
   async function runFts(query) {
     const idx = await loadIndex();
-    setStatus("検索中…");
+    setStatus(labels.searching);
     const type = facet ? facet.value : "";
     const ranked = ftsSearch(idx, query, type);
     render(
@@ -203,7 +240,7 @@ function setup(root) {
   async function runHybrid(query) {
     const idx = await loadIndex();
     const e = await loadEmbedder();
-    setStatus("検索中…");
+    setStatus(labels.searching);
     const qv = await e(query);
     const type = facet ? facet.value : "";
     const allow = type ? (i) => idx.chunks[i].doc_type === type : null;
@@ -216,16 +253,26 @@ function setup(root) {
   }
 
   async function run(query) {
-    if (busy || !query.trim()) return;
+    const trimmed = query.trim();
+    if (!trimmed) {
+      showEmptyState(resultsEl, root, labels.emptyQuery, labels);
+      setStatus(labels.emptyQuery);
+      return;
+    }
+    if (busy) return;
     busy = true;
+    root.setAttribute("aria-busy", "true");
     try {
       const idx = await loadIndex();
       const useHybrid = (idx.mode || mode) === "hybrid";
-      if (useHybrid) await runHybrid(query);
-      else await runFts(query);
+      if (useHybrid) await runHybrid(trimmed);
+      else await runFts(trimmed);
     } catch (err) {
-      setStatus(`エラー: ${err && err.message ? err.message : err}`);
+      const message = err && err.message ? err.message : String(err);
+      showEmptyState(resultsEl, root, labels.error(message), labels);
+      setStatus(labels.error(message));
     } finally {
+      root.removeAttribute("aria-busy");
       busy = false;
     }
   }
@@ -233,6 +280,14 @@ function setup(root) {
   form.addEventListener("submit", (e) => {
     e.preventDefault();
     run(input.value);
+  });
+
+  document.addEventListener("click", (e) => {
+    if (!root.classList.contains("search--header")) return;
+    if (root.contains(e.target)) return;
+    resultsEl.replaceChildren();
+    root.removeAttribute("aria-expanded");
+    if (status) status.textContent = "";
   });
 
   const initialQuery = new URLSearchParams(window.location.search).get("q");

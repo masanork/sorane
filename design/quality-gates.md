@@ -11,7 +11,8 @@
 | `table` | GFM tables need `\| --- \|` separator; header cells non-empty |
 | `date` | `timestamp` / `updated` parseable; `updated` ≥ `timestamp` |
 | `diagram` | (existing) diagram fence alt |
-| `heading` | (existing) heading hierarchy |
+| `heading` | (existing) heading hierarchy (`error` で validate 失敗) |
+| `lang` | Mixed script without `lang` markup; invalid `lang` on inline HTML |
 
 ## Configuration
 
@@ -22,6 +23,8 @@ build:
     link_text: true
     table_headers: true
     dates: true
+    heading: warn    # warn (default) | error | false
+    lang_mixing: true
 ```
 
 ## Roadmap

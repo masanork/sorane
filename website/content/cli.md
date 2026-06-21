@@ -52,8 +52,9 @@ npx @sorane/cli validate [--cwd <dir>] [--json]
 | `reference` | `type: reference` の `description` / `resource` 推奨・GFM 表 |
 | `dataset` | `type: dataset` のライセンス・distribution URL など |
 | `i18n` | `translation_key` と `site.i18n` ロケールの整合性 |
+| `lang` | 本文の言語混在・`lang` 属性の形式 |
 
-`build.quality` で `image` / `link` / `table` / `date` の warning を個別に無効化できます（[設定](configuration.html#品質ゲートvalidate)）。
+`build.quality` で `image` / `link` / `table` / `date` / `lang_mixing` の warning を個別に無効化できます。`heading: error` で見出し階層を error に昇格できます（[設定](configuration.html#品質ゲートvalidate)）。
 
 `template/site/AGENTS.md` と `.grok/skills/sorane-content/SKILL.md` がこの JSON 契約を前提にしています。
 

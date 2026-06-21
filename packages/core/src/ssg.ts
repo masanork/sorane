@@ -673,11 +673,11 @@ export function buildSearchMount(
   const searchClass = variant === "header" ? "search search--header" : "search";
   const form =
     variant === "header"
-      ? `<form class="search-form" role="search">` +
+      ? `<form class="search-form">` +
         `<input type="search" name="q" class="search-input" placeholder="検索" autocomplete="off" aria-label="検索">` +
         `<button type="submit" class="search-submit" aria-label="検索">検索</button>` +
         `</form>`
-      : `<form class="search-form" role="search">` +
+      : `<form class="search-form">` +
         `<input type="search" name="q" class="search-input" placeholder="キーワードで検索" autocomplete="off" aria-label="検索キーワード">` +
         `<select name="type" class="search-facet" aria-label="種別で絞り込み">${facetOpts}</select>` +
         `<button type="submit" class="search-submit">検索</button>` +
@@ -686,8 +686,9 @@ export function buildSearchMount(
     variant === "header"
       ? `<p class="search-status search-status--sr" data-search-status aria-live="polite" aria-atomic="true"></p>`
       : `<p class="search-status" data-search-status aria-live="polite" aria-atomic="true"></p>`;
+  const langAttr = ` data-lang="${escapeHtml(opts.lang ?? "ja")}"`;
   return (
-    `<div class="${searchClass}" data-search data-index="${escapeHtml(indexUrl)}"${hybridAttrs}>` +
+    `<div class="${searchClass}" data-search data-index="${escapeHtml(indexUrl)}"${hybridAttrs}${langAttr} role="search">` +
     `${form}` +
     `${status}` +
     `<ol class="search-results" data-search-results role="list" aria-live="polite" aria-relevant="additions"></ol>` +

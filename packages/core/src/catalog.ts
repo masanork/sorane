@@ -1,5 +1,6 @@
 import type { OkfConcept } from "@sorane/okf";
 import { resolveEffectiveType } from "@sorane/okf";
+import type { TranslationEntry } from "./i18n.ts";
 import { parseAiDisclosure } from "./ai-disclosure.ts";
 import {
   isDatasetCatalogEntry,
@@ -17,6 +18,9 @@ export interface CatalogEntry {
   readonly slug: string;
   readonly url: string;
   readonly concept: OkfConcept;
+  readonly localeId?: string;
+  readonly groupKey?: string;
+  readonly lang?: string;
 }
 
 export interface CatalogPublisher {
@@ -29,6 +33,7 @@ export interface BuildCatalogOptions {
   readonly machineReadable?: boolean;
   readonly docsMode?: boolean;
   readonly publisher?: CatalogPublisher;
+  readonly translationMap?: ReadonlyMap<string, ReadonlyMap<string, TranslationEntry>>;
 }
 
 function markdownDistribution(pageUrl: string): Record<string, unknown> {
@@ -59,6 +64,8 @@ function applyAiDisclosure(
 function buildDatasetNode(
   e: CatalogEntry,
   machineReadable: boolean,
+  baseUrl: string,
+  translationMap?: ReadonlyMap<string, ReadonlyMap<string, TranslationEntry>>,
 ): Record<string, unknown> {
   const concept = e.concept;
   const dataset: Record<string, unknown> = {
@@ -116,13 +123,46 @@ function buildDatasetNode(
   dataset.distribution = downloads;
 
   applyAiDisclosure(dataset, concept, machineReadable);
+  applyTranslationLinks(dataset, e, baseUrl, translationMap);
   return dataset;
+}
+
+function catalogAbsoluteUrl(baseUrl: string, relOrAbs: string): string {
+  if (/^https?:\/\//i.test(relOrAbs)) return relOrAbs;
+  if (baseUrl.length === 0) return relOrAbs;
+  return `${baseUrl.replace(/\/$/, "")}/${relOrAbs.replace(/^\//, "")}`;
+}
+
+function applyTranslationLinks(
+  node: Record<string, unknown>,
+  e: CatalogEntry,
+  baseUrl: string,
+  translationMap?: ReadonlyMap<string, ReadonlyMap<string, TranslationEntry>>,
+): void {
+  if (e.lang) node.inLanguage = e.lang;
+  if (!translationMap || !e.groupKey || !e.localeId) return;
+  const group = translationMap.get(e.groupKey);
+  if (!group || group.size < 2) return;
+
+  const siblings: Record<string, unknown>[] = [];
+  for (const [localeId, entry] of group) {
+    if (localeId === e.localeId) continue;
+    siblings.push({
+      "@type": "CreativeWork",
+      "@id": catalogAbsoluteUrl(baseUrl, entry.outRel),
+      inLanguage: entry.lang,
+      name: entry.parsed.concept.title,
+    });
+  }
+  if (siblings.length > 0) node.workTranslation = siblings;
 }
 
 function buildCreativeWorkNode(
   e: CatalogEntry,
   docsMode: boolean,
   machineReadable: boolean,
+  baseUrl: string,
+  translationMap?: ReadonlyMap<string, ReadonlyMap<string, TranslationEntry>>,
 ): Record<string, unknown> {
   const workType = resolveCatalogCreativeWorkType(e.concept, docsMode);
   const node: Record<string, unknown> = {
@@ -139,6 +179,7 @@ function buildCreativeWorkNode(
   if (e.concept.timestamp) node.dateModified = e.concept.timestamp;
   if (e.concept.resource) node.url = e.concept.resource;
   applyAiDisclosure(node, e.concept, machineReadable);
+  applyTranslationLinks(node, e, baseUrl, translationMap);
   return node;
 }
 
@@ -154,13 +195,16 @@ export function buildCatalogJsonLd(
   const datasets: Record<string, unknown>[] = [];
   const hasPart: Record<string, unknown>[] = [];
 
+  const translationMap = opts?.translationMap;
   for (const e of entries) {
     if (isDatasetCatalogEntry(e.concept)) {
-      datasets.push(buildDatasetNode(e, machineReadable));
+      datasets.push(buildDatasetNode(e, machineReadable, baseUrl, translationMap));
     } else {
       const effective = resolveEffectiveType(e.concept.type, e.concept.profile);
       if (effective === "index") continue;
-      hasPart.push(buildCreativeWorkNode(e, docsMode, machineReadable));
+      hasPart.push(
+        buildCreativeWorkNode(e, docsMode, machineReadable, baseUrl, translationMap),
+      );
     }
   }
 
@@ -194,7 +238,7 @@ export function buildDatasetPageJsonLd(
   entry: CatalogEntry,
   machineReadable = true,
 ): string {
-  const node = buildDatasetNode(entry, machineReadable);
+  const node = buildDatasetNode(entry, machineReadable, "", undefined);
   node["@context"] = "https://schema.org";
   return `<script type="application/ld+json">${JSON.stringify(node)}</script>`;
 }

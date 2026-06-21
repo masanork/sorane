@@ -27,7 +27,7 @@ Parse JSON stdout:
 - Stop and fix if `ok === false`
 - Fix every finding with `severity: "error"` (usually `category: "okf"`)
 - Treat `warning` findings as fixes when practical:
-  - `diagram` / `heading` / `image` / `link` — a11y
+  - `diagram` / `heading` / `image` / `link` / `lang` — a11y
   - `table` / `date` / `revision` — structure and metadata
   - `faq` / `glossary` / `glossary-term` / `reference` / `dataset` — OKF 0.3 page shapes (when `profile: sorane-okf/0.3`)
   - `i18n` — `translation_key` / locale sibling consistency (`site.i18n`)

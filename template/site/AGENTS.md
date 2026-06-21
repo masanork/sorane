@@ -51,7 +51,7 @@ Always run with `--json`. Parse stdout as JSON.
 
 - `error` — must fix before commit (`category: "okf"` is frontmatter / profile)
 - `warning` — fix when practical:
-  - `diagram` / `heading` / `image` / `link` / `table` / `date` / `revision` — a11y and metadata
+  - `diagram` / `heading` / `image` / `link` / `table` / `date` / `lang` / `revision` — a11y and metadata
   - `faq` / `glossary` / `reference` / `dataset` — sorane-okf/0.3 body and open-data structure (0.3 only)
   - `i18n` — `translation_key` / locale sibling consistency (`site.i18n`)
 

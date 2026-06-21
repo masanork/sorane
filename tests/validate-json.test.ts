@@ -81,6 +81,31 @@ describe("validateSiteContent", () => {
     assert.ok(file?.findings.some((f) => f.category === "heading" && f.severity === "warning"));
   });
 
+  test("heading: error fails validate", () => {
+    const root = mkdtempSync(join(tmpdir(), "sorane-validate-"));
+    const contentDir = join(root, "content");
+    mkdirSync(contentDir, { recursive: true });
+    writeFileSync(
+      join(contentDir, "strict.md"),
+      "---\ntype: article\ntitle: T\nprofile: sorane-okf/0.1\n---\n\n#### Skip h2\n",
+      "utf8",
+    );
+    const report = validateSiteContent(
+      root,
+      mergeConfig({
+        build: {
+          content_dir: "content",
+          quality: { heading: "error" },
+        },
+      } as Partial<SoraneConfig>),
+    );
+    assert.equal(report.ok, false);
+    assert.ok(report.error_count >= 1);
+    const file = report.files.find((f) => f.file === "strict.md");
+    assert.equal(file?.ok, false);
+    assert.ok(file?.findings.some((f) => f.category === "heading" && f.severity === "error"));
+  });
+
   test("faq warnings are categorized", () => {
     const root = mkdtempSync(join(tmpdir(), "sorane-validate-"));
     const contentDir = join(root, "content");

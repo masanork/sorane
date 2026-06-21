@@ -90,7 +90,8 @@ okf:
 | `table` | GFM 表のヘッダー区切り行・空ヘッダセル |
 | `date` | `timestamp` / `updated` の形式、`updated` \< `timestamp` |
 | `diagram` | 図表フェンスの alt 欠落 |
-| `heading` | 見出し階層の飛び・本文 h1 |
+| `heading` | 見出し階層の飛び・本文 h1（`heading: error` で validate 失敗） |
+| `lang` | 本文の日英混在・`lang` 属性の形式 |
 
 ```yaml
 build:
@@ -99,9 +100,11 @@ build:
     link_text: true
     table_headers: true
     dates: true
+    heading: warn      # warn（既定）| error | false
+    lang_mixing: true
 ```
 
-いずれかを `false` にすると該当チェックを省略します。
+`image_alt` などを `false` にすると該当チェックを省略します。
 
 ## 多言語（i18n）
 

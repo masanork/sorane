@@ -148,13 +148,13 @@ import {
 } from "./not-found.ts";
 import {
   buildTranslationMap,
+  translationGroupKey,
   hreflangAlternatesForPage,
   langForLocale,
   localeIdFromRelPath,
   ogLocaleAlternatesForPage,
   resolveI18nContext,
   resolvePageLocaleInfo,
-  translationGroupKey,
   type I18nContext,
 } from "./i18n.ts";
 import { okfValidateOptions } from "./okf-config.ts";
@@ -541,6 +541,9 @@ export async function runBuild(opts: BuildOptions): Promise<BuildResult> {
     slug: string;
     url: string;
     concept: ParsedConcept["concept"];
+    localeId: string;
+    groupKey: string;
+    lang: string;
   }> = [];
   let builtPages = 0;
 
@@ -961,6 +964,9 @@ export async function runBuild(opts: BuildOptions): Promise<BuildResult> {
       slug,
       url: canonicalUrl ?? outRel,
       concept: p.concept,
+      localeId: pageLocale.localeId,
+      groupKey: translationGroupKey(p, i18n),
+      lang: pageLang,
     });
   }
 
@@ -1593,6 +1599,7 @@ export async function runBuild(opts: BuildOptions): Promise<BuildResult> {
     buildCatalogJsonLd(catalogInputs, config.site.title, baseUrl, {
       machineReadable: siteAiFlags.machineReadable,
       docsMode,
+      translationMap,
       publisher: siteOrganization
         ? {
             name: siteOrganization.name,

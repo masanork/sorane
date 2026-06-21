@@ -9,6 +9,7 @@ import { validateGlossaryTermWarnings } from "./glossary-term-page.ts";
 import { validateDatasetWarnings } from "./dataset-page.ts";
 import { validateReferenceWarnings } from "./reference-page.ts";
 import { validateHeadingWarnings } from "./validate-heading-structure.ts";
+import { validateLangMixingWarnings } from "./validate-lang-mixing.ts";
 import { validateContentQualityFindings } from "./validate-content-quality.ts";
 import { validateRevisionFindings } from "./revision-history.ts";
 import { validateI18nWarnings } from "./validate-i18n.ts";
@@ -30,7 +31,8 @@ export type ValidateFindingCategory =
   | "glossary"
   | "reference"
   | "dataset"
-  | "i18n";
+  | "i18n"
+  | "lang";
 
 export interface ValidateFinding {
   readonly severity: ValidateFindingSeverity;
@@ -83,6 +85,23 @@ function warningToFinding(category: ValidateFindingCategory, message: string): V
   return { severity: "warning", category, message };
 }
 
+function findingWithSeverity(
+  severity: ValidateFindingSeverity,
+  category: ValidateFindingCategory,
+  message: string,
+): ValidateFinding {
+  return { severity, category, message };
+}
+
+function headingGateEnabled(quality: SoraneConfig["build"]["quality"]): boolean {
+  const mode = quality?.heading;
+  return mode !== false;
+}
+
+function headingSeverity(quality: SoraneConfig["build"]["quality"]): ValidateFindingSeverity {
+  return quality?.heading === "error" ? "error" : "warning";
+}
+
 function frontmatterRecord(source: string): Record<string, unknown> {
   const { frontmatter } = extract(source);
   if (frontmatter === null || frontmatter.length === 0) return {};
@@ -130,11 +149,23 @@ export function validateSiteContent(
         findings.push(warningToFinding("diagram", w));
         warningCount++;
       }
-      for (const w of validateHeadingWarnings(body)) {
-        findings.push(warningToFinding("heading", w));
+      const fm = frontmatterRecord(source);
+      if (headingGateEnabled(config.build.quality)) {
+        const hSeverity = headingSeverity(config.build.quality);
+        for (const w of validateHeadingWarnings(body)) {
+          findings.push(findingWithSeverity(hSeverity, "heading", w));
+          if (hSeverity === "error") errorCount++;
+          else warningCount++;
+        }
+      }
+      const pageLang =
+        typeof fm.lang === "string" && fm.lang.length > 0
+          ? fm.lang
+          : config.site.lang;
+      for (const w of validateLangMixingWarnings(body, pageLang, config.build.quality)) {
+        findings.push(warningToFinding("lang", w));
         warningCount++;
       }
-      const fm = frontmatterRecord(source);
       if (result.type === "faq") {
         for (const w of validateFaqWarnings(body)) {
           findings.push(warningToFinding("faq", w));
@@ -186,9 +217,10 @@ export function validateSiteContent(
       }
     }
 
+    const hasErrorFinding = findings.some((f) => f.severity === "error");
     files.push({
       file: rel,
-      ok: result.ok,
+      ok: result.ok && !hasErrorFinding,
       type: result.type,
       profile: profileFromSource(source),
       findings,

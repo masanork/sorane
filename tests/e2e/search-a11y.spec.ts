@@ -18,7 +18,21 @@ test("header search updates aria-live on query", async ({ page }) => {
     (form as HTMLFormElement).requestSubmit();
   });
 
-  await expect(status).toContainText(/\d+ 件|該当なし/, { timeout: 15_000 });
+  await expect(status).toContainText(/\d+ 件|該当するページは見つかりません/, { timeout: 15_000 });
+});
+
+test("header search shows visible empty state when no hits", async ({ page }) => {
+  await page.goto("/index.html");
+  const input = page.locator(".search--header .search-input");
+  const empty = page.locator(".search--header .search-empty");
+
+  await input.fill("zzzznotfoundquery12345");
+  await page.locator(".search--header .search-form").evaluate((form) => {
+    (form as HTMLFormElement).requestSubmit();
+  });
+
+  await expect(empty).toBeVisible({ timeout: 15_000 });
+  await expect(empty).toContainText(/該当するページは見つかりません|No matching pages/);
 });
 
 test("search results list is aria-live", async ({ page }) => {

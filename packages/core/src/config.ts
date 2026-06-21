@@ -96,6 +96,8 @@ export interface C2paConfig {
   readonly settings_path?: string;
 }
 
+export type QualityGateSeverity = "warn" | "error";
+
 export interface QualityGateConfig {
   /** 本文画像の alt 欠落（既定: true） */
   readonly image_alt?: boolean;
@@ -105,6 +107,10 @@ export interface QualityGateConfig {
   readonly table_headers?: boolean;
   /** timestamp / updated の形式・順序（既定: true） */
   readonly dates?: boolean;
+  /** 見出し階層（既定: warn）。`error` で validate が失敗、`false` で無効 */
+  readonly heading?: boolean | QualityGateSeverity;
+  /** 本文の言語混在・`lang` 属性（既定: true） */
+  readonly lang_mixing?: boolean;
 }
 
 export interface AiDisclosureConfig {
