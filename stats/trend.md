@@ -6,30 +6,30 @@ Auto-generated from `stats/history.jsonl` on each CI run on `main`.
 
 | Field | Value |
 |-------|-------|
-| Timestamp | 2026-06-21T09:07:39.398Z |
-| Commit | `14a46f9` |
+| Timestamp | 2026-06-21T10:29:33.355Z |
+| Commit | `2388c21` |
 | Version | `0.4.0` |
-| Packages LOC | 18,371 |
-| Test functions | 589 |
-| Total LOC | 35,285 |
-| Line coverage | 66.4% |
+| Packages LOC | 19,060 |
+| Test functions | 601 |
+| Total LOC | 36,436 |
+| Line coverage | 66.0% |
 
 ## Δ vs previous run
 
 | Metric | Δ |
 |--------|---|
-| Packages LOC | +278 |
-| Test functions | +9 |
-| Total LOC | +784 |
-| Coverage | +0.1% |
+| Packages LOC | +689 |
+| Test functions | +12 |
+| Total LOC | +1,151 |
+| Coverage | -0.4% |
 
-## Δ vs oldest in window (16 runs)
+## Δ vs oldest in window (17 runs)
 
 | Metric | Start | Latest | Δ |
 |--------|-------|--------|---|
-| Packages LOC | 8,914 | 18,371 | +9,457 |
-| Test functions | 261 | 589 | +328 |
-| Total LOC | 17,869 | 35,285 | +17,416 |
+| Packages LOC | 8,914 | 19,060 | +10,146 |
+| Test functions | 261 | 601 | +340 |
+| Total LOC | 17,869 | 36,436 | +18,567 |
 
 ## History
 
@@ -51,14 +51,15 @@ Auto-generated from `stats/history.jsonl` on each CI run on `main`.
 | 2026-06-21 08:35 | `644b01c` | 0.4.0 | 17,812 | 570 | 34,006 | 66.3 | +50 |
 | 2026-06-21 08:42 | `746a956` | 0.4.0 | 18,093 | 580 | 34,501 | 66.3 | +281 |
 | 2026-06-21 09:07 | `14a46f9` | 0.4.0 | 18,371 | 589 | 35,285 | 66.4 | +278 |
+| 2026-06-21 10:29 | `2388c21` | 0.4.0 | 19,060 | 601 | 36,436 | 66.0 | +689 |
 
 ## Workspace LOC (latest)
 
 | Workspace | Lines |
 |-----------|-------|
-| `@sorane/core` | 14,837 |
-| `@sorane/search` | 1,536 |
+| `@sorane/core` | 15,511 |
+| `@sorane/search` | 1,542 |
 | `@sorane/okf` | 954 |
-| `@sorane/cli` | 690 |
+| `@sorane/cli` | 699 |
 | `@sorane/font` | 354 |
 
