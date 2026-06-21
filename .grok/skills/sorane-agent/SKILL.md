@@ -16,7 +16,13 @@ Repository: OKF-native SSG. Workspaces under `packages/*`, tests in `tests/`.
 npm run typecheck
 npm test
 npm run build -- --cwd examples/minimal --clean
+npm run stats                  # LOC / test ratio / workspace breakdown
+npm run stats:json             # machine-readable snapshot
 ```
+
+Optional: `npm run stats -- --save out` writes `out/project-stats.{json,md}`.
+Coverage overlay: `npm run test:coverage:lcov` then
+`npm run stats -- --coverage coverage/lcov.info`.
 
 Agent-facing features to keep aligned:
 

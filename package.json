@@ -31,6 +31,8 @@
     "test:image-metadata": "node --test tests/iptc-xmp-pass.test.ts tests/static-assets.test.ts tests/asset-provenance.test.ts",
     "typecheck": "tsc --noEmit",
     "cbom-check": "node scripts/cbom-check.ts",
+    "stats": "node scripts/project-stats.ts",
+    "stats:json": "node scripts/project-stats.ts --json",
     "pack:cli": "npm pack -w @sorane/cli",
     "publish:workspaces": "npm publish -w @sorane/font --access public && npm publish -w @sorane/okf --access public && npm publish -w @sorane/search --access public && npm publish -w @sorane/core --access public && npm publish -w @sorane/cli --access public"
   },

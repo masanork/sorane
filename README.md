@@ -14,6 +14,7 @@ OKF-native static site generator. Markdown concepts with YAML frontmatter become
 npm install
 npm test
 npm run build -- --cwd examples/minimal --clean
+npm run stats                  # project size / test ratio snapshot
 ```
 
 Or install the CLI from npm (after publish):
