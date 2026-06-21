@@ -20,4 +20,4 @@ This example site shows every extended OKF concept type in sorane-okf/0.3.
 
 ## Machine-readable outputs
 
-After `sorane build --clean`, see `dist/catalog.jsonld` (`dataset[]` vs `hasPart[]`), `dist/okf/bundle.tar.gz`, and per-page `.md` alternates.
+After `sorane build --clean`, see `dist/catalog.jsonld` (schema.org), `dist/catalog-dcat.jsonld` (DCAT-AP for datasets), `dist/okf/bundle.tar.gz`, and per-page `.md` alternates.

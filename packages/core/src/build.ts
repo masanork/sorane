@@ -25,6 +25,7 @@ import {
   parseAiDisclosure,
   resolveAiDisclosureFlags,
 } from "./ai-disclosure.ts";
+import { buildCatalogDcatJsonLd } from "./catalog-dcat.ts";
 import { buildCatalogJsonLd, buildDatasetPageJsonLd } from "./catalog.ts";
 import { resolveCatalogCreativeWorkType } from "./creative-work-type.ts";
 import { renderDatasetPageBody } from "./dataset-page.ts";
@@ -1367,6 +1368,7 @@ export async function runBuild(opts: BuildOptions): Promise<BuildResult> {
     buildSitemapXml(siteEntries, baseUrl),
     "utf8",
   );
+  const dcatCatalogEnabled = config.site.open_data?.dcat_catalog === true;
   const llmsExtraSections = [
     llmsContactSection({
       contact: config.site.contact,
@@ -1383,6 +1385,7 @@ export async function runBuild(opts: BuildOptions): Promise<BuildResult> {
       baseUrl,
       aiLabeledCount: siteAiFlags.machineReadable ? aiLabeledCount : undefined,
       diagramsEnabled: diagramConfig.enabled !== false,
+      dcatCatalog: dcatCatalogEnabled,
       extraSections: llmsExtraSections,
     }),
     "utf8",
@@ -1413,6 +1416,27 @@ export async function runBuild(opts: BuildOptions): Promise<BuildResult> {
     }),
     "utf8",
   );
+  if (dcatCatalogEnabled) {
+    const dcatJson = buildCatalogDcatJsonLd(
+      catalogInputs,
+      config.site.title,
+      baseUrl,
+      {
+        siteDescription: config.site.description,
+        defaultLicense: config.site.open_data?.default_license,
+        publisher: siteOrganization
+          ? {
+              name: siteOrganization.name,
+              url: siteOrganization.url,
+              type: siteOrganization.type,
+            }
+          : undefined,
+      },
+    );
+    if (dcatJson) {
+      writeFileSync(join(outDir, "catalog-dcat.jsonld"), dcatJson, "utf8");
+    }
+  }
   if (aiLabeledCount > 0) {
     process.stdout.write(
       `[sorane] AI disclosure: ${aiLabeledCount} labeled article(s)\n`,

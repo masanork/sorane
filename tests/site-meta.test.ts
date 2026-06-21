@@ -117,6 +117,17 @@ describe("buildLlmsTxt", () => {
     expect(txt).toContain("catalog.jsonld");
   });
 
+  test("dcatCatalog で DCAT リンクを出す", () => {
+    const txt = buildLlmsTxt({
+      siteTitle: "S",
+      siteDescription: "D",
+      baseUrl: "https://ex.dev",
+      dcatCatalog: true,
+    });
+    expect(txt).toContain("catalog-dcat.jsonld");
+    expect(txt).toContain("DCAT-AP");
+  });
+
   test("diagramsEnabled と aiLabeledCount を反映", () => {
     const txt = buildLlmsTxt({
       siteTitle: "S",

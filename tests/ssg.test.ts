@@ -411,10 +411,15 @@ describe("runBuild", () => {
   test("open-data example は dataset ページと catalog 分離を出す", async () => {
     const exampleRoot = join(import.meta.dirname, "../examples/open-data");
     const tmp = mkdtempSync(join(tmpdir(), "sorane-open-data-"));
+    const { loadSoraneConfig } = await import("../packages/cli/src/config-load.ts");
+    const exampleConfig = loadSoraneConfig(exampleRoot);
     try {
       const result = await runBuild({
         cwd: exampleRoot,
-        config: { build: { out_dir: join(tmp, "dist") } } as Partial<SoraneConfig>,
+        config: {
+          ...exampleConfig,
+          build: { ...exampleConfig.build, out_dir: join(tmp, "dist") },
+        },
         clean: true,
       });
       expect(result.pages >= 2).toBe(true);
@@ -451,6 +456,15 @@ describe("runBuild", () => {
       const searchHtml = readFileSync(join(tmp, "dist/search.html"), "utf8");
       expect(searchHtml).toContain('class="search"');
       expect(searchHtml).toContain('value="dataset"');
+
+      const dcatCatalog = readFileSync(join(tmp, "dist/catalog-dcat.jsonld"), "utf8");
+      const dcatParsed = JSON.parse(dcatCatalog) as Record<string, unknown>;
+      expect(dcatParsed["@type"]).toBe("dcat:Catalog");
+      expect(Array.isArray(dcatParsed["dcat:dataset"])).toBe(true);
+      expect((dcatParsed["dcat:dataset"] as unknown[]).length).toBe(1);
+
+      const llms = readFileSync(join(tmp, "dist/llms.txt"), "utf8");
+      expect(llms).toContain("catalog-dcat.jsonld");
     } finally {
       rmSync(tmp, { recursive: true, force: true });
     }

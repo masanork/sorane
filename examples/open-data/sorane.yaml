@@ -3,6 +3,12 @@ site:
   description: "sorane-okf/0.3 demo — dataset, reference, glossary, FAQ, and search"
   base_url: "https://example.pages.dev"
   lang: en
+  organization:
+    name: Example Transit Authority
+    url: https://example.pages.dev
+    type: GovernmentOrganization
+  open_data:
+    dcat_catalog: true
 
 build:
   content_dir: content

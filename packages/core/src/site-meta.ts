@@ -49,6 +49,7 @@ export interface LlmsTxtOptions {
   readonly baseUrl: string;
   readonly aiLabeledCount?: number;
   readonly diagramsEnabled?: boolean;
+  readonly dcatCatalog?: boolean;
   readonly extraSections?: readonly string[];
 }
 
@@ -119,8 +120,13 @@ export function buildLlmsTxt(opts: LlmsTxtOptions): string {
     "",
     `- [OKF bundle](${abs("okf/bundle.tar.gz")}): all concepts as {type}/{slug}.md`,
     `- [Site catalog](${abs("catalog.jsonld")}): open datasets in \`dataset[]\`; other pages in \`hasPart[]\``,
-    `- [Sitemap](${abs("sitemap.xml")})`,
   ];
+  if (opts.dcatCatalog) {
+    lines.push(
+      `- [DCAT catalog](${abs("catalog-dcat.jsonld")}): DCAT-AP JSON-LD for \`type: dataset\` pages only (portal harvest)`,
+    );
+  }
+  lines.push(`- [Sitemap](${abs("sitemap.xml")})`);
   if (opts.diagramsEnabled) {
     lines.push(
       "",

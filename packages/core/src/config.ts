@@ -156,6 +156,13 @@ export type {
   SiteHostingLogpushConfig,
 } from "./hosting-cloudflare.ts";
 
+export interface SiteOpenDataConfig {
+  /** Emit `dist/catalog-dcat.jsonld` (DCAT-AP JSON-LD for `type: dataset` only). */
+  readonly dcat_catalog?: boolean;
+  /** Fallback `dct:license` when a dataset omits `license`. */
+  readonly default_license?: string;
+}
+
 export interface SoraneConfig {
   readonly site: {
     readonly title: string;
@@ -174,6 +181,8 @@ export interface SoraneConfig {
     readonly emergency?: SiteEmergencyConfig;
     /** ホスティング連携（Cloudflare Logpush 等） */
     readonly hosting?: SiteHostingConfig;
+    /** オープンデータ出力（DCAT-AP カタログ等） */
+    readonly open_data?: SiteOpenDataConfig;
   };
   readonly build: {
     readonly content_dir: string;

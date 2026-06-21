@@ -46,6 +46,7 @@ export {
   stripDuplicateTitleHeading,
 } from "./render.ts";
 export { buildCatalogJsonLd, type CatalogEntry } from "./catalog.ts";
+export { buildCatalogDcatJsonLd, hasDcatCatalogDatasets } from "./catalog-dcat.ts";
 export {
   buildRobotsTxt,
   buildSitemapXml,

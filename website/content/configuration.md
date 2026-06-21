@@ -50,6 +50,21 @@ site:
 
 詳細: [design/findability-pack.md](https://github.com/masanork/sorane/blob/main/design/findability-pack.md)
 
+## オープンデータ（DCAT カタログ）
+
+`type: dataset` ページ向けに、ポータル連携用の DCAT-AP JSON-LD を追加出力できます（schema.org の `catalog.jsonld` とは別ファイル）。
+
+```yaml
+site:
+  open_data:
+    dcat_catalog: true          # dist/catalog-dcat.jsonld を生成
+    default_license: CC-BY-4.0  # 任意。dataset に license が無いときのフォールバック
+```
+
+- 有効時、`type: dataset` が 1 件以上あるビルドだけ `catalog-dcat.jsonld` を書き出します
+- `llms.txt` に DCAT カタログへのリンクが追加されます
+- 実例: [examples/open-data/](https://github.com/masanork/sorane/tree/main/examples/open-data)
+
 ## 品質ゲート（validate）
 
 `validate --json` は OKF に加え、公的サイト向けの **warning** を出します（ビルドは継続）。

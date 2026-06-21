@@ -114,7 +114,8 @@ profile: sorane-okf/0.3
 |------|------|
 | `*.html` | 人間向けページ |
 | `*.md` | OKF ネイティブ代替ソース |
-| `catalog.jsonld` | DCAT 形式カタログ（`dataset[]` と `hasPart[]` を分離） |
+| `catalog.jsonld` | schema.org カタログ（`dataset[]` と `hasPart[]` を分離） |
+| `catalog-dcat.jsonld` | DCAT-AP JSON-LD（`type: dataset` のみ、opt-in） |
 | `llms.txt` | LLM 向けサイトガイド |
 | `okf/bundle.tar.gz` | `{type}/{slug}.md` のバンドル |
 

@@ -26,7 +26,8 @@ npx @sorane/cli build --cwd examples/open-data --clean
 
 ## What to inspect in `dist/`
 
-- `catalog.jsonld` — `dataset[]` for transit-stops; `hasPart[]` for faq, glossary, reference, search
+- `catalog.jsonld` — schema.org `dataset[]` / `hasPart[]`
+- `catalog-dcat.jsonld` — DCAT-AP JSON-LD for datasets only (`site.open_data.dcat_catalog: true`)
 - `transit-stops.html` — dataset landing (license, publisher, distributions)
 - `faq.html` / `glossary.html` — section templates + JSON-LD (`mainEntity` / `hasDefinedTerm`)
 - `stops-csv-fields.html` — reference layout + `isBasedOn` JSON-LD
