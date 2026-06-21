@@ -76,6 +76,18 @@ distributions:
 
 実例: [examples/open-data/](https://github.com/masanork/sorane/tree/main/examples/open-data)
 
+## 用語集・FAQ の例
+
+`glossary` と `faq` は本文で `##` 見出しごとに用語・質問を書きます。アンカー `{#id}` を付けるとページ内リンクと JSON-LD の term id に使えます。
+
+```markdown
+## 分散 {#variance}
+
+標本の二乗偏差の平均。
+```
+
+`glossary` は frontmatter の `terms:` リストでも定義できます（本文の `##` がある場合は本文を優先）。
+
 ## ビルド出力
 
 | パス | 内容 |

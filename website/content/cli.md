@@ -48,6 +48,7 @@ npx @sorane/cli validate [--cwd <dir>] [--json]
 | `date` | `timestamp` / `updated` の形式・順序 |
 | `revision` | `revisions` 配列の形式・日付・要約・並び |
 | `faq` | `type: faq` の `##` 質問見出し・回答の構造 |
+| `glossary` | `type: glossary` の `##` 用語見出し・定義、`terms:` 構造 |
 
 `build.quality` で `image` / `link` / `table` / `date` の warning を個別に無効化できます（[設定](configuration.html#品質ゲートvalidate)）。
 

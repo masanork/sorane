@@ -4,6 +4,7 @@ import { extract, parseYaml, validateSource, type ValidationIssue } from "@soran
 import type { SoraneConfig } from "./config.ts";
 import { validateDiagramAltWarnings } from "./diagrams/validate-diagram-alt.ts";
 import { validateFaqWarnings } from "./faq-page.ts";
+import { validateGlossaryWarnings } from "./glossary-page.ts";
 import { validateHeadingWarnings } from "./validate-heading-structure.ts";
 import { validateContentQualityFindings } from "./validate-content-quality.ts";
 import { validateRevisionFindings } from "./revision-history.ts";
@@ -20,7 +21,8 @@ export type ValidateFindingCategory =
   | "table"
   | "date"
   | "revision"
-  | "faq";
+  | "faq"
+  | "glossary";
 
 export interface ValidateFinding {
   readonly severity: ValidateFindingSeverity;
@@ -121,13 +123,19 @@ export function validateSiteContent(
         findings.push(warningToFinding("heading", w));
         warningCount++;
       }
+      const fm = frontmatterRecord(source);
       if (result.type === "faq") {
         for (const w of validateFaqWarnings(body)) {
           findings.push(warningToFinding("faq", w));
           warningCount++;
         }
       }
-      const fm = frontmatterRecord(source);
+      if (result.type === "glossary") {
+        for (const w of validateGlossaryWarnings(body, fm)) {
+          findings.push(warningToFinding("glossary", w));
+          warningCount++;
+        }
+      }
       for (const f of validateContentQualityFindings(body, fm, config.build.quality)) {
         findings.push(warningToFinding(f.category, f.message));
         warningCount++;

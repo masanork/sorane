@@ -7,8 +7,9 @@ All notable changes to sorane are documented here. Versioning follows [SemVer](h
 ### Added
 
 - FAQ page template (`type: faq`): `##` Q/A sections, `.faq-*` CSS, `FAQPage` JSON-LD with `mainEntity`
-- `validate --json` category `faq` for FAQ body structure warnings
-- `examples/open-data/content/faq.md` demo page
+- Glossary page template (`type: glossary`): `##` term sections or `terms:` frontmatter, `.glossary-*` CSS, `DefinedTermSet` JSON-LD with `hasDefinedTerm`
+- `validate --json` categories `faq` and `glossary` for body structure warnings
+- `examples/open-data/content/faq.md` and `glossary.md` demo pages
 
 ## [0.2.8] - 2026-06-21
 

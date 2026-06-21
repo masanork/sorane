@@ -34,6 +34,11 @@ import {
   renderFaqPageBody,
 } from "./faq-page.ts";
 import {
+  buildGlossaryPageJsonLd,
+  resolveGlossaryTerms,
+  renderGlossaryPageBody,
+} from "./glossary-page.ts";
+import {
   DEFAULT_DIAGRAMS_CONFIG,
   mergeConfig,
   resolvePermalink,
@@ -572,6 +577,8 @@ export async function runBuild(opts: BuildOptions): Promise<BuildResult> {
     let bodyHtml: string;
     let faqJsonLdItems: ReturnType<typeof parseFaqBody> | undefined;
     let faqAnswerHtmls: string[] | undefined;
+    let glossaryResolved: ReturnType<typeof resolveGlossaryTerms> | undefined;
+    let glossaryDefinitionHtmls: string[] | undefined;
     const canonicalUrl = baseUrl.length > 0 ? `${baseUrl}/${outRel}` : undefined;
     if (effectiveType === "dataset") {
       const section = await renderBodySectionForConfig(
@@ -611,6 +618,39 @@ export async function runBuild(opts: BuildOptions): Promise<BuildResult> {
         p.concept,
         parsedFaq.items,
         faqAnswerHtmls,
+        introSection?.html,
+      );
+    } else if (effectiveType === "glossary") {
+      const resolved = resolveGlossaryTerms(p.concept.body, p.concept.frontmatter);
+      glossaryResolved = resolved;
+      const definitionSections = await Promise.all(
+        resolved.items.map((term) =>
+          term.definitionMarkdown.length > 0
+            ? renderBodySectionForConfig(
+                term.definitionMarkdown,
+                bodySectionOpts(rootPrefix),
+              )
+            : Promise.resolve({ html: "", diagrams: emptyDiagramMeta() }),
+        ),
+      );
+      for (const s of definitionSections) {
+        pageDiagrams = mergeDiagramMeta(pageDiagrams, s.diagrams);
+      }
+      glossaryDefinitionHtmls = definitionSections.map((s) => s.html);
+      const introSection =
+        resolved.source === "body" && resolved.preambleMarkdown.length > 0
+          ? await renderBodySectionForConfig(
+              resolved.preambleMarkdown,
+              bodySectionOpts(rootPrefix),
+            )
+          : undefined;
+      if (introSection) {
+        pageDiagrams = mergeDiagramMeta(pageDiagrams, introSection.diagrams);
+      }
+      bodyHtml = renderGlossaryPageBody(
+        p.concept,
+        resolved.items,
+        glossaryDefinitionHtmls,
         introSection?.html,
       );
     } else if (isSearch) {
@@ -695,7 +735,26 @@ export async function runBuild(opts: BuildOptions): Promise<BuildResult> {
               organization: siteOrganization,
               frontmatter: p.concept.frontmatter,
             })
-          : buildCreativeWorkJsonLd({
+          : effectiveType === "glossary" && glossaryResolved && glossaryDefinitionHtmls
+            ? buildGlossaryPageJsonLd({
+                title: p.concept.title,
+                description:
+                  p.concept.description ?? extractDescription(p.concept.body) ?? undefined,
+                url: canonicalUrl ?? outRel,
+                datePublished: p.concept.timestamp,
+                dateModified: updated ?? p.concept.timestamp,
+                author,
+                siteTitle: config.site.title,
+                lang: pageLang,
+                terms: glossaryResolved.items,
+                definitionHtmls: glossaryDefinitionHtmls,
+                aiDisclosure:
+                  pageAiFlags.jsonLd && aiDisclosure ? aiDisclosure : undefined,
+                associatedMedia: associatedMedia.length > 0 ? associatedMedia : undefined,
+                organization: siteOrganization,
+                frontmatter: p.concept.frontmatter,
+              })
+            : buildCreativeWorkJsonLd({
             workType: resolveCatalogCreativeWorkType(p.concept, docsMode),
             title: p.concept.title,
             description:

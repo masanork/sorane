@@ -127,7 +127,11 @@ title: Glossary
 profile: sorane-okf/0.3
 ---
 
-Terms.
+## Alpha {#alpha}
+First term.
+
+## Beta {#beta}
+Second term.
 `,
         "2025-03-01-a.md": ARTICLE("a", "2025-03-01", "digitalSourceType: trainedAlgorithmicMedia"),
         "2025-02-01-b.md": ARTICLE("b", "2025-02-01"),
@@ -176,6 +180,11 @@ Search intro.
       expect(faqHtml).toContain('class="faq-page"');
       expect(faqHtml).toContain("mainEntity");
       expect(faqHtml).toContain("First?");
+
+      const glossaryHtml = readFileSync(join(outDir, "glossary.html"), "utf8");
+      expect(glossaryHtml).toContain('class="glossary-page"');
+      expect(glossaryHtml).toContain("hasDefinedTerm");
+      expect(glossaryHtml).toContain('id="alpha"');
 
       const catalog = readFileSync(join(outDir, "catalog.jsonld"), "utf8");
       expect(catalog).toContain("FAQPage");

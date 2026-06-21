@@ -422,12 +422,17 @@ describe("runBuild", () => {
         hasPart?: { "@type": string }[];
       };
       expect(parsed.dataset?.length).toBe(1);
-      expect((parsed.hasPart ?? []).length).toBe(1);
-      expect(parsed.hasPart?.[0]?.["@type"]).toBe("FAQPage");
+      expect((parsed.hasPart ?? []).length).toBe(2);
+      const hasPartTypes = (parsed.hasPart ?? []).map((p) => p["@type"]).sort();
+      expect(hasPartTypes).toEqual(["DefinedTermSet", "FAQPage"]);
 
       const faqHtml = readFileSync(join(tmp, "dist/faq.html"), "utf8");
       expect(faqHtml).toContain('class="faq-page"');
       expect(faqHtml).toContain("mainEntity");
+
+      const glossaryHtml = readFileSync(join(tmp, "dist/glossary.html"), "utf8");
+      expect(glossaryHtml).toContain('class="glossary-page"');
+      expect(glossaryHtml).toContain("hasDefinedTerm");
     } finally {
       rmSync(tmp, { recursive: true, force: true });
     }

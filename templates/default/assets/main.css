@@ -757,3 +757,71 @@ section.faq {
 .faq-answer > :last-child {
   margin-bottom: 0;
 }
+
+/* Glossary page (sorane-okf/0.3 type: glossary) */
+.glossary-page {
+  margin: 0 auto;
+  max-width: var(--content-width, 42rem);
+}
+
+.glossary-header {
+  margin-bottom: 1.5rem;
+}
+
+.glossary-header h1 {
+  margin: 0 0 0.5rem;
+}
+
+.glossary-description {
+  margin: 0 0 0.5rem;
+  color: var(--muted);
+  font-size: 1.05rem;
+}
+
+.glossary-meta {
+  margin: 0;
+  font-size: 0.95rem;
+  color: var(--muted);
+}
+
+.glossary-intro {
+  margin-bottom: 1.5rem;
+}
+
+.glossary-list {
+  display: flex;
+  flex-direction: column;
+  gap: 1.25rem;
+}
+
+section.glossary-term {
+  padding: 1rem 1.25rem;
+  border: 1px solid var(--border);
+  border-radius: 6px;
+  background: #fafafa;
+}
+
+.glossary-label {
+  margin: 0 0 0.75rem;
+  font-size: 1.1rem;
+  line-height: 1.4;
+}
+
+.glossary-definition {
+  font-size: 0.98rem;
+  line-height: 1.65;
+}
+
+.glossary-definition > :first-child {
+  margin-top: 0;
+}
+
+.glossary-definition > :last-child {
+  margin-bottom: 0;
+}
+
+.glossary-see-also {
+  margin: 0.75rem 0 0;
+  font-size: 0.9rem;
+  color: var(--muted);
+}
