@@ -144,6 +144,50 @@ describe("buildPage hreflang", () => {
 });
 
 describe("runBuild i18n", () => {
+  test("ロケール別 archive / tag を焼く", async () => {
+    const tmp = mkdtempSync(join(tmpdir(), "sorane-i18n-blog-"));
+    const contentDir = join(tmp, "content");
+    mkdirSync(join(contentDir, "en"), { recursive: true });
+    writeFileSync(
+      join(contentDir, "index.md"),
+      "---\ntitle: Blog\ntype: index\nprofile: sorane-okf/0.1\n---\n\n",
+    );
+    writeFileSync(
+      join(contentDir, "en/index.md"),
+      "---\ntitle: Blog EN\ntype: index\nprofile: sorane-okf/0.1\n---\n\n",
+    );
+    writeFileSync(
+      join(contentDir, "post-ja.md"),
+      "---\ntitle: JA Post\ntype: article\ntimestamp: 2025-06-01T00:00:00Z\ntags: [news]\nprofile: sorane-okf/0.1\n---\n\n",
+    );
+    writeFileSync(
+      join(contentDir, "en/post-en.md"),
+      "---\ntitle: EN Post\ntype: article\ntimestamp: 2025-06-02T00:00:00Z\ntags: [news]\nprofile: sorane-okf/0.1\n---\n\n",
+    );
+    try {
+      await runBuild({
+        cwd: tmp,
+        config: {
+          site: i18nSite,
+          build: { content_dir: "content", out_dir: join(tmp, "dist") },
+        } as Partial<SoraneConfig>,
+        clean: true,
+      });
+      expect(existsSync(join(tmp, "dist/archive/index.html"))).toBe(true);
+      expect(existsSync(join(tmp, "dist/tag/news.html"))).toBe(true);
+      expect(existsSync(join(tmp, "dist/en/archive/index.html"))).toBe(true);
+      expect(existsSync(join(tmp, "dist/en/tag/news.html"))).toBe(true);
+
+      const enArchive = readFileSync(join(tmp, "dist/en/archive/index.html"), "utf8");
+      expect(enArchive).toContain('<html lang="en">');
+      expect(enArchive).toContain("Archive by year");
+      const enTag = readFileSync(join(tmp, "dist/en/tag/news.html"), "utf8");
+      expect(enTag).toContain("Tag: news");
+    } finally {
+      rmSync(tmp, { recursive: true, force: true });
+    }
+  });
+
   test("JA + EN ページを hreflang 付きで焼く", async () => {
     const tmp = mkdtempSync(join(tmpdir(), "sorane-i18n-"));
     const contentDir = join(tmp, "content");

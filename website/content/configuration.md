@@ -109,7 +109,8 @@ site:
 - **その他** … `content/{path_prefix}/` に同じ相対パスを置く（例: `content/en/about.md` → `en/about.html`）
 - ファイル名が異なる場合は frontmatter の `translation_key` で翻訳ペアをグループ化
 - ページごとの `lang` frontmatter で `<html lang>` を上書き可能
-- アーカイブ・タグ一覧は現状、既定ロケールのみ
+- アーカイブ・タグ・ページネーションはロケール別（例: `en/archive/index.html`, `en/tag/slug.html`）
+- `validate --json` の `i18n` category で `translation_key` の欠落・不整合を warning
 
 詳細: [design/i18n.md](https://github.com/masanork/sorane/blob/main/design/i18n.md)
 

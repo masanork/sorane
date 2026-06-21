@@ -90,7 +90,7 @@ import {
   slugifyTag,
 } from "./blog-pages.ts";
 import { emitPage } from "./emit-page.ts";
-import { siteChromeText } from "./site-labels.ts";
+import { siteChromeText, siteLabels } from "./site-labels.ts";
 import type { OkfConcept } from "@sorane/okf";
 import {
   buildAtomFeed,
@@ -142,6 +142,7 @@ import {
 import {
   buildTranslationMap,
   hreflangAlternatesForPage,
+  langForLocale,
   localeIdFromRelPath,
   ogLocaleAlternatesForPage,
   resolveI18nContext,
@@ -241,6 +242,44 @@ function syntheticConcept(title: string, description?: string): OkfConcept {
     warnings: [],
     description,
   };
+}
+
+const DEFAULT_LOCALE_ID = "default";
+
+function localeBlogPathPrefix(localeId: string, i18n: I18nContext): string {
+  if (localeId === DEFAULT_LOCALE_ID) return "";
+  return `${i18n.locales[localeId]!.path_prefix}/`;
+}
+
+function articleSummariesForLocale(
+  parsed: readonly ParsedConcept[],
+  config: SoraneConfig,
+  i18n: I18nContext,
+  localeId: string,
+): ArticleListEntry[] {
+  return parsed
+    .filter(
+      (p) =>
+        isBlogArticle(p.concept, p.relPath) &&
+        localeIdFromRelPath(p.relPath, i18n) === localeId,
+    )
+    .map((p) => {
+      const outRel = resolvePageLocaleInfo(p, config, i18n).outRel;
+      const rawDesc =
+        p.concept.description ?? extractDescription(p.concept.body) ?? undefined;
+      const aiDisclosure = parseAiDisclosure(p.concept.frontmatter) ?? undefined;
+      return {
+        title: p.concept.title,
+        href: outRel,
+        timestamp: p.concept.timestamp,
+        updated: frontmatterString(p.concept.frontmatter, "updated"),
+        author: frontmatterString(p.concept.frontmatter, "author"),
+        description: rawDesc ? sanitizeListDescription(rawDesc) : undefined,
+        tags: p.concept.tags,
+        aiDisclosure,
+      };
+    })
+    .sort((a, b) => (b.timestamp ?? "").localeCompare(a.timestamp ?? ""));
 }
 
 function articleNavFor(
@@ -1066,6 +1105,9 @@ export async function runBuild(opts: BuildOptions): Promise<BuildResult> {
         bodySectionOpts(rootPrefix),
       );
       const useBlogLayout = localeIndex.concept.type === "index";
+      const listForLocalePagination =
+        localeArticles.length > 0 ? localeArticles.slice(1) : [];
+      const localeArchivePages = paginate(listForLocalePagination, blogOpts.page_size);
       let bodyHtml: string;
       if (useBlogLayout) {
         bodyHtml = renderBlogIndexBody({
@@ -1074,11 +1116,14 @@ export async function runBuild(opts: BuildOptions): Promise<BuildResult> {
           showHeaderTitle: false,
           introHtml: intro.introHtml,
           lang: pageLocale.lang,
-          articles: localeArticles.slice(0, blogOpts.index_archive_limit),
+          articles: localeArchivePages[0] ?? localeArticles,
           archiveLimit: blogOpts.index_archive_limit,
           showListDescriptions: blogOpts.show_list_descriptions,
           showOnLists: siteAiFlags.showOnLists,
           listRootPrefix: rootPrefix,
+          moreArticlesHref:
+            localeArchivePages.length > 1 ? "page/2.html" : undefined,
+          yearArchiveHref: blogOpts.archives ? "archive/index.html" : undefined,
         });
       } else {
         bodyHtml = renderIndexBody(indexTitle, localeArticles);
@@ -1140,7 +1185,7 @@ export async function runBuild(opts: BuildOptions): Promise<BuildResult> {
           ...(localeHeaderSearch.extraHead ?? []),
           ...(localeDiagramHead ? [localeDiagramHead] : []),
         ],
-        showArchiveNav: false,
+        showArchiveNav: showArchiveInHeader,
         searchPath: searchNavPath,
         headerSearchHtml: localeHeaderSearch.headerSearchHtml,
       });
@@ -1153,178 +1198,231 @@ export async function runBuild(opts: BuildOptions): Promise<BuildResult> {
     }
   }
 
-  // --- Phase C: 派生ブログページ（index がある場合）---
+  // --- Phase C: 派生ブログページ（index がある場合、ロケール別）---
   if (indexParsed) {
-    for (let i = 1; i < archivePages.length; i++) {
-      const pageNum = i + 1;
-      const outRel = `page/${pageNum}.html`;
-      const bodyHtml = renderArchiveListBody(
-        `${config.site.title} — ページ ${pageNum}`,
-        undefined,
-        archivePages[i]!,
-        {
-          fromRel: outRel,
-          page: pageNum,
-          totalPages: archivePages.length,
-          showOnLists: siteAiFlags.showOnLists,
-        },
-      );
-      const concept = syntheticConcept(`${config.site.title} — ページ ${pageNum}`);
-      const rootPrefix = rootPrefixFromRel(outRel);
-      const fontCss = await fontCssFor(concept, rootPrefix, i18n.defaultLang, bodyHtml);
-      const pageChrome = headerSearchFor(rootPrefix, { isSearch: false });
-      emitPage({
-        cwd,
-        config,
-        outDir,
-        outRel,
-        concept,
-        bodyHtml,
-        baseUrl,
-        fontCss,
-        showArchiveNav: showArchiveInHeader,
-        searchPath: searchNavPath,
-        headerSearchHtml: pageChrome.headerSearchHtml,
-        extraHead: pageChrome.extraHead,
-      });
-      builtPages += 1;
-      siteEntries.push({ url: outRel, lastmod: undefined, isIndex: false });
-    }
-  }
-
-  if (indexParsed && blogOpts.archives && articleSummaries.length > 0) {
-    const byYear = groupByYear(articleSummaries);
-    const byMonth = groupByYearMonth(articleSummaries);
-
-    const archiveIndexHtml = renderYearArchiveIndexBody(
-      config.site.title,
-      byYear,
-      "archive/index.html",
-    );
-    const archiveIndexConcept = syntheticConcept(`${config.site.title} — 年別アーカイブ`);
-    const archiveIndexFontCss = await fontCssFor(
-      archiveIndexConcept,
-      rootPrefixFromRel("archive/index.html"),
-      i18n.defaultLang,
-      archiveIndexHtml,
-    );
-    const archiveIndexChrome = headerSearchFor(rootPrefixFromRel("archive/index.html"), {
-      isSearch: false,
-    });
-    emitPage({
-      cwd,
-      config,
-      outDir,
-      outRel: "archive/index.html",
-      concept: archiveIndexConcept,
-      bodyHtml: archiveIndexHtml,
-      baseUrl,
-      fontCss: archiveIndexFontCss,
-      showArchiveNav: showArchiveInHeader,
-      searchPath: searchNavPath,
-      headerSearchHtml: archiveIndexChrome.headerSearchHtml,
-      extraHead: archiveIndexChrome.extraHead,
-    });
-    builtPages += 1;
-    siteEntries.push({ url: "archive/index.html", lastmod: undefined, isIndex: false });
-
-    for (const year of [...byYear.keys()].sort((a, b) => b.localeCompare(a))) {
-      const yearOutRel = `archive/${year}.html`;
-      const yearHtml = renderMonthListForYear(year, byMonth, yearOutRel);
-      const yearConcept = syntheticConcept(`${year}年`);
-      const yearFontCss = await fontCssFor(
-        yearConcept,
-        rootPrefixFromRel(yearOutRel),
-        i18n.defaultLang,
-        yearHtml,
-      );
-      const yearChrome = headerSearchFor(rootPrefixFromRel(yearOutRel), { isSearch: false });
-      emitPage({
-        cwd,
-        config,
-        outDir,
-        outRel: yearOutRel,
-        concept: yearConcept,
-        bodyHtml: yearHtml,
-        baseUrl,
-        fontCss: yearFontCss,
-        showArchiveNav: showArchiveInHeader,
-        searchPath: searchNavPath,
-        headerSearchHtml: yearChrome.headerSearchHtml,
-        extraHead: yearChrome.extraHead,
-      });
-      builtPages += 1;
-      siteEntries.push({ url: `archive/${year}.html`, lastmod: undefined, isIndex: false });
+    const localesToEmit: Array<{ localeId: string; lang: string }> = [
+      { localeId: DEFAULT_LOCALE_ID, lang: i18n.defaultLang },
+    ];
+    if (i18n.enabled) {
+      for (const localeId of Object.keys(i18n.locales)) {
+        localesToEmit.push({ localeId, lang: langForLocale(localeId, i18n) });
+      }
     }
 
-    for (const ym of [...byMonth.keys()].sort((a, b) => b.localeCompare(a))) {
-      const monthArticles = byMonth.get(ym)!;
-      const [y, m] = ym.split("-");
-      const monthOutRel = `archive/${ym}.html`;
-      const bodyHtml = renderArchiveListBody(`${y}年${m}月`, undefined, monthArticles, {
-        fromRel: monthOutRel,
-        showOnLists: siteAiFlags.showOnLists,
-      });
-      const monthConcept = syntheticConcept(`${y}年${m}月`);
-      const monthFontCss = await fontCssFor(
-        monthConcept,
-        rootPrefixFromRel(monthOutRel),
-        i18n.defaultLang,
-        bodyHtml,
-      );
-      const monthChrome = headerSearchFor(rootPrefixFromRel(monthOutRel), { isSearch: false });
-      emitPage({
-        cwd,
-        config,
-        outDir,
-        outRel: monthOutRel,
-        concept: monthConcept,
-        bodyHtml,
-        baseUrl,
-        fontCss: monthFontCss,
-        showArchiveNav: showArchiveInHeader,
-        searchPath: searchNavPath,
-        headerSearchHtml: monthChrome.headerSearchHtml,
-        extraHead: monthChrome.extraHead,
-      });
-      builtPages += 1;
-      siteEntries.push({ url: `archive/${ym}.html`, lastmod: undefined, isIndex: false });
-    }
-  }
+    for (const { localeId, lang } of localesToEmit) {
+      const pathPrefix = localeBlogPathPrefix(localeId, i18n);
+      const localeArticles = articleSummariesForLocale(parsed, config, i18n, localeId);
+      if (localeArticles.length === 0) continue;
 
-  if (indexParsed && blogOpts.tags) {
-    const byTag = groupByTag(articleSummaries);
-    for (const [tagSlug, tagged] of byTag) {
-      const label = tagged[0]?.tags?.find((t) => slugifyTag(t) === tagSlug) ?? tagSlug;
-      const tagOutRel = `tag/${tagSlug}.html`;
-      const bodyHtml = renderArchiveListBody(`タグ: ${label}`, undefined, tagged, {
-        fromRel: tagOutRel,
-        showOnLists: siteAiFlags.showOnLists,
-      });
-      const tagConcept = syntheticConcept(`タグ: ${label}`);
-      const tagFontCss = await fontCssFor(
-        tagConcept,
-        rootPrefixFromRel(tagOutRel),
-        i18n.defaultLang,
-        bodyHtml,
-      );
-      const tagChrome = headerSearchFor(rootPrefixFromRel(tagOutRel), { isSearch: false });
-      emitPage({
-        cwd,
-        config,
-        outDir,
-        outRel: tagOutRel,
-        concept: tagConcept,
-        bodyHtml,
-        baseUrl,
-        fontCss: tagFontCss,
-        showArchiveNav: showArchiveInHeader,
-        searchPath: searchNavPath,
-        headerSearchHtml: tagChrome.headerSearchHtml,
-        extraHead: tagChrome.extraHead,
-      });
-      builtPages += 1;
-      siteEntries.push({ url: `tag/${tagSlug}.html`, lastmod: undefined, isIndex: false });
+      const localeIndex =
+        localeId === DEFAULT_LOCALE_ID
+          ? indexParsed
+          : parsed.find(
+              (p) =>
+                isIndexPage(p) && localeIdFromRelPath(p.relPath, i18n) === localeId,
+            );
+      const listForLocalePagination =
+        localeIndex && localeArticles[0] ? localeArticles.slice(1) : localeArticles;
+      const localeArchivePages = paginate(listForLocalePagination, blogOpts.page_size);
+      const labels = siteLabels(lang);
+
+      for (let i = 1; i < localeArchivePages.length; i++) {
+        const pageNum = i + 1;
+        const outRel = `${pathPrefix}page/${pageNum}.html`;
+        const bodyHtml = renderArchiveListBody(
+          `${config.site.title} — ${labels.pageNumber} ${pageNum}`,
+          undefined,
+          localeArchivePages[i]!,
+          {
+            fromRel: outRel,
+            page: pageNum,
+            totalPages: localeArchivePages.length,
+            showOnLists: siteAiFlags.showOnLists,
+            lang,
+          },
+        );
+        const concept = syntheticConcept(
+          `${config.site.title} — ${labels.pageNumber} ${pageNum}`,
+        );
+        const rootPrefix = rootPrefixFromRel(outRel);
+        const fontCss = await fontCssFor(concept, rootPrefix, lang, bodyHtml);
+        const pageChrome = headerSearchFor(rootPrefix, { isSearch: false });
+        emitPage({
+          cwd,
+          config,
+          outDir,
+          outRel,
+          concept,
+          bodyHtml,
+          baseUrl,
+          fontCss,
+          lang,
+          localeId,
+          showArchiveNav: showArchiveInHeader,
+          searchPath: searchNavPath,
+          headerSearchHtml: pageChrome.headerSearchHtml,
+          extraHead: pageChrome.extraHead,
+        });
+        builtPages += 1;
+        siteEntries.push({ url: outRel, lastmod: undefined, isIndex: false });
+      }
+
+      if (blogOpts.archives) {
+        const byYear = groupByYear(localeArticles);
+        const byMonth = groupByYearMonth(localeArticles);
+        const archiveIndexRel = `${pathPrefix}archive/index.html`;
+
+        const archiveIndexHtml = renderYearArchiveIndexBody(
+          config.site.title,
+          byYear,
+          archiveIndexRel,
+          lang,
+        );
+        const archiveIndexConcept = syntheticConcept(
+          `${config.site.title} — ${labels.yearArchiveIndex}`,
+        );
+        const archiveIndexFontCss = await fontCssFor(
+          archiveIndexConcept,
+          rootPrefixFromRel(archiveIndexRel),
+          lang,
+          archiveIndexHtml,
+        );
+        const archiveIndexChrome = headerSearchFor(rootPrefixFromRel(archiveIndexRel), {
+          isSearch: false,
+        });
+        emitPage({
+          cwd,
+          config,
+          outDir,
+          outRel: archiveIndexRel,
+          concept: archiveIndexConcept,
+          bodyHtml: archiveIndexHtml,
+          baseUrl,
+          fontCss: archiveIndexFontCss,
+          lang,
+          localeId,
+          showArchiveNav: showArchiveInHeader,
+          searchPath: searchNavPath,
+          headerSearchHtml: archiveIndexChrome.headerSearchHtml,
+          extraHead: archiveIndexChrome.extraHead,
+        });
+        builtPages += 1;
+        siteEntries.push({ url: archiveIndexRel, lastmod: undefined, isIndex: false });
+
+        for (const year of [...byYear.keys()].sort((a, b) => b.localeCompare(a))) {
+          const yearOutRel = `${pathPrefix}archive/${year}.html`;
+          const yearHtml = renderMonthListForYear(year, byMonth, yearOutRel, lang);
+          const yearTitle = lang.startsWith("ja") ? `${year}年` : year;
+          const yearConcept = syntheticConcept(yearTitle);
+          const yearFontCss = await fontCssFor(
+            yearConcept,
+            rootPrefixFromRel(yearOutRel),
+            lang,
+            yearHtml,
+          );
+          const yearChrome = headerSearchFor(rootPrefixFromRel(yearOutRel), { isSearch: false });
+          emitPage({
+            cwd,
+            config,
+            outDir,
+            outRel: yearOutRel,
+            concept: yearConcept,
+            bodyHtml: yearHtml,
+            baseUrl,
+            fontCss: yearFontCss,
+            lang,
+            localeId,
+            showArchiveNav: showArchiveInHeader,
+            searchPath: searchNavPath,
+            headerSearchHtml: yearChrome.headerSearchHtml,
+            extraHead: yearChrome.extraHead,
+          });
+          builtPages += 1;
+          siteEntries.push({ url: yearOutRel, lastmod: undefined, isIndex: false });
+        }
+
+        for (const ym of [...byMonth.keys()].sort((a, b) => b.localeCompare(a))) {
+          const monthArticles = byMonth.get(ym)!;
+          const [y, m] = ym.split("-");
+          const monthOutRel = `${pathPrefix}archive/${ym}.html`;
+          const monthTitle = lang.startsWith("ja") ? `${y}年${m}月` : `${y}-${m}`;
+          const bodyHtml = renderArchiveListBody(monthTitle, undefined, monthArticles, {
+            fromRel: monthOutRel,
+            showOnLists: siteAiFlags.showOnLists,
+            lang,
+          });
+          const monthConcept = syntheticConcept(monthTitle);
+          const monthFontCss = await fontCssFor(
+            monthConcept,
+            rootPrefixFromRel(monthOutRel),
+            lang,
+            bodyHtml,
+          );
+          const monthChrome = headerSearchFor(rootPrefixFromRel(monthOutRel), { isSearch: false });
+          emitPage({
+            cwd,
+            config,
+            outDir,
+            outRel: monthOutRel,
+            concept: monthConcept,
+            bodyHtml,
+            baseUrl,
+            fontCss: monthFontCss,
+            lang,
+            localeId,
+            showArchiveNav: showArchiveInHeader,
+            searchPath: searchNavPath,
+            headerSearchHtml: monthChrome.headerSearchHtml,
+            extraHead: monthChrome.extraHead,
+          });
+          builtPages += 1;
+          siteEntries.push({ url: monthOutRel, lastmod: undefined, isIndex: false });
+        }
+      }
+
+      if (blogOpts.tags) {
+        const byTag = groupByTag(localeArticles);
+        for (const [tagSlug, tagged] of byTag) {
+          const label = tagged[0]?.tags?.find((t) => slugifyTag(t) === tagSlug) ?? tagSlug;
+          const tagOutRel = `${pathPrefix}tag/${tagSlug}.html`;
+          const bodyHtml = renderArchiveListBody(
+            `${labels.tagTitle}: ${label}`,
+            undefined,
+            tagged,
+            {
+              fromRel: tagOutRel,
+              showOnLists: siteAiFlags.showOnLists,
+              lang,
+            },
+          );
+          const tagConcept = syntheticConcept(`${labels.tagTitle}: ${label}`);
+          const tagFontCss = await fontCssFor(
+            tagConcept,
+            rootPrefixFromRel(tagOutRel),
+            lang,
+            bodyHtml,
+          );
+          const tagChrome = headerSearchFor(rootPrefixFromRel(tagOutRel), { isSearch: false });
+          emitPage({
+            cwd,
+            config,
+            outDir,
+            outRel: tagOutRel,
+            concept: tagConcept,
+            bodyHtml,
+            baseUrl,
+            fontCss: tagFontCss,
+            lang,
+            localeId,
+            showArchiveNav: showArchiveInHeader,
+            searchPath: searchNavPath,
+            headerSearchHtml: tagChrome.headerSearchHtml,
+            extraHead: tagChrome.extraHead,
+          });
+          builtPages += 1;
+          siteEntries.push({ url: tagOutRel, lastmod: undefined, isIndex: false });
+        }
+      }
     }
   }
 

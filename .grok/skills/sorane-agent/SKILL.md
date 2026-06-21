@@ -46,7 +46,7 @@ Agent-facing features to keep aligned:
 }
 ```
 
-Finding: `{ severity: "error"|"warning", category: "okf"|"diagram"|"heading"|"image"|"link"|"table"|"date"|"revision"|"faq"|"glossary"|"reference"|"dataset", message, where?, instancePath? }`
+Finding: `{ severity: "error"|"warning", category: "okf"|"diagram"|"heading"|"image"|"link"|"table"|"date"|"revision"|"faq"|"glossary"|"reference"|"dataset"|"i18n", message, where?, instancePath? }`
 
 ## When changing validation
 

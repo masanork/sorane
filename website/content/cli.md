@@ -51,6 +51,7 @@ npx @sorane/cli validate [--cwd <dir>] [--json]
 | `glossary` | `type: glossary` の `##` 用語見出し・定義、`terms:` 構造 |
 | `reference` | `type: reference` の `description` / `resource` 推奨・GFM 表 |
 | `dataset` | `type: dataset` のライセンス・distribution URL など |
+| `i18n` | `translation_key` と `site.i18n` ロケールの整合性 |
 
 `build.quality` で `image` / `link` / `table` / `date` の warning を個別に無効化できます（[設定](configuration.html#品質ゲートvalidate)）。
 

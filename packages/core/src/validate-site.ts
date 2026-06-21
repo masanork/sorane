@@ -10,6 +10,7 @@ import { validateReferenceWarnings } from "./reference-page.ts";
 import { validateHeadingWarnings } from "./validate-heading-structure.ts";
 import { validateContentQualityFindings } from "./validate-content-quality.ts";
 import { validateRevisionFindings } from "./revision-history.ts";
+import { validateI18nWarnings } from "./validate-i18n.ts";
 
 export const VALIDATE_JSON_SCHEMA_VERSION = 1 as const;
 
@@ -26,7 +27,8 @@ export type ValidateFindingCategory =
   | "faq"
   | "glossary"
   | "reference"
-  | "dataset";
+  | "dataset"
+  | "i18n";
 
 export interface ValidateFinding {
   readonly severity: ValidateFindingSeverity;
@@ -103,12 +105,14 @@ export function validateSiteContent(
   }
 
   const files: ValidateFileReport[] = [];
+  const i18nEntries: Array<{ rel: string; source: string }> = [];
   let errorCount = 0;
   let warningCount = 0;
 
   for (const abs of walkMarkdown(contentDir)) {
     const rel = relative(contentDir, abs);
     const source = readFileSync(abs, "utf8");
+    i18nEntries.push({ rel, source });
     const result = validateSource(rel, source);
     const findings: ValidateFinding[] = [];
 
@@ -180,6 +184,21 @@ export function validateSiteContent(
       profile: profileFromSource(source),
       findings,
     });
+  }
+
+  const i18nWarnings = validateI18nWarnings(i18nEntries, config.site);
+  if (i18nWarnings.size > 0) {
+    for (const file of files) {
+      const extra = i18nWarnings.get(file.file);
+      if (!extra || extra.length === 0) continue;
+      const merged = [...file.findings];
+      for (const w of extra) {
+        merged.push(warningToFinding("i18n", w.message));
+        warningCount++;
+      }
+      const idx = files.indexOf(file);
+      files[idx] = { ...file, findings: merged };
+    }
   }
 
   return {

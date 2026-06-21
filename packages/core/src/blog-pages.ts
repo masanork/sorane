@@ -1,6 +1,7 @@
 import { buildCompactAiBadgeHtml } from "./ai-disclosure.ts";
 import type { ArticleListEntry } from "./ssg.ts";
 import { escapeHtml } from "./render.ts";
+import { siteLabels } from "./site-labels.ts";
 import { relLinkFrom, renderBlogIndexBody, slugifyTag } from "./ssg.ts";
 
 export { slugifyTag };
@@ -61,6 +62,15 @@ export function blogPaginationRel(page: number): string {
   return page <= 1 ? "index.html" : `page/${page}.html`;
 }
 
+function formatYearMonthLabel(year: string, month: string, lang: string): string {
+  if (lang.startsWith("ja")) return `${year}年${month}月`;
+  return `${year}-${month}`;
+}
+
+function formatYearLabel(year: string, lang: string): string {
+  return lang.startsWith("ja") ? `${year}年` : year;
+}
+
 export function renderArchiveListBody(
   title: string,
   description: string | undefined,
@@ -71,8 +81,11 @@ export function renderArchiveListBody(
     totalPages?: number;
     showOnLists?: boolean;
     listRootPrefix?: string;
+    lang?: string;
   },
 ): string {
+  const lang = opts?.lang ?? "ja";
+  const labels = siteLabels(lang);
   const fromRel = opts?.fromRel ?? "index.html";
   const listPrefix = opts?.listRootPrefix ?? relLinkFrom(fromRel, "index.html").replace(/index\.html$/, "");
   const items = articles
@@ -102,16 +115,16 @@ export function renderArchiveListBody(
     const parts: string[] = [];
     if (page > 1) {
       parts.push(
-        `<a href="${escapeHtml(relLinkFrom(fromRel, blogPaginationRel(page - 1)))}" rel="prev">← 前へ</a>`,
+        `<a href="${escapeHtml(relLinkFrom(fromRel, blogPaginationRel(page - 1)))}" rel="prev">← ${escapeHtml(labels.prevPage)}</a>`,
       );
     }
     parts.push(`<span>${page} / ${totalPages}</span>`);
     if (page < totalPages) {
       parts.push(
-        `<a href="${escapeHtml(relLinkFrom(fromRel, blogPaginationRel(page + 1)))}" rel="next">次へ →</a>`,
+        `<a href="${escapeHtml(relLinkFrom(fromRel, blogPaginationRel(page + 1)))}" rel="next">${escapeHtml(labels.nextPage)} →</a>`,
       );
     }
-    pager = `<nav class="blog-pagination" aria-label="ページ">${parts.join(" · ")}</nav>`;
+    pager = `<nav class="blog-pagination" aria-label="${escapeHtml(labels.pageNav)}">${parts.join(" · ")}</nav>`;
   }
 
   return (
@@ -129,7 +142,9 @@ export function renderYearArchiveIndexBody(
   siteTitle: string,
   byYear: Map<string, ArticleListEntry[]>,
   fromRel = "archive/index.html",
+  lang = "ja",
 ): string {
+  const labels = siteLabels(lang);
   const years = [...byYear.keys()].sort((a, b) => b.localeCompare(a));
   const items = years
     .map((y) => {
@@ -140,7 +155,7 @@ export function renderYearArchiveIndexBody(
     .join("\n");
   return (
     `<div class="blog-index">\n` +
-    `<header class="blog-header"><h1>${escapeHtml(siteTitle)} — 年別アーカイブ</h1></header>\n` +
+    `<header class="blog-header"><h1>${escapeHtml(siteTitle)} — ${escapeHtml(labels.yearArchiveIndex)}</h1></header>\n` +
     `<ul class="blog-list">\n${items}\n</ul>\n` +
     `</div>\n`
   );
@@ -150,7 +165,9 @@ export function renderMonthListForYear(
   year: string,
   byMonth: Map<string, ArticleListEntry[]>,
   fromRel = `archive/${year}.html`,
+  lang = "ja",
 ): string {
+  const labels = siteLabels(lang);
   const months = [...byMonth.keys()]
     .filter((ym) => ym.startsWith(year))
     .sort((a, b) => b.localeCompare(a));
@@ -159,15 +176,15 @@ export function renderMonthListForYear(
       const count = byMonth.get(ym)!.length;
       const label = ym.slice(5);
       const href = relLinkFrom(fromRel, `archive/${ym}.html`);
-      return `<li><a href="${escapeHtml(href)}">${escapeHtml(year)}年${escapeHtml(label)}月</a> (${count})</li>`;
+      return `<li><a href="${escapeHtml(href)}">${escapeHtml(formatYearMonthLabel(year, label, lang))}</a> (${count})</li>`;
     })
     .join("\n");
   const backHref = relLinkFrom(fromRel, "archive/index.html");
   return (
     `<div class="blog-index">\n` +
-    `<header class="blog-header"><h1>${escapeHtml(year)}年</h1></header>\n` +
+    `<header class="blog-header"><h1>${escapeHtml(formatYearLabel(year, lang))}</h1></header>\n` +
     `<ul class="blog-list">\n${items}\n</ul>\n` +
-    `<p><a href="${escapeHtml(backHref)}">← 年別アーカイブ</a></p>\n` +
+    `<p><a href="${escapeHtml(backHref)}">${escapeHtml(labels.backToYearArchive)}</a></p>\n` +
     `</div>\n`
   );
 }

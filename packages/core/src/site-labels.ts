@@ -22,6 +22,10 @@ export interface SiteLabels {
   readonly revisionHistory: string;
   readonly revisionDate: string;
   readonly revisionSummary: string;
+  readonly yearArchiveIndex: string;
+  readonly backToYearArchive: string;
+  readonly tagTitle: string;
+  readonly pageNumber: string;
 }
 
 const JA: SiteLabels = {
@@ -48,6 +52,10 @@ const JA: SiteLabels = {
   revisionHistory: "更新履歴",
   revisionDate: "日付",
   revisionSummary: "内容",
+  yearArchiveIndex: "年別アーカイブ",
+  backToYearArchive: "← 年別アーカイブ",
+  tagTitle: "タグ",
+  pageNumber: "ページ",
 };
 
 const EN: SiteLabels = {
@@ -74,6 +82,10 @@ const EN: SiteLabels = {
   revisionHistory: "Revision history",
   revisionDate: "Date",
   revisionSummary: "Summary",
+  yearArchiveIndex: "Archive by year",
+  backToYearArchive: "← Archive by year",
+  tagTitle: "Tag",
+  pageNumber: "Page",
 };
 
 export function siteLabels(lang: string): SiteLabels {

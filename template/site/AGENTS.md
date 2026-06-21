@@ -53,6 +53,7 @@ Always run with `--json`. Parse stdout as JSON.
 - `warning` — fix when practical:
   - `diagram` / `heading` / `image` / `link` / `table` / `date` / `revision` — a11y and metadata
   - `faq` / `glossary` / `reference` / `dataset` — sorane-okf/0.3 body and open-data structure (0.3 only)
+  - `i18n` — `translation_key` / locale sibling consistency (`site.i18n`)
 
 **Workflow**
 

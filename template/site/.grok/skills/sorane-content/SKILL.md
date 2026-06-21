@@ -30,6 +30,7 @@ Parse JSON stdout:
   - `diagram` / `heading` / `image` / `link` — a11y
   - `table` / `date` / `revision` — structure and metadata
   - `faq` / `glossary` / `reference` / `dataset` — OKF 0.3 page shapes (when `profile: sorane-okf/0.3`)
+  - `i18n` — `translation_key` / locale sibling consistency (`site.i18n`)
 
 ## Full publish loop
 
