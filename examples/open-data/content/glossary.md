@@ -18,3 +18,5 @@ Data Catalog Vocabulary — a W3C standard for describing datasets and catalogs.
 ## Transit stop {#transit-stop}
 
 A designated location where a public transit vehicle picks up or drops off passengers. The demo [Transit Stops](transit-stops.html) dataset lists sample stop identifiers and coordinates.
+
+Standalone term pages (`type: glossary-term`) — [Distribution](distribution.html), [DCAT](dcat.html) — are listed in the [glossary terms index](glossary/terms/index.html).

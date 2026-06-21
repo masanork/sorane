@@ -95,7 +95,7 @@ Every page is Markdown with YAML frontmatter (`---` … `---`).
 
 | Field | Rule |
 |-------|------|
-| `type` | `article` or `index` (`0.3` also: `dataset`, `reference`, `glossary`, `faq`) |
+| `type` | `article` or `index` (`0.3` also: `dataset`, `reference`, `glossary`, `glossary-term`, `faq`) |
 | `title` | Non-empty string |
 | `profile` | `sorane-okf/0.1`, `0.2`, or `0.3` (omit when `sorane.yaml` sets `okf.default_profile`) |
 

@@ -29,7 +29,7 @@ Parse JSON stdout:
 - Treat `warning` findings as fixes when practical:
   - `diagram` / `heading` / `image` / `link` — a11y
   - `table` / `date` / `revision` — structure and metadata
-  - `faq` / `glossary` / `reference` / `dataset` — OKF 0.3 page shapes (when `profile: sorane-okf/0.3`)
+  - `faq` / `glossary` / `glossary-term` / `reference` / `dataset` — OKF 0.3 page shapes (when `profile: sorane-okf/0.3`)
   - `i18n` — `translation_key` / locale sibling consistency (`site.i18n`)
 
 ## Full publish loop
@@ -43,7 +43,7 @@ npx @sorane/cli build --cwd . --clean
 ## Content rules (short)
 
 - Edit only `content/` and `sorane.yaml`; never `dist/`
-- Required frontmatter: `type`, `title`, `profile` (`sorane-okf/0.1`|`0.2`|`0.3`; `0.3` adds `dataset`, `reference`, `glossary`, `faq`)
+- Required frontmatter: `type`, `title`, `profile` (`sorane-okf/0.1`|`0.2`|`0.3`; `0.3` adds `dataset`, `reference`, `glossary`, `glossary-term`, `faq`)
 - Body headings start at `##` (title is already h1)
 - Mermaid/diagram fences need alt text when diagrams are enabled
 - **i18n:** default locale in `content/`; others under `content/{path_prefix}/`; optional `translation_key` to link siblings
@@ -58,6 +58,7 @@ npx @sorane/cli build --cwd . --clean
 | `dataset` | `description`, `resource`, `license`, `publisher`, `distributions[]` |
 | `reference` | `title`; `description`, `resource`, GFM table recommended |
 | `glossary` | `## Term {#id}` sections or `terms:` YAML |
+| `glossary-term` | `term_id`, `inDefinedTermSet` or `glossary` (parent href); body = one definition |
 | `faq` | `## Question?` sections |
 
 ## On validate failure

@@ -40,6 +40,13 @@ import {
   renderGlossaryPageBody,
 } from "./glossary-page.ts";
 import {
+  buildGlossaryTermJsonLd,
+  renderGlossaryTermIndexBody,
+  renderGlossaryTermPageBody,
+  resolveGlossaryTermMeta,
+  type GlossaryTermIndexEntry,
+} from "./glossary-term-page.ts";
+import {
   buildReferencePageJsonLd,
   renderReferencePageBody,
 } from "./reference-page.ts";
@@ -570,7 +577,9 @@ export async function runBuild(opts: BuildOptions): Promise<BuildResult> {
   );
   const staticDirName = config.build.static_dir ?? "static";
 
-  // --- Phase A: content pages（article, dataset, reference, glossary, faq）---
+  const glossaryTermEntries: GlossaryTermIndexEntry[] = [];
+
+  // --- Phase A: content pages（article, dataset, reference, glossary, glossary-term, faq）---
   for (const p of parsed) {
     if (
       !isBuildableContentType(p.concept.type, p.concept.profile) ||
@@ -627,6 +636,7 @@ export async function runBuild(opts: BuildOptions): Promise<BuildResult> {
     let faqAnswerHtmls: string[] | undefined;
     let glossaryResolved: ReturnType<typeof resolveGlossaryTerms> | undefined;
     let glossaryDefinitionHtmls: string[] | undefined;
+    let glossaryTermMeta: ReturnType<typeof resolveGlossaryTermMeta> | undefined;
     const canonicalUrl = baseUrl.length > 0 ? `${baseUrl}/${outRel}` : undefined;
     if (effectiveType === "dataset") {
       const section = await renderBodySectionForConfig(
@@ -701,6 +711,25 @@ export async function runBuild(opts: BuildOptions): Promise<BuildResult> {
         glossaryDefinitionHtmls,
         introSection?.html,
       );
+    } else if (effectiveType === "glossary-term") {
+      glossaryTermMeta = resolveGlossaryTermMeta(p.concept.frontmatter);
+      const section = await renderBodySectionForConfig(
+        stripDuplicateTitleHeading(p.concept.body, p.concept.title),
+        bodySectionOpts(rootPrefix),
+      );
+      pageDiagrams = section.diagrams;
+      bodyHtml = renderGlossaryTermPageBody(p.concept, section.html, glossaryTermMeta, {
+        rootPrefix,
+      });
+      const rawDesc =
+        p.concept.description ?? extractDescription(p.concept.body) ?? undefined;
+      glossaryTermEntries.push({
+        title: p.concept.title,
+        href: outRel,
+        termId: glossaryTermMeta.termId,
+        parentHref: glossaryTermMeta.inDefinedTermSet,
+        description: rawDesc ? sanitizeListDescription(rawDesc) : undefined,
+      });
     } else if (effectiveType === "reference") {
       const section = await renderBodySectionForConfig(
         stripDuplicateTitleHeading(p.concept.body, p.concept.title),
@@ -810,7 +839,29 @@ export async function runBuild(opts: BuildOptions): Promise<BuildResult> {
                 organization: siteOrganization,
                 frontmatter: p.concept.frontmatter,
               })
-            : effectiveType === "reference"
+            : effectiveType === "glossary-term" && glossaryTermMeta
+              ? buildGlossaryTermJsonLd({
+                  title: p.concept.title,
+                  description:
+                    p.concept.description ?? extractDescription(p.concept.body) ?? undefined,
+                  url: canonicalUrl ?? outRel,
+                  datePublished: p.concept.timestamp,
+                  dateModified: updated ?? p.concept.timestamp,
+                  author,
+                  siteTitle: config.site.title,
+                  lang: pageLang,
+                  termId: glossaryTermMeta.termId,
+                  inDefinedTermSet: glossaryTermMeta.inDefinedTermSet,
+                  definitionHtml: bodyHtml,
+                  definitionMarkdown: p.concept.body,
+                  seeAlso: glossaryTermMeta.seeAlso,
+                  aiDisclosure:
+                    pageAiFlags.jsonLd && aiDisclosure ? aiDisclosure : undefined,
+                  associatedMedia: associatedMedia.length > 0 ? associatedMedia : undefined,
+                  organization: siteOrganization,
+                  frontmatter: p.concept.frontmatter,
+                })
+              : effectiveType === "reference"
               ? buildReferencePageJsonLd({
                   title: p.concept.title,
                   description:
@@ -911,6 +962,42 @@ export async function runBuild(opts: BuildOptions): Promise<BuildResult> {
       url: canonicalUrl ?? outRel,
       concept: p.concept,
     });
+  }
+
+  if (glossaryTermEntries.length > 0) {
+    const termsIndexRel = "glossary/terms/index.html";
+    const termsIndexHtml = renderGlossaryTermIndexBody(
+      config.site.title,
+      glossaryTermEntries,
+      { fromRel: termsIndexRel, lang: config.site.lang },
+    );
+    const termsIndexConcept = syntheticConcept(
+      `${config.site.title} — ${config.site.lang.startsWith("ja") ? "用語一覧" : "Glossary terms"}`,
+    );
+    const termsIndexRoot = rootPrefixFromRel(termsIndexRel);
+    const termsIndexFontCss = await fontCssFor(
+      termsIndexConcept,
+      termsIndexRoot,
+      i18n.defaultLang,
+      termsIndexHtml,
+    );
+    const termsIndexChrome = headerSearchFor(termsIndexRoot, { isSearch: false });
+    emitPage({
+      cwd,
+      config,
+      outDir,
+      outRel: termsIndexRel,
+      concept: termsIndexConcept,
+      bodyHtml: termsIndexHtml,
+      baseUrl,
+      fontCss: termsIndexFontCss,
+      showArchiveNav: showArchiveInHeader,
+      searchPath: searchNavPath,
+      headerSearchHtml: termsIndexChrome.headerSearchHtml,
+      extraHead: termsIndexChrome.extraHead,
+    });
+    builtPages += 1;
+    siteEntries.push({ url: termsIndexRel, lastmod: undefined, isIndex: false });
   }
 
   // --- Phase B: index（任意 — content/index.md がある場合のみ）---

@@ -246,7 +246,7 @@ terms:
 
 JSON-LD: one glossary page → `DefinedTermSet`; terms → `hasDefinedTerm` / `DefinedTerm` (build-time extraction).
 
-**No `glossary-term` type in 0.3** unless a later profile adds single-term pages for re-use as transclusion targets.
+**`glossary-term` (0.3):** one term per file for deep links and transclusion; `term_id` + parent `inDefinedTermSet` / `glossary`; auto `glossary/terms/index.html` when ≥2 terms.
 
 ### 5.7 `faq` (new)
 
@@ -286,6 +286,7 @@ JSON-LD: optional `FAQPage` when `build.json_ld.faq: true` (site config).
 | `dataset` | CSV/API open data | Dataset + Distribution | **medium** (template + catalog) |
 | `reference` | enums, specs | — (supporting doc) | low (reuse docs) |
 | `glossary` | 分野別語彙集（多 term / 1 file） | — (`DefinedTermSet`) | low–medium |
+| `glossary-term` | 単一用語ページ（transclusion / 深いリンク） | — (`DefinedTerm`) | low |
 | `faq` | Q&A page | — | low (+ optional FAQPage) |
 
 **Deferred types:** `playbook`, `metric`, `data-service`, `dataset-series`, `BigQuery Table` (use free-form `type` + warning in 0.3 if needed).
@@ -474,7 +475,7 @@ okf:
 ### Phase C — FAQ / glossary / reference
 
 - [ ] `faq` heading validator
-- [ ] `glossary-term` + tag-like index
+- [x] `glossary-term` + tag-like index
 - [ ] `reference` layout tweaks
 
 ### Phase D — External interop (optional)

@@ -9,6 +9,7 @@ export const TYPES_03 = new Set([
   "dataset",
   "reference",
   "glossary",
+  "glossary-term",
   "faq",
 ]);
 
@@ -17,6 +18,7 @@ export const BUILDABLE_CONTENT_TYPES = new Set([
   "dataset",
   "reference",
   "glossary",
+  "glossary-term",
   "faq",
 ]);
 

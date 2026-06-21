@@ -9,6 +9,7 @@
     { "$ref": "#/$defs/dataset" },
     { "$ref": "#/$defs/reference" },
     { "$ref": "#/$defs/glossary" },
+    { "$ref": "#/$defs/glossary-term" },
     { "$ref": "#/$defs/faq" }
   ],
   "$defs": {
@@ -154,6 +155,24 @@
         { "$ref": "#/$defs/okfBase" },
         {
           "properties": { "type": { "const": "glossary" } },
+          "required": ["type", "title"]
+        }
+      ]
+    },
+    "glossary-term": {
+      "allOf": [
+        { "$ref": "#/$defs/okfBase" },
+        {
+          "properties": {
+            "type": { "const": "glossary-term" },
+            "term_id": { "type": "string", "minLength": 1 },
+            "inDefinedTermSet": { "type": "string", "minLength": 1 },
+            "glossary": { "type": "string", "minLength": 1 },
+            "seeAlso": {
+              "type": "array",
+              "items": { "type": "string", "minLength": 1 }
+            }
+          },
           "required": ["type", "title"]
         }
       ]

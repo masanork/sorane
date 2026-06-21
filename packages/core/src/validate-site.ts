@@ -5,6 +5,7 @@ import type { SoraneConfig } from "./config.ts";
 import { validateDiagramAltWarnings } from "./diagrams/validate-diagram-alt.ts";
 import { validateFaqWarnings } from "./faq-page.ts";
 import { validateGlossaryWarnings } from "./glossary-page.ts";
+import { validateGlossaryTermWarnings } from "./glossary-term-page.ts";
 import { validateDatasetWarnings } from "./dataset-page.ts";
 import { validateReferenceWarnings } from "./reference-page.ts";
 import { validateHeadingWarnings } from "./validate-heading-structure.ts";
@@ -142,6 +143,12 @@ export function validateSiteContent(
       }
       if (result.type === "glossary") {
         for (const w of validateGlossaryWarnings(body, fm)) {
+          findings.push(warningToFinding("glossary", w));
+          warningCount++;
+        }
+      }
+      if (result.type === "glossary-term") {
+        for (const w of validateGlossaryTermWarnings(body, fm)) {
           findings.push(warningToFinding("glossary", w));
           warningCount++;
         }

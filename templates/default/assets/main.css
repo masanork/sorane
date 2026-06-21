@@ -826,6 +826,51 @@ section.glossary-term {
   color: var(--muted);
 }
 
+/* Glossary term page (sorane-okf/0.3 type: glossary-term) */
+.glossary-term-page {
+  margin: 0 auto;
+  max-width: var(--content-width, 48rem);
+}
+
+.glossary-term-header {
+  margin-bottom: 1.25rem;
+  padding-bottom: 1rem;
+  border-bottom: 1px solid var(--border);
+}
+
+.glossary-term-title {
+  margin: 0 0 0.5rem;
+  line-height: 1.3;
+}
+
+.glossary-term-description,
+.glossary-term-meta,
+.glossary-term-parent {
+  margin: 0.35rem 0 0;
+  font-size: 0.95rem;
+  color: var(--muted);
+}
+
+.glossary-term-index-list {
+  list-style: none;
+  padding: 0;
+}
+
+.glossary-term-index-item {
+  margin-bottom: 0.75rem;
+}
+
+.glossary-term-index-parent {
+  font-size: 0.9rem;
+  color: var(--muted);
+}
+
+.glossary-term-index-desc {
+  margin: 0.25rem 0 0;
+  font-size: 0.9rem;
+  color: var(--muted);
+}
+
 /* Reference page (sorane-okf/0.3 type: reference) */
 .reference-page {
   margin: 0 auto;

@@ -10,6 +10,9 @@ Minimal site demonstrating all extended OKF concept types and open-data output.
 | `content/transit-stops.md` | `dataset` | `transit-stops.html` |
 | `content/stops-csv-fields.md` | `reference` | `stops-csv-fields.html` |
 | `content/glossary.md` | `glossary` | `glossary.html` |
+| `content/glossary/terms/distribution.md` | `glossary-term` | `distribution.html` |
+| `content/glossary/terms/dcat.md` | `glossary-term` | `dcat.html` |
+| *(auto)* | — | `glossary/terms/index.html` (when ≥1 `glossary-term`) |
 | `content/faq.md` | `faq` | `faq.html` |
 | `content/search.md` | `article` (`view: search`) | `search.html` |
 
@@ -30,6 +33,7 @@ npx @sorane/cli build --cwd examples/open-data --clean
 - `catalog-dcat.jsonld` — DCAT-AP JSON-LD for datasets only (`site.open_data.dcat_catalog: true`)
 - `transit-stops.html` — dataset landing (license, publisher, distributions)
 - `faq.html` / `glossary.html` — section templates + JSON-LD (`mainEntity` / `hasDefinedTerm`)
+- `distribution.html` / `dcat.html` — single-term pages (`DefinedTerm` JSON-LD); `glossary/terms/index.html` — auto terms index
 - `stops-csv-fields.html` — reference layout + `isBasedOn` JSON-LD
 - `assets/search-index.json` — after `index`; filter by `doc_type` or tags like `format:csv`
 

@@ -4,17 +4,24 @@ All notable changes to sorane are documented here. Versioning follows [SemVer](h
 
 ## [Unreleased]
 
+## [0.3.0] - 2026-06-21
+
 ### Added
 
 - FAQ page template (`type: faq`): `##` Q/A sections, `.faq-*` CSS, `FAQPage` JSON-LD with `mainEntity`
 - Glossary page template (`type: glossary`): `##` term sections or `terms:` frontmatter, `.glossary-*` CSS, `DefinedTermSet` JSON-LD with `hasDefinedTerm`
+- **Glossary term page (`type: glossary-term`):** one term per file, `DefinedTerm` JSON-LD, auto `glossary/terms/index.html` when ≥1 term; search / validate integration
 - Reference page template (`type: reference`): source metadata block, table-friendly `.reference-*` CSS, `TechArticle` JSON-LD with `isBasedOn`
-- Search integration for OKF 0.3 types: `faq` / `glossary` section chunking, `reference` table text, `dataset` overview + `license:` / `format:` tags; UI and CLI `--type` facets for all types
-- `validate --json` categories `faq`, `glossary`, `reference`, and `dataset` for structure / open-data warnings
-- `examples/open-data/` polish: README, AGENTS.md, landing index, `search.md`, and agent doc updates (`template/site/AGENTS.md`, sorane-content skill)
+- Search integration for OKF 0.3 types: `faq` / `glossary` / `glossary-term` section chunking, `reference` table text, `dataset` overview + `license:` / `format:` tags; UI and CLI `--type` facets for all types
+- `validate --json` categories `faq`, `glossary`, `reference`, and `dataset` for structure / open-data warnings (`glossary-term` under `glossary`)
+- `examples/open-data/` polish: README, AGENTS.md, landing index, `search.md`, `glossary/terms/*.md`, and agent doc updates (`template/site/AGENTS.md`, sorane-content skill)
 - Opt-in `catalog-dcat.jsonld` DCAT-AP export (`site.open_data.dcat_catalog`) for `type: dataset` pages; `llms.txt` link when enabled
 - **i18n Phase 2:** per-locale blog archives, tags, and pagination (`en/archive/`, `en/tag/`, etc.); `validate --json` category `i18n` for `translation_key` warnings
 - **`okf` site config:** `okf.default_profile` and `okf.unknown_type` (`warn` | `error`) in `sorane.yaml` for site-wide OKF validation and build defaults
+
+### Changed
+
+- Workspace packages aligned to `0.3.0`
 
 ## [0.2.8] - 2026-06-21
 
@@ -141,7 +148,8 @@ All notable changes to sorane are documented here. Versioning follows [SemVer](h
 - Blog layout: archives, tags, pagination
 - Test infrastructure with coverage gate (~90% lines)
 
-[Unreleased]: https://github.com/masanork/sorane/compare/v0.2.8...main
+[Unreleased]: https://github.com/masanork/sorane/compare/v0.3.0...main
+[0.3.0]: https://github.com/masanork/sorane/compare/v0.2.8...v0.3.0
 [0.2.8]: https://github.com/masanork/sorane/compare/v0.2.7...v0.2.8
 [0.2.7]: https://github.com/masanork/sorane/compare/v0.2.6...v0.2.7
 [0.2.6]: https://github.com/masanork/sorane/compare/v0.2.5...v0.2.6

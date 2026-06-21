@@ -71,7 +71,7 @@ export async function runSearchCmd(argv: string[]): Promise<void> {
   const args = parseSearchArgs(argv);
   if (!args.query) {
     process.stderr.write(
-      "usage: sorane search <query> [--cwd <dir>] [--type article|dataset|reference|glossary|faq] [--tag <slug>] [--k 10] [--json] [--fts-only]\n",
+      "usage: sorane search <query> [--cwd <dir>] [--type article|dataset|reference|glossary|glossary-term|faq] [--tag <slug>] [--k 10] [--json] [--fts-only]\n",
     );
     process.exit(2);
   }

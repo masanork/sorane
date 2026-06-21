@@ -5,13 +5,13 @@ profile: sorane-okf/0.1
 excludeFromList: true
 ---
 
-## 現状（v0.2.8）
+## 現状（v0.3.0）
 
 | 手段 | 状態 | 用途 |
 |------|------|------|
 | `npx @sorane/cli` | **利用可能** | サイトビルド・検索・検証 |
 | git clone + `npm ci` | **利用可能** | sorane 本体の開発 |
-| GitHub Release タグ | **v0.2.x** | バージョン固定 |
+| GitHub Release タグ | **v0.3.x** | バージョン固定 |
 | Docker イメージ | 未対応 | — |
 
 npm パッケージ: `@sorane/cli`, `@sorane/core`, `@sorane/okf`, `@sorane/search`, `@sorane/font`
@@ -26,6 +26,12 @@ npx @sorane/cli build --cwd ./my-site --clean
 本番 CI でビルドの再現性が必要なときだけ `@sorane/cli@x.y.z` で pin します（任意）。
 
 パッケージ一覧: https://www.npmjs.com/org/sorane
+
+### v0.3.0 の主な変更
+
+- OKF 0.3 テンプレート一式（`dataset` / `reference` / `glossary` / `glossary-term` / `faq`）、DCAT カタログ、i18n Phase 2
+- `okf.default_profile` / `okf.unknown_type` サイト設定
+- `examples/open-data/` デモ拡充
 
 ### v0.2.8 の主な変更
 

@@ -48,7 +48,7 @@ npx @sorane/cli validate [--cwd <dir>] [--json]
 | `date` | `timestamp` / `updated` の形式・順序 |
 | `revision` | `revisions` 配列の形式・日付・要約・並び |
 | `faq` | `type: faq` の `##` 質問見出し・回答の構造 |
-| `glossary` | `type: glossary` の `##` 用語見出し・定義、`terms:` 構造 |
+| `glossary` | `type: glossary` / `glossary-term` の構造・推奨 frontmatter |
 | `reference` | `type: reference` の `description` / `resource` 推奨・GFM 表 |
 | `dataset` | `type: dataset` のライセンス・distribution URL など |
 | `i18n` | `translation_key` と `site.i18n` ロケールの整合性 |
@@ -82,5 +82,5 @@ npx @sorane/cli index [--cwd <dir>] [--force] [--hybrid] [--fts-only]
 ローカルで検索を試します。
 
 ```bash
-npx @sorane/cli search <query> [--cwd <dir>] [--type article|dataset|reference|glossary|faq] [--tag <slug>] [--k 10] [--json]
+npx @sorane/cli search <query> [--cwd <dir>] [--type article|dataset|reference|glossary|glossary-term|faq] [--tag <slug>] [--k 10] [--json]
 ```

@@ -339,7 +339,11 @@ export function chunkDocument(source: string, relPath: string): Chunk[] {
   }
 
   let bodyChunks = chunkBody(body, meta);
-  if (bodyChunks.length === 0 && meta.docType === "reference" && body.trim().length > 0) {
+  if (
+    bodyChunks.length === 0 &&
+    (meta.docType === "reference" || meta.docType === "glossary-term") &&
+    body.trim().length > 0
+  ) {
     const tree = unified().use(remarkParse).use(remarkGfm).parse(body) as Root;
     const flat = tree.children
       .map((n) => blockToText(n as RootContent))

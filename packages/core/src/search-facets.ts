@@ -13,6 +13,7 @@ export const SEARCH_DOC_TYPE_FACETS: readonly SearchDocTypeFacet[] = [
   { value: "dataset", labelJa: "データセット", labelEn: "Datasets" },
   { value: "reference", labelJa: "参照", labelEn: "Reference" },
   { value: "glossary", labelJa: "用語集", labelEn: "Glossary" },
+  { value: "glossary-term", labelJa: "用語", labelEn: "Term" },
   { value: "faq", labelJa: "FAQ", labelEn: "FAQ" },
 ];
 

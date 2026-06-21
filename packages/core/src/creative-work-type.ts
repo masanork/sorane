@@ -15,6 +15,7 @@ export function resolveCatalogCreativeWorkType(
   if (effective === "reference") return "TechArticle";
   if (effective === "faq") return "FAQPage";
   if (effective === "glossary") return "DefinedTermSet";
+  if (effective === "glossary-term") return "DefinedTermSet";
 
   const override = concept.frontmatter.creativeWorkType;
   if (override === "TechArticle" || override === "BlogPosting") {
