@@ -45,7 +45,7 @@ async function main(): Promise<void> {
           "  migrate   --cwd <dir> [--dry-run] [--bump-profile 0.2|0.3]\n" +
           "  index     --cwd <dir> [--force] [--hybrid] [--fts-only] [--out <path>] [--model <dir>] [--model-id <id>]\n" +
           "  search    <query> [--cwd <dir>] [--type article|dataset|reference|glossary|glossary-term|faq] [--tag <slug>] [--k 10] [--json] [--fts-only]\n" +
-          "  export    --format docx --cwd <dir> --out <file.docx|dir> [--file <rel.md>]\n",
+          "  export    --format docx|pdf --cwd <dir> --out <file|dir> [--file <rel.md>] [--html <rel.html>]\n",
       );
       process.exit(command === undefined ? 0 : 1);
   }

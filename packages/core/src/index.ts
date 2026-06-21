@@ -6,7 +6,20 @@ export {
   type RunDocxExportOptions,
   type RunDocxExportResult,
 } from "./export/docx.ts";
+export {
+  runPdfExport,
+  type RunPdfExportOptions,
+  type RunPdfExportResult,
+} from "./export/pdf.ts";
 export { pandocCliAvailable, resolvePandocBinary } from "./export/pandoc-cli.ts";
+export {
+  vivliostyleCliAvailable,
+  vivliostyleHtmlToPdf,
+  resolveVivliostyleBinary,
+  resolveVivliostyleInvocation,
+  type VivliostyleHtmlToPdfOptions,
+  type VivliostyleInvocation,
+} from "./export/vivliostyle-cli.ts";
 export {
   mergeConfig,
   DEFAULT_CONFIG,
