@@ -47,6 +47,14 @@ import {
   type GlossaryTermIndexEntry,
 } from "./glossary-term-page.ts";
 import { buildGlossaryLinkIndex } from "./markup/glossary-link-index.ts";
+import {
+  discoverDirectoryIndexes,
+  directoryIndexBundlePath,
+  directoryIndexOkfMarkdown,
+  directoryIndexOutRel,
+  humanizeDirectoryLabel,
+  renderDirectoryIndexBody,
+} from "./directory-index.ts";
 import { rubyCharsetExtraFromBody } from "./ruby/ruby-font-extra.ts";
 import {
   buildReferencePageJsonLd,
@@ -1058,6 +1066,50 @@ export async function runBuild(opts: BuildOptions): Promise<BuildResult> {
     siteEntries.push({ url: termsIndexRel, lastmod: undefined, isIndex: false });
   }
 
+  const directoryIndexes = discoverDirectoryIndexes(parsed, config, i18n);
+  const directoryIndexBundleRows: Array<{ path: string; content: string }> = [];
+  for (const spec of directoryIndexes) {
+    const outRel = directoryIndexOutRel(spec);
+    const indexLang =
+      spec.localeId === "default"
+        ? config.site.lang
+        : (i18n.locales[spec.localeId]?.lang ?? config.site.lang);
+    const bodyHtml = renderDirectoryIndexBody(spec, config.site.title, indexLang);
+    const indexConcept = syntheticConcept(
+      `${config.site.title} — ${humanizeDirectoryLabel(spec.dirRel)}`,
+    );
+    const indexRoot = rootPrefixFromRel(outRel);
+    const indexChrome = headerSearchFor(indexRoot, { isSearch: false });
+    const indexFontCss = await fontCssFor(
+      indexConcept,
+      indexRoot,
+      indexLang,
+      bodyHtml,
+    );
+    emitPage({
+      cwd,
+      config,
+      outDir,
+      outRel,
+      concept: indexConcept,
+      bodyHtml,
+      baseUrl,
+      fontCss: indexFontCss,
+      lang: indexLang,
+      localeId: spec.localeId,
+      showArchiveNav: showArchiveInHeader,
+      searchPath: searchNavPath,
+      headerSearchHtml: indexChrome.headerSearchHtml,
+      extraHead: indexChrome.extraHead,
+    });
+    builtPages += 1;
+    siteEntries.push({ url: outRel, lastmod: undefined, isIndex: false });
+    directoryIndexBundleRows.push({
+      path: directoryIndexBundlePath(spec),
+      content: directoryIndexOkfMarkdown(spec),
+    });
+  }
+
   // --- Phase B: index（任意 — content/index.md がある場合のみ）---
   const listForPagination = indexParsed && articleSummaries[0]
     ? articleSummaries.slice(1)
@@ -1699,7 +1751,7 @@ export async function runBuild(opts: BuildOptions): Promise<BuildResult> {
     );
   }
 
-  const bundleEntries = buildBundleEntries(
+  const conceptBundleEntries = buildBundleEntries(
     parsed
       .filter(
         (p) =>
@@ -1712,6 +1764,13 @@ export async function runBuild(opts: BuildOptions): Promise<BuildResult> {
         slug: slugFromRel(p.relPath),
       })),
   );
+  const bundleEntries = [
+    ...conceptBundleEntries,
+    ...directoryIndexBundleRows.map((row) => ({
+      path: row.path,
+      content: row.content,
+    })),
+  ].sort((a, b) => a.path.localeCompare(b.path));
   if (buildOutputs.okf_bundle) {
     writeFileSync(join(outDir, "okf/bundle.tar.gz"), gzipSync(tarBytes(bundleEntries)));
   }

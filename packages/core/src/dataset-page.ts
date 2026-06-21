@@ -5,6 +5,7 @@ import {
   parsePublisher,
   resolveDistributionUrl,
   resolveLicenseUrl,
+  validateEuThemeWarnings,
   type DistributionRef,
 } from "./open-data.ts";
 import { escapeHtml } from "./render.ts";
@@ -51,6 +52,7 @@ export function validateDatasetWarnings(frontmatter: Record<string, unknown>): r
       );
     }
   }
+  warnings.push(...validateEuThemeWarnings(frontmatter.theme, "dataset"));
   const publisher = parsePublisher(frontmatter.publisher);
   if (
     (typeof licenseRaw === "string" && licenseRaw.length > 0) ||

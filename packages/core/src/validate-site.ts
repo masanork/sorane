@@ -9,7 +9,9 @@ import { validateDiagramAltWarnings } from "./diagrams/validate-diagram-alt.ts";
 import { validateFaqWarnings } from "./faq-page.ts";
 import { validateGlossaryWarnings } from "./glossary-page.ts";
 import { validateGlossaryTermWarnings } from "./glossary-term-page.ts";
+import { discoverDirectoryIndexes } from "./directory-index.ts";
 import { validateDatasetWarnings } from "./dataset-page.ts";
+import { validateEuThemeWarnings } from "./open-data.ts";
 import { validateReferenceWarnings } from "./reference-page.ts";
 import { validateHeadingWarnings } from "./validate-heading-structure.ts";
 import { validateLangMixingWarnings } from "./validate-lang-mixing.ts";
@@ -217,6 +219,12 @@ export function validateSiteContent(
           warningCount++;
         }
       }
+      if (typeof fm.theme === "string" && fm.theme.length > 0 && result.type !== "dataset") {
+        for (const w of validateEuThemeWarnings(fm.theme, result.type ?? "page")) {
+          findings.push(warningToFinding("dataset", w));
+          warningCount++;
+        }
+      }
       for (const f of validateContentQualityFindings(body, fm, config.build.quality)) {
         findings.push(warningToFinding(f.category, f.message));
         warningCount++;
@@ -242,6 +250,23 @@ export function validateSiteContent(
       profile: profileFromSource(source),
       findings,
     });
+  }
+
+  const parsedConcepts = i18nEntries.map((e) =>
+    parseConcept("", e.rel, e.source, okfOpts),
+  );
+  for (const spec of discoverDirectoryIndexes(parsedConcepts, config, i18n)) {
+    files.push({
+      file: `${spec.dirRel}/`,
+      ok: true,
+      findings: [
+        warningToFinding(
+          "okf",
+          `okf: directory ${spec.dirRel}/ has no index.md; build auto-generates OKF listing`,
+        ),
+      ],
+    });
+    warningCount++;
   }
 
   const i18nWarnings = validateI18nWarnings(i18nEntries, config.site);

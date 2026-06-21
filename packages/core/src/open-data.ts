@@ -33,6 +33,54 @@ const FORMAT_MEDIA: Record<string, string> = {
   xlsx: "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet",
 };
 
+/** EU Publications Office `data-theme` authority (DCAT-AP). */
+export const EU_DATA_THEME_CODES = new Set([
+  "AGRI",
+  "ECON",
+  "EDUC",
+  "ENER",
+  "ENVI",
+  "GOVE",
+  "HEAL",
+  "INTR",
+  "JUST",
+  "REGI",
+  "SOCI",
+  "TECH",
+  "TRAN",
+]);
+
+const EU_THEME_URI_RE = /data-theme\/([A-Za-z]+)\/?$/;
+
+/** Parse EU data-theme code from short id or Publications Office URI. */
+export function parseEuDataThemeCode(theme: string): string | undefined {
+  const trimmed = theme.trim();
+  const uriMatch = EU_THEME_URI_RE.exec(trimmed);
+  if (uriMatch) return uriMatch[1]!.toUpperCase();
+  if (/^[A-Za-z]{2,6}$/.test(trimmed)) return trimmed.toUpperCase();
+  return undefined;
+}
+
+export function isKnownEuDataTheme(theme: string): boolean {
+  const code = parseEuDataThemeCode(theme);
+  return code !== undefined && EU_DATA_THEME_CODES.has(code);
+}
+
+/** Warn on unknown EU codes; free-form tags (non-code strings) are allowed. */
+export function validateEuThemeWarnings(
+  theme: unknown,
+  context = "dataset",
+): readonly string[] {
+  if (typeof theme !== "string" || theme.length === 0) return [];
+  const code = parseEuDataThemeCode(theme);
+  if (code === undefined) return [];
+  if (EU_DATA_THEME_CODES.has(code)) return [];
+  const list = [...EU_DATA_THEME_CODES].sort().join(", ");
+  return [
+    `${context}: unknown EU data-theme code "${code}"; expected one of ${list}`,
+  ];
+}
+
 export function isKnownLicenseId(license: string): boolean {
   const trimmed = license.trim();
   return /^https?:\/\//i.test(trimmed) || trimmed in SPDX_LICENSE_URL;

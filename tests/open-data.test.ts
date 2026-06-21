@@ -1,12 +1,37 @@
 import { describe, expect, test } from "./_expect.ts";
 import {
+  isKnownEuDataTheme,
   isKnownLicenseId,
   parseDistributions,
+  parseEuDataThemeCode,
   parsePublisher,
   resolveDistributionUrl,
   resolveLicenseUrl,
   resolveMediaType,
+  validateEuThemeWarnings,
 } from "../packages/core/src/open-data.ts";
+
+describe("parseEuDataThemeCode", () => {
+  test("短コードと Publications Office URI", () => {
+    expect(parseEuDataThemeCode("GOVE")).toBe("GOVE");
+    expect(parseEuDataThemeCode("gove")).toBe("GOVE");
+    expect(
+      parseEuDataThemeCode(
+        "http://publications.europa.eu/resource/authority/data-theme/ECON",
+      ),
+    ).toBe("ECON");
+    expect(parseEuDataThemeCode("transport")).toBe(undefined);
+  });
+});
+
+describe("validateEuThemeWarnings", () => {
+  test("未知コードのみ警告、自由タグは許容", () => {
+    expect(validateEuThemeWarnings("GOVE").length).toBe(0);
+    expect(isKnownEuDataTheme("GOVE")).toBe(true);
+    expect(validateEuThemeWarnings("ZZZZ").some((w) => w.includes("ZZZZ"))).toBe(true);
+    expect(validateEuThemeWarnings("open-data").length).toBe(0);
+  });
+});
 
 describe("isKnownLicenseId", () => {
   test("SPDX と HTTPS を認識", () => {

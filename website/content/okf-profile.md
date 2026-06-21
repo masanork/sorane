@@ -22,6 +22,10 @@ sorane は [Open Knowledge Format (OKF) v0.1](https://cloud.google.com/blog/prod
 
 `dataset` では次も必須です: `description`, `resource`, `license`, `publisher`, `distributions`（各要素に `title`, `format`, `accessURL`）。
 
+任意の `theme` は DCAT-AP の EU コード（`GOVE`, `ECON`, `HEAL` など）を推奨します。コード形式で未知の値は `sorane validate` が warning を出します。自由なタグ文字列も許容されます。
+
+`content/datasets/` のようにサブディレクトリにページが 2 件以上あり、作者の `index.md` が無い場合、ビルドは OKF 形式のディレクトリ一覧（`{dir}/index.html` と `okf/bundle.tar.gz` 内の `{dir}/index.md`）を自動生成します。サイトトップの `content/index.md`（`type: index`）とは別物です。
+
 ## プロファイル文字列
 
 frontmatter の `profile` で、検証の厳しさと使える `type` を選びます。

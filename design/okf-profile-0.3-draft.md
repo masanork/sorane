@@ -532,8 +532,8 @@ distributions:
 1. ~~Unknown types~~ → **warn + `article` fallback** (decided).
 2. ~~Glossary~~ → **分野別 `type: glossary`、語は1ファイル内、同形異義語は glossary + anchor で区別** (decided).
 3. ~~`catalog.jsonld` articles in `dataset`?~~ → **No; `hasPart` for non-data** (decided, breaking).
-4. **OKF directory `index.md`:** generate automatically under `content/datasets/` etc.?
-5. **EU theme codes:** validate against EU vocabulary or free string + warn?
+4. ~~**OKF directory `index.md`:** generate automatically under `content/datasets/` etc.?~~ → **auto-generate** at build when a subdirectory has ≥2 pages and no author `index.md` (`directory-index.ts`; HTML + `okf/bundle.tar.gz` `{dir}/index.md`).
+5. ~~**EU theme codes:** validate against EU vocabulary or free string + warn?~~ → **warn on unknown codes**; free-form tags allowed (`validateEuThemeWarnings` in `open-data.ts`).
 6. ~~**Search:** unified index with `type` facet vs dataset-only filter?~~ → **unified index with `type` facet** (`packages/core/src/search-facets.ts`; search UI lists article / dataset / reference / glossary / glossary-term / faq).
 7. ~~**`article` JSON-LD type**~~ → docs = `TechArticle`, blog = `BlogPosting`, `creativeWorkType` override (decided).
 8. ~~**Legacy catalog**~~ → **hard break**, no legacy file (decided).

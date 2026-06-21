@@ -6,6 +6,21 @@ import {
 import { normalizeConcept } from "../packages/okf/src/index.ts";
 
 describe("validateDatasetWarnings", () => {
+  test("未知 EU theme コードを警告", () => {
+    const warnings = validateDatasetWarnings({
+      theme: "ZZZZ",
+      license: "CC-BY-4.0",
+      distributions: [],
+    });
+    expect(warnings.some((w) => w.includes("unknown EU data-theme"))).toBe(true);
+    const ok = validateDatasetWarnings({
+      theme: "GOVE",
+      license: "CC-BY-4.0",
+      publisher: { name: "Org" },
+    });
+    expect(ok.some((w) => w.includes("data-theme"))).toBe(false);
+  });
+
   test("未知ライセンスと http distribution を警告", () => {
     const warnings = validateDatasetWarnings({
       license: "Custom-License",
