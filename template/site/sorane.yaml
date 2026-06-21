@@ -17,7 +17,7 @@ site:
   #   cloudflare:
   #     pages_project: my-site
   #     zone_name: www.example.go.jp
-  #     web_analytics: true   # enable Web Analytics in CF dashboard (no HTML beacon)
+  #     web_analytics: true   # Pages → Metrics → Enable (free PV; CF injects beacon on deploy)
   #     # logpush:            # optional audit logs → R2 (public sector)
   #     #   destination: r2
   #     #   r2_bucket: my-site-access-logs

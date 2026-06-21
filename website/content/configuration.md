@@ -153,8 +153,9 @@ site:
 
 | 項目 | 用途 |
 |------|------|
-| `web_analytics: true` | Cloudflare ダッシュボードで Web Analytics を有効化する目印（ページビュー等） |
-| `logpush` | 監査向けアクセスログを R2 に保存（任意） |
+| `web_analytics: true` | **Pages Web Analytics**（Workers & Pages → Metrics → Enable）の運用メモ。無料で PV 等が取れるが、デプロイ時に Cloudflare がビーコンを注入する（sorane は Markdown/HTML に書かない） |
+| （参考）ゾーン HTTP Traffic | エッジの Requests / Unique visitors は無料。Page views・Visits の詳細は **Pro 以上**（ダッシュボードの Upgrade 表示はこちら） |
+| `logpush` | 監査向け生ログを R2 に保存（任意・解析だけなら不要） |
 
 `sorane build` で `dist/ops/cloudflare.json` と `llms.txt` の Access logs 節が出力されます。`logpush.exclude_paths` は `site.findability.disallow` とマージされます。
 

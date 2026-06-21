@@ -61,9 +61,11 @@ Optional: `R2_PATH_PREFIX` (default `access-logs`) and `LOGPUSH_JOB_NAME` overri
 
 The script creates an R2 Logpush job for dataset `http_requests` with fields from `logpush/fields.json` (aligned with `ops/cloudflare.json` `recommended_fields`).
 
-## 4. Web Analytics (optional)
+## 4. Web Analytics (optional, free)
 
-Enable **Web Analytics** in the Cloudflare dashboard for the zone. sorane does not inject a beacon; traffic is measured at the edge.
+**Pages sites:** Workers & Pages → your project → **Metrics** → **Enable** Web Analytics. Cloudflare injects the beacon on the next deploy; sorane does not add it to Markdown/HTML source.
+
+Do not confuse with **zone HTTP Traffic** (Analytics & Logs): page views and visits on that screen require **Pro**. The free tier still shows requests, bandwidth, and unique visitors at the edge.
 
 ## 5. Verify
 

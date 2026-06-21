@@ -16,7 +16,7 @@ export interface SiteHostingCloudflareConfig {
   /** Logpush 用ゾーン名（カスタムドメインを Cloudflare でプロキシしているホスト） */
   readonly zone_name?: string;
   readonly logpush?: SiteHostingLogpushConfig;
-  /** Cloudflare ダッシュボードで Web Analytics を有効化する（HTML 埋め込みなし） */
+  /** Pages → Metrics の Web Analytics を有効化する目印（CF がデプロイ時にビーコン注入。sorane ソースには埋め込まない） */
   readonly web_analytics?: boolean;
 }
 
@@ -92,7 +92,10 @@ export function buildCloudflareOpsManifest(
   ];
   if (cf.web_analytics) {
     notes.push(
-      "Web Analytics: enable in Cloudflare dashboard (no sorane-embedded beacon).",
+      "Web Analytics: Workers & Pages → project → Metrics → Enable (free; beacon injected on deploy, not in sorane source).",
+    );
+    notes.push(
+      "Zone HTTP Traffic page views/visits require Pro; free tier has requests/bandwidth/unique visitors only.",
     );
   }
   return {
@@ -130,7 +133,7 @@ export function llmsHostingSection(
     "",
     "HTTP access logs are collected at the Cloudflare zone (Logpush `http_requests`), not embedded in page HTML.",
     `- [Ops manifest](${abs("ops/cloudflare.json")})`,
-    "- Stack template: `templates/cloudflare/` (Logpush → R2, optional Web Analytics in dashboard)",
+    "- Stack template: `templates/cloudflare/` (Logpush → R2 optional; Pages Metrics Web Analytics for free PV)",
   ];
   if (cf?.pages_project) {
     lines.push(`- Cloudflare Pages project: \`${cf.pages_project}\``);

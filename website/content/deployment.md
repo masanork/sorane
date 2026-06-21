@@ -71,13 +71,22 @@ sorane ソースを checkout する構成も可能です。`AGENTS.md` の `SORA
 
 sorane は HTML にアナリティクス JS を埋め込みません。計測は Cloudflare ゾーン側で行います。
 
-### Web Analytics（ページビュー等・推奨）
+### アクセス解析（無料プラン）
 
-1. [設定](configuration.html#cloudflare-ホスティング) のとおり `site.hosting.cloudflare.web_analytics: true` を書く
-2. `sorane build` で `dist/ops/cloudflare.json` を確認
-3. Cloudflare ダッシュボードで対象ゾーンの **Web Analytics** を有効化
+Cloudflare には名前が似た製品が2つあります。**ゾーンの HTTP Traffic で「Upgrade to Pro」が出るのは正常**です（詳細な PV / Visits は Pro 以上）。
 
-ダッシュボードで PV・参照元・デバイス等を確認できます。監査用の生ログは不要なサイトではここまでで十分です。
+| 製品 | 場所 | 無料 | PV 相当 | sorane HTML |
+|------|------|------|---------|-------------|
+| **Pages Web Analytics** | Workers & Pages → プロジェクト → **Metrics** → Enable | ○ | ○（Core Web Vitals 含む） | ビルド成果物に CF がスニペット注入（ソース Markdown には書かない） |
+| **ゾーン HTTP Traffic** | ゾーン → Analytics & Logs → HTTP Traffic | 基本のみ | Pro 以上で Page views / Visits | エッジ集計（JS 不要） |
+
+**sorane.dev のような Pages サイト（解析だけ欲しい・監査不要）:**
+
+1. [設定](configuration.html#cloudflare-ホスティング) で `web_analytics: true`（運用メモ用）
+2. **Workers & Pages → `sorane` → Metrics → Web Analytics を Enable**
+3. 次回デプロイ後に計測開始（数分〜24時間でデータ表示）
+
+ゾーンの HTTP Traffic 無料枠（Requests / Bandwidth / Unique visitors）だけでも足りる場合は、Pro に上げずにそちらを見ても構いません。
 
 ### Logpush（監査用アクセスログ・任意）
 
