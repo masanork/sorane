@@ -825,3 +825,73 @@ section.glossary-term {
   font-size: 0.9rem;
   color: var(--muted);
 }
+
+/* Reference page (sorane-okf/0.3 type: reference) */
+.reference-page {
+  margin: 0 auto;
+  max-width: var(--content-width, 48rem);
+}
+
+.reference-header {
+  margin-bottom: 1.5rem;
+  padding-bottom: 1rem;
+  border-bottom: 1px solid var(--border);
+}
+
+.reference-header h1 {
+  margin: 0 0 0.5rem;
+}
+
+.reference-description {
+  margin: 0 0 0.75rem;
+  color: var(--muted);
+  font-size: 1.05rem;
+}
+
+.reference-meta {
+  margin: 0.35rem 0;
+  font-size: 0.95rem;
+  color: var(--muted);
+}
+
+.reference-meta strong {
+  color: var(--text);
+  font-weight: var(--weight-emphasis);
+}
+
+.reference-meta a {
+  word-break: break-all;
+}
+
+.reference-body {
+  font-size: 0.98rem;
+  line-height: 1.65;
+}
+
+.reference-body > :first-child {
+  margin-top: 0;
+}
+
+.reference-body table {
+  width: 100%;
+  border-collapse: collapse;
+  margin: 1rem 0 1.5rem;
+  font-size: 0.92rem;
+}
+
+.reference-body th,
+.reference-body td {
+  border: 1px solid var(--border);
+  padding: 0.5rem 0.65rem;
+  text-align: left;
+  vertical-align: top;
+}
+
+.reference-body th {
+  font-weight: var(--weight-emphasis);
+  background: #f0f0f2;
+}
+
+.reference-body td code {
+  font-size: 0.9em;
+}

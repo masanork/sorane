@@ -39,6 +39,11 @@ import {
   renderGlossaryPageBody,
 } from "./glossary-page.ts";
 import {
+  buildReferencePageJsonLd,
+  renderReferencePageBody,
+} from "./reference-page.ts";
+import { stripDuplicateTitleHeading } from "./render.ts";
+import {
   DEFAULT_DIAGRAMS_CONFIG,
   mergeConfig,
   resolvePermalink,
@@ -653,6 +658,13 @@ export async function runBuild(opts: BuildOptions): Promise<BuildResult> {
         glossaryDefinitionHtmls,
         introSection?.html,
       );
+    } else if (effectiveType === "reference") {
+      const section = await renderBodySectionForConfig(
+        stripDuplicateTitleHeading(p.concept.body, p.concept.title),
+        bodySectionOpts(rootPrefix),
+      );
+      pageDiagrams = section.diagrams;
+      bodyHtml = renderReferencePageBody(p.concept, section.html);
     } else if (isSearch) {
       const searchIntro = p.concept.body.trim()
         ? await renderBodySectionForConfig(p.concept.body, bodySectionOpts(rootPrefix))
@@ -754,7 +766,26 @@ export async function runBuild(opts: BuildOptions): Promise<BuildResult> {
                 organization: siteOrganization,
                 frontmatter: p.concept.frontmatter,
               })
-            : buildCreativeWorkJsonLd({
+            : effectiveType === "reference"
+              ? buildReferencePageJsonLd({
+                  title: p.concept.title,
+                  description:
+                    p.concept.description ?? extractDescription(p.concept.body) ?? undefined,
+                  url: canonicalUrl ?? outRel,
+                  resource: p.concept.resource,
+                  datePublished: p.concept.timestamp,
+                  dateModified: updated ?? p.concept.timestamp,
+                  author,
+                  siteTitle: config.site.title,
+                  lang: pageLang,
+                  tags: p.concept.tags,
+                  aiDisclosure:
+                    pageAiFlags.jsonLd && aiDisclosure ? aiDisclosure : undefined,
+                  associatedMedia: associatedMedia.length > 0 ? associatedMedia : undefined,
+                  organization: siteOrganization,
+                  frontmatter: p.concept.frontmatter,
+                })
+              : buildCreativeWorkJsonLd({
             workType: resolveCatalogCreativeWorkType(p.concept, docsMode),
             title: p.concept.title,
             description:

@@ -88,6 +88,24 @@ distributions:
 
 `glossary` は frontmatter の `terms:` リストでも定義できます（本文の `##` がある場合は本文を優先）。
 
+## 参照（reference）の例
+
+コード一覧や CSV 列定義向けです。`resource` に元データや仕様書の URI を書き、本文は GFM 表が一般的です。
+
+```yaml
+---
+type: reference
+title: Stops CSV Fields
+description: Column definitions for stops.csv
+resource: https://example.dev/static/stops.csv
+profile: sorane-okf/0.3
+---
+
+| Column | Type | Description |
+|--------|------|-------------|
+| stop_id | string | Unique stop id |
+```
+
 ## ビルド出力
 
 | パス | 内容 |

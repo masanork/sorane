@@ -422,9 +422,13 @@ describe("runBuild", () => {
         hasPart?: { "@type": string }[];
       };
       expect(parsed.dataset?.length).toBe(1);
-      expect((parsed.hasPart ?? []).length).toBe(2);
+      expect((parsed.hasPart ?? []).length).toBe(3);
       const hasPartTypes = (parsed.hasPart ?? []).map((p) => p["@type"]).sort();
-      expect(hasPartTypes).toEqual(["DefinedTermSet", "FAQPage"]);
+      expect(hasPartTypes).toEqual(["DefinedTermSet", "FAQPage", "TechArticle"]);
+
+      const refHtml = readFileSync(join(tmp, "dist/stops-csv-fields.html"), "utf8");
+      expect(refHtml).toContain('class="reference-page"');
+      expect(refHtml).toContain("isBasedOn");
 
       const faqHtml = readFileSync(join(tmp, "dist/faq.html"), "utf8");
       expect(faqHtml).toContain('class="faq-page"');

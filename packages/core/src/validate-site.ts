@@ -5,6 +5,7 @@ import type { SoraneConfig } from "./config.ts";
 import { validateDiagramAltWarnings } from "./diagrams/validate-diagram-alt.ts";
 import { validateFaqWarnings } from "./faq-page.ts";
 import { validateGlossaryWarnings } from "./glossary-page.ts";
+import { validateReferenceWarnings } from "./reference-page.ts";
 import { validateHeadingWarnings } from "./validate-heading-structure.ts";
 import { validateContentQualityFindings } from "./validate-content-quality.ts";
 import { validateRevisionFindings } from "./revision-history.ts";
@@ -22,7 +23,8 @@ export type ValidateFindingCategory =
   | "date"
   | "revision"
   | "faq"
-  | "glossary";
+  | "glossary"
+  | "reference";
 
 export interface ValidateFinding {
   readonly severity: ValidateFindingSeverity;
@@ -133,6 +135,16 @@ export function validateSiteContent(
       if (result.type === "glossary") {
         for (const w of validateGlossaryWarnings(body, fm)) {
           findings.push(warningToFinding("glossary", w));
+          warningCount++;
+        }
+      }
+      if (result.type === "reference") {
+        for (const w of validateReferenceWarnings(body, {
+          description: typeof fm.description === "string" ? fm.description : undefined,
+          resource: typeof fm.resource === "string" ? fm.resource : undefined,
+          frontmatter: fm,
+        })) {
+          findings.push(warningToFinding("reference", w));
           warningCount++;
         }
       }

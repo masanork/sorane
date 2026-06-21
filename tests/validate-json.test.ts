@@ -116,6 +116,24 @@ describe("validateSiteContent", () => {
     const file = report.files.find((f) => f.file === "glossary.md");
     assert.ok(file?.findings.some((f) => f.category === "glossary" && f.severity === "warning"));
   });
+
+  test("reference warnings are categorized", () => {
+    const root = mkdtempSync(join(tmpdir(), "sorane-validate-"));
+    const contentDir = join(root, "content");
+    mkdirSync(contentDir, { recursive: true });
+    writeFileSync(
+      join(contentDir, "api.md"),
+      "---\ntype: reference\ntitle: API\nprofile: sorane-okf/0.3\n---\n\nNo table here.\n",
+      "utf8",
+    );
+    const report = validateSiteContent(
+      root,
+      mergeConfig({ build: { content_dir: "content" } } as Partial<SoraneConfig>),
+    );
+    assert.equal(report.ok, true);
+    const file = report.files.find((f) => f.file === "api.md");
+    assert.ok(file?.findings.some((f) => f.category === "reference" && f.severity === "warning"));
+  });
 });
 
 describe("validate CLI --json", () => {

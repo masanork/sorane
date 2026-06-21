@@ -104,10 +104,15 @@ More content.
         "api.md": `---
 type: reference
 title: API Reference
+description: HTTP API field reference.
+resource: https://ex.dev/api-spec
 profile: sorane-okf/0.3
 ---
 
-API fields.
+| Field | Type | Description |
+|-------|------|-------------|
+| id | string | Resource identifier |
+| name | string | Display name |
 `,
         "faq.md": `---
 type: faq
@@ -171,7 +176,10 @@ Search intro.
       expect(guideHtml).toContain("page-toc");
 
       const apiHtml = readFileSync(join(outDir, "api.html"), "utf8");
+      expect(apiHtml).toContain('class="reference-page"');
       expect(apiHtml).toContain("TechArticle");
+      expect(apiHtml).toContain("isBasedOn");
+      expect(apiHtml).toContain("https://ex.dev/api-spec");
 
       const searchHtml = readFileSync(join(outDir, "search.html"), "utf8");
       expect(searchHtml).toContain('class="search"');
