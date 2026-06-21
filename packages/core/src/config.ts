@@ -46,7 +46,10 @@ export interface SearchConfig {
   readonly bundle_model?: boolean;
 }
 
-export type DocsNavSpec = string | { readonly href: string; readonly title?: string };
+export type DocsNavSpec =
+  | string
+  | { readonly href: string; readonly title?: string }
+  | { readonly section: string };
 
 export interface DocsConfig {
   /** ドキュメントサイトのサイドバー順（href は dist 基準、例: getting-started.html） */

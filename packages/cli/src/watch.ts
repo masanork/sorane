@@ -6,12 +6,21 @@ import { loadSoraneConfig, parseCwdFlag } from "./config-load.ts";
 const DEBOUNCE_MS = 350;
 
 /** @internal Exported for unit tests. */
-export function parseWatchArgv(argv: string[]): { cwd: string; clean: boolean; buildArgv: string[] } {
+export function parseWatchArgv(argv: string[]): {
+  cwd: string;
+  clean: boolean;
+  buildArgv: string[];
+  preview: boolean;
+} {
   const cwd = parseCwdFlag(argv);
   const clean = argv.includes("--clean");
+  const preview = argv.includes("--watch-preview") || argv.includes("--preview");
   const buildArgv = ["--cwd", cwd];
   if (clean) buildArgv.push("--clean");
-  return { cwd, clean, buildArgv };
+  if (argv.includes("--drafts") || preview) {
+    buildArgv.push("--drafts", "--preview");
+  }
+  return { cwd, clean, buildArgv, preview };
 }
 
 /** @internal Exported for unit tests. */

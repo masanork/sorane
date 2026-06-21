@@ -50,47 +50,80 @@ function relLinkFrom(fromRel: string, toRel: string): string {
   return rel.length > 0 ? rel : "./";
 }
 
-export interface DocsNavItem {
+export interface DocsNavLink {
   readonly href: string;
   readonly title: string;
 }
 
+export interface DocsNavSection {
+  readonly section: string;
+}
+
+export type DocsNavEntry = DocsNavLink | DocsNavSection;
+
+/** @deprecated Use DocsNavLink */
+export type DocsNavItem = DocsNavLink;
+
+export function isDocsNavLink(entry: DocsNavEntry): entry is DocsNavLink {
+  return "href" in entry;
+}
+
+export function docsNavLinks(entries: readonly DocsNavEntry[]): readonly DocsNavLink[] {
+  return entries.filter(isDocsNavLink);
+}
+
 export function docsNavFor(
   href: string,
-  items: readonly DocsNavItem[],
+  items: readonly DocsNavEntry[],
 ): ArticleNav | undefined {
-  const i = items.findIndex((item) => item.href === href);
+  const links = docsNavLinks(items);
+  const i = links.findIndex((item) => item.href === href);
   if (i < 0) return undefined;
   const prev =
-    i > 0 ? { href: items[i - 1]!.href, title: items[i - 1]!.title } : undefined;
+    i > 0 ? { href: links[i - 1]!.href, title: links[i - 1]!.title } : undefined;
   const next =
-    i < items.length - 1
-      ? { href: items[i + 1]!.href, title: items[i + 1]!.title }
+    i < links.length - 1
+      ? { href: links[i + 1]!.href, title: links[i + 1]!.title }
       : undefined;
   if (!prev && !next) return undefined;
   return { prev, next };
 }
 
 export function docsSidebarHtml(
-  items: readonly DocsNavItem[],
+  items: readonly DocsNavEntry[],
   currentHref: string,
   fromRel: string,
 ): string {
   if (items.length === 0) return "";
-  const links = items
-    .map((item) => {
-      const href = relLinkFrom(fromRel, item.href);
-      const current = item.href === currentHref ? ' aria-current="page"' : "";
-      return (
-        `<li class="docs-nav-item">` +
-        `<a href="${escapeHtml(href)}" class="docs-nav-link"${current}>${escapeHtml(item.title)}</a>` +
-        `</li>`
+  const parts: string[] = [];
+  let openList = false;
+  for (const entry of items) {
+    if (!isDocsNavLink(entry)) {
+      if (openList) {
+        parts.push("</ul>\n");
+        openList = false;
+      }
+      parts.push(
+        `<p class="docs-nav-section">${escapeHtml(entry.section)}</p>\n`,
       );
-    })
-    .join("\n");
+      continue;
+    }
+    if (!openList) {
+      parts.push('<ul class="docs-nav-list">\n');
+      openList = true;
+    }
+    const href = relLinkFrom(fromRel, entry.href);
+    const current = entry.href === currentHref ? ' aria-current="page"' : "";
+    parts.push(
+      `<li class="docs-nav-item">` +
+        `<a href="${escapeHtml(href)}" class="docs-nav-link"${current}>${escapeHtml(entry.title)}</a>` +
+        `</li>\n`,
+    );
+  }
+  if (openList) parts.push("</ul>\n");
   return (
     `<nav class="docs-sidebar-nav" aria-label="ドキュメント">\n` +
-    `<ul class="docs-nav-list">\n${links}\n</ul>\n` +
+    `${parts.join("")}` +
     `</nav>\n`
   );
 }
@@ -170,7 +203,7 @@ export function renderDocsIndexBody(opts: {
   readonly siteTitle: string;
   readonly description?: string;
   readonly introHtml?: string;
-  readonly docsNav: readonly DocsNavItem[];
+  readonly docsNav: readonly DocsNavEntry[];
   readonly recentArticles?: readonly ArticleListEntry[];
   readonly newsLimit?: number;
   readonly archiveHref?: string;
@@ -191,19 +224,39 @@ export function renderDocsIndexBody(opts: {
     .join(" ");
   const profile = links ? links : "";
   const intro = opts.introHtml ? `<div class="docs-intro">${opts.introHtml}</div>` : "";
-  const items = opts.docsNav
-    .map(
-      (item) =>
-        `<li class="docs-index-item">` +
-        `<a href="${escapeHtml(item.href)}" class="docs-index-link">${escapeHtml(item.title)}</a>` +
+  const navGroupParts: string[] = [];
+  let sectionTitle: string | undefined;
+  let linkItems: string[] = [];
+  const flushNavGroup = (): void => {
+    if (linkItems.length === 0) return;
+    const head = sectionTitle
+      ? `<h3 class="docs-index-group-title">${escapeHtml(sectionTitle)}</h3>\n`
+      : "";
+    navGroupParts.push(
+      `<div class="docs-index-group">\n${head}<ul class="docs-index-list">\n${linkItems.join("\n")}\n</ul>\n</div>\n`,
+    );
+    linkItems = [];
+    sectionTitle = undefined;
+  };
+  for (const entry of opts.docsNav) {
+    if (!isDocsNavLink(entry)) {
+      flushNavGroup();
+      sectionTitle = entry.section;
+      continue;
+    }
+    linkItems.push(
+      `<li class="docs-index-item">` +
+        `<a href="${escapeHtml(entry.href)}" class="docs-index-link">${escapeHtml(entry.title)}</a>` +
         `</li>`,
-    )
-    .join("\n");
+    );
+  }
+  flushNavGroup();
+  const navBody = navGroupParts.join("");
   const navSection =
-    items.length > 0
+    navBody.length > 0
       ? `<section class="docs-index-nav">\n` +
         `<h2>${escapeHtml(labels.documentation)}</h2>\n` +
-        `<ul class="docs-index-list">\n${items}\n</ul>\n` +
+        `${navBody}` +
         `</section>\n`
       : "";
 
@@ -253,16 +306,28 @@ export function renderDocsIndexBody(opts: {
 export function resolveDocsNav(
   nav: readonly DocsNavSpec[] | undefined,
   titleByHref: ReadonlyMap<string, string>,
-): DocsNavItem[] {
+): DocsNavEntry[] {
   if (!nav || nav.length === 0) return [];
-  return nav.map((spec) => {
-    const href = typeof spec === "string" ? spec : spec.href;
-    const title =
-      (typeof spec === "object" && spec.title) ||
-      titleByHref.get(href) ||
-      href.replace(/\.html$/i, "");
-    return { href, title };
-  });
+  const out: DocsNavEntry[] = [];
+  for (const spec of nav) {
+    if (typeof spec === "string") {
+      out.push({
+        href: spec,
+        title: titleByHref.get(spec) ?? spec.replace(/\.html$/i, ""),
+      });
+      continue;
+    }
+    if ("section" in spec) {
+      out.push({ section: spec.section });
+      continue;
+    }
+    const href = spec.href;
+    out.push({
+      href,
+      title: spec.title ?? titleByHref.get(href) ?? href.replace(/\.html$/i, ""),
+    });
+  }
+  return out;
 }
 
 export function renderDocsArticleFromConceptWithMeta(

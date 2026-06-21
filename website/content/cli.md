@@ -26,11 +26,20 @@ npm install @sorane/cli @sorane/search   # 検索まで使うサイト
 静的サイトを生成します。
 
 ```bash
-npx @sorane/cli build [--cwd <dir>] [--clean] [--watch]
-npx @sorane/cli watch [--cwd <dir>] [--clean]
+npx @sorane/cli build [--cwd <dir>] [--clean] [--watch] [--drafts] [--preview]
+npx @sorane/cli watch [--cwd <dir>] [--clean] [--drafts] [--preview]
+npx @sorane/cli preview [--cwd <dir>] [--port 4321] [--watch]
 ```
 
 `--clean` は出力ディレクトリを削除してから再生成します。`--watch`（または `sorane watch`）は `content/` と `sorane.yaml` の変更を監視して再ビルドします（2回目以降は自動で `--clean`）。
+
+### ローカルプレビュー
+
+```bash
+npx @sorane/cli preview --cwd . --watch
+```
+
+`dist/` をビルドして `http://127.0.0.1:4321/` で配信します。`--watch` で保存のたびに再ビルドします。プレビューでは `draft: true` の記事も含め、全ページに「ローカルプレビュー」バナーを付けます。本番の `build`（CI デプロイ）では `draft: true` は **出力されません**。
 
 `--skip-c2pa` は `build.c2pa.enabled` 時でも静的画像への C2PA 署名を省略します（CI スナップショット向け）。
 

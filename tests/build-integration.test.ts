@@ -25,7 +25,13 @@ function writeSite(root: string, config: Partial<SoraneConfig>, files: Record<st
     `preset: okf-site\n` +
     `site:\n  title: ${config.site?.title ?? "Site"}\n  description: ${config.site?.description ?? "desc"}\n  base_url: "${config.site?.base_url ?? "https://ex.dev"}"\n  lang: ${config.site?.lang ?? "ja"}\n  og_image: /assets/og.png\n` +
       (config.docs?.nav
-        ? `docs:\n  nav:\n${config.docs.nav.map((n) => (typeof n === "string" ? `    - ${n}` : `    - href: ${n.href}\n      title: ${n.title}`)).join("\n")}\n`
+        ? `docs:\n  nav:\n${config.docs.nav
+            .map((n) => {
+              if (typeof n === "string") return `    - ${n}`;
+              if ("section" in n) return `    - section: ${n.section}`;
+              return `    - href: ${n.href}\n      title: ${n.title ?? n.href}`;
+            })
+            .join("\n")}\n`
         : "") +
       `build:\n  content_dir: content\n  out_dir: dist\n  permalink: "{{slug}}.html"\n` +
       (config.build?.blog

@@ -23,6 +23,16 @@ excludeFromList: true
 
 [sorane 公式サイト](https://sorane.dev/) は sorane リポジトリ内の `website/` を dogfooding してビルドしています。
 
+### デプロイ前のプレビュー
+
+本番反映前にローカルで確認するには [CLI の `preview`](cli.html#ローカルプレビュー) を使います。
+
+```bash
+npx @sorane/cli preview --cwd website --watch
+```
+
+`draft: true` の frontmatter を付けた記事はプレビューでのみ HTML 化され、Pages への通常 `build` では除外されます。
+
 ### 404 ページ
 
 ビルドは常に `dist/404.html` を出力します。Cloudflare Pages はこれを自動的にエラーページとして使います。

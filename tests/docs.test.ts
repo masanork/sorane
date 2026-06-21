@@ -28,6 +28,18 @@ describe("resolveDocsNav", () => {
     const nav = resolveDocsNav(["cli.html"], titles);
     expect(nav).toEqual([{ href: "cli.html", title: "CLI リファレンス" }]);
   });
+
+  test("section 見出しを挟める", () => {
+    const nav = resolveDocsNav(
+      [{ section: "はじめに" }, "a.html", { href: "b.html", title: "B" }],
+      new Map(),
+    );
+    expect(nav).toEqual([
+      { section: "はじめに" },
+      { href: "a.html", title: "a" },
+      { href: "b.html", title: "B" },
+    ]);
+  });
 });
 
 describe("docsNavFor", () => {
@@ -114,6 +126,23 @@ describe("renderDocsIndexBody", () => {
     expect(html).toContain("archive/index.html");
     expect(html).toContain("ドキュメント");
     expect(html).toContain("cli.html");
+  });
+
+  test("section 付きドキュメント一覧", () => {
+    const html = renderDocsIndexBody({
+      siteTitle: "sorane",
+      docsNav: [
+        { section: "はじめに" },
+        { href: "getting-started.html", title: "はじめに" },
+        { section: "運用" },
+        { href: "deployment.html", title: "デプロイ" },
+      ],
+      lang: "ja",
+    });
+    expect(html).toContain("docs-index-group-title");
+    expect(html).toContain("はじめに");
+    expect(html).toContain("運用");
+    expect(html).toContain("deployment.html");
   });
 });
 

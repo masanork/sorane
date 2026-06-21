@@ -119,6 +119,35 @@ site:
 
 sorane.dev の例: [license.html](license.html)（`site.license: MIT`）。
 
+### ドキュメントナビ（`docs.nav`）
+
+サイドバーとトップの「ドキュメント」欄の順序です。`section:` で見出しを挟めます（ニュース欄とは別）。
+
+```yaml
+docs:
+  nav:
+    - section: はじめに
+    - getting-started.html
+    - features.html
+    - section: リファレンス
+    - cli.html
+    # ...
+```
+
+ブログ記事（`excludeFromList` なしの `article`）はナビに載せず、トップのニュース欄と `archive/` に出ます。
+
+### 下書き（`draft`）
+
+```yaml
+---
+type: article
+title: 未公開の告知
+draft: true
+---
+```
+
+`sorane preview`（`--drafts --preview`）でのみ HTML 化されます。通常の `build` / CI デプロイでは出力・feed・サイトマップから除外されます。
+
 ## オープンデータ（DCAT カタログ）
 
 `type: dataset` ページ向けに、ポータル連携用の DCAT-AP JSON-LD を追加出力できます（schema.org の `catalog.jsonld` とは別ファイル）。

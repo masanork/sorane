@@ -13,6 +13,11 @@ import {
 } from "./emergency-banner.ts";
 import { resolveBuildOutputs } from "./presets.ts";
 import { resolveSiteLicense } from "./site-license.ts";
+import {
+  draftPageBannerHtml,
+  isDraftFrontmatter,
+  previewSiteBannerHtml,
+} from "./preview-banner.ts";
 
 function pageOgImage(
   frontmatter: Record<string, unknown>,
@@ -49,6 +54,7 @@ export interface EmitPageOptions {
   readonly hreflangAlternates?: readonly HreflangAlternate[];
   readonly ogLocaleAlternates?: readonly string[];
   readonly localeId?: string;
+  readonly previewMode?: boolean;
 }
 
 export function emitPage(opts: EmitPageOptions): { mdOutRel?: string; canonicalUrl?: string } {
@@ -81,6 +87,12 @@ export function emitPage(opts: EmitPageOptions): { mdOutRel?: string; canonicalU
     opts.config.site,
     opts.localeId ?? "default",
   );
+  const bannerParts: string[] = [];
+  if (opts.previewMode) bannerParts.push(previewSiteBannerHtml(pageLang));
+  if (isDraftFrontmatter(opts.concept.frontmatter)) {
+    bannerParts.push(draftPageBannerHtml(pageLang));
+  }
+  if (emergency) bannerParts.push(emergencyBannerHtml(emergency, pageLang));
   const siteLicense = resolveSiteLicense(opts.config.site);
   const html = buildPage({
     title: opts.concept.title,
@@ -90,7 +102,8 @@ export function emitPage(opts: EmitPageOptions): { mdOutRel?: string; canonicalU
     description,
     canonicalUrl,
     lang: pageLang,
-    emergencyBannerHtml: emergency ? emergencyBannerHtml(emergency, pageLang) : undefined,
+    emergencyBannerHtml:
+      bannerParts.length > 0 ? bannerParts.join("") : undefined,
     hreflangAlternates: opts.hreflangAlternates,
     ogLocaleAlternates: opts.ogLocaleAlternates,
     feedPath: resolveBuildOutputs(opts.config.build.outputs).feed ? "feed.xml" : undefined,

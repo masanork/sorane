@@ -118,6 +118,7 @@ import {
   type SiteEntry,
 } from "./site-meta.ts";
 import { llmsLicenseSection, resolveSiteLicense } from "./site-license.ts";
+import { isDraftFrontmatter } from "./preview-banner.ts";
 import {
   diagramHeadForPage,
   emptyDiagramMeta,
@@ -137,6 +138,7 @@ import { isMermaidBuildEnabled } from "./diagrams/compile-mermaid.ts";
 import { resolveThemeAssetDir } from "./theme-assets.ts";
 import {
   docsNavFor,
+  docsNavLinks,
   docsSidebarHtml,
   renderDocsArticleFromConceptWithMetaForConfig,
   renderDocsIndexBody,
@@ -176,6 +178,10 @@ export interface BuildOptions {
   readonly clean?: boolean;
   /** CI スナップショット用: C2PA 署名をスキップ */
   readonly skipC2pa?: boolean;
+  /** `draft: true` のページも出力（`sorane preview` 用） */
+  readonly includeDrafts?: boolean;
+  /** 全ページにローカルプレビューバナーを付与 */
+  readonly preview?: boolean;
 }
 
 export interface BuildResult {
@@ -228,6 +234,14 @@ function isBlogArticle(concept: ParsedConcept["concept"], relPath: string): bool
   );
 }
 
+function includePageInBuild(
+  concept: ParsedConcept["concept"],
+  includeDrafts: boolean,
+): boolean {
+  if (!includeDrafts && isDraftFrontmatter(concept.frontmatter)) return false;
+  return true;
+}
+
 function frontmatterString(
   frontmatter: Record<string, unknown>,
   key: string,
@@ -275,11 +289,13 @@ function articleSummariesForLocale(
   config: SoraneConfig,
   i18n: I18nContext,
   localeId: string,
+  includeDrafts: boolean,
 ): ArticleListEntry[] {
   return parsed
     .filter(
       (p) =>
         isBlogArticle(p.concept, p.relPath) &&
+        includePageInBuild(p.concept, includeDrafts) &&
         localeIdFromRelPath(p.relPath, i18n) === localeId,
     )
     .map((p) => {
@@ -379,6 +395,9 @@ export async function runBuild(opts: BuildOptions): Promise<BuildResult> {
   const startedAt = performance.now();
   const { cwd } = opts;
   const config = mergeConfig(opts.config);
+  const includeDrafts = opts.includeDrafts === true;
+  const previewMode = opts.preview === true;
+  const pageEmitBase = { previewMode };
   const buildOutputs = resolveBuildOutputs(config.build.outputs);
   const okfOpts = okfValidateOptions(config);
   const contentDir = resolve(cwd, config.build.content_dir);
@@ -467,6 +486,7 @@ export async function runBuild(opts: BuildOptions): Promise<BuildResult> {
     .filter(
       (p) =>
         isBlogArticle(p.concept, p.relPath) &&
+        includePageInBuild(p.concept, includeDrafts) &&
         localeIdFromRelPath(p.relPath, i18n) === "default",
     )
     .map((p) => {
@@ -504,7 +524,7 @@ export async function runBuild(opts: BuildOptions): Promise<BuildResult> {
   }
   const docsNav = resolveDocsNav(config.docs?.nav, titleByHref);
   const docsMode = docsNav.length > 0;
-  const docsHrefSet = new Set(docsNav.map((item) => item.href));
+  const docsHrefSet = new Set(docsNavLinks(docsNav).map((item) => item.href));
 
   type FontProcessorType = {
     fontCssForPage: (opts: {
@@ -650,7 +670,8 @@ export async function runBuild(opts: BuildOptions): Promise<BuildResult> {
     if (
       !isBuildableContentType(p.concept.type, p.concept.profile) ||
       isSystemPage(p.concept) ||
-      isNotFoundSource(p.relPath)
+      isNotFoundSource(p.relPath) ||
+      !includePageInBuild(p.concept, includeDrafts)
     ) {
       continue;
     }
@@ -997,6 +1018,7 @@ export async function runBuild(opts: BuildOptions): Promise<BuildResult> {
           ...(diagramHead ? [diagramHead] : []),
         ];
     emitPage({
+      ...pageEmitBase,
       cwd,
       config,
       outDir,
@@ -1053,6 +1075,7 @@ export async function runBuild(opts: BuildOptions): Promise<BuildResult> {
     );
     const termsIndexChrome = headerSearchFor(termsIndexRoot, { isSearch: false });
     emitPage({
+      ...pageEmitBase,
       cwd,
       config,
       outDir,
@@ -1091,6 +1114,7 @@ export async function runBuild(opts: BuildOptions): Promise<BuildResult> {
       bodyHtml,
     );
     emitPage({
+      ...pageEmitBase,
       cwd,
       config,
       outDir,
@@ -1243,6 +1267,7 @@ export async function runBuild(opts: BuildOptions): Promise<BuildResult> {
       ...(indexDiagramHead ? [indexDiagramHead] : []),
     ];
     emitPage({
+      ...pageEmitBase,
       cwd,
       config,
       outDir,
@@ -1373,6 +1398,7 @@ export async function runBuild(opts: BuildOptions): Promise<BuildResult> {
         bodyHtml,
       );
       emitPage({
+        ...pageEmitBase,
         cwd,
         config,
         outDir,
@@ -1419,7 +1445,13 @@ export async function runBuild(opts: BuildOptions): Promise<BuildResult> {
 
     for (const { localeId, lang } of localesToEmit) {
       const pathPrefix = localeBlogPathPrefix(localeId, i18n);
-      const localeArticles = articleSummariesForLocale(parsed, config, i18n, localeId);
+      const localeArticles = articleSummariesForLocale(
+        parsed,
+        config,
+        i18n,
+        localeId,
+        includeDrafts,
+      );
       if (localeArticles.length === 0) continue;
 
       const localeIndex =
@@ -1456,6 +1488,7 @@ export async function runBuild(opts: BuildOptions): Promise<BuildResult> {
         const fontCss = await fontCssFor(concept, rootPrefix, lang, bodyHtml);
         const pageChrome = headerSearchFor(rootPrefix, { isSearch: false });
         emitPage({
+          ...pageEmitBase,
           cwd,
           config,
           outDir,
@@ -1499,6 +1532,7 @@ export async function runBuild(opts: BuildOptions): Promise<BuildResult> {
           isSearch: false,
         });
         emitPage({
+          ...pageEmitBase,
           cwd,
           config,
           outDir,
@@ -1530,6 +1564,7 @@ export async function runBuild(opts: BuildOptions): Promise<BuildResult> {
           );
           const yearChrome = headerSearchFor(rootPrefixFromRel(yearOutRel), { isSearch: false });
           emitPage({
+            ...pageEmitBase,
             cwd,
             config,
             outDir,
@@ -1568,6 +1603,7 @@ export async function runBuild(opts: BuildOptions): Promise<BuildResult> {
           );
           const monthChrome = headerSearchFor(rootPrefixFromRel(monthOutRel), { isSearch: false });
           emitPage({
+            ...pageEmitBase,
             cwd,
             config,
             outDir,
@@ -1612,6 +1648,7 @@ export async function runBuild(opts: BuildOptions): Promise<BuildResult> {
           );
           const tagChrome = headerSearchFor(rootPrefixFromRel(tagOutRel), { isSearch: false });
           emitPage({
+            ...pageEmitBase,
             cwd,
             config,
             outDir,
@@ -1835,6 +1872,7 @@ export async function runBuild(opts: BuildOptions): Promise<BuildResult> {
     );
     const notFoundChrome = headerSearchFor("./", { isSearch: false });
     emitPage({
+      ...pageEmitBase,
       cwd,
       config,
       outDir,
@@ -1861,6 +1899,7 @@ export async function runBuild(opts: BuildOptions): Promise<BuildResult> {
     const bodyHtml = renderDefaultNotFoundBody(config.site.lang);
     const defaultNotFoundChrome = headerSearchFor("./", { isSearch: false });
     emitPage({
+      ...pageEmitBase,
       cwd,
       config,
       outDir,

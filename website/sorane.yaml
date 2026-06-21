@@ -32,15 +32,19 @@ build:
 
 docs:
   nav:
-    - features.html
+    - section: はじめに
     - getting-started.html
+    - features.html
     - ai-onboarding.html
+    - section: リファレンス
     - cli.html
     - configuration.html
     - diagrams.html
-    - ai-disclosure.html
+    - section: OKF・オープンデータ
     - okf-profile.html
     - open-data-harvesting.html
+    - ai-disclosure.html
+    - section: 運用
     - deployment.html
     - releases.html
     - supply-chain.html
