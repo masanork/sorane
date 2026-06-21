@@ -11,10 +11,10 @@ import {
   creativeWorkFindabilityFields,
   type OrganizationSpec,
 } from "./findability.ts";
+import { splitMarkdownOnH2 } from "./markup/mdast-section-split.ts";
 import { escapeHtml } from "./render.ts";
 
 const FENCE_OPEN_RE = /^(```+|~~~+)/;
-const TERM_HEADING_RE = /^##\s+(.+?)(?:\s*\{#([^}]+)\})?\s*$/;
 const OTHER_HEADING_RE = /^(#{1,6})\s+/;
 
 export interface GlossaryTerm {
@@ -31,77 +31,17 @@ export interface ParseGlossaryBodyResult {
   readonly preambleLine?: number;
 }
 
-function stripTermAnchorSuffix(label: string): string {
-  return label.replace(/\s*\{#[^}]+\}\s*$/, "").trim();
-}
-
-/** Markdown 本文から `##` 見出し単位の用語を抽出する。 */
+/** Markdown 本文から `##` 見出し単位の用語を抽出する（mdast 経由、ruby/termLink 保持）。 */
 export function parseGlossaryBody(body: string): ParseGlossaryBodyResult {
-  const lines = body.split(/\r?\n/);
-  let inFence = false;
-  let fenceMarker = "";
-  const preamble: string[] = [];
-  let preambleLine: number | undefined;
-  const sections: {
-    label: string;
-    definitionLines: string[];
-    line: number;
-    anchorId?: string;
-  }[] = [];
-  let current: (typeof sections)[number] | null = null;
-
-  for (let i = 0; i < lines.length; i++) {
-    const line = lines[i]!;
-    const fence = FENCE_OPEN_RE.exec(line);
-    if (fence) {
-      const marker = fence[1]!;
-      if (!inFence) {
-        inFence = true;
-        fenceMarker = marker;
-      } else if (line.startsWith(fenceMarker)) {
-        inFence = false;
-        fenceMarker = "";
-      }
-      if (current) current.definitionLines.push(line);
-      else preamble.push(line);
-      continue;
-    }
-    if (inFence) {
-      if (current) current.definitionLines.push(line);
-      else preamble.push(line);
-      continue;
-    }
-
-    const hm = TERM_HEADING_RE.exec(line);
-    if (hm) {
-      if (current) sections.push(current);
-      current = {
-        label: stripTermAnchorSuffix(hm[1]!.trim()),
-        definitionLines: [],
-        line: i + 1,
-        anchorId: hm[2],
-      };
-      continue;
-    }
-
-    if (current) current.definitionLines.push(line);
-    else {
-      if (line.trim().length > 0 && preambleLine === undefined) preambleLine = i + 1;
-      preamble.push(line);
-    }
-  }
-  if (current) sections.push(current);
-
-  const items = sections.map((s) => ({
-    label: s.label,
-    definitionMarkdown: s.definitionLines.join("\n").trim(),
-    line: s.line,
-    anchorId: s.anchorId,
-  }));
-
+  const { sections, preambleMarkdown, preambleLine } = splitMarkdownOnH2(body);
   return {
-    items,
-    preambleMarkdown: preamble.join("\n").trim(),
+    items: sections.map((s) => ({
+      label: s.label,
+      definitionMarkdown: s.bodyMarkdown,
+      line: s.line,
+      anchorId: s.anchorId,
+    })),
+    preambleMarkdown,
     preambleLine,
   };
 }
