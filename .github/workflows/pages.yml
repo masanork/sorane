@@ -32,6 +32,8 @@ jobs:
         run: npm ci
 
       - name: Install d2 CLI
+        env:
+          GITHUB_TOKEN: ${{ github.token }}
         run: |
           curl -fsSL https://d2lang.com/install.sh | sh -s -- --version v0.7.1 --prefix "$HOME/.local"
           echo "$HOME/.local/bin" >> "$GITHUB_PATH"

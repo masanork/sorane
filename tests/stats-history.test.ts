@@ -29,12 +29,30 @@ const SAMPLE = {
 
 describe("stats-history", () => {
   test("snapshotFromFullStats はコンパクト行に変換する", () => {
-    const snap = snapshotFromFullStats(SAMPLE);
-    assert.equal(snap.commit, "abc1234");
-    assert.equal(snap.packagesLines, 1000);
-    assert.equal(snap.testFunctions, 50);
-    assert.equal(snap.coveragePercent, 85.4);
-    assert.equal(snap.workspaces["@sorane/core"], 800);
+    const prevSha = process.env.GITHUB_SHA;
+    delete process.env.GITHUB_SHA;
+    try {
+      const snap = snapshotFromFullStats(SAMPLE);
+      assert.equal(snap.commit, "abc1234");
+      assert.equal(snap.packagesLines, 1000);
+      assert.equal(snap.testFunctions, 50);
+      assert.equal(snap.coveragePercent, 85.4);
+      assert.equal(snap.workspaces["@sorane/core"], 800);
+    } finally {
+      if (prevSha !== undefined) process.env.GITHUB_SHA = prevSha;
+    }
+  });
+
+  test("snapshotFromFullStats は GITHUB_SHA を優先する", () => {
+    const prevSha = process.env.GITHUB_SHA;
+    process.env.GITHUB_SHA = "fullsha969a819deadbeef";
+    try {
+      const snap = snapshotFromFullStats(SAMPLE);
+      assert.equal(snap.commit, "fullsha");
+    } finally {
+      if (prevSha !== undefined) process.env.GITHUB_SHA = prevSha;
+      else delete process.env.GITHUB_SHA;
+    }
   });
 
   test("appendHistory は同一 commit を重複しない", async () => {
