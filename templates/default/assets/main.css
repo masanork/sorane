@@ -11,8 +11,8 @@
   --border: #d8d8db;
   --focus-ring: #0017c1;
 
-  --weight-body: 350;
-  --weight-compact: 400;
+  --weight-body: 400;
+  --weight-compact: 425;
   --weight-emphasis: 600;
   --weight-heading: 700;
 }
@@ -38,6 +38,8 @@ body {
   margin: 2rem auto;
   padding: 0 1.5rem;
   color: var(--text);
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
 }
 
 h1, h2, h3 {
@@ -897,6 +899,31 @@ span.glossary-term-unresolved {
 }
 
 .glossary-term-index-desc {
+  margin: 0.25rem 0 0;
+  font-size: 0.9rem;
+  color: var(--muted);
+}
+
+/* OKF directory index (auto-generated subdirectory listing) */
+.directory-index-label {
+  margin: 0 0 0.35rem;
+  font-size: 0.85rem;
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+  color: var(--muted);
+}
+
+.directory-index-item {
+  margin-bottom: 0.85rem;
+}
+
+.directory-index-type {
+  font-size: 0.8rem;
+  color: var(--muted);
+  font-family: ui-monospace, SFMono-Regular, Menlo, Consolas, monospace;
+}
+
+.directory-index-desc {
   margin: 0.25rem 0 0;
   font-size: 0.9rem;
   color: var(--muted);
