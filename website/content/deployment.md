@@ -67,11 +67,23 @@ sorane ソースを checkout する構成も可能です。`AGENTS.md` の `SORA
 
 `sorane.yaml` の `base_url` を本番ホストに揃えてください。
 
-## アクセスログ（Cloudflare）
+## アクセス解析・ログ（Cloudflare）
 
-HTML にアナリティクス JS を埋め込まず、Cloudflare ゾーンの **Logpush**（`http_requests`）でエッジのアクセスログを収集できます。
+sorane は HTML にアナリティクス JS を埋め込みません。計測は Cloudflare ゾーン側で行います。
 
-1. `sorane.yaml` で `site.hosting.provider: cloudflare` を設定し、`sorane build` で `dist/ops/cloudflare.json` を出力する
-2. `templates/cloudflare/` の手順で R2 バケットと Logpush ジョブを作成する（`logpush/setup-r2.sh`）
+### Web Analytics（ページビュー等・推奨）
+
+1. [設定](configuration.html#cloudflare-ホスティング) のとおり `site.hosting.cloudflare.web_analytics: true` を書く
+2. `sorane build` で `dist/ops/cloudflare.json` を確認
+3. Cloudflare ダッシュボードで対象ゾーンの **Web Analytics** を有効化
+
+ダッシュボードで PV・参照元・デバイス等を確認できます。監査用の生ログは不要なサイトではここまでで十分です。
+
+### Logpush（監査用アクセスログ・任意）
+
+公的サイトなどで HTTP リクエストの生ログが必要なときだけ、ゾーン **Logpush**（`http_requests`）→ R2 を設定します。
+
+1. `sorane.yaml` に `logpush` ブロックを追加
+2. `templates/cloudflare/logpush/setup-r2.sh` でジョブ作成
 
 詳細: [design/access-logs.md](https://github.com/masanork/sorane/blob/main/design/access-logs.md)

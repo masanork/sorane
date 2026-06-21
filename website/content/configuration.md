@@ -74,6 +74,90 @@ build:
 
 いずれかを `false` にすると該当チェックを省略します。
 
+## 多言語（i18n）
+
+`site.i18n` でロケール別のコンテンツパスと `hreflang` を出力します。
+
+```yaml
+site:
+  lang: ja
+  base_url: https://www.example.go.jp/
+  i18n:
+    default: ja
+    locales:
+      en:
+        lang: en
+        path_prefix: en
+```
+
+- **既定ロケール** … `content/` 直下（例: `content/about.md` → `about.html`）
+- **その他** … `content/{path_prefix}/` に同じ相対パスを置く（例: `content/en/about.md` → `en/about.html`）
+- ファイル名が異なる場合は frontmatter の `translation_key` で翻訳ペアをグループ化
+- ページごとの `lang` frontmatter で `<html lang>` を上書き可能
+- アーカイブ・タグ一覧は現状、既定ロケールのみ
+
+詳細: [design/i18n.md](https://github.com/masanork/sorane/blob/main/design/i18n.md)
+
+## 緊急バナー
+
+サイト全体のお知らせを全ページのヘッダー直前に表示します（`role="alert"`）。
+
+```yaml
+site:
+  emergency:
+    message: ただいまメンテナンス中です。
+    severity: warning   # info | warning | emergency
+    href: https://status.example.go.jp/
+    link_text: 状況ページ
+    locales:
+      en:
+        message: Scheduled maintenance in progress.
+        href: https://status.example.go.jp/en
+        link_text: Status page
+```
+
+`message` を省略または空にするとバナーは出ません。`locales` のキーは `site.i18n.locales` の ID と一致させます。
+
+## 改訂履歴
+
+記事 frontmatter の `revisions` でページ下部に更新履歴テーブルを出せます。
+
+```yaml
+revisions:
+  - date: 2025-06-15
+    summary: 誤字を修正
+  - date: 2025-06-01
+    summary: 初版公開
+```
+
+`validate --json` の `revision` category は配列形式・日付・要約・新しい順を warning で確認します（`note` / `updated` はエイリアス可）。
+
+## Cloudflare ホスティング
+
+Pages デプロイ向けの運用メタをビルドに含めます（HTML にトラッキング JS は埋め込みません）。
+
+```yaml
+site:
+  hosting:
+    provider: cloudflare
+    cloudflare:
+      pages_project: my-site
+      zone_name: www.example.go.jp
+      web_analytics: true
+      logpush:
+        destination: r2
+        r2_bucket: my-site-access-logs
+        exclude_paths:
+          - /assets/search/lib/
+```
+
+| 項目 | 用途 |
+|------|------|
+| `web_analytics: true` | Cloudflare ダッシュボードで Web Analytics を有効化する目印（ページビュー等） |
+| `logpush` | 監査向けアクセスログを R2 に保存（任意） |
+
+`sorane build` で `dist/ops/cloudflare.json` と `llms.txt` の Access logs 節が出力されます。`logpush.exclude_paths` は `site.findability.disallow` とマージされます。
+
 ## 404 ページ
 
 ビルドは常に `404.html` を `out_dir` 直下に出力します。`content/404.md` で本文をカスタムできます（詳細は [デプロイ](deployment.html)）。

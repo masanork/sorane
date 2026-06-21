@@ -106,6 +106,29 @@ Every page is Markdown with YAML frontmatter (`---` … `---`).
 | `excludeFromList` | `true` — hide from blog lists |
 | `view` | `search` — search UI page |
 | `digitalSourceType` | AI disclosure (`0.2` only) — see sorane.dev/ai-disclosure.html |
+| `translation_key` | Groups locale siblings when filenames differ (`site.i18n`) |
+| `lang` | Overrides page `<html lang>` (per-locale sites) |
+| `revisions` | Update history table: `[{ date, summary }]` newest-first |
+| `updated` | Sitemap `lastmod` + findability metadata |
+| `identifier` / `subject` / `audience` / `coverage` | Public-sector findability (optional) |
+
+### Multilingual (`site.i18n`)
+
+When `sorane.yaml` defines `site.i18n.locales`:
+
+- Default locale lives at `content/` root
+- Other locales mirror paths under `content/{path_prefix}/` (e.g. `content/en/about.md`)
+- Use the same relative path when possible; otherwise set matching `translation_key` on each locale file
+- Emergency banner copy can use `site.emergency.locales.{id}` in `sorane.yaml` (not in Markdown)
+
+### Site config (not in Markdown)
+
+| `sorane.yaml` block | Agent edits? |
+|---------------------|--------------|
+| `site.organization` / `contact` / `findability` | Yes, when user asks for publisher/search/robots |
+| `site.emergency` | Yes, for site-wide alerts |
+| `site.hosting.cloudflare` | Yes, when user sets up Pages + analytics (no HTML beacon) |
+| `build.quality` | Yes, to toggle validate warnings |
 
 ### Article example
 

@@ -3,6 +3,12 @@ site:
   description: OKF-native static site generator
   base_url: https://sorane.dev
   lang: ja
+  hosting:
+    provider: cloudflare
+    cloudflare:
+      pages_project: sorane
+      zone_name: sorane.dev
+      web_analytics: true
 
 build:
   content_dir: content

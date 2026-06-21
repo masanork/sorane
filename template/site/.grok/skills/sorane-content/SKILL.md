@@ -26,7 +26,9 @@ Parse JSON stdout:
 
 - Stop and fix if `ok === false`
 - Fix every finding with `severity: "error"` (usually `category: "okf"`)
-- Treat `warning` + `category: "diagram"` or `"heading"` as a11y fixes when practical
+- Treat `warning` findings as fixes when practical:
+  - `diagram` / `heading` / `image` / `link` — a11y
+  - `table` / `date` / `revision` — structure and metadata
 
 ## Full publish loop
 
@@ -42,6 +44,9 @@ npx @sorane/cli@0.2.7 build --cwd . --clean
 - Required frontmatter: `type`, `title`, `profile` (`sorane-okf/0.1`|`0.2`|`0.3`; `0.3` adds `dataset`, `reference`, `glossary`, `faq`)
 - Body headings start at `##` (title is already h1)
 - Mermaid/diagram fences need alt text when diagrams are enabled
+- **i18n:** default locale in `content/`; others under `content/{path_prefix}/`; optional `translation_key` to link siblings
+- **revisions:** optional `[{ date, summary }]` on articles (newest first); `validate` warns on bad shape
+- **emergency / hosting:** edit `sorane.yaml` only (`site.emergency`, `site.hosting.cloudflare`); sorane does not inject analytics JS
 
 ## On validate failure
 

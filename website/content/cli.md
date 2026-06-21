@@ -35,7 +35,20 @@ npx @sorane/cli@0.2.7 validate [--cwd <dir>] [--json]
 | `findings[].severity` | 意味 |
 |-----------------------|------|
 | `error` | 修正必須（OKF / frontmatter） |
-| `warning` | 推奨修正（`diagram` alt、`heading` 階層） |
+| `warning` | 推奨修正（下表の `category`） |
+
+| `findings[].category` | 内容 |
+|-----------------------|------|
+| `okf` | プロファイル・必須 frontmatter |
+| `diagram` | 図表フェンスの alt 欠落 |
+| `heading` | 見出し階層の飛び・本文 h1 |
+| `image` | 本文画像の alt 欠落 |
+| `link` | 非説明的リンクテキスト |
+| `table` | GFM 表のヘッダー不備 |
+| `date` | `timestamp` / `updated` の形式・順序 |
+| `revision` | `revisions` 配列の形式・日付・要約・並び |
+
+`build.quality` で `image` / `link` / `table` / `date` の warning を個別に無効化できます（[設定](configuration.html#品質ゲートvalidate)）。
 
 `template/site/AGENTS.md` と `.grok/skills/sorane-content/SKILL.md` がこの JSON 契約を前提にしています。
 
