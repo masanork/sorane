@@ -3,10 +3,6 @@ type: index
 title: sorane
 description: OKF-native static site generator
 profile: sorane-okf/0.1
-githubUrl: https://github.com/masanork/sorane
 ---
 
-Markdown と YAML frontmatter から、**人間向け HTML** と **機械可読な OKF 出力**を同時に生成する静的サイトジェネレータだ。`npm install @sorane/cli` で始め、Git と AI アシスタントで編集し、Cloudflare Pages などにデプロイする。
-
-- [npm @sorane/cli](https://www.npmjs.com/package/@sorane/cli)
-- [GitHub](https://github.com/masanork/sorane) · [template/site](https://github.com/masanork/sorane/tree/main/template/site)（新規サイト用テンプレート）
+Markdown と YAML frontmatter から、**人間向け HTML** と **機械可読な OKF 出力**を同時に生成する静的サイトジェネレータ。ドキュメント・ニュース・オープンデータを同じリポジトリでまとめて公開できる。
