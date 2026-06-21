@@ -5,7 +5,9 @@
 #                      ├─> publish npm (--provenance)
 #                      ├─> source + cbom
 #                      └─> sbom
-#                              └─> compute-digests ─> provenance ─> release
+#                              └─> compute-digests ─> provenance ─> release (tags only)
+#
+# workflow_dispatch (no tag): publish npm only; GitHub Release + SLSA asset upload skipped.
 
 name: Release
 
@@ -278,10 +280,11 @@ jobs:
     with:
       base64-subjects: ${{ needs.compute-digests.outputs.hashes }}
       provenance-name: sorane-${{ github.ref_name }}.intoto.jsonl
-      upload-assets: true
+      upload-assets: ${{ github.ref_type == 'tag' }}
 
   release:
     name: release
+    if: github.ref_type == 'tag'
     needs: [compute-digests, provenance]
     permissions:
       contents: write
