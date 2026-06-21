@@ -46,6 +46,7 @@ import {
   resolveGlossaryTermMeta,
   type GlossaryTermIndexEntry,
 } from "./glossary-term-page.ts";
+import { buildGlossaryLinkIndex } from "./markup/glossary-link-index.ts";
 import { rubyCharsetExtraFromBody } from "./ruby/ruby-font-extra.ts";
 import {
   buildReferencePageJsonLd,
@@ -415,8 +416,10 @@ export async function runBuild(opts: BuildOptions): Promise<BuildResult> {
   if (isD2CompileEnabled(diagramConfig)) mkdirSync(d2OutDir, { recursive: true });
   if (isMermaidBuildEnabled(diagramConfig)) mkdirSync(mermaidOutDir, { recursive: true });
   if (isGraphvizCompileEnabled(diagramConfig)) mkdirSync(graphvizOutDir, { recursive: true });
+  const glossaryLinkIndex = buildGlossaryLinkIndex(parsed, config, i18n);
   const bodySectionOpts = (rootPrefix: string): BodySectionOptions => ({
     diagrams: diagramConfig,
+    glossaryIndex: glossaryLinkIndex,
     rootPrefix,
     d2OutDir,
     mermaidOutDir,

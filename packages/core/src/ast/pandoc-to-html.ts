@@ -362,10 +362,16 @@ function renderSpan(attr: Attr, inlines: readonly Inline[]): string {
 function renderLink(attr: Attr, inlines: readonly Inline[], target: Target): string {
   const [url, title] = target;
   const safeUrl = isSafeUrl(url) ? encodeUrl(url) : null;
-  const hrefAttr = safeUrl !== null ? ` href="${escapeAttr(safeUrl)}"` : '';
-  const titleAttr = title !== '' ? ` title="${escapeAttr(title)}"` : '';
-  const extraAttr = renderAttr(attr);
-  return `<a${extraAttr}${hrefAttr}${titleAttr}>${renderInlines(inlines)}</a>`;
+  const [id, classes, kvs] = attr;
+  let attrs = safeUrl !== null ? ` href="${escapeAttr(safeUrl)}"` : '';
+  if (id.length > 0) attrs += ` id="${escapeAttr(id)}"`;
+  if (classes.length > 0) attrs += ` class="${escapeAttr(classes.join(' '))}"`;
+  if (title !== '') attrs += ` title="${escapeAttr(title)}"`;
+  for (const [k, v] of kvs) {
+    if (!isSafeAttrName(k)) continue;
+    attrs += ` ${k}="${escapeAttr(v)}"`;
+  }
+  return `<a${attrs}>${renderInlines(inlines)}</a>`;
 }
 
 function renderImage(attr: Attr, inlines: readonly Inline[], target: Target): string {

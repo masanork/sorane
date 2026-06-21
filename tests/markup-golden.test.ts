@@ -3,21 +3,29 @@ import { join } from "node:path";
 import { describe, expect, test } from "./_expect.ts";
 import { mdastToPandoc } from "../packages/core/src/ast/mdast-to-pandoc.ts";
 import { pandocToHtml } from "../packages/core/src/ast/pandoc-to-html.ts";
+import {
+  glossaryLinkIndexFromRecord,
+  type GlossaryLinkEntry,
+} from "../packages/core/src/markup/glossary-link-index.ts";
 import { processMarkdownToMdast } from "../packages/core/src/markup/process-markdown.ts";
 
 const GOLDEN_DIR = join(import.meta.dirname, "../design/golden/markup");
 
-/** PR3 までスキップする fixture（termLink 未実装）。 */
-const SKIP_BASES = new Set(["2-term-link", "3-combined"]);
-
-const ACTIVE_GOLDEN_BASES = ["0-article", "1-ruby"];
+const ACTIVE_GOLDEN_BASES = ["0-article", "1-ruby", "2-term-link", "3-combined"];
 
 function normalizeGoldenHtml(html: string): string {
   return html.replace(/\r\n?/g, "\n").trimEnd();
 }
 
-function renderPandocPipeline(md: string): string {
-  const tree = processMarkdownToMdast(md);
+function loadGlossaryIndex(base: string) {
+  const jsonPath = join(GOLDEN_DIR, `${base}.index.json`);
+  if (!existsSync(jsonPath)) return undefined;
+  const raw = JSON.parse(readFileSync(jsonPath, "utf8")) as Record<string, GlossaryLinkEntry>;
+  return glossaryLinkIndexFromRecord(raw);
+}
+
+function renderPandocPipeline(md: string, base: string): string {
+  const tree = processMarkdownToMdast(md, { glossaryIndex: loadGlossaryIndex(base) });
   const doc = mdastToPandoc(tree);
   return normalizeGoldenHtml(pandocToHtml(doc, { sanitize: "strict" }));
 }
@@ -44,18 +52,7 @@ describe("markup golden fixtures", () => {
       const expected = normalizeGoldenHtml(
         readFileSync(join(GOLDEN_DIR, `${base}.html`), "utf8"),
       );
-      expect(renderPandocPipeline(md)).toBe(expected);
+      expect(renderPandocPipeline(md, base)).toBe(expected);
     });
   }
-
-  test("skipped fixtures documented until PR3", () => {
-    const files = readdirSync(GOLDEN_DIR).filter(
-      (f) => f.endsWith(".md") && !f.startsWith("README"),
-    );
-    for (const md of files) {
-      const base = md.replace(/\.md$/, "");
-      if (ACTIVE_GOLDEN_BASES.includes(base)) continue;
-      expect(SKIP_BASES.has(base)).toBe(true);
-    }
-  });
 });

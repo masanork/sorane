@@ -33,6 +33,31 @@ const NULL_ATTR: P.Attr = ['', [], []];
 
 const DIAGRAM_LANGS = new Set(['mermaid', 'd2', 'graphviz', 'dot']);
 
+function hProperties(node: { data?: unknown }): Record<string, unknown> | undefined {
+  const data = node.data as { hProperties?: Record<string, unknown> } | undefined;
+  return data?.hProperties;
+}
+
+function classNamesFromHProps(hProps: Record<string, unknown> | undefined): readonly string[] {
+  const className = hProps?.className;
+  if (Array.isArray(className)) {
+    return className.filter((c): c is string => typeof c === 'string');
+  }
+  if (typeof className === 'string' && className.length > 0) return [className];
+  return [];
+}
+
+function linkAttrFromNode(link: Link): P.Attr {
+  const hProps = hProperties(link);
+  const classes = classNamesFromHProps(hProps);
+  const kvs: (readonly [string, string])[] = [];
+  const termId = hProps?.dataSoraneTerm;
+  if (typeof termId === 'string' && termId.length > 0) {
+    kvs.push(['data-sorane-term', termId]);
+  }
+  return ['', classes, kvs];
+}
+
 export function mdastToPandoc(tree: Root): P.Doc {
   return {
     'pandoc-api-version': P.PANDOC_API_VERSION,
@@ -219,7 +244,7 @@ function convertInline(node: PhrasingContent): P.Inline | readonly P.Inline[] | 
       const title = typeof link.title === 'string' ? link.title : '';
       return {
         t: 'Link',
-        c: [NULL_ATTR, convertInlines(link.children as readonly PhrasingContent[]), [link.url, title]],
+        c: [linkAttrFromNode(link), convertInlines(link.children as readonly PhrasingContent[]), [link.url, title]],
       };
     }
     case 'image': {
@@ -236,6 +261,19 @@ function convertInline(node: PhrasingContent): P.Inline | readonly P.Inline[] | 
       const r = node as unknown as { base: string; text: string };
       const attr: P.Attr = ['', [], [['data-sorane-rt', r.text]]];
       return { t: 'Span', c: [attr, [{ t: 'Str', c: r.base }]] };
+    }
+    case 'termLink' as PhrasingContent['type']: {
+      const t = node as unknown as { termId: string; label?: string };
+      const label = typeof t.label === 'string' && t.label.length > 0 ? t.label : t.termId;
+      const attr: P.Attr = [
+        '',
+        ['glossary-term-unresolved'],
+        [
+          ['data-sorane-term', t.termId],
+          ['title', `Unresolved glossary term: ${t.termId}`],
+        ],
+      ];
+      return { t: 'Span', c: [attr, [{ t: 'Str', c: label }]] };
     }
     default:
       return null;

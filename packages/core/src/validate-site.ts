@@ -1,7 +1,10 @@
 import { existsSync, readdirSync, readFileSync, statSync } from "node:fs";
 import { join, relative, resolve } from "node:path";
-import { extract, parseYaml, validateSource, type ValidationIssue } from "@sorane/okf";
+import { extract, parseConcept, parseYaml, validateSource, type ValidationIssue } from "@sorane/okf";
 import type { SoraneConfig } from "./config.ts";
+import { buildGlossaryLinkIndex } from "./markup/glossary-link-index.ts";
+import { validateTermLinkWarnings } from "./markup/validate-term-links.ts";
+import { resolveI18nContext } from "./i18n.ts";
 import { validateDiagramAltWarnings } from "./diagrams/validate-diagram-alt.ts";
 import { validateFaqWarnings } from "./faq-page.ts";
 import { validateGlossaryWarnings } from "./glossary-page.ts";
@@ -130,11 +133,21 @@ export function validateSiteContent(
   const i18nEntries: Array<{ rel: string; source: string }> = [];
   let errorCount = 0;
   let warningCount = 0;
+  const i18n = resolveI18nContext(config.site);
 
   for (const abs of walkMarkdown(contentDir)) {
     const rel = relative(contentDir, abs);
     const source = readFileSync(abs, "utf8");
     i18nEntries.push({ rel, source });
+  }
+
+  const glossaryLinkIndex = buildGlossaryLinkIndex(
+    i18nEntries.map((e) => parseConcept("", e.rel, e.source, okfOpts)),
+    config,
+    i18n,
+  );
+
+  for (const { rel, source } of i18nEntries) {
     const result = validateSource(rel, source, okfOpts);
     const findings: ValidateFinding[] = [];
 
@@ -164,6 +177,10 @@ export function validateSiteContent(
           : config.site.lang;
       for (const w of validateLangMixingWarnings(body, pageLang, config.build.quality)) {
         findings.push(warningToFinding("lang", w));
+        warningCount++;
+      }
+      for (const w of validateTermLinkWarnings(body, glossaryLinkIndex)) {
+        findings.push(warningToFinding("glossary", w));
         warningCount++;
       }
       if (result.type === "faq") {

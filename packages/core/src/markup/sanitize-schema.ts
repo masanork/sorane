@@ -15,6 +15,7 @@ export const sanitizeSchema: Schema = {
       ),
       "title",
       ["className", "data-footnote-backref", "keyword", "okeyword", "heading-anchor", "glossary-term-link"],
+      "dataSoraneTerm",
     ],
     h1: [...(schemaAttributes.h1 ?? []), "id"],
     h2: [...(schemaAttributes.h2 ?? []), "id"],
