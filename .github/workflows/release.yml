@@ -60,12 +60,23 @@ jobs:
       - name: Install dependencies
         run: npm ci
 
-      - name: Publish workspaces with provenance
+      # npm Trusted Publisher (OIDC): each @sorane/* package needs trusted publisher
+      # on npmjs.com (workflow filename: release.yml). Or set GitHub secret NPM_TOKEN.
+      - name: Publish workspaces
         env:
-          NODE_AUTH_TOKEN: ${{ secrets.NPM_TOKEN }}
+          NPM_TOKEN: ${{ secrets.NPM_TOKEN }}
         run: |
           set -euo pipefail
+          if [[ -n "${NPM_TOKEN:-}" ]]; then
+            export NODE_AUTH_TOKEN="$NPM_TOKEN"
+          fi
           for ws in @sorane/font @sorane/okf @sorane/search @sorane/core @sorane/cli; do
+            published="$(npm view "${ws#@}" version 2>/dev/null || true)"
+            target="$(node -p "require('./packages/${ws#@sorane/}/package.json').version")"
+            if [[ "$published" == "$target" ]]; then
+              echo "skip ${ws}@${target} (already on npm)"
+              continue
+            fi
             npm publish -w "$ws" --provenance --access public
           done
 
