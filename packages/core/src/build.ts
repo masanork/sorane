@@ -217,12 +217,16 @@ function articleNavFor(
   return { prev, next };
 }
 
-function tarBytes(entries: Array<{ path: string; content: string }>): Buffer {
+/** @internal Exported for unit tests (OKF bundle tar header limits). */
+export function tarBytes(entries: Array<{ path: string; content: string }>): Buffer {
   const blocks: Buffer[] = [];
   for (const entry of entries) {
+    if (entry.path.length > 100) {
+      throw new Error(`bundle path exceeds tar name limit (100): ${entry.path}`);
+    }
     const content = Buffer.from(entry.content, "utf8");
     const header = Buffer.alloc(512, 0);
-    header.write(entry.path.slice(0, 100), 0, "ascii");
+    header.write(entry.path, 0, "ascii");
     header.write("0000644\0", 100, "ascii");
     header.write("0000000\0", 108, "ascii");
     header.write("0000000\0", 116, "ascii");
@@ -1042,7 +1046,11 @@ export async function runBuild(opts: BuildOptions): Promise<BuildResult> {
       notFoundBodySource(notFoundParsed.concept),
       bodySectionOpts(rootPrefix),
     );
-    const bodyHtml = renderCustomNotFoundBody(notFoundParsed.concept, section.html);
+    const bodyHtml = renderCustomNotFoundBody(
+      notFoundParsed.concept,
+      section.html,
+      config.site.lang,
+    );
     const fontCss = await fontCssFor(notFoundParsed.concept, rootPrefix, bodyHtml);
     const notFoundChrome = headerSearchFor("./", { isSearch: false });
     emitPage({

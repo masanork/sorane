@@ -79,6 +79,21 @@ describe("buildAiBadgeHtml", () => {
     const d = parseAiDisclosure({ digitalSourceType: "humanEdits" })!;
     expect(buildAiBadgeHtml(d, { lang: "ja", rootPrefix: "./" })).toBe("");
   });
+
+  test("ja ラベルと policy リンク", () => {
+    const d = parseAiDisclosure({
+      digitalSourceType: "compositeSynthetic",
+      aiDisclosureNote: "補助あり",
+    })!;
+    const html = buildAiBadgeHtml(d, {
+      lang: "ja",
+      rootPrefix: "./",
+      policyUrl: "https://ex.dev/policy",
+    });
+    expect(html).toContain("部分的に改変");
+    expect(html).toContain("policy");
+    expect(html).toContain("補助あり");
+  });
 });
 
 describe("buildCompactAiBadgeHtml", () => {

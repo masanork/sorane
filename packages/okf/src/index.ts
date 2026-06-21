@@ -4,6 +4,7 @@ export { normalizeConcept, type OkfConcept } from "./normalize.ts";
 export {
   toOkfFrontmatterLines,
   conceptToOkfMarkdown,
+  formatScalar,
 } from "./serialize.ts";
 export {
   validateSource,

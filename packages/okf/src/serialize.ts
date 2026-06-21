@@ -14,7 +14,8 @@ const KEY_ORDER = [
   "aiSystems",
 ] as const;
 
-function formatScalar(value: unknown): string {
+/** @internal Exported for unit tests (YAML scalar quoting rules). */
+export function formatScalar(value: unknown): string {
   if (typeof value === "boolean" || typeof value === "number") {
     return String(value);
   }

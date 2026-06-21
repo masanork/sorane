@@ -4,11 +4,13 @@ import { tmpdir } from "node:os";
 import { describe, expect, test } from "./_expect.ts";
 import {
   isNotFoundSource,
+  notFoundLabels,
+  renderCustomNotFoundBody,
   renderDefaultNotFoundBody,
 } from "../packages/core/src/not-found.ts";
 import { runBuild } from "../packages/core/src/build.ts";
 import type { SoraneConfig } from "../packages/core/src/config.ts";
-import { buildSitemapXml } from "../packages/core/src/site-meta.ts";
+import { normalizeConcept } from "../packages/okf/src/index.ts";
 
 describe("isNotFoundSource", () => {
   test("404.md を検出する", () => {
@@ -24,6 +26,37 @@ describe("renderDefaultNotFoundBody", () => {
     expect(html).toContain("指定されたページは存在しません");
     expect(html).toContain('lang="en"');
     expect(html).toContain("トップページへ");
+  });
+
+  test("en は英語のみ", () => {
+    const html = renderDefaultNotFoundBody("en");
+    expect(html).toContain("Page not found.");
+    expect(html).toContain("Back to home");
+    expect(html).not.toContain('lang="en"');
+  });
+});
+
+describe("notFoundLabels", () => {
+  test("ja / en ラベル", () => {
+    expect(notFoundLabels("ja").message).toContain("存在しません");
+    expect(notFoundLabels("en").message).toBe("Page not found.");
+  });
+});
+
+describe("renderCustomNotFoundBody", () => {
+  test("空タイトルは lang に応じた見出し", () => {
+    const concept = normalizeConcept({ type: "article", title: "  ", profile: "sorane-okf/0.1" }, "body", "404");
+    const en = renderCustomNotFoundBody(concept, "<p>x</p>", "en");
+    expect(en).toContain("<h1>404</h1>");
+    const ja = renderCustomNotFoundBody(concept, "<p>x</p>", "ja");
+    expect(ja).toContain("<h1>404</h1>");
+  });
+
+  test("タイトルありは concept.title を使う", () => {
+    const concept = normalizeConcept({ type: "article", title: "Custom", profile: "sorane-okf/0.1" }, "body", "404");
+    const html = renderCustomNotFoundBody(concept, "<p>copy</p>");
+    expect(html).toContain("<h1>Custom</h1>");
+    expect(html).toContain("<p>copy</p>");
   });
 });
 

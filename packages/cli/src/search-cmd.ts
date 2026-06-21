@@ -3,6 +3,31 @@ import { resolve } from "node:path";
 import { IndexStore, RuriEmbeddings, search, checkModelMismatch } from "@sorane/search";
 import { loadSoraneConfig, parseCwdFlag } from "./config-load.ts";
 
+const SEARCH_FLAGS_WITH_VALUE = new Set([
+  "--cwd",
+  "--out",
+  "--model",
+  "--model-id",
+  "--k",
+  "--type",
+  "--tag",
+]);
+
+/** @internal Exported for unit tests (positional query vs flag values). */
+export function parseSearchQuery(argv: readonly string[]): string {
+  const parts: string[] = [];
+  for (let i = 0; i < argv.length; i++) {
+    const token = argv[i]!;
+    if (SEARCH_FLAGS_WITH_VALUE.has(token)) {
+      i++;
+      continue;
+    }
+    if (token.startsWith("--")) continue;
+    parts.push(token);
+  }
+  return parts.join(" ");
+}
+
 function parseSearchArgs(argv: string[]): {
   cwd: string;
   query: string;
@@ -21,7 +46,7 @@ function parseSearchArgs(argv: string[]): {
     const i = argv.indexOf(flag);
     return i >= 0 && argv[i + 1] ? argv[i + 1]! : def;
   };
-  const query = argv.find((t, i) => !t.startsWith("--") && (i === 0 || !argv[i - 1]!.startsWith("--"))) ?? "";
+  const query = parseSearchQuery(argv);
   const outFlag = argv.indexOf("--out");
   const indexPath =
     outFlag >= 0 && argv[outFlag + 1]

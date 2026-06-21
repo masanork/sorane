@@ -20,6 +20,18 @@ describe("buildBundleEntries", () => {
 });
 
 describe("buildOkfBundle", () => {
+  test("100 文字超パスは拒否", async () => {
+    const concept = normalizeConcept({ type: "article", title: "T" }, "body", "t");
+    const longSlug = "a".repeat(95);
+    let threw = false;
+    try {
+      await buildOkfBundle([{ concept, slug: longSlug }]);
+    } catch (e) {
+      threw = e instanceof Error && /tar name limit/.test(e.message);
+    }
+    expect(threw).toBe(true);
+  });
+
   test("gzip 圧縮 tar を返す", async () => {
     const concept = normalizeConcept({ type: "article", title: "T" }, "body", "t");
     const buf = await buildOkfBundle([{ concept, slug: "t" }]);

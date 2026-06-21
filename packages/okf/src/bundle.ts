@@ -31,10 +31,13 @@ export function buildBundleEntries(concepts: readonly BundleConcept[]): BundleEn
 function tarEntries(entries: readonly BundleEntry[]): Buffer {
   const blocks: Buffer[] = [];
   for (const entry of entries) {
+    if (entry.path.length > 100) {
+      throw new Error(`bundle path exceeds tar name limit (100): ${entry.path}`);
+    }
     const content = Buffer.from(entry.content, "utf8");
     const name = entry.path;
     const header = Buffer.alloc(512, 0);
-    header.write(name.slice(0, 100), 0, "ascii");
+    header.write(name, 0, "ascii");
     header.write("0000644\0", 100, "ascii");
     header.write("0000000\0", 108, "ascii");
     header.write("0000000\0", 116, "ascii");

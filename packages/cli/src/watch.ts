@@ -5,7 +5,8 @@ import { loadSoraneConfig, parseCwdFlag } from "./config-load.ts";
 
 const DEBOUNCE_MS = 350;
 
-function parseWatchArgv(argv: string[]): { cwd: string; clean: boolean; buildArgv: string[] } {
+/** @internal Exported for unit tests. */
+export function parseWatchArgv(argv: string[]): { cwd: string; clean: boolean; buildArgv: string[] } {
   const cwd = parseCwdFlag(argv);
   const clean = argv.includes("--clean");
   const buildArgv = ["--cwd", cwd];
@@ -13,7 +14,8 @@ function parseWatchArgv(argv: string[]): { cwd: string; clean: boolean; buildArg
   return { cwd, clean, buildArgv };
 }
 
-function watchPaths(cwd: string, contentDir: string): string[] {
+/** @internal Exported for unit tests. */
+export function watchPaths(cwd: string, contentDir: string): string[] {
   const paths = [resolve(cwd, contentDir), resolve(cwd, "sorane.yaml")];
   const staticDir = resolve(cwd, "static");
   if (existsSync(staticDir)) paths.push(staticDir);

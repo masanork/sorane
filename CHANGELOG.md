@@ -8,6 +8,13 @@ All notable changes to sorane are documented here. Versioning follows [SemVer](h
 
 - `npm run stats` / `stats:json` — monorepo LOC, test ratio, workspace breakdown (`scripts/project-stats.ts`)
 - CI `project-stats` job: append `stats/history.jsonl`, regenerate `stats/trend.md` on `main` (`[skip ci]` bot commit)
+- Broad unit/integration test suite; `npm run test:coverage` line gate raised to **90%**
+
+### Fixed
+
+- Custom `404.md` with empty title now uses `site.lang` for the fallback heading (was always Japanese)
+- OKF bundle tar: reject paths longer than 100 bytes instead of silent truncation
+- `sorane search --type article <query>` no longer treats the type value as the query
 
 ## [0.2.7] - 2026-06-21
 

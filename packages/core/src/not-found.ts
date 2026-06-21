@@ -49,8 +49,13 @@ export function renderDefaultNotFoundBody(lang: string, homeHref = "./index.html
   );
 }
 
-export function renderCustomNotFoundBody(concept: OkfConcept, bodyHtml: string): string {
-  const title = concept.title.trim().length > 0 ? concept.title : notFoundLabels("ja").heading;
+export function renderCustomNotFoundBody(
+  concept: OkfConcept,
+  bodyHtml: string,
+  lang = "ja",
+): string {
+  const title =
+    concept.title.trim().length > 0 ? concept.title : notFoundLabels(lang).heading;
   return (
     `<article class="article-page not-found-page">\n` +
     `<header>\n<h1>${escapeHtml(title)}</h1>\n</header>\n` +
