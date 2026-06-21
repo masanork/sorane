@@ -1,0 +1,52 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<rss version="2.0"
+  xmlns:excerpt="http://wordpress.org/export/1.2/excerpt/"
+  xmlns:content="http://purl.org/rss/1.0/modules/content/"
+  xmlns:dc="http://purl.org/dc/elements/1.1/"
+  xmlns:wp="http://wordpress.org/export/1.2/">
+<channel>
+  <title>Example WordPress</title>
+  <link>https://example.com</link>
+  <generator>https://wordpress.com/export/1.2/</generator>
+  <item>
+    <title>公開記事</title>
+    <link>https://example.com/2012-03-15/hello/</link>
+    <guid isPermaLink="false">https://example.com/?p=1</guid>
+    <pubDate>Thu, 15 Mar 2012 10:00:00 +0000</pubDate>
+    <category domain="category" nicename="news">News</category>
+    <content:encoded><![CDATA[<p>WordPress body with <img src="https://cdn.example.com/photo.jpg" alt=""/></p>]]></content:encoded>
+    <wp:post_id>1</wp:post_id>
+    <wp:post_date>2012-03-15 10:00:00</wp:post_date>
+    <wp:post_type>post</wp:post_type>
+    <wp:status>publish</wp:status>
+  </item>
+  <item>
+    <title>下書き記事</title>
+    <guid isPermaLink="false">https://example.com/?p=2</guid>
+    <content:encoded><![CDATA[<p>draft only</p>]]></content:encoded>
+    <wp:post_id>2</wp:post_id>
+    <wp:post_date>2012-03-16 11:00:00</wp:post_date>
+    <wp:post_type>post</wp:post_type>
+    <wp:status>draft</wp:status>
+  </item>
+  <item>
+    <title>固定ページ</title>
+    <guid isPermaLink="false">https://example.com/?page_id=3</guid>
+    <content:encoded><![CDATA[<p>page body</p>]]></content:encoded>
+    <wp:post_id>3</wp:post_id>
+    <wp:post_date>2012-03-17 12:00:00</wp:post_date>
+    <wp:post_type>page</wp:post_type>
+    <wp:status>publish</wp:status>
+  </item>
+  <item>
+    <title>第二公開記事</title>
+    <guid isPermaLink="false">https://example.com/?p=4</guid>
+    <category domain="post_tag" nicename="memo">Memo</category>
+    <content:encoded><![CDATA[<p>![alt](https://cdn.example.com/diagram.png)</p>]]></content:encoded>
+    <wp:post_id>4</wp:post_id>
+    <wp:post_date>2012-03-18 09:30:00</wp:post_date>
+    <wp:post_type>post</wp:post_type>
+    <wp:status>publish</wp:status>
+  </item>
+</channel>
+</rss>

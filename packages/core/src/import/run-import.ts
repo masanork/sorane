@@ -2,6 +2,7 @@ import { existsSync, mkdirSync, writeFileSync } from 'node:fs';
 import { dirname, join, resolve } from 'node:path';
 import { parseHatenaDiaryExport } from './adapters/hatena-diary.ts';
 import { parseMtExport } from './adapters/mt.ts';
+import { parseWordPressWxrExport } from './adapters/wordpress.ts';
 import { readImportFile, type EncodingHint } from './decode.ts';
 import { resolveImportFormat } from './detect-format.ts';
 import { importEntryRelPath, importEntryToOkfMarkdown } from './okf-writer.ts';
@@ -31,7 +32,7 @@ function parseEntries(format: ImportFormatId, text: string, skipDrafts: boolean)
     case 'hatena-diary':
       return parseHatenaDiaryExport(text, { skipDrafts });
     case 'wordpress':
-      throw new Error('wordpress import not implemented yet (use --format mt or wait for I4)');
+      return parseWordPressWxrExport(text, { skipDrafts });
     default:
       throw new Error(`unsupported import format: ${format}`);
   }

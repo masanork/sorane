@@ -47,5 +47,5 @@ export function resolveImportFormat(requested: string, text: string): ImportForm
   if (norm === 'mt' || norm === 'hatena-diary' || norm === 'wordpress') {
     return norm;
   }
-  throw new Error(`unsupported --format: ${requested} (supported: auto, mt, hatena-diary)`);
+  throw new Error(`unsupported --format: ${requested} (supported: auto, mt, hatena-diary, wordpress)`);
 }

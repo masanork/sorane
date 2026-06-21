@@ -3,7 +3,7 @@
 | Field | Value |
 |-------|-------|
 | **Date** | 2026-06-21 |
-| **Status** | Draft (I3 complete) |
+| **Status** | Draft (I4 complete) |
 | **Related** | `migrate` (in-repo OKF frontmatter only), srn `src/ssg/migrate.ts`, gjs `src/shared/txtbin/encoding-detect.ts` |
 
 ---
@@ -59,7 +59,7 @@ Import logs record `import_encoding` in `.sorane/import-manifest.json` per entry
 |----|--------|-----------|-----|
 | `mt` | Movable Type export | `--------` + `TITLE:` / `BODY:` | **I2** |
 | `hatena-diary` | はてなダイアリー Atom | Atom + hatena NS | **I3** |
-| `wordpress` | WordPress WXR | `<rss` + `wp:` | I4 |
+| `wordpress` | WordPress WXR | `<rss` + `wp:` | **I4** |
 | `auto` | Sniff above | default | I2+ |
 
 ### ImportEntry (internal)
@@ -92,6 +92,16 @@ Ported from srn `src/ssg/migrate.ts` `importMT`:
 - Draft: `app:draft` yes/no; categories from `category@term`
 - はてなブログ Atom export も同一アダプタで取り込み可（`Hatena::Blog` / `blog.hatena.ne.jp`）
 
+### WordPress WXR adapter (I4)
+
+`packages/core/src/import/adapters/wordpress.ts`:
+
+- Split `<item>…</item>` fragments (namespace-tolerant)
+- Keep `wp:post_type=post` only (skip pages, attachments, …)
+- Body: `content:encoded` → `excerpt:encoded` fallback
+- Draft: `wp:status` (`publish` vs other); categories/tags from `<category domain="category|post_tag">`
+- `--fetch-images` (CLI): `fetch-images.ts` downloads external `![](url)` / `src="url"` into `{static_dir}/images/imported/`, rewrites to `/images/imported/…` (srn `rescue-images.ts` prior art; skipped on `--dry-run`)
+
 ---
 
 ## CLI
@@ -100,11 +110,12 @@ Ported from srn `src/ssg/migrate.ts` `importMT`:
 sorane import \
   --input ~/Downloads/blog.txt \
   --cwd <site> \
-  [--format auto|mt|hatena-diary] \
+  [--format auto|mt|hatena-diary|wordpress] \
   [--out content/article] \
   [--encoding auto|utf-8|shift_jis|euc-jp] \
   [--dry-run] \
-  [--skip-drafts]
+  [--skip-drafts] \
+  [--fetch-images]
 ```
 
 | Flag | Meaning |
@@ -115,6 +126,7 @@ sorane import \
 | `--encoding` | Override charset detection |
 | `--dry-run` | List would-write paths only |
 | `--skip-drafts` | Skip non-published MT entries (default) |
+| `--fetch-images` | Download external images in imported bodies to `static/images/imported/` |
 
 Manifest: `.sorane/import-manifest.json` — `{ version, entries: [{ sourceId, relPath, encoding, importedAt }] }`.
 
@@ -127,7 +139,7 @@ Manifest: `.sorane/import-manifest.json` — `{ version, entries: [{ sourceId, r
 | **I1** | gjs port + EUC-JP + iconv-lite + tests | Shift_JIS / EUC-JP fixtures decode correctly |
 | **I2** | MT adapter + `sorane import` + manifest | MT export → OKF articles; dry-run |
 | **I3** | はてなダイアリー Atom + auto sniff | Atom fixture smoke ✅ |
-| **I4** | WordPress WXR + `--fetch-images` sketch | — |
+| **I4** | WordPress WXR + `--fetch-images` sketch | WXR fixture smoke ✅ |
 | **I5** | HTML normalize (hatena keyword links), optional gjs glyph maps | — |
 
 Out of default CI (one-shot migration tool).
@@ -140,6 +152,7 @@ Out of default CI (one-shot migration tool).
 npm run typecheck && npm test
 sorane import --input tests/fixtures/import/sample-mt.txt --cwd examples/minimal --dry-run
 sorane import --input tests/fixtures/import/sample-hatena-diary.atom.xml --cwd examples/minimal --dry-run
+sorane import --input tests/fixtures/import/sample-wordpress.wxr.xml --cwd examples/minimal --dry-run
 ```
 
 ---

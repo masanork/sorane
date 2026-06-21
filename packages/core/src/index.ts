@@ -31,6 +31,14 @@ export { readImportFile, parseEncodingHint, type EncodingHint } from "./import/d
 export { detectImportFormat } from "./import/detect-format.ts";
 export { parseMtExport } from "./import/adapters/mt.ts";
 export { parseHatenaDiaryExport } from "./import/adapters/hatena-diary.ts";
+export { parseWordPressWxrExport } from "./import/adapters/wordpress.ts";
+export {
+  fetchImportImages,
+  collectExternalImageUrls,
+  rewriteExternalImagesInText,
+  type FetchImportImagesOptions,
+  type FetchImportImagesResult,
+} from "./import/fetch-images.ts";
 export { runImport, type RunImportOptions, type RunImportResult } from "./import/run-import.ts";
 export {
   mergeConfig,

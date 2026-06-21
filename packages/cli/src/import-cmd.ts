@@ -1,5 +1,5 @@
-import { parseEncodingHint, runImport } from "@sorane/core";
-import { parseCwdFlag } from "./config-load.ts";
+import { fetchImportImages, parseEncodingHint, runImport } from "@sorane/core";
+import { loadSoraneConfig, parseCwdFlag } from "./config-load.ts";
 
 function parseInputFlag(argv: string[]): string {
   const i = argv.indexOf("--input");
@@ -29,6 +29,7 @@ function parseEncodingFlag(argv: string[]): string | undefined {
 
 export async function runImportCmd(argv: string[]): Promise<void> {
   const cwd = parseCwdFlag(argv);
+  const dryRun = argv.includes("--dry-run");
   const encodingRaw = parseEncodingFlag(argv);
   const result = runImport({
     cwd,
@@ -36,15 +37,28 @@ export async function runImportCmd(argv: string[]): Promise<void> {
     format: parseFormatFlag(argv),
     out: parseOutFlag(argv),
     encoding: encodingRaw !== undefined ? parseEncodingHint(encodingRaw) : 'auto',
-    dryRun: argv.includes("--dry-run"),
+    dryRun,
     skipDrafts: !argv.includes("--include-drafts"),
   });
 
-  const mode = argv.includes("--dry-run") ? "would import" : "imported";
+  const mode = dryRun ? "would import" : "imported";
   process.stdout.write(
     `[sorane] ${mode} ${result.files.length} file(s) via ${result.format} (${result.encoding})\n`,
   );
   for (const file of result.files) {
     process.stdout.write(`[sorane]   ${file}\n`);
+  }
+
+  if (argv.includes("--fetch-images") && !dryRun && result.files.length > 0) {
+    const config = loadSoraneConfig(cwd);
+    const staticDir = config.build.static_dir ?? "static";
+    const fetchResult = await fetchImportImages({
+      cwd,
+      markdownPaths: result.files,
+      staticDir,
+    });
+    process.stdout.write(
+      `[sorane] fetched ${fetchResult.downloadedCount} image(s); updated ${fetchResult.updatedFiles.length} file(s)\n`,
+    );
   }
 }
