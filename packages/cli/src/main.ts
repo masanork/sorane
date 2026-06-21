@@ -4,6 +4,7 @@ import { runWatchCmd } from "./watch.ts";
 import { runIndexCmd } from "./index-cmd.ts";
 import { runMigrateCmd } from "./migrate.ts";
 import { runSearchCmd } from "./search-cmd.ts";
+import { runExportCmd } from "./export.ts";
 import { runValidateCmd } from "./validate.ts";
 
 const [, , command, ...rest] = process.argv;
@@ -32,15 +33,19 @@ async function main(): Promise<void> {
     case "search":
       await runSearchCmd(rest);
       break;
+    case "export":
+      await runExportCmd(rest);
+      break;
     default:
       process.stderr.write(
-        "usage: sorane <build|validate|migrate|index|search|watch> [options]\n" +
+        "usage: sorane <build|validate|migrate|index|search|export|watch> [options]\n" +
           "  build     --cwd <dir> [--clean] [--watch] [--skip-c2pa]\n" +
           "  watch     --cwd <dir> [--clean]\n" +
           "  validate  --cwd <dir> [--json]\n" +
           "  migrate   --cwd <dir> [--dry-run] [--bump-profile 0.2|0.3]\n" +
           "  index     --cwd <dir> [--force] [--hybrid] [--fts-only] [--out <path>] [--model <dir>] [--model-id <id>]\n" +
-          "  search    <query> [--cwd <dir>] [--type article|dataset|reference|glossary|glossary-term|faq] [--tag <slug>] [--k 10] [--json] [--fts-only]\n",
+          "  search    <query> [--cwd <dir>] [--type article|dataset|reference|glossary|glossary-term|faq] [--tag <slug>] [--k 10] [--json] [--fts-only]\n" +
+          "  export    --format docx --cwd <dir> --out <file.docx|dir> [--file <rel.md>]\n",
       );
       process.exit(command === undefined ? 0 : 1);
   }

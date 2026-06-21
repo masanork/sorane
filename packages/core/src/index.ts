@@ -1,5 +1,13 @@
 export { runBuild, type BuildOptions, type BuildResult } from "./build.ts";
 export {
+  exportMarkdownBodyToDocx,
+  runDocxExport,
+  type ExportDocxBodyOptions,
+  type RunDocxExportOptions,
+  type RunDocxExportResult,
+} from "./export/docx.ts";
+export { pandocCliAvailable, resolvePandocBinary } from "./export/pandoc-cli.ts";
+export {
   mergeConfig,
   DEFAULT_CONFIG,
   resolvePermalink,
