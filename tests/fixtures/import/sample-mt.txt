@@ -1,0 +1,35 @@
+AUTHOR: test
+TITLE: Hello Import
+DATE: 01/15/2024 12:00:00
+PRIMARY KEY: 1
+STATUS: Publish
+CATEGORY: sorane,import
+-----
+BODY:
+<p>First paragraph from <strong>MT</strong> export.</p>
+-----
+
+--------
+AUTHOR: test
+TITLE: Draft Post
+DATE: 01/16/2024 09:00:00
+PRIMARY KEY: 2
+STATUS: Draft
+-----
+BODY:
+<p>Should be skipped.</p>
+-----
+
+--------
+AUTHOR: test
+TITLE: Second Post
+DATE: 01/17/2024 18:30:00
+PRIMARY KEY: 3
+STATUS: Publish
+-----
+BODY:
+<p>Second published entry.</p>
+-----
+EXTENDED BODY:
+<p>Extended section.</p>
+-----

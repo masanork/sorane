@@ -21,6 +21,17 @@ export {
   type VivliostyleInvocation,
 } from "./export/vivliostyle-cli.ts";
 export {
+  detectEncoding,
+  scoreUtf8,
+  scoreShiftJIS,
+  scoreEucJp,
+  decodeBytes,
+} from "./import/encoding-detect.ts";
+export { readImportFile, parseEncodingHint, type EncodingHint } from "./import/decode.ts";
+export { detectImportFormat } from "./import/detect-format.ts";
+export { parseMtExport } from "./import/adapters/mt.ts";
+export { runImport, type RunImportOptions, type RunImportResult } from "./import/run-import.ts";
+export {
   mergeConfig,
   DEFAULT_CONFIG,
   resolvePermalink,

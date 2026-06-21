@@ -5,6 +5,7 @@ import { runIndexCmd } from "./index-cmd.ts";
 import { runMigrateCmd } from "./migrate.ts";
 import { runSearchCmd } from "./search-cmd.ts";
 import { runExportCmd } from "./export.ts";
+import { runImportCmd } from "./import-cmd.ts";
 import { runValidateCmd } from "./validate.ts";
 
 const [, , command, ...rest] = process.argv;
@@ -36,16 +37,20 @@ async function main(): Promise<void> {
     case "export":
       await runExportCmd(rest);
       break;
+    case "import":
+      await runImportCmd(rest);
+      break;
     default:
       process.stderr.write(
-        "usage: sorane <build|validate|migrate|index|search|export|watch> [options]\n" +
+        "usage: sorane <build|validate|migrate|index|search|export|import|watch> [options]\n" +
           "  build     --cwd <dir> [--clean] [--watch] [--skip-c2pa]\n" +
           "  watch     --cwd <dir> [--clean]\n" +
           "  validate  --cwd <dir> [--json]\n" +
           "  migrate   --cwd <dir> [--dry-run] [--bump-profile 0.2|0.3]\n" +
           "  index     --cwd <dir> [--force] [--hybrid] [--fts-only] [--out <path>] [--model <dir>] [--model-id <id>]\n" +
           "  search    <query> [--cwd <dir>] [--type article|dataset|reference|glossary|glossary-term|faq] [--tag <slug>] [--k 10] [--json] [--fts-only]\n" +
-          "  export    --format docx|pdf --cwd <dir> --out <file|dir> [--file <rel.md>] [--html <rel.html>]\n",
+          "  export    --format docx|pdf --cwd <dir> --out <file|dir> [--file <rel.md>] [--html <rel.html>]\n" +
+          "  import    --input <file> --cwd <dir> [--format auto|mt] [--out content/article] [--encoding auto] [--dry-run]\n",
       );
       process.exit(command === undefined ? 0 : 1);
   }
