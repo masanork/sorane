@@ -2,7 +2,7 @@
 
 OKF-native static site generator. Markdown concepts with YAML frontmatter become a static site with machine-readable outputs for agents and search tools.
 
-- **Product site:** https://sorane.dev/ (built from `website/` in this repo; mirror at https://ssg.sorane.dev/)
+- **Product site:** https://ssg.sorane.dev/ (built from `website/` in this repo)
 
 ## Requirements
 
@@ -36,7 +36,7 @@ If a command needs a missing package, sorane prints `npm install <pkg>` and may 
 
 ## New site (AI-assisted)
 
-Copy [`template/site/`](template/site/) into your own GitHub repo. It includes **AGENTS.md** (Cursor, Claude Code, Antigravity, Codex, …), Cursor rules, and a sample CI workflow. See [AI onboarding](https://sorane.dev/ai-onboarding.html).
+Copy [`template/site/`](template/site/) into your own GitHub repo. It includes **AGENTS.md** (Cursor, Claude Code, Antigravity, Codex, …), Cursor rules, and a sample CI workflow. See [AI onboarding](https://ssg.sorane.dev/ai-onboarding.html).
 
 ## CLI
 
@@ -59,7 +59,7 @@ preset: okf-site    # full machine-readable outputs, diagrams, archives/tags
 preset: gov         # okf-site + strict validate quality gates
 ```
 
-See [configuration](https://sorane.dev/configuration.html#プリセット) on sorane.dev.
+See [configuration](https://ssg.sorane.dev/configuration.html#プリセット) on ssg.sorane.dev.
 
 ## OKF profile
 
@@ -88,7 +88,7 @@ aiDisclosureNote: Draft edited with an LLM; facts verified by the author.
 Body markdown here.
 ```
 
-See [AI content disclosure](https://sorane.dev/ai-disclosure.html) for image provenance (IPTC XMP, C2PA) and `content/asset-provenance.yaml`.
+See [AI content disclosure](https://ssg.sorane.dev/ai-disclosure.html) for image provenance (IPTC XMP, C2PA) and `content/asset-provenance.yaml`.
 
 ## Build outputs
 
@@ -183,7 +183,7 @@ The product site lives in `website/` and is built with sorane itself:
 npm run build -- --cwd website --clean
 ```
 
-Cloudflare Pages deploys `website/dist` to **sorane.dev** on push to `main` (see `.github/workflows/pages.yml`). **ssg.sorane.dev** remains as a secondary hostname on the same deployment.
+Cloudflare Pages deploys `website/dist` to **ssg.sorane.dev** on push to `main` (see `.github/workflows/pages.yml`). **sorane.dev** is reserved for the 空音 board (kototoi), not the SSG product site.
 
 ## Distribution
 

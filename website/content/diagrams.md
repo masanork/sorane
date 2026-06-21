@@ -35,7 +35,7 @@ sequenceDiagram
 
 `mermaid.mode: build` にすると `@mermaid-js/mermaid-cli`（mmdc）で SVG を生成します。クライアント loader は不要です。
 
-[sorane.dev](https://sorane.dev/) は Pages ビルドを軽く保つため **client モード**を使っています（このページの Mermaid はクライアント描画）。CI で Chromium を入れられるサイトは build モードも選べます。詳細は [デプロイ](deployment.html#図表d2--mermaid) を参照してください。
+[ssg.sorane.dev](https://ssg.sorane.dev/) は Pages ビルドを軽く保つため **client モード**を使っています（このページの Mermaid はクライアント描画）。CI で Chromium を入れられるサイトは build モードも選べます。詳細は [デプロイ](deployment.html#図表d2--mermaid) を参照してください。
 
 ```yaml
 build:

@@ -9,7 +9,7 @@
     "url": "git+https://github.com/masanork/sorane.git",
     "directory": "packages/core"
   },
-  "homepage": "https://sorane.dev",
+  "homepage": "https://ssg.sorane.dev",
   "bugs": "https://github.com/masanork/sorane/issues",
   "files": [
     "src"

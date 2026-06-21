@@ -39,8 +39,17 @@ function loadKototoiConfig() {
 
 mkdirSync(distDir, { recursive: true });
 const clientDist = resolveClientDist();
-for (const name of ['kototoi-form.js', 'kototoi-form.css']) {
-  copyFileSync(join(clientDist, name), join(distDir, name));
+for (const name of ['kototoi-form.js', 'kototoi-form.css', 'kototoi-sw.js']) {
+  const src = join(clientDist, name);
+  if (!existsSync(src)) {
+    if (name === 'kototoi-sw.js') {
+      const fallback = join(staticDir, name);
+      if (existsSync(fallback)) copyFileSync(fallback, join(distDir, name));
+      continue;
+    }
+    throw new Error(`missing kototoi asset: ${name}`);
+  }
+  copyFileSync(src, join(distDir, name));
 }
 
 const config = loadKototoiConfig();

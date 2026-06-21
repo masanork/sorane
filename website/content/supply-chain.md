@@ -12,11 +12,11 @@ sorane のタグ付きリリース（`v*`）には SLSA v1.0 Build-L3 provenance
 <!-- supply-chain-status:auto -->
 | 項目 | 値 |
 |------|-----|
-| バージョン | `0.2.8` |
-| リリースタグ | [`v0.2.8`](https://github.com/masanork/sorane/releases/tag/v0.2.8) |
+| バージョン | `0.4.0` |
+| リリースタグ | [`v0.4.0`](https://github.com/masanork/sorane/releases/tag/v0.4.0) |
 | SLSA | Build-L3（`.intoto.jsonl`） |
 | npm provenance | あり（Trusted Publisher / OIDC） |
-| 生成日時（UTC） | 2026-06-21T05:10:42.788Z |
+| 生成日時（UTC） | 2026-06-21T12:09:13.567Z |
 
 ### 公開 npm パッケージ
 

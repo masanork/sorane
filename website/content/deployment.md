@@ -21,7 +21,7 @@ excludeFromList: true
 
 初回のみ Cloudflare で Pages プロジェクトを作成してください。シークレットに `CLOUDFLARE_API_TOKEN` と `CLOUDFLARE_ACCOUNT_ID` を設定します。
 
-[sorane 公式サイト](https://sorane.dev/) は sorane リポジトリ内の `website/` を dogfooding してビルドしています。
+[sorane 公式サイト](https://ssg.sorane.dev/) は sorane リポジトリ内の `website/` を dogfooding してビルドしています。
 
 問い合わせ（kototoi）を有効にしているサイトは、`build` のあとに埋め込み資産の配置と `contact.html` のパッチが必要です。手順は [kototoi 問い合わせフォーム](kototoi.html) を参照してください。公式 CI（`.github/workflows/pages.yml`）では次を追加しています。
 
@@ -62,7 +62,7 @@ npx @sorane/cli preview --cwd website --watch
 build:
   redirects:
     - from: /2025-12-23-srn.html
-      to: https://sorane.dev/2025-12-23-sorane-refactor.html
+      to: https://ssg.sorane.dev/2025-12-23-sorane-refactor.html
       status: 301
 ```
 
@@ -72,7 +72,7 @@ build:
 ---
 type: article
 title: （移管済み）
-redirect: https://sorane.dev/2025-12-23-sorane-refactor.html
+redirect: https://ssg.sorane.dev/2025-12-23-sorane-refactor.html
 redirect_status: 301
 excludeFromList: true
 profile: sorane-okf/0.2
@@ -90,11 +90,11 @@ profile: sorane-okf/0.2
 
 ### 図表（D2 / Mermaid）
 
-`build.diagrams.d2.enabled: true` のサイトは CI で [d2](https://d2lang.com/) CLI をインストールしてください。sorane.dev は `v0.7.1` を使っています。
+`build.diagrams.d2.enabled: true` のサイトは CI で [d2](https://d2lang.com/) CLI をインストールしてください。ssg.sorane.dev は `v0.7.1` を使っています。
 
 Mermaid は次の 2 モードがあります。
 
-| モード | CI の追加要件 | sorane.dev |
+| モード | CI の追加要件 | ssg.sorane.dev |
 |--------|---------------|------------|
 | `mermaid.mode: client`（既定） | なし（`mermaid` npm パッケージのみ） | **採用** — Pages ビルドに Chromium 不要 |
 | `mermaid.mode: build` | `@mermaid-js/mermaid-cli`（mmdc）+ Chromium | 未使用 — 静的 SVG が必要なサイト向け |
@@ -123,8 +123,8 @@ sorane ソースを checkout する構成も可能です。`AGENTS.md` の `SORA
 
 | ホスト | 用途 |
 |--------|------|
-| `sorane.dev` | プロダクトサイト |
-| `ssg.sorane.dev` | ミラー |
+| `ssg.sorane.dev` | プロダクトサイト（SSG 公式ドキュメント） |
+| `sorane.dev` | 空音掲示板（kototoi）— Pages プロジェクト `sorane` からは切り離す |
 | `sorane.pages.dev` | Pages 既定 URL |
 
 `sorane.yaml` の `base_url` を本番ホストに揃えてください。
@@ -142,7 +142,7 @@ Cloudflare には名前が似た製品が2つあります。**ゾーンの HTTP 
 | **Pages Web Analytics** | Workers & Pages → プロジェクト → **Metrics** → Enable | ○ | ○（Core Web Vitals 含む） | ビルド成果物に CF がスニペット注入（ソース Markdown には書かない） |
 | **ゾーン HTTP Traffic** | ゾーン → Analytics & Logs → HTTP Traffic | 基本のみ | Pro 以上で Page views / Visits | エッジ集計（JS 不要） |
 
-**sorane.dev のような Pages サイト（解析だけ欲しい・監査不要）:**
+**ssg.sorane.dev のような Pages サイト（解析だけ欲しい・監査不要）:**
 
 1. [設定](configuration.html#cloudflare-ホスティング) で `web_analytics: true`（運用メモ用）
 2. **Workers & Pages → `sorane` → Metrics → Web Analytics を Enable**

@@ -1,10 +1,10 @@
 {
   "schema_version": 1,
-  "generated_at": "2026-06-21T05:10:42.788Z",
-  "version": "0.2.8",
+  "generated_at": "2026-06-21T12:09:13.567Z",
+  "version": "0.4.0",
   "release": {
-    "tag": "v0.2.8",
-    "url": "https://github.com/masanork/sorane/releases/tag/v0.2.8",
+    "tag": "v0.4.0",
+    "url": "https://github.com/masanork/sorane/releases/tag/v0.4.0",
     "assets_url": "https://github.com/masanork/sorane/releases/latest",
     "slsa_level": "Build-L3",
     "npm_publish_provenance": true
@@ -30,7 +30,7 @@
     "c2pa_note": "Optional C2PA signing is delegated to external c2patool; sorane does not hold signing keys."
   },
   "sbom": {
-    "release_asset": "sbom.json (GitHub Release v0.2.8)",
+    "release_asset": "sbom.json (GitHub Release v0.4.0)",
     "scope": "Third-party npm packages from package-lock.json"
   },
   "verification": {

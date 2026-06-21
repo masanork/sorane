@@ -5,7 +5,7 @@ profile: sorane-okf/0.1
 excludeFromList: true
 ---
 
-sorane プロジェクトのソースコードと、このサイト（[sorane.dev](https://sorane.dev)）に掲載するドキュメントは、いずれも **MIT License** です。コードと同じ条件で利用・改変・再配布できます。
+sorane プロジェクトのソースコードと、このサイト（[ssg.sorane.dev](https://ssg.sorane.dev)）に掲載するドキュメントは、いずれも **MIT License** です。コードと同じ条件で利用・改変・再配布できます。
 
 サイト全体の宣言は `sorane.yaml` の `site.license` / `site.license_page` / `site.copyright` で機械可読に出力されます（全ページフッター、JSON-LD、`llms.txt`）。設定の詳細は [設定（YAML）](configuration.html#サイト全体のライセンス) を参照してください。
 

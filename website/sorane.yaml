@@ -3,7 +3,7 @@ preset: okf-site
 site:
   title: sorane
   description: OKF-native static site generator
-  base_url: https://sorane.dev
+  base_url: https://ssg.sorane.dev
   lang: ja
   license: MIT
   license_page: license.html
@@ -80,6 +80,12 @@ kototoi:
         type: text
         required: false
         max_length: 200
+      - id: subject
+        label: 件名
+        type: text
+        required: false
+        max_length: 200
+        placeholder: 任意（一覧の表示名になります）
       - id: body
         label: お問い合わせ内容
         type: textarea

@@ -176,6 +176,16 @@ var Kototoi = (() => {
         body: JSON.stringify({ body })
       });
     }
+    async getVapidPublicKey() {
+      const res = await this.request("/push/vapid");
+      return res.publicKey;
+    }
+    async subscribePush(subscription) {
+      await this.request("/push/subscribe", {
+        method: "POST",
+        body: JSON.stringify(subscription)
+      });
+    }
   };
 
   // src/form.ts
@@ -219,7 +229,169 @@ var Kototoi = (() => {
     return { ok: true, profileFields, body, subject };
   }
 
+  // src/push.ts
+  function urlBase64ToUint8Array(base64) {
+    const pad = "=".repeat((4 - base64.length % 4) % 4);
+    const raw = atob((base64 + pad).replace(/-/g, "+").replace(/_/g, "/"));
+    const out = new Uint8Array(raw.length);
+    for (let i = 0; i < raw.length; i++) out[i] = raw.charCodeAt(i);
+    return out;
+  }
+  function isPushSupported() {
+    return typeof window !== "undefined" && "serviceWorker" in navigator && "PushManager" in window && "Notification" in window;
+  }
+  async function subscribeToPush(api, swPath = "/kototoi-sw.js") {
+    if (!isPushSupported()) return { ok: false, reason: "unsupported" };
+    const permission = await Notification.requestPermission();
+    if (permission !== "granted") return { ok: false, reason: "denied" };
+    try {
+      const vapidKey = await api.getVapidPublicKey();
+      const reg = await navigator.serviceWorker.register(swPath, { scope: "/" });
+      await navigator.serviceWorker.ready;
+      const sub = await reg.pushManager.subscribe({
+        userVisibleOnly: true,
+        applicationServerKey: urlBase64ToUint8Array(vapidKey)
+      });
+      const json = sub.toJSON();
+      if (!json.endpoint || !json.keys?.p256dh || !json.keys?.auth) {
+        return { ok: false, reason: "error", message: "invalid subscription" };
+      }
+      await api.subscribe(json);
+      return { ok: true };
+    } catch (e) {
+      return {
+        ok: false,
+        reason: "error",
+        message: e instanceof Error ? e.message : "push subscribe failed"
+      };
+    }
+  }
+  function shouldOfferPushOptIn() {
+    if (!isPushSupported()) return false;
+    if (Notification.permission === "granted") return false;
+    if (sessionStorage.getItem("kototoi_push_dismissed") === "1") return false;
+    return Notification.permission === "default";
+  }
+  function dismissPushOptIn() {
+    sessionStorage.setItem("kototoi_push_dismissed", "1");
+  }
+
+  // src/unread.ts
+  var STORAGE_PREFIX = "kototoi_seen_";
+  function storageKey(siteId) {
+    return `${STORAGE_PREFIX}${siteId}`;
+  }
+  function readMap(siteId) {
+    try {
+      const raw = localStorage.getItem(storageKey(siteId));
+      if (!raw) return {};
+      const parsed = JSON.parse(raw);
+      if (!parsed || typeof parsed !== "object") return {};
+      return parsed;
+    } catch {
+      return {};
+    }
+  }
+  function writeMap(siteId, map) {
+    localStorage.setItem(storageKey(siteId), JSON.stringify(map));
+  }
+  function getLastSeenMessageId(siteId, threadId) {
+    return readMap(siteId)[threadId] ?? null;
+  }
+  function markThreadSeen(siteId, threadId, messageId) {
+    const map = readMap(siteId);
+    map[threadId] = messageId;
+    writeMap(siteId, map);
+  }
+  function isAdminReplyUnread(siteId, threadId, lastMessage) {
+    if (!lastMessage || lastMessage.authorRole !== "admin") return false;
+    return getLastSeenMessageId(siteId, threadId) !== lastMessage.id;
+  }
+
+  // ../api/src/threads/ref.ts
+  var THREAD_REF_ALPHABET = "0123456789ABCDEFGHJKMNPQRSTVWXYZ";
+  var PAYLOAD_LEN = 5;
+  var THREAD_REF_LEN = PAYLOAD_LEN + 1;
+  function normalizeThreadRef(input) {
+    return input.trim().toUpperCase().replace(/[^0-9A-Z]/g, "").replace(/[ILOU]/g, (ch) => {
+      if (ch === "I" || ch === "L") return "1";
+      if (ch === "O") return "0";
+      if (ch === "U") return "V";
+      return ch;
+    });
+  }
+  function threadRefChecksum(payload) {
+    let acc = 0;
+    for (let i = 0; i < payload.length; i++) {
+      const idx = THREAD_REF_ALPHABET.indexOf(payload[i]);
+      if (idx < 0) throw new Error("invalid ref payload");
+      acc = (acc + idx * (i + 3)) % THREAD_REF_ALPHABET.length;
+    }
+    return THREAD_REF_ALPHABET[acc];
+  }
+  function formatThreadRef(ref) {
+    const n = normalizeThreadRef(ref);
+    if (n.length !== THREAD_REF_LEN) return n;
+    return `${n.slice(0, 3)}-${n.slice(3)}`;
+  }
+  function parseThreadRef(input) {
+    const normalized = normalizeThreadRef(input);
+    if (normalized.length !== THREAD_REF_LEN) return null;
+    for (const ch of normalized) {
+      if (!THREAD_REF_ALPHABET.includes(ch)) return null;
+    }
+    const payload = normalized.slice(0, PAYLOAD_LEN);
+    const check = normalized[PAYLOAD_LEN];
+    if (threadRefChecksum(payload) !== check) return null;
+    return normalized;
+  }
+
+  // src/replies.ts
+  function threadsWithUnreadAdminReplies(threads, siteId) {
+    return threads.filter((t) => isAdminReplyUnread(siteId, t.id, t.lastMessage)).sort((a, b) => {
+      const at = Date.parse(a.lastMessage?.createdAt ?? a.updatedAt);
+      const bt = Date.parse(b.lastMessage?.createdAt ?? b.updatedAt);
+      return bt - at;
+    });
+  }
+  function threadLookupFromNavigationTarget(url) {
+    try {
+      const u = new URL(url);
+      const hash = u.hash.replace(/^#/, "");
+      const refHash = hash.match(/^ref-([0-9A-HJ-NP-Z]{6})$/i);
+      if (refHash) return refHash[1];
+      const hashMatch = hash.match(/^thread-([0-9a-f-]{36})$/i);
+      if (hashMatch) return hashMatch[1];
+      const refQuery = u.searchParams.get("ref");
+      if (refQuery) {
+        const parsed = parseThreadRef(refQuery);
+        if (parsed) return parsed;
+      }
+      const query = u.searchParams.get("thread")?.trim();
+      if (query && /^[0-9a-f-]{36}$/i.test(query)) return query;
+    } catch {
+    }
+    const tagMatch = url.match(/^thread-([0-9a-f-]{36})$/i);
+    if (tagMatch) return tagMatch[1];
+    return null;
+  }
+
+  // ../api/src/threads/title.ts
+  function threadTitle(thread) {
+    const subject = thread.subject?.trim();
+    if (subject) return subject;
+    if (thread.ref) return `\u554F\u3044\u5408\u308F\u305B ${formatThreadRef(thread.ref)}`;
+    if (thread.updatedAt) {
+      const d = new Date(thread.updatedAt);
+      if (!Number.isNaN(d.getTime())) {
+        return `\u554F\u3044\u5408\u308F\u305B\uFF08${d.toLocaleDateString("ja-JP")}\uFF09`;
+      }
+    }
+    return `\u554F\u3044\u5408\u308F\u305B ${thread.id.slice(0, 8)}`;
+  }
+
   // src/app.ts
+  var REPLY_POLL_MS = 3e4;
   function el(tag, className, children = []) {
     const node = document.createElement(tag);
     if (className) node.className = className;
@@ -235,12 +407,6 @@ var Kototoi = (() => {
       return iso;
     }
   }
-  function threadTitle(thread) {
-    if (thread.subject) return thread.subject;
-    const name = thread.profileFields.name ?? thread.profileFields["\u6C0F\u540D"];
-    if (name) return name;
-    return `\u554F\u3044\u5408\u308F\u305B ${thread.id.slice(0, 8)}`;
-  }
   var KototoiApp = class {
     constructor(container, config) {
       this.container = container;
@@ -251,6 +417,7 @@ var Kototoi = (() => {
       this.contentEl = el("div");
       this.root.append(this.contentEl, this.statusEl);
       this.container.replaceChildren(this.root);
+      this.bindPushNavigation();
     }
     api;
     view = "auth";
@@ -261,9 +428,20 @@ var Kototoi = (() => {
     busy = false;
     siteSuspended = false;
     acceptsNewInquiries = true;
+    replyPollTimer = null;
     root;
     statusEl;
     contentEl;
+    bindPushNavigation() {
+      if (!("serviceWorker" in navigator)) return;
+      navigator.serviceWorker.addEventListener("message", (ev) => {
+        const data = ev.data;
+        if (data?.type !== "kototoi-open-thread") return;
+        const id = data.threadId ?? (data.url ? threadLookupFromNavigationTarget(data.url) : null);
+        if (!id || this.view === "auth") return;
+        void this.openThreadFromPush(id, data.body);
+      });
+    }
     async mount() {
       this.setStatus("");
       try {
@@ -281,8 +459,94 @@ var Kototoi = (() => {
           this.acceptsNewInquiries = !this.siteSuspended;
         }
         await this.render();
+        await this.openThreadFromHash();
+        if (this.view !== "auth") {
+          await this.navigateToPendingReplies();
+          this.startReplyPolling();
+        }
       } catch (e) {
         this.setStatus(e instanceof Error ? e.message : "\u521D\u671F\u5316\u306B\u5931\u6557\u3057\u307E\u3057\u305F", "error");
+      }
+    }
+    hasThreadHash() {
+      const hash = window.location.hash.replace(/^#/, "");
+      return /^thread-[0-9a-f-]{36}$/i.test(hash) || /^ref-[0-9A-HJ-NP-Z]{6}$/i.test(hash);
+    }
+    setThreadHash(thread) {
+      const base = `${window.location.pathname}${window.location.search}`;
+      const tag = thread.ref ? `ref-${thread.ref}` : `thread-${thread.id}`;
+      history.replaceState(null, "", `${base}#${tag}`);
+    }
+    clearThreadHash() {
+      const base = `${window.location.pathname}${window.location.search}`;
+      history.replaceState(null, "", base);
+    }
+    async openThreadFromHash() {
+      const lookup = threadLookupFromNavigationTarget(window.location.href);
+      if (!lookup || this.view === "auth") return;
+      await this.openThread(lookup);
+    }
+    async openThreadFromPush(threadId, preview) {
+      const status = preview ? `\u8FD4\u4FE1: ${preview}` : "\u8FD4\u4FE1\u304C\u5C4A\u304D\u307E\u3057\u305F\u3002";
+      this.setStatus(status, "ok");
+      await this.openThread(threadId);
+    }
+    startReplyPolling() {
+      this.stopReplyPolling();
+      this.replyPollTimer = setInterval(() => void this.checkForNewReplies(), REPLY_POLL_MS);
+    }
+    stopReplyPolling() {
+      if (this.replyPollTimer !== null) {
+        clearInterval(this.replyPollTimer);
+        this.replyPollTimer = null;
+      }
+    }
+    async navigateToPendingReplies() {
+      if (this.view === "auth" || this.hasThreadHash()) return;
+      try {
+        this.threads = await this.api.listThreads();
+        const unread = threadsWithUnreadAdminReplies(this.threads, this.config.siteId);
+        if (unread.length === 0) return;
+        const newest = unread[0];
+        this.tab = "threads";
+        this.setStatus(
+          unread.length === 1 ? "\u8FD4\u4FE1\u304C\u5C4A\u3044\u3066\u3044\u307E\u3059\u3002" : `\u8FD4\u4FE1\u304C ${unread.length} \u4EF6\u5C4A\u3044\u3066\u3044\u307E\u3059\u3002`,
+          "ok"
+        );
+        await this.openThread(newest.id);
+      } catch {
+      }
+    }
+    async checkForNewReplies() {
+      if (this.busy || this.view === "auth") return;
+      try {
+        const threads = await this.api.listThreads();
+        this.threads = threads;
+        const unread = threadsWithUnreadAdminReplies(threads, this.config.siteId);
+        if (unread.length === 0) return;
+        const newest = unread[0];
+        if (this.view === "thread" && this.activeThread?.id === newest.id) {
+          const res = await this.api.getThread(newest.id);
+          if (res.messages.length > this.messages.length) {
+            this.messages = res.messages;
+            const last = res.messages.at(-1);
+            if (last) markThreadSeen(this.config.siteId, newest.id, last.id);
+            await this.render();
+            this.setStatus("\u65B0\u3057\u3044\u8FD4\u4FE1\u304C\u5C4A\u304D\u307E\u3057\u305F\u3002", "ok");
+          }
+          return;
+        }
+        if (this.view === "thread" && this.activeThread) {
+          const stillUnread = isAdminReplyUnread(
+            this.config.siteId,
+            this.activeThread.id,
+            this.activeThread.lastMessage
+          );
+          if (!stillUnread) return;
+        }
+        this.setStatus("\u8FD4\u4FE1\u304C\u5C4A\u304D\u307E\u3057\u305F\u3002", "ok");
+        await this.openThread(newest.id);
+      } catch {
       }
     }
     async render() {
@@ -296,6 +560,64 @@ var Kototoi = (() => {
         return;
       }
       this.contentEl.append(await this.renderMain());
+    }
+    renderUnreadAlert(unread) {
+      const panel = el("div", "kototoi-form__panel kototoi-form__reply-alert");
+      const count = unread.length;
+      const latest = unread[0];
+      panel.append(
+        el("p", "kototoi-form__intro", [
+          count === 1 ? `\u300C${threadTitle(latest)}\u300D\u306B\u8FD4\u4FE1\u304C\u5C4A\u3044\u3066\u3044\u307E\u3059\u3002` : `\u8FD4\u4FE1\u304C ${count} \u4EF6\u5C4A\u3044\u3066\u3044\u307E\u3059\u3002\u6700\u65B0\u306E\u8FD4\u4FE1\u3092\u8868\u793A\u3057\u307E\u3059\u3002`
+        ])
+      );
+      const openBtn = el("button", "kototoi-form__btn", ["\u8FD4\u4FE1\u3092\u898B\u308B"]);
+      openBtn.type = "button";
+      openBtn.addEventListener("click", () => void this.openThread(latest.id));
+      panel.append(openBtn);
+      return panel;
+    }
+    renderPushOptIn() {
+      const panel = el("div", "kototoi-form__panel kototoi-form__stack kototoi-form__push-optin");
+      panel.append(
+        el("p", "kototoi-form__intro", [
+          "\u8FD4\u4FE1\u3084\u66F4\u65B0\u3092\u30D6\u30E9\u30A6\u30B6\u901A\u77E5\u3067\u53D7\u3051\u53D6\u308C\u307E\u3059\u3002\u30E1\u30FC\u30EB\u30A2\u30C9\u30EC\u30B9\u306F\u4E0D\u8981\u3067\u3001\u3053\u306E\u7AEF\u672B\u306E\u30D6\u30E9\u30A6\u30B6\u306B\u5C4A\u304D\u307E\u3059\u3002"
+        ])
+      );
+      const row = el("div", "kototoi-form__row");
+      const enableBtn = el("button", "kototoi-form__btn kototoi-form__btn--secondary", [
+        "\u901A\u77E5\u3092\u53D7\u3051\u53D6\u308B"
+      ]);
+      enableBtn.type = "button";
+      enableBtn.addEventListener("click", () => void this.handleEnablePush());
+      const dismissBtn = el("button", "kototoi-form__btn kototoi-form__btn--text", ["\u3042\u3068\u3067"]);
+      dismissBtn.type = "button";
+      dismissBtn.addEventListener("click", () => {
+        dismissPushOptIn();
+        void this.render();
+      });
+      row.append(enableBtn, dismissBtn);
+      panel.append(row);
+      return panel;
+    }
+    async handleEnablePush() {
+      this.setBusy(true);
+      this.setStatus("\u901A\u77E5\u306E\u8A2D\u5B9A\u4E2D\u2026");
+      const result = await subscribeToPush({
+        getVapidPublicKey: () => this.api.getVapidPublicKey(),
+        subscribe: (sub) => this.api.subscribePush(sub)
+      });
+      if (result.ok) {
+        dismissPushOptIn();
+        this.setStatus("\u901A\u77E5\u3092\u6709\u52B9\u306B\u3057\u307E\u3057\u305F\u3002", "ok");
+        await this.render();
+      } else if (result.reason === "denied") {
+        this.setStatus("\u901A\u77E5\u304C\u30D6\u30ED\u30C3\u30AF\u3055\u308C\u3066\u3044\u307E\u3059\u3002\u30D6\u30E9\u30A6\u30B6\u306E\u8A2D\u5B9A\u304B\u3089\u8A31\u53EF\u3067\u304D\u307E\u3059\u3002", "error");
+      } else if (result.reason === "unavailable") {
+        this.setStatus("\u901A\u77E5\u306F\u73FE\u5728\u5229\u7528\u3067\u304D\u307E\u305B\u3093\u3002", "error");
+      } else {
+        this.setStatus(result.message ?? "\u901A\u77E5\u306E\u8A2D\u5B9A\u306B\u5931\u6557\u3057\u307E\u3057\u305F", "error");
+      }
+      this.setBusy(false);
     }
     renderAuth() {
       const panel = el("div", "kototoi-form__panel kototoi-form__stack");
@@ -318,11 +640,6 @@ var Kototoi = (() => {
       if (this.config.form.intro) {
         panel.append(el("p", "kototoi-form__intro", [this.config.form.intro]));
       }
-      panel.append(
-        el("p", "kototoi-form__intro", [
-          "Passkey\uFF08\u9854\u8A8D\u8A3C\u30FB\u6307\u7D0B\u30FB\u30BB\u30AD\u30E5\u30EA\u30C6\u30A3\u30AD\u30FC\u7B49\uFF09\u3067\u672C\u4EBA\u78BA\u8A8D\u3092\u884C\u3044\u307E\u3059\u3002\u30E1\u30FC\u30EB\u30A2\u30C9\u30EC\u30B9\u306E\u767B\u9332\u306F\u4E0D\u8981\u3067\u3059\u3002"
-        ])
-      );
       const row = el("div", "kototoi-form__row");
       const registerBtn = el("button", "kototoi-form__btn", ["Passkey \u3092\u767B\u9332\u3057\u3066\u59CB\u3081\u308B"]);
       registerBtn.type = "button";
@@ -359,6 +676,17 @@ var Kototoi = (() => {
       });
       tabs.append(newTab, listTab);
       wrap.append(tabs);
+      try {
+        if (this.threads.length === 0) this.threads = await this.api.listThreads();
+      } catch {
+      }
+      const unread = threadsWithUnreadAdminReplies(this.threads, this.config.siteId);
+      if (unread.length > 0) {
+        wrap.append(this.renderUnreadAlert(unread));
+      }
+      if (shouldOfferPushOptIn()) {
+        wrap.append(this.renderPushOptIn());
+      }
       const row = el("div", "kototoi-form__row");
       const logoutBtn = el("button", "kototoi-form__btn kototoi-form__btn--text", ["\u30ED\u30B0\u30A2\u30A6\u30C8"]);
       logoutBtn.type = "button";
@@ -438,10 +766,22 @@ var Kototoi = (() => {
       }
       const list = el("ul", "kototoi-form__thread-list");
       for (const thread of this.threads) {
-        const item = el("li", "kototoi-form__thread-item");
+        const unread = isAdminReplyUnread(this.config.siteId, thread.id, thread.lastMessage);
+        const item = el(
+          "li",
+          `kototoi-form__thread-item${unread ? " kototoi-form__thread-item--unread" : ""}`
+        );
+        const titleRow = el("div", "kototoi-form__thread-title-row");
+        titleRow.append(el("span", "", [threadTitle(thread)]));
+        if (thread.ref) {
+          titleRow.append(el("span", "kototoi-form__message-meta", [formatThreadRef(thread.ref)]));
+        }
+        if (unread) {
+          titleRow.append(el("span", "kototoi-form__badge", ["\u8FD4\u4FE1\u3042\u308A"]));
+        }
         const status = thread.status;
         item.append(
-          el("div", "", [threadTitle(thread)]),
+          titleRow,
           el("div", "kototoi-form__message-meta", [`${status} \xB7 ${formatDate(thread.updatedAt)}`])
         );
         item.addEventListener("click", () => void this.openThread(thread.id));
@@ -461,10 +801,18 @@ var Kototoi = (() => {
         this.tab = "threads";
         this.activeThread = null;
         this.messages = [];
+        this.clearThreadHash();
         void this.render();
       });
       wrap.append(back);
       wrap.append(el("h3", "kototoi-form__title", [threadTitle(thread)]));
+      if (thread.ref) {
+        wrap.append(
+          el("p", "kototoi-form__intro", [
+            `\u304A\u554F\u3044\u5408\u308F\u305B\u756A\u53F7: ${formatThreadRef(thread.ref)}\uFF08\u5225\u306E\u9023\u7D61\u624B\u6BB5\u3067\u304A\u4F1D\u3048\u3044\u305F\u3060\u304F\u969B\u306B\u3054\u5229\u7528\u304F\u3060\u3055\u3044\uFF09`
+          ])
+        );
+      }
       const messagesEl = el("div", "kototoi-form__messages");
       for (const msg of this.messages) {
         const cls = msg.authorRole === "admin" ? "kototoi-form__message kototoi-form__message--admin" : "kototoi-form__message";
@@ -504,8 +852,11 @@ var Kototoi = (() => {
         this.activeThread = res.thread;
         this.messages = res.messages;
         this.view = "thread";
+        this.tab = "threads";
+        const last = res.messages.at(-1);
+        if (last) markThreadSeen(this.config.siteId, id, last.id);
+        this.setThreadHash(res.thread);
         await this.render();
-        this.setStatus("");
       } catch (e) {
         this.setStatus(e instanceof Error ? e.message : "\u30B9\u30EC\u30C3\u30C9\u306E\u53D6\u5F97\u306B\u5931\u6557\u3057\u307E\u3057\u305F", "error");
       } finally {
@@ -521,6 +872,7 @@ var Kototoi = (() => {
         this.tab = "new";
         this.setStatus("Passkey \u3092\u767B\u9332\u3057\u307E\u3057\u305F\u3002", "ok");
         await this.render();
+        this.startReplyPolling();
       } catch (e) {
         this.setStatus(e instanceof Error ? e.message : "\u767B\u9332\u306B\u5931\u6557\u3057\u307E\u3057\u305F", "error");
       } finally {
@@ -533,10 +885,17 @@ var Kototoi = (() => {
       try {
         await this.api.loginPasskey();
         this.view = "main";
-        this.tab = this.siteSuspended ? "threads" : "threads";
+        this.tab = "threads";
         this.acceptsNewInquiries = !this.siteSuspended;
-        this.setStatus("\u30ED\u30B0\u30A4\u30F3\u3057\u307E\u3057\u305F\u3002", "ok");
         await this.render();
+        await this.openThreadFromHash();
+        if (!this.hasThreadHash()) {
+          await this.navigateToPendingReplies();
+        }
+        if (this.view === "main") {
+          this.setStatus("\u30ED\u30B0\u30A4\u30F3\u3057\u307E\u3057\u305F\u3002", "ok");
+        }
+        this.startReplyPolling();
       } catch (e) {
         this.setStatus(e instanceof Error ? e.message : "\u30ED\u30B0\u30A4\u30F3\u306B\u5931\u6557\u3057\u307E\u3057\u305F", "error");
       } finally {
@@ -546,12 +905,14 @@ var Kototoi = (() => {
     async handleLogout() {
       this.setBusy(true);
       try {
+        this.stopReplyPolling();
         await this.api.logout();
         this.view = "auth";
         this.tab = "new";
         this.threads = [];
         this.activeThread = null;
         this.messages = [];
+        this.clearThreadHash();
         this.setStatus("");
         await this.render();
       } catch (e) {
@@ -598,6 +959,7 @@ var Kototoi = (() => {
       try {
         const res = await this.api.addMessage(this.activeThread.id, body);
         this.messages.push(res.message);
+        markThreadSeen(this.config.siteId, this.activeThread.id, res.message.id);
         textarea.value = "";
         await this.render();
         this.setStatus("\u9001\u4FE1\u3057\u307E\u3057\u305F\u3002", "ok");

@@ -5,19 +5,19 @@ profile: sorane-okf/0.1
 excludeFromList: true
 ---
 
-[sorane](https://sorane.dev) 静的サイトに [kototoi](https://github.com/masanork/kototoi)（Passkey 問い合わせ）を埋め込む手順と運用メモです。
+[sorane](https://ssg.sorane.dev) 静的サイトに [kototoi](https://github.com/masanork/kototoi)（Passkey 問い合わせ）を埋め込む手順と運用メモです。
 
 ## 構成
 
 | ホスト | 役割 |
 |--------|------|
-| `sorane.dev`（Pages） | 静的 HTML・`kototoi-form.js` / `.css`（同一オリジン） |
+| `ssg.sorane.dev`（Pages） | 静的 HTML・`kototoi-form.js` / `.css`（同一オリジン） |
 | `ask.sorane.dev`（Worker） | API・管理 UI・D1 |
 
 フォーム JS は sorane ビルド成果物に同梱し、API 呼び出しだけ `ask.sorane.dev` 向けになります（CORS + `credentials: 'include'`）。Passkey の `rpId` は親ドメイン `sorane.dev` です。
 
 ```
-sorane.dev/contact  →  kototoi-form.js（同一オリジン）
+ssg.sorane.dev/contact  →  kototoi-form.js（同一オリジン）
                     →  fetch → ask.sorane.dev/api/...
 ```
 
@@ -25,7 +25,7 @@ sorane.dev/contact  →  kototoi-form.js（同一オリジン）
 
 ```yaml
 site:
-  base_url: https://sorane.dev
+  base_url: https://ssg.sorane.dev
   contact:
     page: contact.html   # llms.txt・発見性メタ用
 
@@ -42,6 +42,12 @@ kototoi:
         type: text
         required: true
         max_length: 200
+      - id: subject
+        label: 件名
+        type: text
+        required: false
+        max_length: 200
+        placeholder: 任意（一覧の表示名になります）
       - id: body
         label: お問い合わせ内容
         type: textarea
@@ -51,6 +57,7 @@ kototoi:
 
 - `endpoint` / `site_id` … kototoi Worker 側でサイト登録した値（全テナント共通の `ask.sorane.dev` でよい）
 - `form` … ビルド時に `dist/kototoi-form.json` へ書き出し、クライアントが読み込む
+- `subject`（件名）… 任意。入力するとスレッド一覧の表示名になる。未入力時は日付ベースのラベル（氏名は使わない）
 - `site.base_url` と `site_id` の組は kototoi の `allowed_origins` と一致させる
 
 ## コンテンツ
@@ -63,7 +70,7 @@ title: お問い合わせ
 type: article
 ---
 
-Passkey で本人確認します。メール登録は不要です。
+Passkey で認証します。
 
 <!-- kototoi-form -->
 ```

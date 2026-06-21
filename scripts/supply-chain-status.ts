@@ -1,6 +1,6 @@
 #!/usr/bin/env node
 /**
- * Writes website/static/supply-chain.json and syncs cbom.json for sorane.dev.
+ * Writes website/static/supply-chain.json and syncs cbom.json for ssg.sorane.dev.
  * Updates the auto block in website/content/supply-chain.md when present.
  *
  *   node scripts/supply-chain-status.ts

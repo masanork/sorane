@@ -29,7 +29,7 @@ build:
 
 ```yaml
 preset: blog        # 軽量 SSG（preset 省略時と同じ系統）
-preset: okf-site    # 機械可読出力・図表・アーカイブ（sorane.dev / open-data 向け）
+preset: okf-site    # 機械可読出力・図表・アーカイブ（ssg.sorane.dev / open-data 向け）
 preset: gov         # okf-site + 厳格な validate 品質ゲート
 ```
 
@@ -147,7 +147,7 @@ site:
 - `llms.txt` に License セクションを追加します
 - `license_page` を省略したときは `license` の URI（SPDX なら解決後 URL）へリンクします
 
-sorane.dev の例: [license.html](license.html)（`site.license: MIT`）。
+ssg.sorane.dev の例: [license.html](license.html)（`site.license: MIT`）。
 
 ### ドキュメントナビ（`docs.nav`）
 

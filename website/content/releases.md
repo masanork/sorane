@@ -49,7 +49,7 @@ npx sorane index --cwd ./my-site --force
 
 - 公的サイト向け **Findability pack**（組織 JSON-LD、品質ゲート、i18n / hreflang、緊急バナー、改訂履歴、Cloudflare ホスティング hooks）
 - `validate` category `revision`、frontmatter YAML パース修正
-- sorane.dev [機能](features.html) ページ
+- ssg.sorane.dev [機能](features.html) ページ
 
 ### v0.2.7 の主な変更
 
@@ -97,7 +97,7 @@ masanork/sorane
 
 ## ロードマップ
 
-- [x] プロダクトサイト `sorane.dev`
+- [x] プロダクトサイト `ssg.sorane.dev`
 - [x] `CHANGELOG.md` と SemVer タグ
 - [x] npm 配布（`@sorane/cli` ほか）
 - [x] SLSA L3 + SBOM/CBOM（タグリリース workflow）

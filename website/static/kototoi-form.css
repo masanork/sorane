@@ -300,7 +300,35 @@
   cursor: pointer;
 }
 
+.kototoi-form__thread-item--unread {
+  border-color: var(--kototoi-accent);
+  background: var(--kototoi-accent-subtle);
+}
+
 .kototoi-form__thread-item:hover {
+  border-color: var(--kototoi-accent);
+  background: var(--kototoi-accent-subtle);
+}
+
+.kototoi-form__thread-title-row {
+  display: flex;
+  align-items: center;
+  gap: var(--kototoi-space-2);
+  flex-wrap: wrap;
+}
+
+.kototoi-form__badge {
+  display: inline-block;
+  font-size: var(--kototoi-text-xs);
+  font-weight: var(--kototoi-weight-emphasis);
+  color: var(--kototoi-accent);
+  background: var(--kototoi-surface);
+  border: 1px solid var(--kototoi-accent);
+  border-radius: 999px;
+  padding: 0.1rem 0.5rem;
+}
+
+.kototoi-form__reply-alert {
   border-color: var(--kototoi-accent);
   background: var(--kototoi-accent-subtle);
 }

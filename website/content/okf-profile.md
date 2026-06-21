@@ -152,4 +152,4 @@ profile: sorane-okf/0.3
 | `sorane-okf/0.2` | [sorane-okf-0.2.schema.json](profile/sorane-okf-0.2.schema.json) |
 | `sorane-okf/0.3` | [sorane-okf-0.3.schema.json](profile/sorane-okf-0.3.schema.json) |
 
-`$id` は本番 URL `sorane.dev` を指します。
+`$id` は本番 URL `ssg.sorane.dev` を指します。
