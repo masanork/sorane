@@ -1,4 +1,12 @@
 // sorane-mermaid-loader.mjs — client-side Mermaid rendering (bunsen 013 pattern).
+
+function sanitizeSvgMarkup(svg) {
+  return svg
+    .replace(/<script[\s\S]*?<\/script>/gi, "")
+    .replace(/<foreignObject[\s\S]*?<\/foreignObject>/gi, "")
+    .replace(/\s+on[a-z]+\s*=\s*("[^"]*"|'[^']*'|[^\s>]+)/gi, "");
+}
+
 (async () => {
   const fences = document.querySelectorAll("pre > code.language-mermaid");
   if (fences.length === 0) return;
@@ -32,7 +40,7 @@
       const figure = document.createElement("figure");
       figure.setAttribute("role", "img");
       figure.setAttribute("aria-label", alt);
-      figure.innerHTML = svg;
+      figure.innerHTML = sanitizeSvgMarkup(svg);
       pre.replaceWith(figure);
     } catch (err) {
       console.error(`[sorane-mermaid] render failed (idx=${i}):`, err);

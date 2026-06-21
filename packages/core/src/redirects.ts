@@ -1,6 +1,10 @@
 import type { ParsedConcept } from "@sorane/okf";
 import type { RedirectRuleConfig, SoraneConfig } from "./config.ts";
+import { resolveSecurityConfig } from "./config.ts";
 import { resolvePageLocaleInfo, type I18nContext } from "./i18n.ts";
+import { validateRedirectTarget as validateRedirectTargetUrl } from "./safe-url.ts";
+
+export { validateRedirectTarget } from "./safe-url.ts";
 
 export const DEFAULT_REDIRECT_STATUS = 301;
 
@@ -38,20 +42,13 @@ export function normalizeRedirectTo(to: string): string {
   return trimmed.startsWith("/") ? trimmed : `/${trimmed}`;
 }
 
-/** @returns error message, or undefined when valid */
-export function validateRedirectTarget(to: string): string | undefined {
-  const trimmed = to.trim();
-  if (!trimmed) return "redirect target is empty";
-  if (trimmed.startsWith("http://") || trimmed.startsWith("https://")) {
-    try {
-      new URL(trimmed);
-      return undefined;
-    } catch {
-      return "redirect target is not a valid URL";
-    }
-  }
-  if (trimmed.startsWith("/")) return undefined;
-  return "redirect target must be an absolute URL (http/https) or a path starting with /";
+export function redirectValidationOptions(
+  config: SoraneConfig,
+): { readonly sameOriginBase?: string } {
+  const security = resolveSecurityConfig(config);
+  if (!security.redirect_same_origin) return {};
+  const base = config.site.base_url?.trim();
+  return base ? { sameOriginBase: base } : {};
 }
 
 export function validateRedirectStatus(status: number): string | undefined {
@@ -145,12 +142,13 @@ export interface RedirectValidationFinding {
 
 export function validateRedirectFrontmatter(
   frontmatter: Record<string, unknown>,
+  opts?: { readonly sameOriginBase?: string },
 ): RedirectValidationFinding[] {
   if (!isRedirectPage(frontmatter)) return [];
   const findings: RedirectValidationFinding[] = [];
   const target = frontmatter.redirect;
   if (typeof target === "string") {
-    const targetErr = validateRedirectTarget(target);
+    const targetErr = validateRedirectTargetUrl(target, opts);
     if (targetErr) findings.push({ severity: "error", message: targetErr });
   }
   const status = parseRedirectStatus(frontmatter);
@@ -161,6 +159,7 @@ export function validateRedirectFrontmatter(
 
 export function validateRedirectConfigRules(
   rules: readonly RedirectRuleConfig[] | undefined,
+  opts?: { readonly sameOriginBase?: string },
 ): RedirectValidationFinding[] {
   if (!rules || rules.length === 0) return [];
   const findings: RedirectValidationFinding[] = [];
@@ -178,7 +177,7 @@ export function validateRedirectConfigRules(
     }
     try {
       const from = normalizeRedirectFrom(rule.from);
-      const toErr = validateRedirectTarget(rule.to);
+      const toErr = validateRedirectTargetUrl(rule.to, opts);
       if (toErr) findings.push({ severity: "error", message: `${label}: ${toErr}` });
       const status = rule.status ?? DEFAULT_REDIRECT_STATUS;
       const statusErr = validateRedirectStatus(status);

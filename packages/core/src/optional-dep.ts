@@ -116,6 +116,12 @@ async function confirmInstall(packageName: string): Promise<boolean> {
 }
 
 function runPackageInstall(packageName: string, cwd: string): boolean {
+  if (!packageName.startsWith("@sorane/")) {
+    process.stderr.write(
+      `[sorane] refusing auto-install of non-@sorane package: ${packageName}\n`,
+    );
+    return false;
+  }
   const pm = detectPackageManager(cwd);
   const args = [...pm.installArgs(packageName)];
   process.stderr.write(`[sorane] running: ${pm.command} ${args.join(" ")}\n`);

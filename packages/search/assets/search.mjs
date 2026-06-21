@@ -4,6 +4,18 @@
 // Hybrid:     + data-model-base, data-lib-base
 
 const MODEL_ID = "ruri-v3-30m";
+
+function sanitizeSvgMarkup(svg) {
+  return svg
+    .replace(/<script[\s\S]*?<\/script>/gi, "")
+    .replace(/<foreignObject[\s\S]*?<\/foreignObject>/gi, "")
+    .replace(/\s+on[a-z]+\s*=\s*("[^"]*"|'[^']*'|[^\s>]+)/gi, "");
+}
+
+async function sha256Hex(buffer) {
+  const digest = await crypto.subtle.digest("SHA-256", buffer);
+  return [...new Uint8Array(digest)].map((b) => b.toString(16).padStart(2, "0")).join("");
+}
 const QUERY_PREFIX = "検索クエリ: ";
 const TOP_K = 10;
 
@@ -161,9 +173,24 @@ function setup(root) {
     return index;
   }
 
+  async function verifyModelSha(modelSha) {
+    if (!modelSha || !modelBase) return;
+    const onnxUrl = new URL(`${MODEL_ID}/onnx/model_quantized.onnx`, modelBase).href;
+    const res = await fetch(onnxUrl);
+    if (!res.ok) throw new Error(`model fetch failed (${res.status})`);
+    const buf = await res.arrayBuffer();
+    const actual = await sha256Hex(buf);
+    if (actual !== modelSha) {
+      throw new Error(`model SHA-256 mismatch (expected ${modelSha.slice(0, 12)}…)`);
+    }
+  }
+
   async function loadEmbedder() {
     if (embed) return embed;
     setStatus(labels.loadingModel);
+    if (index?.model?.sha256) {
+      await verifyModelSha(index.model.sha256);
+    }
     const libUrl = new URL(libBase, document.baseURI).href;
     const tjs = await import(`${libUrl}transformers.web.js`);
     const { env, pipeline } = tjs;

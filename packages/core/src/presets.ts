@@ -56,6 +56,7 @@ export interface PresetLayer {
       readonly graphviz?: { readonly enabled?: boolean };
     };
     readonly quality?: Record<string, unknown>;
+    readonly security?: Record<string, unknown>;
     readonly outputs?: BuildOutputsConfig;
   };
 }
@@ -78,7 +79,10 @@ const PRESET_PARTIALS: Record<SoranePreset, PresetLayer> = {
   gov: {
     build: {
       blog: { archives: true, tags: true },
-      diagrams: { enabled: true },
+      diagrams: {
+        enabled: true,
+        mermaid: { mode: "build" },
+      },
       quality: {
         image_alt: true,
         link_text: true,
@@ -86,6 +90,16 @@ const PRESET_PARTIALS: Record<SoranePreset, PresetLayer> = {
         dates: true,
         heading: "error",
         lang_mixing: true,
+      },
+      security: {
+        strict_html: true,
+        allow_embeds: false,
+        search_snippet_only: true,
+        redirect_same_origin: true,
+        allow_custom_binaries: false,
+        emit_security_headers: true,
+        csp_profile: "strict",
+        link_scheme_check: "error",
       },
       outputs: { ...OKF_SITE_OUTPUTS },
     },

@@ -2,7 +2,7 @@ import { execFileSync, spawnSync } from "node:child_process";
 import { mkdirSync } from "node:fs";
 import { dirname } from "node:path";
 
-const NPX_VIVLIOSTYLE_PACKAGE = "@vivliostyle/cli@latest";
+const NPX_VIVLIOSTYLE_PACKAGE = "@vivliostyle/cli@11.0.2";
 
 export type VivliostyleInvocation =
   | { readonly kind: "direct"; readonly binary: string }

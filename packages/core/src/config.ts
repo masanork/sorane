@@ -105,6 +105,59 @@ export interface C2paConfig {
 
 export type QualityGateSeverity = "warn" | "error";
 
+export type CspProfile = "standard" | "strict";
+
+export interface SecurityConfig {
+  /** iframe/embed/object を HTML から除外（gov 既定: true） */
+  readonly strict_html?: boolean;
+  /** レガシー HTML の埋め込みを許可（strict_html が false のときのみ有効） */
+  readonly allow_embeds?: boolean;
+  /** search-index.json に chunk 全文を含めない */
+  readonly search_snippet_only?: boolean;
+  /** リダイレクト先を site.base_url と同一オリジンに限定 */
+  readonly redirect_same_origin?: boolean;
+  /** sorane.yaml で外部バイナリパスを上書き可能 */
+  readonly allow_custom_binaries?: boolean;
+  /** dist/_headers に CSP 等を出力 */
+  readonly emit_security_headers?: boolean;
+  /** CSP 厳格度 */
+  readonly csp_profile?: CspProfile;
+  /** Markdown / HTML 内リンクのスキーム検査 */
+  readonly link_scheme_check?: boolean | QualityGateSeverity;
+}
+
+export const DEFAULT_SECURITY_CONFIG: Required<SecurityConfig> = {
+  strict_html: true,
+  allow_embeds: false,
+  search_snippet_only: false,
+  redirect_same_origin: false,
+  allow_custom_binaries: true,
+  emit_security_headers: true,
+  csp_profile: "standard",
+  link_scheme_check: "warn",
+};
+
+export function resolveSecurityConfig(
+  config: Pick<SoraneConfig, "build">,
+): Required<SecurityConfig> {
+  const raw = config.build.security ?? {};
+  const strictHtml = raw.strict_html ?? DEFAULT_SECURITY_CONFIG.strict_html;
+  const allowEmbeds = raw.allow_embeds ?? DEFAULT_SECURITY_CONFIG.allow_embeds;
+  return {
+    strict_html: strictHtml,
+    allow_embeds: allowEmbeds && !strictHtml,
+    search_snippet_only: raw.search_snippet_only ?? DEFAULT_SECURITY_CONFIG.search_snippet_only,
+    redirect_same_origin:
+      raw.redirect_same_origin ?? DEFAULT_SECURITY_CONFIG.redirect_same_origin,
+    allow_custom_binaries:
+      raw.allow_custom_binaries ?? DEFAULT_SECURITY_CONFIG.allow_custom_binaries,
+    emit_security_headers:
+      raw.emit_security_headers ?? DEFAULT_SECURITY_CONFIG.emit_security_headers,
+    csp_profile: raw.csp_profile ?? DEFAULT_SECURITY_CONFIG.csp_profile,
+    link_scheme_check: raw.link_scheme_check ?? DEFAULT_SECURITY_CONFIG.link_scheme_check,
+  };
+}
+
 export interface QualityGateConfig {
   /** 本文画像の alt 欠落（既定: true） */
   readonly image_alt?: boolean;
@@ -240,6 +293,7 @@ export interface SoraneConfig {
      * 記事 frontmatter の `redirect` と併用可（同一 `from` は後勝ち）。
      */
     readonly redirects?: readonly RedirectRuleConfig[];
+    readonly security?: SecurityConfig;
   };
   readonly fonts: {
     readonly enabled: boolean;
@@ -288,6 +342,7 @@ export const DEFAULT_CONFIG: SoraneConfig = {
     image_metadata: {},
     c2pa: { enabled: false, embed: true, binary: "c2patool" },
     quality: {},
+    security: {},
     outputs: {
       md_alternate: false,
       okf_bundle: false,
@@ -369,6 +424,9 @@ export function mergeConfig(partial: MergeConfigInput = {}): SoraneConfig {
       quality: buildPartial.quality
         ? { ...DEFAULT_CONFIG.build.quality, ...buildPartial.quality }
         : DEFAULT_CONFIG.build.quality,
+      security: buildPartial.security
+        ? { ...DEFAULT_CONFIG.build.security, ...buildPartial.security }
+        : DEFAULT_CONFIG.build.security,
       outputs: mergeOutputsConfig(
         mergeOutputsConfig(DEFAULT_CONFIG.build.outputs, presetLayer.build?.outputs),
         rest.build?.outputs,

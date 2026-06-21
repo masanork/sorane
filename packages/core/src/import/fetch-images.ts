@@ -1,5 +1,6 @@
 import { existsSync, mkdirSync, readFileSync, writeFileSync } from 'node:fs';
 import { basename, extname, join } from 'node:path';
+import { guardedFetch, readGuardedResponse } from '../fetch-url-guard.ts';
 
 const MD_IMG_RE = /!\[[^\]]*]\((https?:\/\/[^)]+)\)/g;
 const HTML_SRC_RE = /src="(https?:\/\/[^"]+)"/g;
@@ -10,11 +11,14 @@ export interface FetchImportImagesOptions {
   /** Site static root relative to cwd (default `static`). */
   readonly staticDir?: string;
   readonly fetchFn?: typeof fetch;
+  /** @internal Test hook: skip SSRF guard when injecting fetchFn */
+  readonly skipFetchGuard?: boolean;
 }
 
 export interface FetchImportImagesResult {
   readonly updatedFiles: readonly string[];
   readonly downloadedCount: number;
+  readonly skippedCount: number;
 }
 
 /** Collect unique external image URLs from markdown/HTML body text. */
@@ -46,6 +50,7 @@ async function downloadImage(
   url: string,
   destDir: string,
   fetchFn: typeof fetch,
+  skipFetchGuard: boolean,
 ): Promise<{ path: string; downloaded: boolean } | null> {
   try {
     const filename = urlHashFilename(url);
@@ -54,14 +59,17 @@ async function downloadImage(
       return { path: destPath, downloaded: false };
     }
 
-    const response = await fetchFn(url, {
+    const init = {
       headers: { 'User-Agent': 'Mozilla/5.0 (compatible; SoraneImport/1.0)' },
-    });
+    };
+    const response = skipFetchGuard
+      ? await fetchFn(url, init)
+      : await guardedFetch(url, init, { fetchFn });
     if (!response.ok) {
       throw new Error(`status ${response.status}`);
     }
 
-    const buffer = Buffer.from(await response.arrayBuffer());
+    const buffer = await readGuardedResponse(response);
     writeFileSync(destPath, buffer);
     return { path: destPath, downloaded: true };
   } catch {
@@ -95,6 +103,7 @@ export async function fetchImportImages(
   const fetchFn = opts.fetchFn ?? fetch;
   const updatedFiles: string[] = [];
   let downloadedCount = 0;
+  let skippedCount = 0;
 
   for (const filePath of opts.markdownPaths) {
     let content = readFileSync(filePath, 'utf8');
@@ -104,8 +113,16 @@ export async function fetchImportImages(
       if (shouldSkipUrl(url)) continue;
       if (urlToRelative[url] !== undefined) continue;
 
-      const result = await downloadImage(url, imagesDir, fetchFn);
-      if (result === null) continue;
+      const result = await downloadImage(
+        url,
+        imagesDir,
+        fetchFn,
+        opts.skipFetchGuard === true,
+      );
+      if (result === null) {
+        skippedCount += 1;
+        continue;
+      }
 
       urlToRelative[url] = `/images/imported/${basename(result.path)}`;
       if (result.downloaded) downloadedCount += 1;
@@ -120,5 +137,5 @@ export async function fetchImportImages(
     }
   }
 
-  return { updatedFiles, downloadedCount };
+  return { updatedFiles, downloadedCount, skippedCount };
 }

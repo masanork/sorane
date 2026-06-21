@@ -19,6 +19,7 @@ export async function deriveWebIndex(
   opts?: {
     readonly contentDir?: string;
     readonly machineReadable?: boolean;
+    readonly snippetOnly?: boolean;
   },
 ): Promise<DeriveResult> {
   if (!existsSync(dbPath)) return { written: false, chunks: 0, bytes: 0 };
@@ -39,6 +40,7 @@ export async function deriveWebIndex(
     const exportOpts = {
       disclosureMap,
       machineReadable: opts?.machineReadable,
+      snippetOnly: opts?.snippetOnly,
     };
 
     if (mode === "hybrid" && store.hasVectors()) {

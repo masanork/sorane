@@ -1,4 +1,5 @@
 import type { SoraneConfig } from "./config.ts";
+import { validateHttpNavUrl } from "./safe-url.ts";
 import { escapeHtml } from "./render.ts";
 import { siteLabels } from "./site-labels.ts";
 
@@ -69,11 +70,13 @@ export function emergencyBannerHtml(
 ): string {
   const labels = siteLabels(lang);
   const message = escapeHtml(banner.message);
+  const safeHref =
+    banner.href && validateHttpNavUrl(banner.href) === undefined ? banner.href : undefined;
   const link =
-    banner.href && banner.linkText
-      ? ` <a href="${escapeHtml(banner.href)}">${escapeHtml(banner.linkText)}</a>`
-      : banner.href
-        ? ` <a href="${escapeHtml(banner.href)}">${escapeHtml(labels.emergencyLink)}</a>`
+    safeHref && banner.linkText
+      ? ` <a href="${escapeHtml(safeHref)}">${escapeHtml(banner.linkText)}</a>`
+      : safeHref
+        ? ` <a href="${escapeHtml(safeHref)}">${escapeHtml(labels.emergencyLink)}</a>`
         : "";
   return (
     `<div class="emergency-banner emergency-banner--${escapeHtml(banner.severity)}" role="alert">` +

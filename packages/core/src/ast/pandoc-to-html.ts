@@ -19,6 +19,7 @@ import type {
   TableRow,
   TableCell,
 } from './pandoc-types.ts';
+import { isSafeUrl } from '../safe-url.ts';
 
 export interface RenderHtmlOpts {
   readonly sanitize: 'strict';
@@ -456,17 +457,6 @@ const EMPTY_SET: ReadonlySet<string> = new Set();
 const SAFE_ATTR_PATTERN = /^(data-[\w-]+|aria-[\w-]+|role|lang|datetime|scope|title)$/;
 function isSafeAttrName(name: string): boolean {
   return SAFE_ATTR_PATTERN.test(name);
-}
-
-const DANGEROUS_SCHEME = /^[a-z][a-z0-9+.-]*:/i;
-const SAFE_SCHEME = /^(https?:|mailto:|#|\/|\.|tel:)/i;
-
-function isSafeUrl(url: string): boolean {
-  const trimmed = url.trim();
-  if (trimmed.length === 0) return true; // empty URL passes through (rehype outputs href="")
-  if (SAFE_SCHEME.test(trimmed)) return true;
-  if (DANGEROUS_SCHEME.test(trimmed)) return false;
-  return true; // 相対パス
 }
 
 /**

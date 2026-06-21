@@ -33,7 +33,9 @@ import type {
   RenderedMarkdown,
   TocEntry,
 } from "../render.ts";
-import { rewriteLinks, sanitizeSchema } from "../render.ts";
+import { rewriteLinks } from "../render.ts";
+import { buildSanitizeSchema } from "../markup/sanitize-schema.ts";
+import { rehypeFilterEmbeds } from "../markup/rehype-filter-embeds.ts";
 import rehypeAutolinkHeadings from "rehype-autolink-headings";
 import rehypeRaw from "rehype-raw";
 import rehypeSanitize from "rehype-sanitize";
@@ -209,6 +211,8 @@ export async function renderMarkdownDocumentAsync(
   Object.assign(diagrams, countDiagramsForConfig(tree, diagramConfig));
   const builtFigures = await compileBuiltFigures(tree, diagramConfig, opts ?? {});
 
+  const schema = buildSanitizeSchema(opts?.sanitize);
+  const allowEmbeds = opts?.sanitize?.strictHtml !== true;
   const processor = unified()
     .use(remarkInjectBuiltFigures(builtFigures))
     .use(remarkRehype, { allowDangerousHtml: true })
@@ -224,12 +228,13 @@ export async function renderMarkdownDocumentAsync(
       },
       content: { type: "text", value: "#" },
     })
-    .use(rehypeCollectOutline(outline))
-    .use(rehypeSanitize, sanitizeSchema)
-    .use(rehypeStringify);
+    .use(rehypeCollectOutline(outline));
+  if (allowEmbeds) processor.use(rehypeFilterEmbeds);
+  processor.use(rehypeSanitize, schema).use(rehypeStringify);
 
   const html = processor
     .stringify(processor.runSync(tree))
+    .toString()
     .replace(/\r\n?/g, "\n")
     .trimEnd();
 

@@ -76,7 +76,6 @@ export function signRasterWithC2pa(
     "-o",
     outputPath,
     "-f",
-    "--no_signing_verify",
   ];
   if (opts.embed === false) args.push("-s");
 
@@ -89,6 +88,9 @@ export function signRasterWithC2pa(
   if (result.status !== 0) {
     const msg = (result.stderr || result.stdout || "").trim();
     return { ok: false, message: msg.length > 0 ? msg : `c2patool exited ${result.status}` };
+  }
+  if (!probeC2paManifest(outputPath, binary)) {
+    return { ok: false, message: "signed output failed C2PA manifest probe" };
   }
   return { ok: true };
 }

@@ -7,7 +7,8 @@ import { SlugLedger } from "../heading-slug.ts";
 import { unified } from "unified";
 import { visit } from "unist-util-visit";
 import { rehypeDiagramPre } from "../diagrams/rehype-diagram-pre.ts";
-import { sanitizeSchema, type TocEntry } from "./sanitize-schema.ts";
+import { rehypeFilterEmbeds } from "./rehype-filter-embeds.ts";
+import { buildSanitizeSchema, type TocEntry, type SanitizeSchemaOptions } from "./sanitize-schema.ts";
 
 function hastToPlainText(node: { type?: string; value?: string; children?: unknown[] }): string {
   if (node.type === "text" && typeof node.value === "string") return node.value;
@@ -48,8 +49,14 @@ function rehypeCollectOutline(outline: TocEntry[]) {
 }
 
 /** Pandoc HTML 断片に見出し id・アンカー・sanitize を適用する。 */
-export function rehypePostProcess(html: string, outline: TocEntry[]): string {
-  return unified()
+export function rehypePostProcess(
+  html: string,
+  outline: TocEntry[],
+  sanitizeOpts?: SanitizeSchemaOptions,
+): string {
+  const schema = buildSanitizeSchema(sanitizeOpts);
+  const allowEmbeds = sanitizeOpts?.strictHtml !== true;
+  const chain = unified()
     .use(rehypeParse, { fragment: true })
     .use(rehypeDiagramPre)
     .use(rehypeHeadingIds)
@@ -62,8 +69,10 @@ export function rehypePostProcess(html: string, outline: TocEntry[]): string {
       },
       content: { type: "text", value: "#" },
     })
-    .use(rehypeCollectOutline(outline))
-    .use(rehypeSanitize, sanitizeSchema)
+    .use(rehypeCollectOutline(outline));
+  if (allowEmbeds) chain.use(rehypeFilterEmbeds);
+  return chain
+    .use(rehypeSanitize, schema)
     .use(rehypeStringify)
     .processSync(html)
     .toString();

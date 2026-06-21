@@ -21,6 +21,8 @@ export interface RunImportOptions {
   readonly skipDrafts?: boolean;
   /** Strip はてな keyword links in bodies (default on). */
   readonly normalizeHtml?: boolean;
+  /** Remove iframe/script/embed/object from imported HTML bodies. */
+  readonly strictHtml?: boolean;
   /** Apply gjs substitute map from `--glyph-map` (off unless path set). */
   readonly glyphMapPath?: string;
 }
@@ -82,6 +84,7 @@ export function runImport(opts: RunImportOptions): RunImportResult {
     mkdirSync(dirname(abs), { recursive: true });
     const body = normalizeImportBody(entry.body, {
       normalizeHtml: opts.normalizeHtml,
+      strictHtml: opts.strictHtml,
       glyphMap,
     });
     writeFileSync(abs, importEntryToOkfMarkdown({ ...entry, body }), 'utf8');

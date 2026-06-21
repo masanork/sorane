@@ -35,6 +35,7 @@ export function startPreviewServer(
   rootDir: string,
   port: number,
   onListen?: (url: string) => void,
+  host = "127.0.0.1",
 ): Server {
   const root = resolve(rootDir);
   const server = createServer((req, res) => {
@@ -59,8 +60,8 @@ export function startPreviewServer(
     res.writeHead(200, { "Content-Type": type });
     res.end(readFileSync(target));
   });
-  server.listen(port, () => {
-    onListen?.(`http://127.0.0.1:${port}/`);
+  server.listen(port, host, () => {
+    onListen?.(`http://${host}:${port}/`);
   });
   return server;
 }

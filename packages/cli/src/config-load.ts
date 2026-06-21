@@ -1,12 +1,20 @@
-import { existsSync, readFileSync } from "node:fs";
+import { existsSync, readFileSync, statSync } from "node:fs";
 import { resolve } from "node:path";
 import yaml from "js-yaml";
 import { mergeConfig, normalizeOkfConfig, type SoraneConfig } from "@sorane/core";
+
+export const MAX_SORANE_YAML_BYTES = 512 * 1024;
 
 export function loadSoraneConfig(cwd: string): SoraneConfig {
   const path = resolve(cwd, "sorane.yaml");
   if (!existsSync(path)) {
     return mergeConfig({});
+  }
+  const size = statSync(path).size;
+  if (size > MAX_SORANE_YAML_BYTES) {
+    throw new Error(
+      `sorane.yaml is too large (${size} bytes; max ${MAX_SORANE_YAML_BYTES})`,
+    );
   }
   const raw = yaml.load(readFileSync(path, "utf8"), { schema: yaml.CORE_SCHEMA });
   if (raw === null || typeof raw !== "object" || Array.isArray(raw)) {

@@ -46,6 +46,7 @@ export async function runImportCmd(argv: string[]): Promise<void> {
     dryRun,
     skipDrafts: !argv.includes("--include-drafts"),
     normalizeHtml: !argv.includes("--no-normalize-html"),
+    strictHtml: argv.includes("--strict-html"),
     glyphMapPath: parseGlyphMapFlag(argv),
   });
 

@@ -114,6 +114,7 @@ describe("fetchImportImages", () => {
         markdownPaths: result.files,
         staticDir: "static",
         fetchFn,
+        skipFetchGuard: true,
       });
 
       expect(fetchResult.downloadedCount >= 1).toBe(true);

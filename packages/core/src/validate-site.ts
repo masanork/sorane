@@ -20,10 +20,17 @@ import { validateRevisionFindings } from "./revision-history.ts";
 import { validateI18nWarnings } from "./validate-i18n.ts";
 import { okfValidateOptions } from "./okf-config.ts";
 import {
+  redirectValidationOptions,
   validateRedirectCollisions,
   validateRedirectConfigRules,
   validateRedirectFrontmatter,
 } from "./redirects.ts";
+import { validateConfigSecurity } from "./validate-config-security.ts";
+import {
+  linkSchemeGateEnabled,
+  linkSchemeGateSeverity,
+  validateUnsafeLinkFindings,
+} from "./validate-unsafe-links.ts";
 
 export const VALIDATE_JSON_SCHEMA_VERSION = 1 as const;
 
@@ -142,6 +149,9 @@ export function validateSiteContent(
   let errorCount = 0;
   let warningCount = 0;
   const i18n = resolveI18nContext(config.site);
+  const redirectOpts = redirectValidationOptions(config);
+  const linkSchemeEnabled = linkSchemeGateEnabled(config);
+  const linkSchemeSeverity = linkSchemeGateSeverity(config);
 
   for (const abs of walkMarkdown(contentDir)) {
     const rel = relative(contentDir, abs);
@@ -235,11 +245,20 @@ export function validateSiteContent(
         findings.push(warningToFinding(f.category, f.message));
         warningCount++;
       }
+      if (linkSchemeEnabled) {
+        for (const f of validateUnsafeLinkFindings(body, config)) {
+          const linkSeverity: ValidateFindingSeverity =
+            linkSchemeSeverity === "error" ? "error" : "warning";
+          findings.push(findingWithSeverity(linkSeverity, "link", f.message));
+          if (linkSeverity === "error") errorCount++;
+          else warningCount++;
+        }
+      }
       for (const f of validateRevisionFindings(fm)) {
         findings.push(warningToFinding(f.category, f.message));
         warningCount++;
       }
-      for (const f of validateRedirectFrontmatter(fm)) {
+      for (const f of validateRedirectFrontmatter(fm, redirectOpts)) {
         findings.push(findingWithSeverity(f.severity, "redirect", f.message));
         if (f.severity === "error") errorCount++;
         else warningCount++;
@@ -280,8 +299,23 @@ export function validateSiteContent(
     warningCount++;
   }
 
+  const configSecurityFindings = validateConfigSecurity(config);
+  if (configSecurityFindings.length > 0) {
+    const findings: ValidateFinding[] = [];
+    for (const f of configSecurityFindings) {
+      findings.push(f);
+      if (f.severity === "error") errorCount++;
+      else warningCount++;
+    }
+    files.push({
+      file: "sorane.yaml",
+      ok: !findings.some((x) => x.severity === "error"),
+      findings,
+    });
+  }
+
   const redirectConfigFindings = [
-    ...validateRedirectConfigRules(config.build.redirects),
+    ...validateRedirectConfigRules(config.build.redirects, redirectOpts),
     ...validateRedirectCollisions(parsedConcepts, config, i18n),
   ];
   if (redirectConfigFindings.length > 0) {

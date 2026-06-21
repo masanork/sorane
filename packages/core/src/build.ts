@@ -70,8 +70,10 @@ import {
   DEFAULT_DIAGRAMS_CONFIG,
   mergeConfig,
   resolvePermalink,
+  resolveSecurityConfig,
   type SoraneConfig,
 } from "./config.ts";
+import { buildSecurityHeadersFile } from "./security-headers.ts";
 import {
   breadcrumbItemsForPage,
   buildBreadcrumbJsonLd,
@@ -460,9 +462,12 @@ export async function runBuild(opts: BuildOptions): Promise<BuildResult> {
   if (isMermaidBuildEnabled(diagramConfig)) mkdirSync(mermaidOutDir, { recursive: true });
   if (isGraphvizCompileEnabled(diagramConfig)) mkdirSync(graphvizOutDir, { recursive: true });
   const glossaryLinkIndex = buildGlossaryLinkIndex(parsed, config, i18n);
+  const security = resolveSecurityConfig(config);
+  const sanitizeOpts = { strictHtml: security.strict_html || !security.allow_embeds };
   const bodySectionOpts = (rootPrefix: string): BodySectionOptions => ({
     diagrams: diagramConfig,
     glossaryIndex: glossaryLinkIndex,
+    sanitize: sanitizeOpts,
     rootPrefix,
     d2OutDir,
     mermaidOutDir,
@@ -1957,6 +1962,15 @@ export async function runBuild(opts: BuildOptions): Promise<BuildResult> {
     process.stdout.write(`[sorane] redirects: ${redirectRules.length} rule(s) → _redirects\n`);
   }
 
+  if (security.emit_security_headers) {
+    const headersPath = join(outDir, "_headers");
+    const headers = buildSecurityHeadersFile(security, {
+      hybridSearch: searchMode === "hybrid",
+    });
+    writeFileSync(headersPath, headers, "utf8");
+    process.stdout.write("[sorane] security headers → _headers\n");
+  }
+
   if (searchPageRel) {
     try {
       const { emitSearchAssets } = await import("@sorane/search");
@@ -1971,6 +1985,7 @@ export async function runBuild(opts: BuildOptions): Promise<BuildResult> {
         assetBaseUrl: config.search.asset_base_url || undefined,
         contentDir,
         machineReadable: siteAiFlags.machineReadable,
+        snippetOnly: security.search_snippet_only,
         sourceToUrl: (source) => sourceToUrl.get(source) ?? source.replace(/\.md$/i, ".html"),
         onProgress: (message) => process.stdout.write(`[sorane] ${message}\n`),
       });

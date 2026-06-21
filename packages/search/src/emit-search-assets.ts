@@ -15,6 +15,7 @@ export interface EmitSearchAssetsOptions {
   readonly sourceToUrl: (source: string) => string;
   readonly contentDir?: string;
   readonly machineReadable?: boolean;
+  readonly snippetOnly?: boolean;
   readonly repoRoot?: string;
   readonly onProgress?: (message: string) => void;
 }
@@ -44,6 +45,7 @@ export async function emitSearchAssets(
     {
       contentDir: opts.contentDir,
       machineReadable: opts.machineReadable,
+      snippetOnly: opts.snippetOnly,
     },
   );
 

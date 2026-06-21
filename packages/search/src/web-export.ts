@@ -33,7 +33,7 @@ export interface WebIndex {
 }
 
 export interface FtsWebChunk extends WebChunk {
-  readonly text: string;
+  readonly text?: string;
 }
 
 export interface FtsWebIndex {
@@ -132,9 +132,11 @@ export function buildFtsWebIndex(
   opts?: {
     readonly disclosureMap?: ReadonlyMap<string, string>;
     readonly machineReadable?: boolean;
+    readonly snippetOnly?: boolean;
   },
 ): FtsWebIndex {
   const machineReadable = opts?.machineReadable !== false;
+  const snippetOnly = opts?.snippetOnly === true;
   const chunks: FtsWebChunk[] = rows.map((r) => {
     const chunk: FtsWebChunk = {
       source: r.source,
@@ -145,7 +147,7 @@ export function buildFtsWebIndex(
       title: r.title,
       tags: r.tags,
       snippet: toSnippet(r.text),
-      text: r.text,
+      ...(snippetOnly ? {} : { text: r.text }),
     };
     const dst = disclosureForSource(r.source, opts?.disclosureMap, machineReadable);
     if (dst) return { ...chunk, digital_source_type: dst };

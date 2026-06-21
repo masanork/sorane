@@ -7,13 +7,14 @@ import {
 import type { GlossaryLinkIndex } from "./markup/glossary-link-index.ts";
 import { processMarkdownToMdast } from "./markup/process-markdown.ts";
 import { renderMdastToHtml } from "./markup/render-mdast.ts";
-import type { TocEntry } from "./markup/sanitize-schema.ts";
+import type { SanitizeSchemaOptions, TocEntry } from "./markup/sanitize-schema.ts";
 
 export { sanitizeSchema, type TocEntry } from "./markup/sanitize-schema.ts";
 
 export interface RenderOptions {
   readonly diagrams?: DiagramsConfig;
   readonly glossaryIndex?: GlossaryLinkIndex;
+  readonly sanitize?: SanitizeSchemaOptions;
 }
 
 export interface RenderedMarkdown {
@@ -65,7 +66,7 @@ export function renderMarkdownDocument(
     glossaryIndex: opts?.glossaryIndex,
   });
   Object.assign(diagrams, countDiagramsForConfig(tree, diagramConfig));
-  const html = renderMdastToHtml(tree, outline);
+  const html = renderMdastToHtml(tree, outline, opts?.sanitize);
   return {
     html,
     outline,
