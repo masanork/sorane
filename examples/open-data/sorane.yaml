@@ -1,8 +1,8 @@
 site:
   title: "Open Data Example"
-  description: "sorane-okf/0.3 dataset landing page demo"
+  description: "sorane-okf/0.3 demo — dataset, reference, glossary, FAQ, and search"
   base_url: "https://example.pages.dev"
-  lang: ja
+  lang: en
 
 build:
   content_dir: content

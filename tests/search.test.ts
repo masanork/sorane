@@ -181,6 +181,36 @@ This system page should never appear in the search index even with a long enough
   });
 });
 
+describe("open-data example indexing", () => {
+  test("OKF 0.3 型を doc_type で検索できる", async () => {
+    const contentDir = join(import.meta.dirname, "../examples/open-data/content");
+    const dir = mkdtempSync(join(tmpdir(), "sorane-open-data-search-"));
+    const indexPath = join(dir, "index.db");
+    try {
+      const built = await buildSearchIndex({
+        contentDir,
+        indexPath,
+        force: true,
+        embeddings: null,
+      });
+      expect(built.chunks > 0).toBe(true);
+
+      const store = new IndexStore(indexPath);
+      const datasetHits = searchFts(store, "Transit", { docType: "dataset", k: 5 });
+      expect(datasetHits.length > 0).toBe(true);
+
+      const faqHits = searchFts(store, "license", { docType: "faq", k: 5 });
+      expect(faqHits.length > 0).toBe(true);
+
+      const refHits = searchFts(store, "stop_id", { docType: "reference", k: 5 });
+      expect(refHits.length > 0).toBe(true);
+      store.close();
+    } finally {
+      rmSync(dir, { recursive: true, force: true });
+    }
+  });
+});
+
 describe("index + search integration", () => {
   test("FTS でヒットする", async () => {
     const dir = mkdtempSync(join(tmpdir(), "sorane-search-"));

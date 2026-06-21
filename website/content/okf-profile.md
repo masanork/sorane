@@ -74,7 +74,7 @@ distributions:
 本文（データの説明・更新履歴など）
 ```
 
-実例: [examples/open-data/](https://github.com/masanork/sorane/tree/main/examples/open-data)
+実例: [examples/open-data/](https://github.com/masanork/sorane/tree/main/examples/open-data)（[README](https://github.com/masanork/sorane/blob/main/examples/open-data/README.md) に全ページ一覧と `index` / `search` の手順）
 
 ## 用語集・FAQ の例
 

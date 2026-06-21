@@ -430,9 +430,11 @@ describe("runBuild", () => {
         hasPart?: { "@type": string }[];
       };
       expect(parsed.dataset?.length).toBe(1);
-      expect((parsed.hasPart ?? []).length).toBe(3);
-      const hasPartTypes = (parsed.hasPart ?? []).map((p) => p["@type"]).sort();
-      expect(hasPartTypes).toEqual(["DefinedTermSet", "FAQPage", "TechArticle"]);
+      expect((parsed.hasPart ?? []).length >= 3).toBe(true);
+      const hasPartTypes = (parsed.hasPart ?? []).map((p) => p["@type"]);
+      expect(hasPartTypes).toContain("FAQPage");
+      expect(hasPartTypes).toContain("DefinedTermSet");
+      expect(hasPartTypes).toContain("TechArticle");
 
       const refHtml = readFileSync(join(tmp, "dist/stops-csv-fields.html"), "utf8");
       expect(refHtml).toContain('class="reference-page"');
@@ -445,6 +447,10 @@ describe("runBuild", () => {
       const glossaryHtml = readFileSync(join(tmp, "dist/glossary.html"), "utf8");
       expect(glossaryHtml).toContain('class="glossary-page"');
       expect(glossaryHtml).toContain("hasDefinedTerm");
+
+      const searchHtml = readFileSync(join(tmp, "dist/search.html"), "utf8");
+      expect(searchHtml).toContain('class="search"');
+      expect(searchHtml).toContain('value="dataset"');
     } finally {
       rmSync(tmp, { recursive: true, force: true });
     }

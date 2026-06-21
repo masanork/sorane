@@ -50,7 +50,9 @@ Always run with `--json`. Parse stdout as JSON.
 **Severity**
 
 - `error` — must fix before commit (`category: "okf"` is frontmatter / profile)
-- `warning` — fix when practical (`diagram` = diagram alt, `heading` = hierarchy, `image` = image alt, `link` = generic link text, `table` = table headers, `date` = timestamp/updated, `revision` = revisions frontmatter)
+- `warning` — fix when practical:
+  - `diagram` / `heading` / `image` / `link` / `table` / `date` / `revision` — a11y and metadata
+  - `faq` / `glossary` / `reference` / `dataset` — sorane-okf/0.3 body and open-data structure (0.3 only)
 
 **Workflow**
 
@@ -143,6 +145,28 @@ profile: sorane-okf/0.1
 
 Body in Markdown. Start headings at `##` (page title is already h1).
 ```
+
+### sorane-okf/0.3 types (summary)
+
+| `type` | Body pattern | Notes |
+|--------|--------------|-------|
+| `dataset` | prose + optional `# Schema` | Requires `description`, `resource`, `license`, `publisher`, `distributions` |
+| `reference` | GFM tables, enums | `description` and `resource` recommended |
+| `glossary` | `## Term {#id}` per entry | Or `terms:` in frontmatter when body has no `##` |
+| `faq` | `## Question?` then answer | One question per `##` heading |
+
+Full examples: [examples/open-data/](https://github.com/masanork/sorane/tree/main/examples/open-data) in the sorane repo.
+
+### Search (optional)
+
+Add `content/search.md` with `view: search`, then:
+
+```bash
+npx @sorane/cli index --cwd . --force
+npx @sorane/cli build --cwd . --clean
+```
+
+Search UI facets include `article`, `dataset`, `reference`, `glossary`, and `faq`. Dataset pages index `license:` / `format:` tags for CLI `--tag`.
 
 ## Agent workflow (checklist)
 

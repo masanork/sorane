@@ -113,6 +113,16 @@ npx @sorane/cli index --cwd examples/minimal --force --hybrid
 
 Add a search page with `view: search` in frontmatter (see `examples/minimal/content/search.md`).
 
+**OKF 0.3 open-data demo** (`dataset`, `reference`, `glossary`, `faq`, search facets):
+
+```bash
+npx @sorane/cli validate --cwd examples/open-data --json
+npx @sorane/cli index --cwd examples/open-data --force
+npx @sorane/cli build --cwd examples/open-data --clean
+```
+
+See [examples/open-data/README.md](examples/open-data/README.md).
+
 ```yaml
 search:
   index: .sorane/index.db          # FTS (default)

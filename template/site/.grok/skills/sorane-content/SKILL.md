@@ -29,6 +29,7 @@ Parse JSON stdout:
 - Treat `warning` findings as fixes when practical:
   - `diagram` / `heading` / `image` / `link` — a11y
   - `table` / `date` / `revision` — structure and metadata
+  - `faq` / `glossary` / `reference` / `dataset` — OKF 0.3 page shapes (when `profile: sorane-okf/0.3`)
 
 ## Full publish loop
 
@@ -47,6 +48,16 @@ npx @sorane/cli build --cwd . --clean
 - **i18n:** default locale in `content/`; others under `content/{path_prefix}/`; optional `translation_key` to link siblings
 - **revisions:** optional `[{ date, summary }]` on articles (newest first); `validate` warns on bad shape
 - **emergency / hosting:** edit `sorane.yaml` only (`site.emergency`, `site.hosting.cloudflare`); sorane does not inject analytics JS
+- **0.3 templates:** see `examples/open-data/` in the sorane repo (dataset landing, reference table, glossary/faq sections, search facets)
+
+## OKF 0.3 quick reference
+
+| type | Required / recommended |
+|------|------------------------|
+| `dataset` | `description`, `resource`, `license`, `publisher`, `distributions[]` |
+| `reference` | `title`; `description`, `resource`, GFM table recommended |
+| `glossary` | `## Term {#id}` sections or `terms:` YAML |
+| `faq` | `## Question?` sections |
 
 ## On validate failure
 

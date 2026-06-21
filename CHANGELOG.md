@@ -11,7 +11,7 @@ All notable changes to sorane are documented here. Versioning follows [SemVer](h
 - Reference page template (`type: reference`): source metadata block, table-friendly `.reference-*` CSS, `TechArticle` JSON-LD with `isBasedOn`
 - Search integration for OKF 0.3 types: `faq` / `glossary` section chunking, `reference` table text, `dataset` overview + `license:` / `format:` tags; UI and CLI `--type` facets for all types
 - `validate --json` categories `faq`, `glossary`, `reference`, and `dataset` for structure / open-data warnings
-- `examples/open-data/content/faq.md`, `glossary.md`, and `stops-csv-fields.md` demo pages
+- `examples/open-data/` polish: README, AGENTS.md, landing index, `search.md`, and agent doc updates (`template/site/AGENTS.md`, sorane-content skill)
 
 ## [0.2.8] - 2026-06-21
 
