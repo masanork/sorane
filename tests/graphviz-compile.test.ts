@@ -32,6 +32,7 @@ describe("isGraphvizCompileEnabled", () => {
     expect(
       isGraphvizCompileEnabled({
         ...DEFAULT_DIAGRAMS_CONFIG,
+        enabled: true,
         graphviz: { enabled: true },
       }),
     ).toBe(true);

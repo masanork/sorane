@@ -22,7 +22,7 @@ You edit a **sorane** static site: Markdown + YAML frontmatter in `content/`, co
 ├── content/
 │   ├── index.md           ← landing (type: index)
 │   ├── article/           ← posts (type: article)
-│   └── search.md          ← optional FTS search UI (view: search)
+│   └── search.md          ← optional dedicated search page (view: search)
 └── dist/                  ← build output (gitignored)
 ```
 
@@ -30,9 +30,12 @@ You edit a **sorane** static site: Markdown + YAML frontmatter in `content/`, co
 
 ```bash
 npx @sorane/cli validate --cwd . --json
+npm install @sorane/search                 # before index/search (or accept CLI install prompt)
 npx @sorane/cli index --cwd . --force    # if content/search.md exists
 npx @sorane/cli build --cwd . --clean
 ```
+
+This template sets `preset: blog` in `sorane.yaml` (lite outputs, no diagrams/archives by default). For full OKF/agent outputs use `preset: okf-site` — see https://sorane.dev/configuration.html#プリセット
 
 Fork / monorepo with sorane checkout: set `SORANE_ROOT` and use `node "$SORANE_ROOT/packages/cli/bin/sorane.mjs"` instead.
 
@@ -160,6 +163,17 @@ Full examples: [examples/open-data/](https://github.com/masanork/sorane/tree/mai
 
 ### Search (optional)
 
+Install `@sorane/search` when using search commands or a search page.
+
+**Two UI layers:**
+
+| Layer | When | Notes |
+|-------|------|-------|
+| Header search | After `sorane index`, on all pages | Compact; no type facet |
+| `content/search.md` (`view: search`) | Optional dedicated page | Full UI + OKF type facets + `SearchAction` URL |
+
+Small blogs can omit `search.md` and rely on header search only. Keep `search.md` for open-data / gov sites (facets, intro copy).
+
 Add `content/search.md` with `view: search`, then:
 
 ```bash
@@ -187,7 +201,7 @@ Search UI facets include `article`, `dataset`, `reference`, `glossary`, and `faq
 
 ## Machine-readable outputs (after build)
 
-`dist/llms.txt`, `catalog.jsonld`, `okf/bundle.tar.gz`, per-page `.md` alternates — use these to answer questions about the **published** site.
+With `preset: blog` (this template), dist is mostly HTML + `feed.xml` / `sitemap.xml` / `robots.txt`. Full agent outputs (`llms.txt`, `catalog.jsonld`, `okf/bundle.tar.gz`, per-page `.md`) require `preset: okf-site` or explicit `build.outputs` in `sorane.yaml`.
 
 ## Docs
 

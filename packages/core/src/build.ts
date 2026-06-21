@@ -1,5 +1,5 @@
-import { createFontProcessor, plainTextFromHtml } from "@sorane/font";
-import { emitSearchAssets } from "@sorane/search";
+import { plainTextFromHtml } from "./plain-text.ts";
+import { resolveBuildOutputs } from "./presets.ts";
 import {
   parseConcept,
   buildBundleEntries,
@@ -366,6 +366,7 @@ export async function runBuild(opts: BuildOptions): Promise<BuildResult> {
   const startedAt = performance.now();
   const { cwd } = opts;
   const config = mergeConfig(opts.config);
+  const buildOutputs = resolveBuildOutputs(config.build.outputs);
   const okfOpts = okfValidateOptions(config);
   const contentDir = resolve(cwd, config.build.content_dir);
   const outDir = resolve(cwd, config.build.out_dir);
@@ -377,7 +378,9 @@ export async function runBuild(opts: BuildOptions): Promise<BuildResult> {
   if (opts.clean && existsSync(outDir)) {
     rmSync(outDir, { recursive: true, force: true });
   }
-  mkdirSync(join(outDir, "okf"), { recursive: true });
+  if (buildOutputs.okf_bundle) {
+    mkdirSync(join(outDir, "okf"), { recursive: true });
+  }
   mkdirSync(join(outDir, "assets"), { recursive: true });
 
   const mdFiles = walkMarkdown(contentDir);
@@ -488,7 +491,35 @@ export async function runBuild(opts: BuildOptions): Promise<BuildResult> {
   const docsMode = docsNav.length > 0;
   const docsHrefSet = new Set(docsNav.map((item) => item.href));
 
-  const fontProcessor = await createFontProcessor(cwd, config.fonts, outDir);
+  type FontProcessorType = {
+    fontCssForPage: (opts: {
+      body: string;
+      title: string;
+      extraText: string;
+      frontmatter: Record<string, unknown>;
+      rootPrefix: string;
+    }) => Promise<string | undefined>;
+  };
+  let fontProcessor: FontProcessorType | null = null;
+  if (config.fonts.enabled) {
+    try {
+      const { createFontProcessor } = await import("@sorane/font");
+      fontProcessor = await createFontProcessor(cwd, config.fonts, outDir);
+    } catch (err) {
+      const { isOptionalModuleMissing, warnOptionalPackageMissing } = await import(
+        "./optional-dep.ts"
+      );
+      if (isOptionalModuleMissing(err)) {
+        warnOptionalPackageMissing(
+          { packageName: "@sorane/font", feature: "font embedding (fonts.enabled)" },
+          cwd,
+        );
+        process.stderr.write("[sorane] skipping font embedding\n");
+      } else {
+        throw err;
+      }
+    }
+  }
 
   const sourceToUrl = new Map<string, string>();
   let searchPageRel: string | undefined;
@@ -507,17 +538,28 @@ export async function runBuild(opts: BuildOptions): Promise<BuildResult> {
   let searchIndexReady = false;
   const searchMode = config.search.mode ?? "fts";
   if (searchPageRel && existsSync(indexDbPath)) {
-    const { IndexStore } = await import("@sorane/search");
-    const probe = new IndexStore(indexDbPath);
-    const { chunks } = probe.counts();
-    if (chunks > 0) {
-      if (searchMode === "hybrid") {
-        searchIndexReady = probe.hasVectors();
-      } else {
-        searchIndexReady = true;
+    try {
+      const { IndexStore } = await import("@sorane/search");
+      const probe = new IndexStore(indexDbPath);
+      const { chunks } = probe.counts();
+      if (chunks > 0) {
+        if (searchMode === "hybrid") {
+          searchIndexReady = probe.hasVectors();
+        } else {
+          searchIndexReady = true;
+        }
       }
+      probe.close();
+    } catch (err) {
+      const { isOptionalModuleMissing, warnOptionalPackageMissing } = await import(
+        "./optional-dep.ts"
+      );
+      if (!isOptionalModuleMissing(err)) throw err;
+      warnOptionalPackageMissing(
+        { packageName: "@sorane/search", feature: "search index probing" },
+        cwd,
+      );
     }
-    probe.close();
   }
   const headerSearchEnabled = searchIndexReady;
   const searchNavPath = headerSearchEnabled || !searchIndexReady ? undefined : searchPageRel;
@@ -1547,26 +1589,32 @@ export async function runBuild(opts: BuildOptions): Promise<BuildResult> {
           : undefined,
     };
   });
-  writeFileSync(
-    join(outDir, "feed.xml"),
-    buildAtomFeed(feedEntries, {
-      siteTitle: config.site.title,
-      siteDescription: config.site.description,
-      baseUrl,
-    }),
-    "utf8",
-  );
+  if (buildOutputs.feed) {
+    writeFileSync(
+      join(outDir, "feed.xml"),
+      buildAtomFeed(feedEntries, {
+        siteTitle: config.site.title,
+        siteDescription: config.site.description,
+        baseUrl,
+      }),
+      "utf8",
+    );
+  }
 
-  writeFileSync(
-    join(outDir, "robots.txt"),
-    buildRobotsTxt(baseUrl, { disallow: siteFindability.disallow }),
-    "utf8",
-  );
-  writeFileSync(
-    join(outDir, "sitemap.xml"),
-    buildSitemapXml(siteEntries, baseUrl),
-    "utf8",
-  );
+  if (buildOutputs.robots) {
+    writeFileSync(
+      join(outDir, "robots.txt"),
+      buildRobotsTxt(baseUrl, { disallow: siteFindability.disallow }),
+      "utf8",
+    );
+  }
+  if (buildOutputs.sitemap) {
+    writeFileSync(
+      join(outDir, "sitemap.xml"),
+      buildSitemapXml(siteEntries, baseUrl),
+      "utf8",
+    );
+  }
   const dcatCatalogEnabled = config.site.open_data?.dcat_catalog === true;
   const llmsExtraSections = [
     llmsContactSection({
@@ -1576,19 +1624,21 @@ export async function runBuild(opts: BuildOptions): Promise<BuildResult> {
     }).join("\n"),
     llmsHostingSection(config.site, baseUrl).join("\n"),
   ].filter((s) => s.length > 0);
-  writeFileSync(
-    join(outDir, "llms.txt"),
-    buildLlmsTxt({
-      siteTitle: config.site.title,
-      siteDescription: config.site.description,
-      baseUrl,
-      aiLabeledCount: siteAiFlags.machineReadable ? aiLabeledCount : undefined,
-      diagramsEnabled: diagramConfig.enabled !== false,
-      dcatCatalog: dcatCatalogEnabled,
-      extraSections: llmsExtraSections,
-    }),
-    "utf8",
-  );
+  if (buildOutputs.llms_txt) {
+    writeFileSync(
+      join(outDir, "llms.txt"),
+      buildLlmsTxt({
+        siteTitle: config.site.title,
+        siteDescription: config.site.description,
+        baseUrl,
+        aiLabeledCount: siteAiFlags.machineReadable ? aiLabeledCount : undefined,
+        diagramsEnabled: diagramConfig.enabled !== false,
+        dcatCatalog: dcatCatalogEnabled,
+        extraSections: llmsExtraSections,
+      }),
+      "utf8",
+    );
+  }
 
   const cloudflareOps = buildCloudflareOpsManifest(config.site);
   if (cloudflareOps) {
@@ -1600,23 +1650,25 @@ export async function runBuild(opts: BuildOptions): Promise<BuildResult> {
       "utf8",
     );
   }
-  writeFileSync(
-    join(outDir, "catalog.jsonld"),
-    buildCatalogJsonLd(catalogInputs, config.site.title, baseUrl, {
-      machineReadable: siteAiFlags.machineReadable,
-      docsMode,
-      translationMap,
-      publisher: siteOrganization
-        ? {
-            name: siteOrganization.name,
-            url: siteOrganization.url,
-            type: siteOrganization.type,
-          }
-        : undefined,
-    }),
-    "utf8",
-  );
-  if (dcatCatalogEnabled) {
+  if (buildOutputs.catalog) {
+    writeFileSync(
+      join(outDir, "catalog.jsonld"),
+      buildCatalogJsonLd(catalogInputs, config.site.title, baseUrl, {
+        machineReadable: siteAiFlags.machineReadable,
+        docsMode,
+        translationMap,
+        publisher: siteOrganization
+          ? {
+              name: siteOrganization.name,
+              url: siteOrganization.url,
+              type: siteOrganization.type,
+            }
+          : undefined,
+      }),
+      "utf8",
+    );
+  }
+  if (dcatCatalogEnabled && buildOutputs.catalog) {
     const dcatJson = buildCatalogDcatJsonLd(
       catalogInputs,
       config.site.title,
@@ -1656,7 +1708,9 @@ export async function runBuild(opts: BuildOptions): Promise<BuildResult> {
         slug: slugFromRel(p.relPath),
       })),
   );
-  writeFileSync(join(outDir, "okf/bundle.tar.gz"), gzipSync(tarBytes(bundleEntries)));
+  if (buildOutputs.okf_bundle) {
+    writeFileSync(join(outDir, "okf/bundle.tar.gz"), gzipSync(tarBytes(bundleEntries)));
+  }
 
   const templateCss = resolveThemeCss(cwd);
   if (templateCss) {
@@ -1665,9 +1719,11 @@ export async function runBuild(opts: BuildOptions): Promise<BuildResult> {
     writeFileSync(join(outDir, "assets/main.css"), DEFAULT_CSS, "utf8");
   }
 
-  const aiLabelsSrc = resolveThemeAssetDir(cwd, "ai-labels");
-  if (aiLabelsSrc) {
-    cpSync(aiLabelsSrc, join(outDir, "assets/ai-labels"), { recursive: true });
+  if (hasAnyDisclosure) {
+    const aiLabelsSrc = resolveThemeAssetDir(cwd, "ai-labels");
+    if (aiLabelsSrc) {
+      cpSync(aiLabelsSrc, join(outDir, "assets/ai-labels"), { recursive: true });
+    }
   }
 
   emitDiagramAssets({
@@ -1770,20 +1826,38 @@ export async function runBuild(opts: BuildOptions): Promise<BuildResult> {
     onProgress: (message) => process.stdout.write(`[sorane] ${message}\n`),
   });
 
-  await emitSearchAssets({
-    cwd,
-    outDir,
-    indexPath: indexDbPath,
-    mode: searchMode,
-    modelRoot: config.search.model,
-    modelId: config.search.model_id,
-    bundleModel: config.search.bundle_model,
-    assetBaseUrl: config.search.asset_base_url || undefined,
-    contentDir,
-    machineReadable: siteAiFlags.machineReadable,
-    sourceToUrl: (source) => sourceToUrl.get(source) ?? source.replace(/\.md$/i, ".html"),
-    onProgress: (message) => process.stdout.write(`[sorane] ${message}\n`),
-  });
+  if (searchPageRel) {
+    try {
+      const { emitSearchAssets } = await import("@sorane/search");
+      await emitSearchAssets({
+        cwd,
+        outDir,
+        indexPath: indexDbPath,
+        mode: searchMode,
+        modelRoot: config.search.model,
+        modelId: config.search.model_id,
+        bundleModel: config.search.bundle_model,
+        assetBaseUrl: config.search.asset_base_url || undefined,
+        contentDir,
+        machineReadable: siteAiFlags.machineReadable,
+        sourceToUrl: (source) => sourceToUrl.get(source) ?? source.replace(/\.md$/i, ".html"),
+        onProgress: (message) => process.stdout.write(`[sorane] ${message}\n`),
+      });
+    } catch (err) {
+      const { isOptionalModuleMissing, warnOptionalPackageMissing } = await import(
+        "./optional-dep.ts"
+      );
+      if (isOptionalModuleMissing(err)) {
+        warnOptionalPackageMissing(
+          { packageName: "@sorane/search", feature: "search page assets" },
+          cwd,
+        );
+        process.stderr.write("[sorane] skipping search assets\n");
+      } else {
+        throw err;
+      }
+    }
+  }
 
   return { pages: builtPages, errors: 0, durationMs: performance.now() - startedAt };
 }

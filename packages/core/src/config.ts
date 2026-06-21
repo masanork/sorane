@@ -73,11 +73,15 @@ export interface DiagramsConfig {
 }
 
 export const DEFAULT_DIAGRAMS_CONFIG: Required<DiagramsConfig> = {
-  enabled: true,
+  enabled: false,
   mermaid: { mode: "client", version: "~11.15.0", mmdc: "mmdc" },
   d2: { enabled: false, binary: "d2" },
   graphviz: { enabled: false, binary: "dot" },
 };
+
+import type { BuildOutputsConfig, PresetLayer } from "./presets.ts";
+
+export type { BuildOutputsConfig, SoranePreset } from "./presets.ts";
 
 export interface ImageMetadataConfig {
   readonly enabled?: boolean;
@@ -207,6 +211,8 @@ export interface SoraneConfig {
     readonly c2pa?: C2paConfig;
     /** `validate` の公的品質ゲート（warning のみ、ビルドは継続） */
     readonly quality?: QualityGateConfig;
+    /** 機械可読・フィード等の出力（`preset` と併用可） */
+    readonly outputs?: BuildOutputsConfig;
   };
   readonly fonts: {
     readonly enabled: boolean;
@@ -247,14 +253,23 @@ export const DEFAULT_CONFIG: SoraneConfig = {
       featured_mode: "excerpt",
       excerpt_length: 400,
       show_list_descriptions: false,
-      archives: true,
-      tags: true,
+      archives: false,
+      tags: false,
     },
     ai_disclosure: {},
     diagrams: DEFAULT_DIAGRAMS_CONFIG,
     image_metadata: {},
     c2pa: { enabled: false, embed: true, binary: "c2patool" },
     quality: {},
+    outputs: {
+      md_alternate: false,
+      okf_bundle: false,
+      catalog: false,
+      llms_txt: false,
+      feed: true,
+      sitemap: true,
+      robots: true,
+    },
   },
   fonts: {
     enabled: false,
@@ -274,50 +289,72 @@ export const DEFAULT_CONFIG: SoraneConfig = {
   },
 };
 
-export function mergeConfig(partial: Partial<SoraneConfig>): SoraneConfig {
+import {
+  mergeOutputsConfig,
+  presetPartial,
+  type SoranePreset,
+} from "./presets.ts";
+
+export type MergeConfigInput = Partial<SoraneConfig> & { readonly preset?: SoranePreset };
+
+export function mergeConfig(partial: MergeConfigInput = {}): SoraneConfig {
+  const { preset, ...rest } = partial;
+  const presetLayer: PresetLayer = preset ? presetPartial(preset) : {};
+  const site = { ...DEFAULT_CONFIG.site, ...rest.site };
+  const buildPartial = { ...presetLayer.build, ...rest.build };
   return {
-    site: { ...DEFAULT_CONFIG.site, ...partial.site },
+    site,
     build: {
       ...DEFAULT_CONFIG.build,
-      ...partial.build,
-      blog: { ...DEFAULT_CONFIG.build.blog, ...partial.build?.blog },
-      ai_disclosure: partial.build?.ai_disclosure
-        ? { ...DEFAULT_CONFIG.build.ai_disclosure, ...partial.build.ai_disclosure }
+      ...buildPartial,
+      blog: {
+        ...DEFAULT_CONFIG.build.blog,
+        ...presetLayer.build?.blog,
+        ...rest.build?.blog,
+      },
+      ai_disclosure: buildPartial.ai_disclosure
+        ? { ...DEFAULT_CONFIG.build.ai_disclosure, ...buildPartial.ai_disclosure }
         : DEFAULT_CONFIG.build.ai_disclosure,
-      diagrams: partial.build?.diagrams
+      diagrams: buildPartial.diagrams
         ? {
             ...DEFAULT_DIAGRAMS_CONFIG,
-            ...partial.build.diagrams,
+            ...buildPartial.diagrams,
             mermaid: {
               ...DEFAULT_DIAGRAMS_CONFIG.mermaid,
-              ...partial.build.diagrams.mermaid,
+              ...buildPartial.diagrams.mermaid,
             },
             d2: {
               ...DEFAULT_DIAGRAMS_CONFIG.d2,
-              ...partial.build.diagrams.d2,
+              ...buildPartial.diagrams.d2,
             },
             graphviz: {
               ...DEFAULT_DIAGRAMS_CONFIG.graphviz,
-              ...partial.build.diagrams.graphviz,
+              ...buildPartial.diagrams.graphviz,
             },
           }
         : DEFAULT_DIAGRAMS_CONFIG,
-      image_metadata: partial.build?.image_metadata
-        ? { ...DEFAULT_CONFIG.build.image_metadata, ...partial.build.image_metadata }
+      image_metadata: buildPartial.image_metadata
+        ? { ...DEFAULT_CONFIG.build.image_metadata, ...buildPartial.image_metadata }
         : DEFAULT_CONFIG.build.image_metadata,
-      c2pa: partial.build?.c2pa
-        ? { ...DEFAULT_CONFIG.build.c2pa, ...partial.build.c2pa }
+      c2pa: buildPartial.c2pa
+        ? { ...DEFAULT_CONFIG.build.c2pa, ...buildPartial.c2pa }
         : DEFAULT_CONFIG.build.c2pa,
-      quality: partial.build?.quality
-        ? { ...DEFAULT_CONFIG.build.quality, ...partial.build.quality }
+      quality: buildPartial.quality
+        ? { ...DEFAULT_CONFIG.build.quality, ...buildPartial.quality }
         : DEFAULT_CONFIG.build.quality,
+      outputs: mergeOutputsConfig(
+        mergeOutputsConfig(DEFAULT_CONFIG.build.outputs, presetLayer.build?.outputs),
+        rest.build?.outputs,
+      ),
     },
-    fonts: { ...DEFAULT_CONFIG.fonts, ...partial.fonts },
-    search: { ...DEFAULT_CONFIG.search, ...partial.search },
-    docs: partial.docs ? { nav: partial.docs.nav } : undefined,
-    okf: partial.okf,
+    fonts: { ...DEFAULT_CONFIG.fonts, ...rest.fonts },
+    search: { ...DEFAULT_CONFIG.search, ...rest.search },
+    docs: rest.docs ? { nav: rest.docs.nav } : undefined,
+    okf: rest.okf,
   };
 }
+
+
 
 /** permalink テンプレートから出力 HTML ファイル名を決める。 */
 export function resolvePermalink(

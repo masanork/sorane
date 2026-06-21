@@ -1,5 +1,5 @@
 import type { OkfConcept } from "@sorane/okf";
-import { plainTextFromHtml } from "@sorane/font";
+import { plainTextFromHtml } from "./plain-text.ts";
 import type { AiDisclosure } from "./ai-disclosure.ts";
 import { aiDisclosureJsonLdFields } from "./ai-disclosure.ts";
 import {

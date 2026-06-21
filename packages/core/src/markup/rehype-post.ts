@@ -3,7 +3,7 @@ import rehypeAutolinkHeadings from "rehype-autolink-headings";
 import rehypeParse from "rehype-parse";
 import rehypeSanitize from "rehype-sanitize";
 import rehypeStringify from "rehype-stringify";
-import { SlugLedger } from "@sorane/search";
+import { SlugLedger } from "../heading-slug.ts";
 import { unified } from "unified";
 import { visit } from "unist-util-visit";
 import { rehypeDiagramPre } from "../diagrams/rehype-diagram-pre.ts";

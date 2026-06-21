@@ -11,6 +11,7 @@ import {
   emergencyBannerHtml,
   resolveEmergencyBanner,
 } from "./emergency-banner.ts";
+import { resolveBuildOutputs } from "./presets.ts";
 
 function pageOgImage(
   frontmatter: Record<string, unknown>,
@@ -49,7 +50,7 @@ export interface EmitPageOptions {
   readonly localeId?: string;
 }
 
-export function emitPage(opts: EmitPageOptions): { mdOutRel: string; canonicalUrl?: string } {
+export function emitPage(opts: EmitPageOptions): { mdOutRel?: string; canonicalUrl?: string } {
   const outAbs = join(opts.outDir, opts.outRel);
   mkdirSync(dirname(outAbs), { recursive: true });
 
@@ -63,8 +64,11 @@ export function emitPage(opts: EmitPageOptions): { mdOutRel: string; canonicalUr
   const canonicalUrl =
     opts.baseUrl.length > 0 ? `${opts.baseUrl.replace(/\/$/, "")}/${opts.outRel}` : undefined;
 
-  const mdOutRel = opts.outRel.replace(/\.html$/, ".md");
-  writeFileSync(join(opts.outDir, mdOutRel), conceptToOkfMarkdown(opts.concept), "utf8");
+  const writeMd = resolveBuildOutputs(opts.config.build.outputs).md_alternate;
+  const mdOutRel = writeMd ? opts.outRel.replace(/\.html$/, ".md") : undefined;
+  if (writeMd && mdOutRel) {
+    writeFileSync(join(opts.outDir, mdOutRel), conceptToOkfMarkdown(opts.concept), "utf8");
+  }
 
   const extraHead = [
     ...(opts.extraHead ?? []),
@@ -87,11 +91,12 @@ export function emitPage(opts: EmitPageOptions): { mdOutRel: string; canonicalUr
     emergencyBannerHtml: emergency ? emergencyBannerHtml(emergency, pageLang) : undefined,
     hreflangAlternates: opts.hreflangAlternates,
     ogLocaleAlternates: opts.ogLocaleAlternates,
-    feedPath: "feed.xml",
+    feedPath: resolveBuildOutputs(opts.config.build.outputs).feed ? "feed.xml" : undefined,
     showArchiveNav: opts.showArchiveNav,
     searchPath: opts.searchPath,
     pageKind: opts.pageKind ?? (opts.isIndex ? "website" : "article"),
-    machineSources: [{ href: mdOutRel, type: "text/markdown" }],
+    machineSources:
+      writeMd && mdOutRel ? [{ href: mdOutRel, type: "text/markdown" }] : undefined,
     extraHead: extraHead.length > 0 ? extraHead : undefined,
     docsLayout: opts.docsLayout,
     docsSidebarHtml: opts.docsSidebarHtml,

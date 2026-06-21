@@ -31,7 +31,7 @@ describe("runBuild (mermaid.mode: build)", () => {
         config: mergeConfig({
           build: {
             out_dir: outDir,
-            diagrams: { mermaid: { mode: "build" } },
+            diagrams: { enabled: true, mermaid: { mode: "build" } },
           },
         } as Partial<SoraneConfig>),
         clean: true,

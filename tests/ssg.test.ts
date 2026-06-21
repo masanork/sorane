@@ -495,14 +495,14 @@ describe("runBuild", () => {
       expect(result.durationMs >= 0).toBe(true);
       expect(existsSync(join(tmp, "dist/index.html"))).toBe(true);
       expect(existsSync(join(tmp, "dist/2025-01-01-hello.html"))).toBe(true);
-      expect(existsSync(join(tmp, "dist/archive/index.html"))).toBe(true);
-      expect(existsSync(join(tmp, "dist/2025-01-01-hello.md"))).toBe(true);
+      expect(existsSync(join(tmp, "dist/archive/index.html"))).toBe(false);
+      expect(existsSync(join(tmp, "dist/2025-01-01-hello.md"))).toBe(false);
       expect(existsSync(join(tmp, "dist/404.html"))).toBe(true);
-      expect(existsSync(join(tmp, "dist/okf/bundle.tar.gz"))).toBe(true);
+      expect(existsSync(join(tmp, "dist/okf/bundle.tar.gz"))).toBe(false);
       expect(existsSync(join(tmp, "dist/feed.xml"))).toBe(true);
       const html = readFileSync(join(tmp, "dist/2025-01-01-hello.html"), "utf8");
       expect(html).toContain("Hello OKF");
-      expect(html).toContain('type="text/markdown"');
+      expect(html.includes('type="text/markdown"')).toBe(false);
     } finally {
       rmSync(tmp, { recursive: true, force: true });
     }

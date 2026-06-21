@@ -23,6 +23,54 @@ build:
 
 記事ごとに `og_image` frontmatter で上書きできます（絶対 URL またはサイトルート相対パス）。
 
+## プリセット
+
+サイトの規模に合わせた既定値をまとめて適用します。`sorane.yaml` の先頭に書きます。
+
+```yaml
+preset: blog        # 軽量 SSG（preset 省略時と同じ系統）
+preset: okf-site    # 機械可読出力・図表・アーカイブ（sorane.dev / open-data 向け）
+preset: gov         # okf-site + 厳格な validate 品質ゲート
+```
+
+| 項目 | 省略 / `blog` | `okf-site` / `gov` |
+|------|---------------|---------------------|
+| `build.blog.archives` / `tags` | `false` | `true` |
+| `build.diagrams.enabled` | `false` | `true` |
+| `catalog.jsonld` / `llms.txt` / `okf/bundle` / 各ページ `.md` | off | on |
+| `feed.xml` / `sitemap.xml` / `robots.txt` | on | on |
+| `build.quality`（`gov` のみ） | 既定 | 画像 alt・リンク文言などを強化（`heading: error`） |
+
+既存の本番サイトで v0.4 以降に出力が減った場合は `preset: okf-site` を追加するか、下記 `build.outputs` で個別に有効化してください。
+
+### `build.outputs`（個別上書き）
+
+```yaml
+build:
+  outputs:
+    md_alternate: true    # 各 HTML と並ぶ .md 代替
+    okf_bundle: true      # okf/bundle.tar.gz
+    catalog: true         # catalog.jsonld
+    llms_txt: true
+    feed: true
+    sitemap: true
+    robots: true
+```
+
+未指定のキーは lite 既定（`feed` / `sitemap` / `robots` のみ on）です。`preset: okf-site` は上表のフル出力をまとめて有効にします。
+
+## オプショナル npm パッケージ
+
+`@sorane/cli` 単体で `build` / `validate` / `watch` / `migrate` / `export` / `import` は動きます。次は **使う機能のときだけ** 追加インストールします。
+
+| パッケージ | 用途 |
+|------------|------|
+| `@sorane/search` | `sorane index` / `sorane search`、検索ページ用 `search-index.json` 等 |
+| `@sorane/font` | `fonts.enabled: true` の WOFF2 サブセット |
+| `mermaid` | `build.diagrams.enabled: true` かつ Mermaid client モード |
+
+未インストール時は `npm install <pkg>`（lockfile に応じて yarn / pnpm）を表示し、TTY ではインストール確認を出します。`sorane index --yes` / `sorane search --yes` で非対話インストールできます。
+
 ## 発見性（findability）
 
 公的サイト向けに JSON-LD・サイトマップ・`llms.txt` を強化します。
@@ -205,9 +253,11 @@ build:
     index_archive_limit: 15
     featured_mode: excerpt   # excerpt | full | off
     excerpt_length: 400
-    archives: true
-    tags: true
+    archives: false          # 既定（preset: okf-site で true）
+    tags: false
 ```
+
+`preset: okf-site` または `gov` では `archives` / `tags` が `true` になります。
 
 ## フォントサブセット
 
@@ -249,14 +299,24 @@ search:
   asset_base_url: ""           # R2 等に ONNX を置く場合
 ```
 
-- `sorane index` … FTS（既定）
+- `sorane index` … FTS（既定）。要 `npm install @sorane/search`
 - `sorane index --hybrid` … ベクトル付きインデックス（要 `npm run fetch-model`）
 
-検索 UI は `view: search` を持つ記事ページで有効になります。
+### 検索 UI（ヘッダー vs 専用ページ）
+
+| | ヘッダー検索 | `content/search.md`（`view: search`） |
+|--|-------------|----------------------------------------|
+| いつ | `sorane index` 後、全ページ（専用ページ除く） | コンテンツがある限り常に `search.html` |
+| UI | コンパクト（種別 facet なし） | フル UI（記事 / dataset / FAQ… の facet） |
+| 用途 | どのページからでもさっと検索 | 絞り込み・説明文・`SearchAction` の安定 URL |
+
+`view: search` の記事があるときだけ検索アセット（`search-index.json` 等）を dist に出力します。小さなブログは `search.md` を省略してヘッダー検索のみでも構いません。open-data / 行政向けでは専用ページを残すのが一般的です。
 
 ## 図表
 
 Markdown のコードフェンスで図を書けます。ソースは `.md` 代替ファイルと OKF バンドルにそのまま残ります。
+
+既定は `build.diagrams.enabled: false`（`preset: okf-site` で `true`）。有効化時は `mermaid` パッケージが必要です（client モード）。
 
 ```yaml
 build:

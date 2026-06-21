@@ -8,6 +8,7 @@ import {
 } from "../packages/core/src/diagrams/diagram-meta.ts";
 import { buildMermaidHead } from "../packages/core/src/diagrams/mermaid-head.ts";
 import { DEFAULT_DIAGRAMS_CONFIG } from "../packages/core/src/config.ts";
+import { DIAGRAMS_ON } from "./_diagrams-config.ts";
 import remarkParse from "remark-parse";
 import { unified } from "unified";
 import type { Root } from "mdast";
@@ -37,7 +38,7 @@ describe("countDiagramsForConfig", () => {
         "```mermaid\na\n```\n\n```mermaid\nb\n```\n\n```d2\nc\n```\n",
       ) as Root;
     const counts = countDiagramsForConfig(tree, {
-      ...DEFAULT_DIAGRAMS_CONFIG,
+      ...DIAGRAMS_ON,
       d2: { enabled: true },
     });
     expect(counts.mermaid).toBe(2);
@@ -49,7 +50,7 @@ describe("countDiagramsForConfig", () => {
       .use(remarkParse)
       .parse("```dot\na -> b\n```\n") as Root;
     const counts = countDiagramsForConfig(tree, {
-      ...DEFAULT_DIAGRAMS_CONFIG,
+      ...DIAGRAMS_ON,
       graphviz: { enabled: true },
     });
     expect(counts.graphviz).toBe(1);
@@ -69,16 +70,14 @@ describe("countDiagramsForConfig", () => {
 
 describe("resolveMermaidMode", () => {
   test("既定は client", () => {
-    expect(resolveMermaidMode(DEFAULT_DIAGRAMS_CONFIG)).toBe("client");
+    expect(resolveMermaidMode(DIAGRAMS_ON)).toBe("client");
   });
 
   test("build / off / disabled", () => {
     expect(
-      resolveMermaidMode({ ...DEFAULT_DIAGRAMS_CONFIG, mermaid: { mode: "build" } }),
+      resolveMermaidMode({ ...DIAGRAMS_ON, mermaid: { mode: "build" } }),
     ).toBe("build");
-    expect(resolveMermaidMode({ ...DEFAULT_DIAGRAMS_CONFIG, mermaid: { mode: "off" } })).toBe(
-      "off",
-    );
+    expect(resolveMermaidMode({ ...DIAGRAMS_ON, mermaid: { mode: "off" } })).toBe("off");
     expect(resolveMermaidMode({ enabled: false })).toBe("off");
   });
 });
@@ -88,7 +87,7 @@ describe("diagramHeadForPage", () => {
     const head = diagramHeadForPage(
       { mermaid: 1, d2: 0, graphviz: 0 },
       "./",
-      DEFAULT_DIAGRAMS_CONFIG,
+      DIAGRAMS_ON,
     );
     expect(head).toBe(buildMermaidHead("./"));
     expect(head).toContain("sorane-mermaid-loader.mjs");
@@ -105,7 +104,7 @@ describe("diagramHeadForPage", () => {
       diagramHeadForPage(
         { mermaid: 1, d2: 0, graphviz: 0 },
         "./",
-        { ...DEFAULT_DIAGRAMS_CONFIG, mermaid: { mode: "off" } },
+        { ...DIAGRAMS_ON, mermaid: { mode: "off" } },
       ),
     ).toBe(undefined);
   });
@@ -115,7 +114,7 @@ describe("diagramHeadForPage", () => {
       diagramHeadForPage(
         { mermaid: 1, d2: 0, graphviz: 0 },
         "./",
-        { ...DEFAULT_DIAGRAMS_CONFIG, mermaid: { mode: "build" } },
+        { ...DIAGRAMS_ON, mermaid: { mode: "build" } },
       ),
     ).toBe(undefined);
   });

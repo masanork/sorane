@@ -14,7 +14,15 @@ export function loadSoraneConfig(cwd: string): SoraneConfig {
   }
   const doc = raw as Record<string, unknown>;
   const okf = normalizeOkfConfig(doc.okf as SoraneConfig["okf"] | undefined);
+  const preset = doc.preset;
+  const presetId =
+    typeof preset === "string" &&
+    (preset === "blog" || preset === "okf-site" || preset === "gov")
+      ? preset
+      : undefined;
+
   return mergeConfig({
+    preset: presetId,
     site: doc.site as SoraneConfig["site"] | undefined,
     build: doc.build as SoraneConfig["build"] | undefined,
     fonts: doc.fonts as SoraneConfig["fonts"] | undefined,

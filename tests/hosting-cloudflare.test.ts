@@ -3,7 +3,7 @@ import { join } from "node:path";
 import { tmpdir } from "node:os";
 import { describe, expect, test } from "./_expect.ts";
 import { runBuild } from "../packages/core/src/build.ts";
-import type { SoraneConfig } from "../packages/core/src/config.ts";
+import { mergeConfig, type SoraneConfig } from "../packages/core/src/config.ts";
 import { buildLlmsTxt } from "../packages/core/src/site-meta.ts";
 import {
   buildCloudflareOpsManifest,
@@ -90,10 +90,15 @@ describe("runBuild cloudflare ops", () => {
     try {
       await runBuild({
         cwd: tmp,
-        config: {
+        config: mergeConfig({
           site: hostingSite,
-          build: { content_dir: "content", out_dir: join(tmp, "dist") },
-        } as Partial<SoraneConfig>,
+          build: {
+            content_dir: "content",
+            out_dir: join(tmp, "dist"),
+            permalink: "{{slug}}.html",
+            outputs: { llms_txt: true },
+          },
+        } as Partial<SoraneConfig>),
         clean: true,
       });
 

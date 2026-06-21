@@ -5,13 +5,13 @@ profile: sorane-okf/0.1
 excludeFromList: true
 ---
 
-## 現状（v0.3.0）
+## 現状（v0.4.0）
 
 | 手段 | 状態 | 用途 |
 |------|------|------|
-| `npx @sorane/cli` | **利用可能** | サイトビルド・検索・検証 |
+| `npx @sorane/cli` | **利用可能** | サイトビルド・検証（検索は `@sorane/search` を追加） |
 | git clone + `npm ci` | **利用可能** | sorane 本体の開発 |
-| GitHub Release タグ | **v0.3.x** | バージョン固定 |
+| GitHub Release タグ | **v0.4.x** | バージョン固定 |
 | Docker イメージ | 未対応 | — |
 
 npm パッケージ: `@sorane/cli`, `@sorane/core`, `@sorane/okf`, `@sorane/search`, `@sorane/font`
@@ -19,13 +19,25 @@ npm パッケージ: `@sorane/cli`, `@sorane/core`, `@sorane/okf`, `@sorane/sear
 ### 使い方
 
 ```bash
-npx @sorane/cli validate --cwd ./my-site --json
-npx @sorane/cli build --cwd ./my-site --clean
+npm install @sorane/cli
+npx sorane validate --cwd ./my-site --json
+npx sorane build --cwd ./my-site --clean
+# 検索まで使う場合:
+npm install @sorane/search
+npx sorane index --cwd ./my-site --force
 ```
 
 本番 CI でビルドの再現性が必要なときだけ `@sorane/cli@x.y.z` で pin します（任意）。
 
 パッケージ一覧: https://www.npmjs.com/org/sorane
+
+### v0.4.0 の主な変更
+
+- **`preset:`** — `blog` / `okf-site` / `gov` でサイト規模に応じた既定値
+- **`build.outputs`** — 機械可読成果物の個別 on/off
+- **軽量既定（breaking）** — 図表 off、アーカイブ/tag off、lite outputs。既存本番サイトは `preset: okf-site` を推奨
+- **オプショナル npm** — `@sorane/search` / `@sorane/font` / `mermaid` を必要時インストール（CLI が案内・`--yes` 対応）
+- `@sorane/cli-lite` 廃止（単一 CLI に統合）
 
 ### v0.3.0 の主な変更
 
@@ -68,8 +80,7 @@ masanork/sorane
 **コンテンツ分離** — サイト repo から npm で sorane を呼び出す:
 
 ```yaml
-- run: npx @sorane/cli build --cwd . --clean
-# 再現性が必要なら: npx @sorane/cli@0.2.8 build --cwd . --clean
+- run: npx @sorane/cli@0.4.0 build --cwd . --clean
 ```
 
 ## サプライチェーン
@@ -91,6 +102,6 @@ masanork/sorane
 - [x] npm 配布（`@sorane/cli` ほか）
 - [x] SLSA L3 + SBOM/CBOM（タグリリース workflow）
 - [x] CI から `npm publish --provenance`
+- [x] optional dependencies の整理（v0.4.0）
 - [ ] GitHub Releases に Bunsen フォント資産
-- [ ] optional dependencies の整理
 - [ ] Homebrew formula / Docker image

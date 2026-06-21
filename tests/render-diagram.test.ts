@@ -8,6 +8,8 @@ import { renderBodySection } from "../packages/core/src/diagrams/render-body-sec
 import { renderMarkdownDocumentAsync } from "../packages/core/src/diagrams/render-async.ts";
 import { rehypeDiagramPre } from "../packages/core/src/diagrams/rehype-diagram-pre.ts";
 import { DEFAULT_DIAGRAMS_CONFIG } from "../packages/core/src/config.ts";
+
+const DIAGRAMS_ON = { ...DEFAULT_DIAGRAMS_CONFIG, enabled: true };
 import rehypeStringify from "rehype-stringify";
 import { unified } from "unified";
 import type { Element, Root as HastRoot } from "hast";
@@ -25,7 +27,7 @@ const MERMAID_MD = '```mermaid alt="Test diagram"\nflowchart LR\n  A --> B\n```\
 
 describe("renderMarkdownDocument (diagrams)", () => {
   test("mermaid フェンスは data-sorane-alt 付き pre を出す", () => {
-    const { html, diagrams } = renderMarkdownDocument(MERMAID_MD);
+    const { html, diagrams } = renderMarkdownDocument(MERMAID_MD, { diagrams: DIAGRAMS_ON });
     expect(html).toContain('class="language-mermaid"');
     expect(html).toContain("data-sorane-alt");
     expect(html).toContain("Test diagram");
@@ -34,7 +36,9 @@ describe("renderMarkdownDocument (diagrams)", () => {
   });
 
   test("無効な mermaid でも PE HTML を出す", () => {
-    const { html } = renderMarkdownDocument("```mermaid\nthis is not valid mermaid!!!\n```\n");
+    const { html } = renderMarkdownDocument("```mermaid\nthis is not valid mermaid!!!\n```\n", {
+      diagrams: DIAGRAMS_ON,
+    });
     expect(html).toContain('class="language-mermaid"');
     expect(html.includes("<script")).toBe(false);
   });
@@ -50,14 +54,14 @@ describe("renderMarkdownDocument (diagrams)", () => {
 
   test("alt は %% alt コメントからも付与", () => {
     const md = "```mermaid\n%% alt: From comment\nflowchart LR\n  X --> Y\n```\n";
-    const { html } = renderMarkdownDocument(md);
+    const { html } = renderMarkdownDocument(md, { diagrams: DIAGRAMS_ON });
     expect(html).toContain("From comment");
   });
 });
 
 describe("renderBodySection", () => {
   test("renderMarkdownDocument のラッパー", () => {
-    const section = renderBodySection(MERMAID_MD, { diagrams: DEFAULT_DIAGRAMS_CONFIG });
+    const section = renderBodySection(MERMAID_MD, { diagrams: DIAGRAMS_ON });
     expect(section.diagrams.mermaid).toBe(1);
     expect(section.html).toContain("language-mermaid");
     expect(section.outline.length).toBe(0);
@@ -118,7 +122,7 @@ describe("renderMarkdownDocumentAsync (build backends)", () => {
     try {
       const { html, diagrams } = await renderMarkdownDocumentAsync(md, {
         diagrams: {
-          ...DEFAULT_DIAGRAMS_CONFIG,
+          ...DIAGRAMS_ON,
           mermaid: { mode: "build", mmdc: "/nonexistent/mmdc" },
         },
         mermaidOutDir: join(tmp, "mermaid"),
@@ -139,7 +143,7 @@ describe("renderMarkdownDocumentAsync (build backends)", () => {
     try {
       const { diagrams } = await renderMarkdownDocumentAsync(md, {
         diagrams: {
-          ...DEFAULT_DIAGRAMS_CONFIG,
+          ...DIAGRAMS_ON,
           graphviz: { enabled: true, binary: "/nonexistent/dot" },
         },
         graphvizOutDir: join(tmp, "graphviz"),
@@ -167,7 +171,7 @@ describe("renderMarkdownDocument (d2)", () => {
     try {
       const { html, diagrams } = await renderMarkdownDocumentAsync(md, {
         diagrams: {
-          ...DEFAULT_DIAGRAMS_CONFIG,
+          ...DIAGRAMS_ON,
           d2: { enabled: true, binary: "/nonexistent/d2-binary" },
         },
         d2OutDir: join(tmp, "d2"),
@@ -188,7 +192,7 @@ describe("renderMarkdownDocument (d2)", () => {
     const tmp = mkdtempSync(join(tmpdir(), "sorane-d2-render-"));
     try {
       const { html, diagrams } = await renderMarkdownDocumentAsync(md, {
-        diagrams: { ...DEFAULT_DIAGRAMS_CONFIG, d2: { enabled: true } },
+        diagrams: { ...DIAGRAMS_ON, d2: { enabled: true } },
         d2OutDir: join(tmp, "d2"),
         rootPrefix: "../",
       });

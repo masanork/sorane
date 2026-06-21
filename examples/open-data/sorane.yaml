@@ -1,3 +1,5 @@
+preset: okf-site
+
 site:
   title: "Open Data Example"
   description: "sorane-okf/0.3 demo — dataset, reference, glossary, FAQ, and search"

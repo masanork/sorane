@@ -1,3 +1,5 @@
+preset: blog
+
 site:
   title: My Site
   description: A sorane site edited with AI assistants

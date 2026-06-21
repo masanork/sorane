@@ -8,6 +8,7 @@ import {
   substituteMermaidVersion,
 } from "../packages/core/src/diagrams/emit-diagram-assets.ts";
 import { DEFAULT_DIAGRAMS_CONFIG } from "../packages/core/src/config.ts";
+import { DIAGRAMS_ON } from "./_diagrams-config.ts";
 
 describe("substituteMermaidVersion", () => {
   test("{{ MERMAID_VERSION }} を置換する", () => {
@@ -43,7 +44,7 @@ describe("emitDiagramAssets", () => {
       const result = emitDiagramAssets({
         cwd: process.cwd(),
         outDir,
-        config: DEFAULT_DIAGRAMS_CONFIG,
+        config: DIAGRAMS_ON,
         contentHasMermaid: true,
       });
       expect(result.copied).toBe(true);

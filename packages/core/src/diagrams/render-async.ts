@@ -42,7 +42,7 @@ import remarkGfm from "remark-gfm";
 import remarkParse from "remark-parse";
 import remarkRehype from "remark-rehype";
 import { unified } from "unified";
-import { SlugLedger } from "@sorane/search";
+import { SlugLedger } from "../heading-slug.ts";
 import type { Root as HastRoot } from "hast";
 import { visit } from "unist-util-visit";
 

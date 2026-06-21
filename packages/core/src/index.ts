@@ -56,6 +56,28 @@ export {
   type OkfConfig,
   type UnknownTypePolicy,
 } from "./config.ts";
+export {
+  presetPartial,
+  resolveBuildOutputs,
+  mergeOutputsConfig,
+  LITE_OUTPUTS,
+  OKF_SITE_OUTPUTS,
+  type SoranePreset,
+  type BuildOutputsConfig,
+  type ResolvedBuildOutputs,
+} from "./presets.ts";
+export {
+  requireOptionalModule,
+  importOptionalModule,
+  isOptionalModuleMissing,
+  formatMissingOptionalMessage,
+  installCommandFor,
+  detectPackageManager,
+  warnOptionalPackageMissing,
+  OptionalPackageMissingError,
+  type OptionalPackageSpec,
+  type RequireOptionalModuleOptions,
+} from "./optional-dep.ts";
 export { normalizeOkfConfig, okfValidateOptions } from "./okf-config.ts";
 export { migrateToOkf, parseBumpProfileArg, type MigrateToOkfOptions } from "./migrate.ts";
 export { validateHeadingWarnings } from "./validate-heading-structure.ts";

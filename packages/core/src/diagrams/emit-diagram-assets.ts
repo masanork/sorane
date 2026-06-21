@@ -11,6 +11,7 @@ import { dirname, join, relative, resolve } from "node:path";
 import { fileURLToPath } from "node:url";
 import { createRequire } from "node:module";
 import type { DiagramsConfig } from "../config.ts";
+import { installCommandFor } from "../optional-dep.ts";
 import { resolveThemeAssetDir } from "../theme-assets.ts";
 import { contentNeedsMermaidClient, resolveMermaidMode } from "./diagram-meta.ts";
 
@@ -78,7 +79,9 @@ export function emitDiagramAssets(opts: EmitDiagramAssetsOptions): EmitDiagramAs
 
   const mermaidRoot = resolveMermaidPackageRoot();
   if (!mermaidRoot) {
-    log("diagrams: mermaid package not found; skipping asset copy");
+    log(
+      `diagrams: mermaid package not found; install with: ${installCommandFor("mermaid", opts.cwd)}`,
+    );
     return { copied: false, bytes: 0 };
   }
 

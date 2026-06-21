@@ -5,9 +5,27 @@ profile: sorane-okf/0.1
 excludeFromList: true
 ---
 
-sorane は **OKF（Open Knowledge Format）ネイティブ**の静的サイトジェネレータです。Markdown を書くだけで、人間向け HTML とエージェント向けの機械可読出力を同じビルドから得られます。
+sorane は **OKF（Open Knowledge Format）ネイティブ**の静的サイトジェネレータです。Markdown を書くだけで、人間向け HTML と（必要なら）エージェント向けの機械可読出力を同じビルドから得られます。
+
+## プリセット（軽量 vs フル OKF）
+
+```yaml
+preset: blog        # 軽量 SSG（既定に近い）
+preset: okf-site    # sorane.dev 相当のフル出力
+preset: gov         # 行政向け + 厳格 validate
+```
+
+| 出力 | `blog` / 既定 | `okf-site` |
+|------|---------------|------------|
+| HTML + `feed` / `sitemap` / `robots` | on | on |
+| 各ページ `.md` / `catalog.jsonld` / `llms.txt` / `okf/bundle` | off | on |
+| 図表・ブログ archive/tag | off | on |
+
+詳細は [設定（YAML）](configuration.html#プリセット)。
 
 ## OKF と機械可読出力
+
+`preset: okf-site`（または `build.outputs`）で有効になる主な成果物:
 
 | 出力 | 用途 |
 |------|------|
@@ -45,9 +63,16 @@ AI アシスタント向けの手順は [AI 向け解説](ai-onboarding.html)。
 - **FTS（標準）** — SQLite ベースのキーワード検索。モデル不要
 - **ハイブリッド（experimental）** — 埋め込み + FTS。大規模サイトは ONNX を CDN 配信可能
 
-検索 UI は `view: search` の記事ページで有効化します。
+- **ヘッダー検索** — `sorane index` 後、全ページにコンパクトな検索ボックス
+- **専用ページ** — `content/search.md`（`view: search`）で種別 facet・説明文・`SearchAction` 用 URL
+
+小さなサイトは専用ページを省略可能。open-data / 行政向けでは残すのが一般的です（[設定](configuration.html#検索-uiヘッダー-vs-専用ページ)）。
+
+`index` / `search` コマンドは `@sorane/search` を別途インストールします（[CLI](cli.html#オプショナルパッケージ)）。
 
 ## 図表
+
+既定は off（`preset: okf-site` で on）。Mermaid client 利用時は `mermaid` パッケージが必要です。
 
 ソースは常に Markdown のコードフェンスに残り、HTML はプレゼンテーション層です。
 

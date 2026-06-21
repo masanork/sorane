@@ -15,6 +15,8 @@ flowchart LR
 \`\`\`
 `;
 
+const DIAGRAMS_ON = { ...DEFAULT_DIAGRAMS_CONFIG, enabled: true };
+
 describe("renderArticleBodyWithMeta", () => {
   test("mermaid フェンスの diagrams メタを返す", () => {
     const concept = normalizeConcept(
@@ -23,7 +25,7 @@ describe("renderArticleBodyWithMeta", () => {
       "diagram-post",
     );
     const { bodyHtml, diagrams } = renderArticleBodyWithMeta(concept, undefined, {
-      diagrams: DEFAULT_DIAGRAMS_CONFIG,
+      diagrams: DIAGRAMS_ON,
     });
     expect(diagrams.mermaid).toBe(1);
     expect(bodyHtml).toContain("language-mermaid");
@@ -36,7 +38,7 @@ describe("buildPage (diagram extraHead)", () => {
     const head = diagramHeadForPage(
       { mermaid: 1, d2: 0, graphviz: 0 },
       "./",
-      DEFAULT_DIAGRAMS_CONFIG,
+      DIAGRAMS_ON,
     )!;
     const html = buildPage({
       title: "T",
