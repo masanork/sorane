@@ -4,6 +4,19 @@ All notable changes to sorane are documented here. Versioning follows [SemVer](h
 
 ## [Unreleased]
 
+### Added
+
+- `sorane-okf/0.3` profile: `dataset`, `reference`, `glossary`, `faq` concept types
+- Open-data frontmatter (`license`, `publisher`, `distributions`, …) and dataset landing page template
+- `examples/open-data/` minimal dataset site
+- Profile helpers in `@sorane/okf` (`resolveEffectiveType`, `isBuildableContentType`, …)
+
+### Changed
+
+- **`catalog.jsonld` breaking:** `type: dataset` pages go to `dataset[]`; other content pages go to `hasPart[]` as `BlogPosting` / `TechArticle` / `FAQPage` / `DefinedTermSet` (no legacy combined shape)
+- Page JSON-LD: docs → `TechArticle`, blog → `BlogPosting`, `reference` → `TechArticle`, overridable via `creativeWorkType`
+- `sorane-okf/0.3`: unknown `type` → warning + build treats as `article` (0.1/0.2 unchanged: error)
+
 ## [0.2.6] - 2026-06-21
 
 ### Added

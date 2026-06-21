@@ -2,6 +2,7 @@ import { describe, expect, test } from "./_expect.ts";
 import {
   conceptToOkfMarkdown,
   normalizeConcept,
+  resolveEffectiveType,
   validateSource,
 } from "../packages/okf/src/index.ts";
 
@@ -29,9 +30,58 @@ describe("validateSource", () => {
     expect(bad.ok).toBe(false);
   });
 
+  test("0.3 の未知 type は warning のみ", () => {
+    const r = validateSource(
+      "playbook.md",
+      "---\ntype: playbook\ntitle: Ops\nprofile: sorane-okf/0.3\n---\n\nbody\n",
+    );
+    expect(r.ok).toBe(true);
+    expect(r.warnings.some((w) => w.includes('unknown type "playbook"'))).toBe(true);
+  });
+
+  test("0.3 dataset は必須フィールドを検証する", () => {
+    const bad = validateSource(
+      "data.md",
+      "---\ntype: dataset\ntitle: Data\nprofile: sorane-okf/0.3\n---\n\nbody\n",
+    );
+    expect(bad.ok).toBe(false);
+    expect(bad.issues.length > 0).toBe(true);
+
+    const ok = validateSource(
+      "data.md",
+      [
+        "---",
+        "type: dataset",
+        "title: Transit",
+        "description: Sample open data",
+        "resource: https://ex.dev/data/transit",
+        "license: CC-BY-4.0",
+        "profile: sorane-okf/0.3",
+        "publisher:",
+        "  name: Example Org",
+        "distributions:",
+        "  - title: CSV",
+        "    format: csv",
+        "    accessURL: /static/transit.csv",
+        "---",
+        "",
+        "body",
+      ].join("\n"),
+    );
+    expect(ok.ok).toBe(true);
+  });
+
   test("frontmatter 無しはエラー", () => {
     const r = validateSource("a.md", "no frontmatter\n");
     expect(r.ok).toBe(false);
+  });
+});
+
+describe("resolveEffectiveType", () => {
+  test("0.3 未知 type は article にフォールバック", () => {
+    expect(resolveEffectiveType("playbook", "sorane-okf/0.3")).toBe("article");
+    expect(resolveEffectiveType("dataset", "sorane-okf/0.3")).toBe("dataset");
+    expect(resolveEffectiveType("playbook", "sorane-okf/0.1")).toBe("playbook");
   });
 });
 

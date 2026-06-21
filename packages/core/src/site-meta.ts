@@ -110,7 +110,7 @@ export function buildLlmsTxt(opts: LlmsTxtOptions): string {
     "## Machine-readable",
     "",
     `- [OKF bundle](${abs("okf/bundle.tar.gz")}): all concepts as {type}/{slug}.md`,
-    `- [DCAT catalog](${abs("catalog.jsonld")})`,
+    `- [Site catalog](${abs("catalog.jsonld")}): open datasets in \`dataset[]\`; other pages in \`hasPart[]\``,
     `- [Sitemap](${abs("sitemap.xml")})`,
   ];
   if (opts.diagramsEnabled) {

@@ -400,6 +400,34 @@ describe("runBuild", () => {
     }
   });
 
+  test("open-data example は dataset ページと catalog 分離を出す", async () => {
+    const exampleRoot = join(import.meta.dirname, "../examples/open-data");
+    const tmp = mkdtempSync(join(tmpdir(), "sorane-open-data-"));
+    try {
+      const result = await runBuild({
+        cwd: exampleRoot,
+        config: { build: { out_dir: join(tmp, "dist") } } as Partial<SoraneConfig>,
+        clean: true,
+      });
+      expect(result.pages >= 2).toBe(true);
+      const html = readFileSync(join(tmp, "dist/transit-stops.html"), "utf8");
+      expect(html).toContain("Transit Stops");
+      expect(html).toContain("dataset-meta");
+      expect(html).toContain("Stops CSV");
+      expect(html).toContain('application/ld+json');
+      expect(html).toContain('"@type":"Dataset"');
+      const catalog = readFileSync(join(tmp, "dist/catalog.jsonld"), "utf8");
+      const parsed = JSON.parse(catalog) as {
+        dataset?: unknown[];
+        hasPart?: { "@type": string }[];
+      };
+      expect(parsed.dataset?.length).toBe(1);
+      expect((parsed.hasPart ?? []).length).toBe(0);
+    } finally {
+      rmSync(tmp, { recursive: true, force: true });
+    }
+  });
+
   test("minimal example を dist に焼く", async () => {
     const exampleRoot = join(import.meta.dirname, "../examples/minimal");
     const tmp = mkdtempSync(join(tmpdir(), "sorane-build-"));

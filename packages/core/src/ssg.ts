@@ -334,7 +334,14 @@ function articleNavHtml(nav?: ArticleNav): string {
   return `<nav class="article-nav" aria-label="記事">${parts.join(" · ")}</nav>`;
 }
 
-export function buildBlogPostingJsonLd(opts: {
+export type PageCreativeWorkType =
+  | "BlogPosting"
+  | "TechArticle"
+  | "FAQPage"
+  | "DefinedTermSet";
+
+export function buildCreativeWorkJsonLd(opts: {
+  workType: PageCreativeWorkType;
   title: string;
   description?: string;
   url: string;
@@ -346,13 +353,19 @@ export function buildBlogPostingJsonLd(opts: {
   aiDisclosure?: AiDisclosure;
   associatedMedia?: readonly AssociatedMediaItem[];
 }): string {
+  const isPartOf =
+    opts.workType === "BlogPosting"
+      ? { "@type": "Blog", name: opts.siteTitle }
+      : { "@type": "WebSite", name: opts.siteTitle };
+
   const data: Record<string, unknown> = {
     "@context": "https://schema.org",
-    "@type": "BlogPosting",
+    "@type": opts.workType,
     headline: opts.title,
+    name: opts.title,
     url: opts.url,
     inLanguage: opts.lang,
-    isPartOf: { "@type": "Blog", name: opts.siteTitle },
+    isPartOf,
   };
   if (opts.description) data.description = opts.description;
   if (opts.datePublished) data.datePublished = opts.datePublished;
@@ -366,6 +379,22 @@ export function buildBlogPostingJsonLd(opts: {
   const mediaFields = associatedMediaJsonLdFields(opts.associatedMedia ?? []);
   if (mediaFields) Object.assign(data, mediaFields);
   return `<script type="application/ld+json">${JSON.stringify(data)}</script>`;
+}
+
+/** @deprecated Use buildCreativeWorkJsonLd({ workType: "BlogPosting", ... }) */
+export function buildBlogPostingJsonLd(opts: {
+  title: string;
+  description?: string;
+  url: string;
+  datePublished?: string;
+  dateModified?: string;
+  author?: string;
+  siteTitle: string;
+  lang: string;
+  aiDisclosure?: AiDisclosure;
+  associatedMedia?: readonly AssociatedMediaItem[];
+}): string {
+  return buildCreativeWorkJsonLd({ ...opts, workType: "BlogPosting" });
 }
 
 const SERIF_FONT_STYLES = new Set(["GJM", "serif", "mincho"]);

@@ -1,0 +1,10 @@
+site:
+  title: "Open Data Example"
+  description: "sorane-okf/0.3 dataset landing page demo"
+  base_url: "https://example.pages.dev"
+  lang: ja
+
+build:
+  content_dir: content
+  out_dir: dist
+  permalink: "{{slug}}.html"

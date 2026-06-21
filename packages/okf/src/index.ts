@@ -13,6 +13,17 @@ export {
   type ValidationIssue,
 } from "./validate.ts";
 export {
+  DEFAULT_PROFILE,
+  SUPPORTED_PROFILE_RE,
+  TYPES_03,
+  TYPES_01_02,
+  BUILDABLE_CONTENT_TYPES,
+  isProfile03,
+  resolveEffectiveType,
+  isBuildableContentType,
+  resolveProfileForValidation,
+} from "./profile.ts";
+export {
   IPTC_BASE,
   resolveDigitalSourceType,
   inferEuLabel,

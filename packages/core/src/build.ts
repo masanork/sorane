@@ -3,6 +3,8 @@ import { emitSearchAssets } from "@sorane/search";
 import {
   parseConcept,
   buildBundleEntries,
+  isBuildableContentType,
+  resolveEffectiveType,
   type ParsedConcept,
 } from "@sorane/okf";
 import {
@@ -23,7 +25,9 @@ import {
   parseAiDisclosure,
   resolveAiDisclosureFlags,
 } from "./ai-disclosure.ts";
-import { buildCatalogJsonLd } from "./catalog.ts";
+import { buildCatalogJsonLd, buildDatasetPageJsonLd } from "./catalog.ts";
+import { resolveCatalogCreativeWorkType } from "./creative-work-type.ts";
+import { renderDatasetPageBody } from "./dataset-page.ts";
 import {
   DEFAULT_DIAGRAMS_CONFIG,
   mergeConfig,
@@ -31,7 +35,7 @@ import {
   type SoraneConfig,
 } from "./config.ts";
 import {
-  buildBlogPostingJsonLd,
+  buildCreativeWorkJsonLd,
   extractDescription,
   renderArticleBodyWithMetaForConfig,
   renderBlogIndexBody,
@@ -152,7 +156,7 @@ function isSystemPage(concept: ParsedConcept["concept"]): boolean {
 
 function isBlogArticle(concept: ParsedConcept["concept"], relPath: string): boolean {
   return (
-    concept.type === "article" &&
+    resolveEffectiveType(concept.type, concept.profile) === "article" &&
     !isSystemPage(concept) &&
     !isNotFoundSource(relPath) &&
     !isSearchView(concept.frontmatter) &&
@@ -478,21 +482,23 @@ export async function runBuild(opts: BuildOptions): Promise<BuildResult> {
   );
   const staticDirName = config.build.static_dir ?? "static";
 
-  // --- Phase A: articles（SSG の核）---
+  // --- Phase A: content pages（article, dataset, reference, glossary, faq）---
   for (const p of parsed) {
     if (
-      p.concept.type !== "article" ||
+      !isBuildableContentType(p.concept.type, p.concept.profile) ||
       isSystemPage(p.concept) ||
       isNotFoundSource(p.relPath)
     ) {
       continue;
     }
 
+    const effectiveType = resolveEffectiveType(p.concept.type, p.concept.profile);
     const slug = slugFromRel(p.relPath);
     const outRel = resolvePermalink(config.build.permalink, slug, p.concept.timestamp);
     const depth = outRel.replace(/\\/g, "/").split("/").length - 1;
     const rootPrefix = depth > 0 ? "../".repeat(depth) : "./";
-    const isSearch = isSearchView(p.concept.frontmatter);
+    const isSearch =
+      effectiveType === "article" && isSearchView(p.concept.frontmatter);
     const isDocsPage = docsMode && docsHrefSet.has(outRel);
     const nav = isSearch
       ? undefined
@@ -514,7 +520,18 @@ export async function runBuild(opts: BuildOptions): Promise<BuildResult> {
         : "";
     let pageDiagrams = emptyDiagramMeta();
     let bodyHtml: string;
-    if (isSearch) {
+    const canonicalUrl = baseUrl.length > 0 ? `${baseUrl}/${outRel}` : undefined;
+    if (effectiveType === "dataset") {
+      const section = await renderBodySectionForConfig(
+        p.concept.body,
+        bodySectionOpts(rootPrefix),
+      );
+      pageDiagrams = section.diagrams;
+      bodyHtml = renderDatasetPageBody(p.concept, section.html, {
+        pageUrl: canonicalUrl ?? outRel,
+        baseUrl,
+      });
+    } else if (isSearch) {
       const searchIntro = p.concept.body.trim()
         ? await renderBodySectionForConfig(p.concept.body, bodySectionOpts(rootPrefix))
         : undefined;
@@ -552,7 +569,6 @@ export async function runBuild(opts: BuildOptions): Promise<BuildResult> {
 
     const updated = frontmatterString(p.concept.frontmatter, "updated");
     const author = frontmatterString(p.concept.frontmatter, "author");
-    const canonicalUrl = baseUrl.length > 0 ? `${baseUrl}/${outRel}` : undefined;
     const pageImageRefs = collectMarkdownImageRefs({
       body: p.concept.body,
       sourceMdRel: p.relPath,
@@ -572,19 +588,26 @@ export async function runBuild(opts: BuildOptions): Promise<BuildResult> {
 
     const jsonLd = isSearch
       ? ""
-      : buildBlogPostingJsonLd({
-          title: p.concept.title,
-          description: p.concept.description ?? extractDescription(p.concept.body) ?? undefined,
-          url: canonicalUrl ?? outRel,
-          datePublished: p.concept.timestamp,
-          dateModified: updated ?? p.concept.timestamp,
-          author,
-          siteTitle: config.site.title,
-          lang: config.site.lang,
-          aiDisclosure:
-            pageAiFlags.jsonLd && aiDisclosure ? aiDisclosure : undefined,
-          associatedMedia: associatedMedia.length > 0 ? associatedMedia : undefined,
-        });
+      : effectiveType === "dataset"
+        ? buildDatasetPageJsonLd(
+            { slug, url: canonicalUrl ?? outRel, concept: p.concept },
+            pageAiFlags.jsonLd,
+          )
+        : buildCreativeWorkJsonLd({
+            workType: resolveCatalogCreativeWorkType(p.concept, docsMode),
+            title: p.concept.title,
+            description:
+              p.concept.description ?? extractDescription(p.concept.body) ?? undefined,
+            url: canonicalUrl ?? outRel,
+            datePublished: p.concept.timestamp,
+            dateModified: updated ?? p.concept.timestamp,
+            author,
+            siteTitle: config.site.title,
+            lang: config.site.lang,
+            aiDisclosure:
+              pageAiFlags.jsonLd && aiDisclosure ? aiDisclosure : undefined,
+            associatedMedia: associatedMedia.length > 0 ? associatedMedia : undefined,
+          });
 
     const fontCss = await fontCssFor(p.concept, rootPrefix, bodyHtml);
     const headerSearch = headerSearchFor(rootPrefix, {
@@ -963,6 +986,7 @@ export async function runBuild(opts: BuildOptions): Promise<BuildResult> {
     join(outDir, "catalog.jsonld"),
     buildCatalogJsonLd(catalogInputs, config.site.title, baseUrl, {
       machineReadable: siteAiFlags.machineReadable,
+      docsMode,
     }),
     "utf8",
   );
