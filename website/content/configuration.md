@@ -107,10 +107,26 @@ site:
 
 - `organization` … `WebSite` / 記事 JSON-LD / `catalog.jsonld` / `llms.txt` の発行主体
 - `contact` … `llms.txt` の問い合わせ先
+- `kototoi` … Passkey 問い合わせフォーム（[kototoi 運用](kototoi.html)）
 - `findability.search_action` … 検索ページがあるとき `SearchAction`（`search.html?q=`）を出力
 - 記事 frontmatter（任意）: `identifier`, `subject`, `audience`, `coverage`, `updated`（サイトマップ `lastmod` に反映）
 
 詳細: [design/findability-pack.md](https://github.com/masanork/sorane/blob/main/design/findability-pack.md)
+
+## kototoi（問い合わせフォーム）
+
+静的サイトに [kototoi](https://github.com/masanork/kototoi) を埋め込むときは `kototoi:` 節を追加します。API は別ホスト（例: `ask.sorane.dev`）でも、フォーム JS は sorane の `dist/` に同梱します。
+
+```yaml
+kototoi:
+  endpoint: https://ask.sorane.dev
+  site_id: "<uuid>"
+  form:
+    title: お問い合わせ
+    fields: [...]
+```
+
+ビルド後スクリプト・CI・クライアント更新・`site sync`・管理者招待などの運用は [kototoi 問い合わせフォーム](kototoi.html) にまとめています。
 
 ## サイト全体のライセンス
 

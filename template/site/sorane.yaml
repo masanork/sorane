@@ -11,6 +11,13 @@ site:
   #   type: GovernmentOrganization
   # contact:
   #   page: contact.html
+  # kototoi:                          # Passkey 問い合わせ（ask.example.com 等）
+  #   endpoint: https://ask.example.com
+  #   site_id: "<uuid>"
+  #   form:
+  #     title: お問い合わせ
+  #     fields: [...]
+  # → 運用: sorane リポ website/content/kototoi.md（公式 dogfooding 例）
   # findability:
   #   breadcrumbs: true
   #   search_action: true

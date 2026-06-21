@@ -23,6 +23,13 @@ excludeFromList: true
 
 [sorane 公式サイト](https://sorane.dev/) は sorane リポジトリ内の `website/` を dogfooding してビルドしています。
 
+問い合わせ（kototoi）を有効にしているサイトは、`build` のあとに埋め込み資産の配置と `contact.html` のパッチが必要です。手順は [kototoi 問い合わせフォーム](kototoi.html) を参照してください。公式 CI（`.github/workflows/pages.yml`）では次を追加しています。
+
+```yaml
+- run: node website/scripts/emit-kototoi.mjs
+- run: node website/scripts/patch-contact.mjs
+```
+
 ### デプロイ前のプレビュー
 
 本番反映前にローカルで確認するには [CLI の `preview`](cli.html#ローカルプレビュー) を使います。
