@@ -153,7 +153,9 @@ ${algoRows}
 
 function syncCbomToWebsite(version: string): void {
   const raw = readFileSync(CBOM_PATH, "utf8");
-  const doc = JSON.parse(raw) as CbomDoc;
+  const doc = JSON.parse(raw) as {
+    metadata?: { component?: { version?: string } };
+  };
   if (doc.metadata?.component) {
     doc.metadata.component.version = version;
   }

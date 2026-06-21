@@ -88,7 +88,7 @@ describe("validateSiteContent i18n category", () => {
           lang: "ja",
           i18n: { locales: { en: { lang: "en", path_prefix: "en" } } },
         },
-      } as Partial<SoraneConfig>),
+      } as unknown as Partial<SoraneConfig>),
     );
     const file = report.files.find((f) => f.file === "about.md");
     expect(file?.findings.some((f) => f.category === "i18n" && f.severity === "warning")).toBe(

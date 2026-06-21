@@ -196,13 +196,13 @@ describe("open-data example indexing", () => {
       expect(built.chunks > 0).toBe(true);
 
       const store = new IndexStore(indexPath);
-      const datasetHits = searchFts(store, "Transit", { docType: "dataset", k: 5 });
+      const datasetHits = searchFts(store, "Transit", { filter: { docType: "dataset" }, k: 5 });
       expect(datasetHits.length > 0).toBe(true);
 
-      const faqHits = searchFts(store, "license", { docType: "faq", k: 5 });
+      const faqHits = searchFts(store, "license", { filter: { docType: "faq" }, k: 5 });
       expect(faqHits.length > 0).toBe(true);
 
-      const refHits = searchFts(store, "stop_id", { docType: "reference", k: 5 });
+      const refHits = searchFts(store, "stop_id", { filter: { docType: "reference" }, k: 5 });
       expect(refHits.length > 0).toBe(true);
       store.close();
     } finally {
