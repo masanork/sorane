@@ -35,10 +35,13 @@ jobs:
         run: npm ci
 
       - name: Install d2 CLI
-        env:
-          GITHUB_TOKEN: ${{ github.token }}
         run: |
-          curl -fsSL https://d2lang.com/install.sh | sh -s -- --version v0.7.1 --prefix "$HOME/.local"
+          D2_VERSION=v0.7.1
+          mkdir -p "$HOME/.local/bin"
+          curl -fsSL -o /tmp/d2.tar.gz \
+            "https://github.com/terrastruct/d2/releases/download/${D2_VERSION}/d2-${D2_VERSION}-linux-amd64.tar.gz"
+          tar -xzf /tmp/d2.tar.gz -C /tmp
+          install -m 0755 "/tmp/d2-${D2_VERSION}/d2" "$HOME/.local/bin/d2"
           echo "$HOME/.local/bin" >> "$GITHUB_PATH"
 
       - name: Update supply chain status
@@ -49,6 +52,12 @@ jobs:
 
       - name: Build docs site
         run: node packages/cli/src/main.ts build --cwd website --clean
+
+      - name: Emit kototoi embed assets
+        run: node website/scripts/emit-kototoi.mjs
+
+      - name: Patch contact page for kototoi
+        run: node website/scripts/patch-contact.mjs
 
       - name: Deploy to Cloudflare Pages
         uses: cloudflare/wrangler-action@v3
