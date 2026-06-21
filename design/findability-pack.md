@@ -48,7 +48,7 @@ updated: 2025-06-01
 ## Roadmap (this initiative)
 
 1. **Findability pack** (this doc) — done in core
-2. **validate** public quality gates
+2. **validate** public quality gates — see [quality-gates.md](./quality-gates.md)
 3. **Multilingual / hreflang**
 4. **Emergency banner + revision history**
 5. **Access logs** — Cloudflare stack templates + sorane hooks

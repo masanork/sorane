@@ -4,11 +4,19 @@ import { extract, validateSource, type ValidationIssue } from "@sorane/okf";
 import type { SoraneConfig } from "./config.ts";
 import { validateDiagramAltWarnings } from "./diagrams/validate-diagram-alt.ts";
 import { validateHeadingWarnings } from "./validate-heading-structure.ts";
+import { validateContentQualityFindings } from "./validate-content-quality.ts";
 
 export const VALIDATE_JSON_SCHEMA_VERSION = 1 as const;
 
 export type ValidateFindingSeverity = "error" | "warning";
-export type ValidateFindingCategory = "okf" | "diagram" | "heading";
+export type ValidateFindingCategory =
+  | "okf"
+  | "diagram"
+  | "heading"
+  | "image"
+  | "link"
+  | "table"
+  | "date";
 
 export interface ValidateFinding {
   readonly severity: ValidateFindingSeverity;
@@ -57,7 +65,7 @@ function okfIssueToFinding(issue: ValidationIssue): ValidateFinding {
   };
 }
 
-function warningToFinding(category: "okf" | "diagram" | "heading", message: string): ValidateFinding {
+function warningToFinding(category: ValidateFindingCategory, message: string): ValidateFinding {
   return { severity: "warning", category, message };
 }
 
@@ -93,7 +101,7 @@ export function validateSiteContent(
       warningCount++;
     }
 
-    const { body } = extract(source);
+    const { frontmatter, body } = extract(source);
     if (body !== null) {
       for (const w of validateDiagramAltWarnings(body, config.build.diagrams ?? {})) {
         findings.push(warningToFinding("diagram", w));
@@ -101,6 +109,14 @@ export function validateSiteContent(
       }
       for (const w of validateHeadingWarnings(body)) {
         findings.push(warningToFinding("heading", w));
+        warningCount++;
+      }
+      const fm =
+        frontmatter !== null && typeof frontmatter === "object"
+          ? (frontmatter as Record<string, unknown>)
+          : {};
+      for (const f of validateContentQualityFindings(body, fm, config.build.quality)) {
+        findings.push(warningToFinding(f.category, f.message));
         warningCount++;
       }
     }

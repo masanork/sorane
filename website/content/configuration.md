@@ -50,6 +50,30 @@ site:
 
 詳細: [design/findability-pack.md](https://github.com/masanork/sorane/blob/main/design/findability-pack.md)
 
+## 品質ゲート（validate）
+
+`validate --json` は OKF に加え、公的サイト向けの **warning** を出します（ビルドは継続）。
+
+| category | 内容 |
+|----------|------|
+| `image` | 本文 `![](path)` の alt 欠落 |
+| `link` | 「こちら」「here」など非説明的リンクテキスト |
+| `table` | GFM 表のヘッダー区切り行・空ヘッダセル |
+| `date` | `timestamp` / `updated` の形式、`updated` \< `timestamp` |
+| `diagram` | 図表フェンスの alt 欠落 |
+| `heading` | 見出し階層の飛び・本文 h1 |
+
+```yaml
+build:
+  quality:
+    image_alt: true
+    link_text: true
+    table_headers: true
+    dates: true
+```
+
+いずれかを `false` にすると該当チェックを省略します。
+
 ## 404 ページ
 
 ビルドは常に `404.html` を `out_dir` 直下に出力します。`content/404.md` で本文をカスタムできます（詳細は [デプロイ](deployment.html)）。

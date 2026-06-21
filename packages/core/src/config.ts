@@ -96,6 +96,17 @@ export interface C2paConfig {
   readonly settings_path?: string;
 }
 
+export interface QualityGateConfig {
+  /** 本文画像の alt 欠落（既定: true） */
+  readonly image_alt?: boolean;
+  /** 非説明的リンクテキスト（既定: true） */
+  readonly link_text?: boolean;
+  /** GFM 表のヘッダー行・区切り行（既定: true） */
+  readonly table_headers?: boolean;
+  /** timestamp / updated の形式・順序（既定: true） */
+  readonly dates?: boolean;
+}
+
 export interface AiDisclosureConfig {
   readonly enabled?: boolean;
   readonly badges?: boolean;
@@ -154,6 +165,8 @@ export interface SoraneConfig {
     readonly diagrams?: DiagramsConfig;
     readonly image_metadata?: ImageMetadataConfig;
     readonly c2pa?: C2paConfig;
+    /** `validate` の公的品質ゲート（warning のみ、ビルドは継続） */
+    readonly quality?: QualityGateConfig;
   };
   readonly fonts: {
     readonly enabled: boolean;
@@ -199,6 +212,7 @@ export const DEFAULT_CONFIG: SoraneConfig = {
     diagrams: DEFAULT_DIAGRAMS_CONFIG,
     image_metadata: {},
     c2pa: { enabled: false, embed: true, binary: "c2patool" },
+    quality: {},
   },
   fonts: {
     enabled: false,
@@ -252,6 +266,9 @@ export function mergeConfig(partial: Partial<SoraneConfig>): SoraneConfig {
       c2pa: partial.build?.c2pa
         ? { ...DEFAULT_CONFIG.build.c2pa, ...partial.build.c2pa }
         : DEFAULT_CONFIG.build.c2pa,
+      quality: partial.build?.quality
+        ? { ...DEFAULT_CONFIG.build.quality, ...partial.build.quality }
+        : DEFAULT_CONFIG.build.quality,
     },
     fonts: { ...DEFAULT_CONFIG.fonts, ...partial.fonts },
     search: { ...DEFAULT_CONFIG.search, ...partial.search },
