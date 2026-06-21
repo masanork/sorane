@@ -5,6 +5,10 @@ site:
   description: OKF-native static site generator
   base_url: https://sorane.dev
   lang: ja
+  license: MIT
+  license_page: license.html
+  copyright_since: 2023
+  copyright_holder: Masanori Kusunoki
   hosting:
     provider: cloudflare
     cloudflare:
@@ -39,6 +43,7 @@ docs:
     - deployment.html
     - releases.html
     - supply-chain.html
+    - license.html
 
 search:
   index: .sorane/index.db

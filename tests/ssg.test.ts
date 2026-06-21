@@ -350,6 +350,25 @@ describe("buildPage", () => {
     expect(html).toContain("<main id=\"main\">");
   });
 
+  test("site.license でフッターにライセンス行", () => {
+    const html = buildPage({
+      title: "T",
+      siteTitle: "Site",
+      bodyHtml: "<p>x</p>",
+      rootPrefix: "./",
+      siteLicense: {
+        id: "MIT",
+        url: "https://opensource.org/license/mit",
+        page: "license.html",
+        copyright: "2023 Example",
+      },
+    });
+    expect(html).toContain('class="site-footer-meta"');
+    expect(html).toContain('rel="license"');
+    expect(html).toContain("license.html");
+    expect(html).toContain("© 2023 Example");
+  });
+
   test("OG / Twitter メタを出す", () => {
     const html = buildPage({
       title: "Post",

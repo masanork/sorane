@@ -26,6 +26,10 @@ import {
   parseRevisionHistory,
   revisionHistoryHtml,
 } from "./revision-history.ts";
+import {
+  siteLicenseFooterMeta,
+  type ResolvedSiteLicense,
+} from "./site-license.ts";
 
 export function extractDescription(body: string, maxLen = 200): string | null {
   const lines = body.split(/\r?\n/);
@@ -112,6 +116,7 @@ export interface PageShellOptions {
   readonly headerSearchHtml?: string;
   readonly ogImageUrl?: string;
   readonly emergencyBannerHtml?: string;
+  readonly siteLicense?: ResolvedSiteLicense;
 }
 
 export interface ArticleListEntry {
@@ -268,6 +273,9 @@ export function buildPage(opts: PageShellOptions): string {
   const emergencyBlock = opts.emergencyBannerHtml
     ? `${opts.emergencyBannerHtml}\n`
     : "";
+  const licenseFooter = opts.siteLicense
+    ? `${siteLicenseFooterMeta(opts.siteLicense, opts.rootPrefix)}\n`
+    : "";
   return (
     "<!doctype html>\n" +
     `<html lang="${escapeHtml(lang)}">\n` +
@@ -280,7 +288,7 @@ export function buildPage(opts: PageShellOptions): string {
     `${headerEnd}` +
     `</header>\n` +
     `${mainBlock}` +
-    `<footer class="site-footer"><p><a href="${escapeHtml(home)}">${escapeHtml(opts.siteTitle)}</a></p></footer>\n` +
+    `<footer class="site-footer"><p><a href="${escapeHtml(home)}">${escapeHtml(opts.siteTitle)}</a></p>\n${licenseFooter}</footer>\n` +
     "</body>\n</html>\n"
   );
 }
@@ -371,6 +379,7 @@ export function buildCreativeWorkJsonLd(opts: {
   associatedMedia?: readonly AssociatedMediaItem[];
   organization?: OrganizationSpec;
   frontmatter?: Record<string, unknown>;
+  licenseUrl?: string;
 }): string {
   const isPartOf =
     opts.workType === "BlogPosting"
@@ -403,6 +412,9 @@ export function buildCreativeWorkJsonLd(opts: {
   }
   const mediaFields = associatedMediaJsonLdFields(opts.associatedMedia ?? []);
   if (mediaFields) Object.assign(data, mediaFields);
+  if (opts.licenseUrl) {
+    data.license = opts.licenseUrl;
+  }
   return `<script type="application/ld+json">${JSON.stringify(data)}</script>`;
 }
 

@@ -12,6 +12,7 @@ import {
   resolveEmergencyBanner,
 } from "./emergency-banner.ts";
 import { resolveBuildOutputs } from "./presets.ts";
+import { resolveSiteLicense } from "./site-license.ts";
 
 function pageOgImage(
   frontmatter: Record<string, unknown>,
@@ -80,6 +81,7 @@ export function emitPage(opts: EmitPageOptions): { mdOutRel?: string; canonicalU
     opts.config.site,
     opts.localeId ?? "default",
   );
+  const siteLicense = resolveSiteLicense(opts.config.site);
   const html = buildPage({
     title: opts.concept.title,
     siteTitle: opts.config.site.title,
@@ -102,6 +104,7 @@ export function emitPage(opts: EmitPageOptions): { mdOutRel?: string; canonicalU
     docsSidebarHtml: opts.docsSidebarHtml,
     headerSearchHtml: opts.headerSearchHtml,
     ogImageUrl: pageOgImage(opts.concept.frontmatter, opts.config.site.og_image, opts.baseUrl),
+    siteLicense,
   });
   writeFileSync(outAbs, html, "utf8");
 

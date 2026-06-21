@@ -98,6 +98,27 @@ site:
 
 詳細: [design/findability-pack.md](https://github.com/masanork/sorane/blob/main/design/findability-pack.md)
 
+## サイト全体のライセンス
+
+ドキュメントサイトやブログの **コンテンツ**（`article` / `reference` 等）に適用するライセンスを `sorane.yaml` で宣言できます。`type: dataset` の `license:`（データセット単位）とは別です。
+
+```yaml
+site:
+  license: MIT                    # SPDX id または HTTPS URI
+  license_page: license.html      # 任意。説明ページ（dist 相対）
+  copyright_since: 2023           # 任意。初出年（ビルド年と異なれば 2023–2026 と表示）
+  copyright_holder: Example Corp  # 任意。著作権者名
+  # copyright: "2023–2026 Example Corp"  # 上記の代わりに全文を固定でも可
+```
+
+- 全 HTML ページのフッターに `rel="license"` リンクと著作権行を出します
+- `copyright_since` / `copyright_holder` はビルド時の UTC 年と組み合わせて範囲を自動生成します（Git 不要）
+- トップの WebSite JSON-LD と各記事の CreativeWork JSON-LD に `license` を付与します
+- `llms.txt` に License セクションを追加します
+- `license_page` を省略したときは `license` の URI（SPDX なら解決後 URL）へリンクします
+
+sorane.dev の例: [license.html](license.html)（`site.license: MIT`）。
+
 ## オープンデータ（DCAT カタログ）
 
 `type: dataset` ページ向けに、ポータル連携用の DCAT-AP JSON-LD を追加出力できます（schema.org の `catalog.jsonld` とは別ファイル）。

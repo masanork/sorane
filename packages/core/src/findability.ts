@@ -110,6 +110,7 @@ export function buildWebSiteJsonLd(opts: {
   readonly lang: string;
   readonly organization?: OrganizationSpec;
   readonly searchUrl?: string;
+  readonly licenseUrl?: string;
 }): string {
   const data: Record<string, unknown> = {
     "@context": "https://schema.org",
@@ -121,6 +122,9 @@ export function buildWebSiteJsonLd(opts: {
   if (opts.url) data.url = opts.url;
   if (opts.organization) {
     data.publisher = buildOrganizationNode(opts.organization);
+  }
+  if (opts.licenseUrl) {
+    data.license = opts.licenseUrl;
   }
   if (opts.searchUrl) {
     const template = opts.searchUrl.includes("?")

@@ -36,6 +36,16 @@ describe("buildWebSiteJsonLd", () => {
     expect(html).toContain("SearchAction");
     expect(html).toContain("search.html?q={search_term_string}");
   });
+
+  test("license を WebSite JSON-LD に付与", () => {
+    const html = buildWebSiteJsonLd({
+      title: "Site",
+      url: "https://ex.dev",
+      lang: "ja",
+      licenseUrl: "https://opensource.org/license/mit",
+    });
+    expect(html).toContain('"license":"https://opensource.org/license/mit"');
+  });
 });
 
 describe("buildBreadcrumbJsonLd", () => {

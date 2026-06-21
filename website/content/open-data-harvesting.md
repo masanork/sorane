@@ -1,6 +1,6 @@
 ---
 type: article
-title: オープンデータのポータル連携
+title: Open Data Portal 連携
 profile: sorane-okf/0.1
 excludeFromList: true
 ---

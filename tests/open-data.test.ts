@@ -43,6 +43,7 @@ describe("isKnownLicenseId", () => {
 
 describe("resolveLicenseUrl", () => {
   test("SPDX 短コードを URL に解決する", () => {
+    expect(resolveLicenseUrl("MIT")).toBe("https://opensource.org/license/mit");
     expect(resolveLicenseUrl("CC-BY-4.0")).toBe(
       "https://creativecommons.org/licenses/by/4.0/",
     );

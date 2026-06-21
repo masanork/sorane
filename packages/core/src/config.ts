@@ -197,6 +197,16 @@ export interface SoraneConfig {
     readonly hosting?: SiteHostingConfig;
     /** オープンデータ出力（DCAT-AP カタログ等） */
     readonly open_data?: SiteOpenDataConfig;
+    /** サイト全体のコンテンツライセンス（SPDX id または HTTPS URI）。フッター・JSON-LD・llms.txt に反映。 */
+    readonly license?: string;
+    /** ライセンス説明ページ（dist 相対、例: `license.html`）。未設定時は `license` の URI へリンク。 */
+    readonly license_page?: string;
+    /** フッターの著作権表示（`copyright_since` / `copyright_holder` より優先）。 */
+    readonly copyright?: string;
+    /** 初出年。ビルド年と異なれば `2023–2026` のように範囲化（`copyright` 未設定時）。 */
+    readonly copyright_since?: number;
+    /** 著作権者名（`copyright` 未設定時は `copyright_since` と組み合わせ）。 */
+    readonly copyright_holder?: string;
   };
   readonly build: {
     readonly content_dir: string;

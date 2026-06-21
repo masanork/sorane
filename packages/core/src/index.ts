@@ -138,6 +138,14 @@ export {
   type SiteEntry,
 } from "./site-meta.ts";
 export {
+  resolveCopyrightNotice,
+  resolveSiteLicense,
+  siteLicenseFooterMeta,
+  llmsLicenseSection,
+  type ResolvedSiteLicense,
+  type SiteLicenseSpec,
+} from "./site-license.ts";
+export {
   buildBreadcrumbJsonLd,
   creativeWorkFindabilityFields,
   organizationFromSite,

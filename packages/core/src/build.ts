@@ -117,6 +117,7 @@ import {
   type FeedEntry,
   type SiteEntry,
 } from "./site-meta.ts";
+import { llmsLicenseSection, resolveSiteLicense } from "./site-license.ts";
 import {
   diagramHeadForPage,
   emptyDiagramMeta,
@@ -423,6 +424,8 @@ export async function runBuild(opts: BuildOptions): Promise<BuildResult> {
   const i18n = resolveI18nContext(config.site);
   const translationMap = buildTranslationMap(parsed, config, i18n);
   const siteOrganization = organizationFromSite(config.site);
+  const siteLicense = resolveSiteLicense(config.site);
+  const siteLicenseUrl = siteLicense?.url;
   const siteFindability = findabilityFlags(config.site);
   const diagramConfig = config.build.diagrams ?? DEFAULT_DIAGRAMS_CONFIG;
   const d2OutDir = join(outDir, "assets", "diagrams", "d2");
@@ -959,6 +962,7 @@ export async function runBuild(opts: BuildOptions): Promise<BuildResult> {
             associatedMedia: associatedMedia.length > 0 ? associatedMedia : undefined,
             organization: siteOrganization,
             frontmatter: p.concept.frontmatter,
+            licenseUrl: siteLicenseUrl,
           });
 
     const breadcrumbJsonLd =
@@ -1222,6 +1226,7 @@ export async function runBuild(opts: BuildOptions): Promise<BuildResult> {
       lang: indexLang,
       organization: siteOrganization,
       searchUrl: searchActionUrl,
+      licenseUrl: siteLicenseUrl,
     });
     const indexHeaderSearch = headerSearchFor("./", { docsLayout: docsMode });
     const indexDiagramHead = diagramHeadForPage(
@@ -1350,6 +1355,7 @@ export async function runBuild(opts: BuildOptions): Promise<BuildResult> {
         url: localeCanonical,
         lang: pageLocale.lang,
         organization: siteOrganization,
+        licenseUrl: siteLicenseUrl,
       });
       const localeDiagramHead = diagramHeadForPage(
         intro.diagrams,
@@ -1673,6 +1679,7 @@ export async function runBuild(opts: BuildOptions): Promise<BuildResult> {
   }
   const dcatCatalogEnabled = config.site.open_data?.dcat_catalog === true;
   const llmsExtraSections = [
+    siteLicense ? llmsLicenseSection(siteLicense, baseUrl).join("\n") : "",
     llmsContactSection({
       contact: config.site.contact,
       organization: siteOrganization,
