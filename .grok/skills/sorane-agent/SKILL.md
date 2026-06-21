@@ -30,6 +30,7 @@ then `npm run stats:history -- append` / `npm run stats:trend`.
 
 Agent-facing features to keep aligned:
 
+- `design/markup-interchange.md` — mdast → Pandoc AST → HTML/docx contract (ruby, term links)
 - `template/site/AGENTS.md` — content repo instructions
 - `template/site/.grok/skills/sorane-content/SKILL.md` — site editing skill
 - `sorane validate --json` — structured report (`packages/core/src/validate-site.ts`)

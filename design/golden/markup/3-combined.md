@@ -1,0 +1,1 @@
+[[term:distribution]] は {配布|はいふ} ファイルのことです（[[term:dcat]] 参照）。

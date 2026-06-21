@@ -1,0 +1,14 @@
+{
+  "distribution": {
+    "termId": "distribution",
+    "href": "distribution.html",
+    "title": "Distribution",
+    "description": "A downloadable representation of a dataset."
+  },
+  "dcat": {
+    "termId": "dcat",
+    "href": "dcat.html",
+    "title": "DCAT",
+    "description": "Data Catalog Vocabulary."
+  }
+}
