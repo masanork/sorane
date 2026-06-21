@@ -29,9 +29,9 @@ You edit a **sorane** static site: Markdown + YAML frontmatter in `content/`, co
 ## Commands (preferred: npm)
 
 ```bash
-npx @sorane/cli@0.2.2 validate --cwd . --json
-npx @sorane/cli@0.2.2 index --cwd . --force    # if content/search.md exists
-npx @sorane/cli@0.2.2 build --cwd . --clean
+npx @sorane/cli@0.2.4 validate --cwd . --json
+npx @sorane/cli@0.2.4 index --cwd . --force    # if content/search.md exists
+npx @sorane/cli@0.2.4 build --cwd . --clean
 ```
 
 Fork / monorepo with sorane checkout: set `SORANE_ROOT` and use `node "$SORANE_ROOT/packages/cli/bin/sorane.mjs"` instead.

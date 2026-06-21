@@ -9,8 +9,7 @@ import { normalizeConcept } from "./normalize.ts";
 import { parseYaml } from "./yaml.ts";
 
 const __dirname = dirname(fileURLToPath(import.meta.url));
-const REPO_ROOT = join(__dirname, "../../..");
-const PROFILE_SCHEMA_DIR = join(REPO_ROOT, "profile");
+const PROFILE_SCHEMA_DIR = join(__dirname, "../profile");
 
 const SUPPORTED_PROFILE_RE = /^sorane-okf\/(0\.[12])$/;
 const DEFAULT_PROFILE = "sorane-okf/0.1";

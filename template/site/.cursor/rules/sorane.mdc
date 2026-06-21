@@ -12,5 +12,5 @@ Read `AGENTS.md` at the repo root. Skill: `.grok/skills/sorane-content/SKILL.md`
 
 - Edit only `content/**/*.md` and `sorane.yaml`; never `dist/`
 - Frontmatter: `type` (`article` | `index`), `title`, `profile: sorane-okf/0.1` or `0.2`
-- After edits: `npx @sorane/cli@0.2.2 validate --cwd . --json` → fix all `error` findings
+- After edits: `npx @sorane/cli@0.2.4 validate --cwd . --json` → fix all `error` findings
 - Then: `index --force` (if search page) → `build --clean`

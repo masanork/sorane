@@ -52,8 +52,8 @@ template/site/
 **推奨（npm）:**
 
 ```bash
-npx @sorane/cli@0.2.2 validate --cwd . --json
-npx @sorane/cli@0.2.2 build --cwd . --clean
+npx @sorane/cli@0.2.4 validate --cwd . --json
+npx @sorane/cli@0.2.4 build --cwd . --clean
 ```
 
 CI ではテンプレートの `pages.yml` と同様に `npx @sorane/cli` を使えます。fork や monorepo で sorane ソースを pin する場合は、リポジトリ checkout + `SORANE_ROOT`（`AGENTS.md` 参照）でも構いません。

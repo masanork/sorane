@@ -4,6 +4,18 @@ All notable changes to sorane are documented here. Versioning follows [SemVer](h
 
 ## [Unreleased]
 
+## [0.2.4] - 2026-06-21
+
+### Added
+
+- `sorane validate --json` — structured validation report (`schema_version: 1`) for AI agents
+- `template/site/AGENTS.md` agent contract and `sorane-content` Grok skill
+- `.grok/skills/sorane-agent` for monorepo development
+
+### Fixed
+
+- Bundle OKF profile schemas in `@sorane/okf` so `validate` works from npm installs
+
 ## [0.2.0] - 2026-06-21
 
 ### Added
@@ -39,6 +51,7 @@ All notable changes to sorane are documented here. Versioning follows [SemVer](h
 - Blog layout: archives, tags, pagination
 - Test infrastructure with coverage gate (~90% lines)
 
-[Unreleased]: https://github.com/masanork/sorane/compare/v0.2.0...main
+[Unreleased]: https://github.com/masanork/sorane/compare/v0.2.4...main
+[0.2.4]: https://github.com/masanork/sorane/compare/v0.2.0...v0.2.4
 [0.2.0]: https://github.com/masanork/sorane/compare/v0.1.0...v0.2.0
 [0.1.0]: https://github.com/masanork/sorane/releases/tag/v0.1.0

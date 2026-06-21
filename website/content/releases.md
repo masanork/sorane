@@ -18,7 +18,7 @@ excludeFromList: true
 ### npm で使う
 
 ```bash
-npx @sorane/cli@0.2.2 build --cwd ./my-site --clean
+npx @sorane/cli@0.2.4 build --cwd ./my-site --clean
 npx @sorane/cli validate --cwd ./my-site
 ```
 
@@ -48,7 +48,7 @@ masanork/sorane
 
 ```yaml
 # npm（推奨）
-- run: npx @sorane/cli@0.2.2 build --cwd . --clean
+- run: npx @sorane/cli@0.2.4 build --cwd . --clean
 
 # git checkout（開発・フォーク向け）
 - uses: actions/checkout@v4
