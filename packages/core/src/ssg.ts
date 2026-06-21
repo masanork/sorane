@@ -18,6 +18,7 @@ import {
   type BodySectionOptions,
 } from "./diagrams/render-body-section.ts";
 import type { DiagramRenderMeta } from "./diagrams/diagram-meta.ts";
+import { searchFacetOptionsHtml } from "./search-facets.ts";
 import { escapeHtml, stripDuplicateTitleHeading } from "./render.ts";
 import { ogLocaleFromLang } from "./og-meta.ts";
 import { siteLabels, type SiteLabels } from "./site-labels.ts";
@@ -649,17 +650,12 @@ export function buildSearchMount(
     readonly assetBaseUrl?: string;
     readonly mode?: SearchMountMode;
     readonly variant?: SearchMountVariant;
+    readonly lang?: string;
   } = {},
 ): string {
   const mode = opts.mode ?? "fts";
   const variant = opts.variant ?? "page";
-  const facetOpts = [
-    ["", "すべて"],
-    ["article", "記事"],
-    ["index", "トップ"],
-  ]
-    .map(([v, l]) => `<option value="${escapeHtml(v!)}">${escapeHtml(l!)}</option>`)
-    .join("");
+  const facetOpts = searchFacetOptionsHtml(opts.lang ?? "ja");
   const indexUrl = `${rootPrefix}assets/search-index.json`;
   const hybridAttrs =
     mode === "hybrid"

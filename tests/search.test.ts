@@ -98,6 +98,77 @@ More body text here that also exceeds the minimum chunk size for reliable search
     expect(chunks[0]!.tags).toBe("sorane");
   });
 
+  test("faq を ## 単位で索引する", () => {
+    const source = `---
+type: faq
+title: FAQ
+---
+
+## License?
+CC-BY-4.0 applies.
+
+## Download?
+See the dataset page.
+`;
+    const chunks = chunkDocument(source, "faq.md");
+    expect(chunks.length).toBe(2);
+    expect(chunks[0]!.docType).toBe("faq");
+    expect(chunks[0]!.text.includes("License")).toBe(true);
+  });
+
+  test("glossary を ## 単位で索引する", () => {
+    const source = `---
+type: glossary
+title: Terms
+---
+
+## CSV {#csv}
+Comma-separated values.
+`;
+    const chunks = chunkDocument(source, "glossary.md");
+    expect(chunks.length).toBe(1);
+    expect(chunks[0]!.text.includes("CSV")).toBe(true);
+  });
+
+  test("dataset はメタデータ概要チャンクを付与", () => {
+    const source = `---
+type: dataset
+title: Transit
+description: Bus stops.
+license: CC-BY-4.0
+theme: transport
+distributions:
+  - title: CSV
+    format: csv
+    accessURL: data.csv
+---
+
+Short body.
+`;
+    const chunks = chunkDocument(source, "transit.md");
+    expect(chunks.length >= 1).toBe(true);
+    expect(chunks[0]!.text.includes("Transit")).toBe(true);
+    expect(chunks[0]!.text.includes("CC-BY-4.0")).toBe(true);
+    expect(chunks[0]!.tags.includes("format:csv")).toBe(true);
+    expect(chunks[0]!.tags.includes("license:cc-by-4.0")).toBe(true);
+  });
+
+  test("reference の GFM 表を索引する", () => {
+    const source = `---
+type: reference
+title: Fields
+---
+
+| Column | Type |
+|--------|------|
+| stop_id | string |
+| name | string |
+`;
+    const chunks = chunkDocument(source, "fields.md");
+    expect(chunks.length).toBe(1);
+    expect(chunks[0]!.text.includes("stop_id")).toBe(true);
+  });
+
   test("isSystem は索引から除外", () => {
     const source = `---
 type: article

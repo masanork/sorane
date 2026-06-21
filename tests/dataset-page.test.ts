@@ -1,6 +1,20 @@
 import { describe, expect, test } from "./_expect.ts";
-import { renderDatasetPageBody } from "../packages/core/src/dataset-page.ts";
+import {
+  renderDatasetPageBody,
+  validateDatasetWarnings,
+} from "../packages/core/src/dataset-page.ts";
 import { normalizeConcept } from "../packages/okf/src/index.ts";
+
+describe("validateDatasetWarnings", () => {
+  test("未知ライセンスと http distribution を警告", () => {
+    const warnings = validateDatasetWarnings({
+      license: "Custom-License",
+      distributions: [{ title: "CSV", format: "csv", accessURL: "http://ex.dev/data.csv" }],
+    });
+    expect(warnings.some((w) => w.includes("unknown license"))).toBe(true);
+    expect(warnings.some((w) => w.includes("http://"))).toBe(true);
+  });
+});
 
 describe("renderDatasetPageBody", () => {
   test("メタデータと distribution テーブル", () => {

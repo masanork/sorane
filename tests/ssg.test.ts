@@ -220,6 +220,14 @@ describe("buildSearchMount", () => {
     expect(html).toContain('class="search search--header"');
     expect(html).not.toContain("search-facet");
   });
+
+  test("page variant は OKF 0.3 型ファセットを出す", async () => {
+    const { buildSearchMount } = await import("../packages/core/src/ssg.ts");
+    const html = buildSearchMount("./", { lang: "ja" });
+    expect(html).toContain('value="dataset"');
+    expect(html).toContain('value="glossary"');
+    expect(html).toContain("データセット");
+  });
 });
 
 describe("buildAtomFeed", () => {

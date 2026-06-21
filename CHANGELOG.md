@@ -9,7 +9,8 @@ All notable changes to sorane are documented here. Versioning follows [SemVer](h
 - FAQ page template (`type: faq`): `##` Q/A sections, `.faq-*` CSS, `FAQPage` JSON-LD with `mainEntity`
 - Glossary page template (`type: glossary`): `##` term sections or `terms:` frontmatter, `.glossary-*` CSS, `DefinedTermSet` JSON-LD with `hasDefinedTerm`
 - Reference page template (`type: reference`): source metadata block, table-friendly `.reference-*` CSS, `TechArticle` JSON-LD with `isBasedOn`
-- `validate --json` categories `faq`, `glossary`, and `reference` for body structure warnings
+- Search integration for OKF 0.3 types: `faq` / `glossary` section chunking, `reference` table text, `dataset` overview + `license:` / `format:` tags; UI and CLI `--type` facets for all types
+- `validate --json` categories `faq`, `glossary`, `reference`, and `dataset` for structure / open-data warnings
 - `examples/open-data/content/faq.md`, `glossary.md`, and `stops-csv-fields.md` demo pages
 
 ## [0.2.8] - 2026-06-21

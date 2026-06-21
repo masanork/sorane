@@ -1,5 +1,6 @@
 import type { OkfConcept } from "@sorane/okf";
 import {
+  isKnownLicenseId,
   parseDistributions,
   parsePublisher,
   resolveDistributionUrl,
@@ -32,6 +33,34 @@ function distributionRow(
     `<td><a href="${escapeHtml(href)}">${escapeHtml(href)}</a>${size}${checksum}</td>` +
     `</tr>`
   );
+}
+
+/** `type: dataset` 向けの warning（schema エラー以外）。 */
+export function validateDatasetWarnings(frontmatter: Record<string, unknown>): readonly string[] {
+  const warnings: string[] = [];
+  const licenseRaw = frontmatter.license;
+  if (typeof licenseRaw === "string" && licenseRaw.length > 0 && !isKnownLicenseId(licenseRaw)) {
+    warnings.push(
+      `dataset: unknown license "${licenseRaw}"; use SPDX id (e.g. CC-BY-4.0) or HTTPS URI`,
+    );
+  }
+  for (const dist of parseDistributions(frontmatter.distributions)) {
+    if (/^http:\/\//i.test(dist.accessURL.trim())) {
+      warnings.push(
+        `dataset: distribution "${dist.title}" uses http:// accessURL; prefer https://`,
+      );
+    }
+  }
+  const publisher = parsePublisher(frontmatter.publisher);
+  if (
+    (typeof licenseRaw === "string" && licenseRaw.length > 0) ||
+    parseDistributions(frontmatter.distributions).length > 0
+  ) {
+    if (!publisher) {
+      warnings.push("dataset: publisher.name is recommended when license or distributions are set");
+    }
+  }
+  return warnings;
 }
 
 /** Dataset landing: metadata block + distribution table + rendered body. */

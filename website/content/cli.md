@@ -50,6 +50,7 @@ npx @sorane/cli validate [--cwd <dir>] [--json]
 | `faq` | `type: faq` の `##` 質問見出し・回答の構造 |
 | `glossary` | `type: glossary` の `##` 用語見出し・定義、`terms:` 構造 |
 | `reference` | `type: reference` の `description` / `resource` 推奨・GFM 表 |
+| `dataset` | `type: dataset` のライセンス・distribution URL など |
 
 `build.quality` で `image` / `link` / `table` / `date` の warning を個別に無効化できます（[設定](configuration.html#品質ゲートvalidate)）。
 
@@ -80,5 +81,5 @@ npx @sorane/cli index [--cwd <dir>] [--force] [--hybrid] [--fts-only]
 ローカルで検索を試します。
 
 ```bash
-npx @sorane/cli search <query> [--cwd <dir>] [--type article] [--tag <slug>] [--k 10] [--json]
+npx @sorane/cli search <query> [--cwd <dir>] [--type article|dataset|reference|glossary|faq] [--tag <slug>] [--k 10] [--json]
 ```

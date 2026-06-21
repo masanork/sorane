@@ -481,6 +481,7 @@ export async function runBuild(opts: BuildOptions): Promise<BuildResult> {
         assetBaseUrl: config.search.asset_base_url,
         mode: searchMode,
         variant: "header",
+        lang: config.site.lang,
       }),
       extraHead: buildSearchHead(rootPrefix, searchMode),
     };
@@ -674,6 +675,7 @@ export async function runBuild(opts: BuildOptions): Promise<BuildResult> {
         buildSearchMount(rootPrefix, {
           assetBaseUrl: config.search.asset_base_url,
           mode: searchMode,
+          lang: pageLang,
         }) +
         (searchIntro
           ? `<div class="search-intro">${searchIntro.html}</div>`

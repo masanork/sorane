@@ -106,6 +106,8 @@ profile: sorane-okf/0.3
 | stop_id | string | Unique stop id |
 ```
 
+検索インデックスは `doc_type`（frontmatter の `type`）で絞り込めます。`dataset` には `license:` / `theme:` / `format:` タグが付与され、`sorane search --tag format:csv` のように検索できます。
+
 ## ビルド出力
 
 | パス | 内容 |

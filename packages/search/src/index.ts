@@ -1,4 +1,10 @@
-export { chunkDocument, MIN_BODY, MAX_BODY, type Chunk } from "./chunker.ts";
+export {
+  chunkDocument,
+  MIN_BODY,
+  MIN_BODY_STRUCTURED,
+  MAX_BODY,
+  type Chunk,
+} from "./chunker.ts";
 export { hashContent, planIncremental, type IncrementalPlan } from "./incremental.ts";
 export { slugifyHeading, SlugLedger } from "./heading-slug.ts";
 export {

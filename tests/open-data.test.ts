@@ -1,11 +1,20 @@
 import { describe, expect, test } from "./_expect.ts";
 import {
+  isKnownLicenseId,
   parseDistributions,
   parsePublisher,
   resolveDistributionUrl,
   resolveLicenseUrl,
   resolveMediaType,
 } from "../packages/core/src/open-data.ts";
+
+describe("isKnownLicenseId", () => {
+  test("SPDX と HTTPS を認識", () => {
+    expect(isKnownLicenseId("CC-BY-4.0")).toBe(true);
+    expect(isKnownLicenseId("https://example.com/license")).toBe(true);
+    expect(isKnownLicenseId("custom")).toBe(false);
+  });
+});
 
 describe("resolveLicenseUrl", () => {
   test("SPDX 短コードを URL に解決する", () => {

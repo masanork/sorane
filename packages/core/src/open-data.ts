@@ -33,6 +33,11 @@ const FORMAT_MEDIA: Record<string, string> = {
   xlsx: "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet",
 };
 
+export function isKnownLicenseId(license: string): boolean {
+  const trimmed = license.trim();
+  return /^https?:\/\//i.test(trimmed) || trimmed in SPDX_LICENSE_URL;
+}
+
 export function resolveLicenseUrl(license: string): string {
   const trimmed = license.trim();
   if (/^https?:\/\//i.test(trimmed)) return trimmed;

@@ -5,6 +5,7 @@ import type { SoraneConfig } from "./config.ts";
 import { validateDiagramAltWarnings } from "./diagrams/validate-diagram-alt.ts";
 import { validateFaqWarnings } from "./faq-page.ts";
 import { validateGlossaryWarnings } from "./glossary-page.ts";
+import { validateDatasetWarnings } from "./dataset-page.ts";
 import { validateReferenceWarnings } from "./reference-page.ts";
 import { validateHeadingWarnings } from "./validate-heading-structure.ts";
 import { validateContentQualityFindings } from "./validate-content-quality.ts";
@@ -24,7 +25,8 @@ export type ValidateFindingCategory =
   | "revision"
   | "faq"
   | "glossary"
-  | "reference";
+  | "reference"
+  | "dataset";
 
 export interface ValidateFinding {
   readonly severity: ValidateFindingSeverity;
@@ -145,6 +147,12 @@ export function validateSiteContent(
           frontmatter: fm,
         })) {
           findings.push(warningToFinding("reference", w));
+          warningCount++;
+        }
+      }
+      if (result.type === "dataset") {
+        for (const w of validateDatasetWarnings(fm)) {
+          findings.push(warningToFinding("dataset", w));
           warningCount++;
         }
       }

@@ -134,6 +134,24 @@ describe("validateSiteContent", () => {
     const file = report.files.find((f) => f.file === "api.md");
     assert.ok(file?.findings.some((f) => f.category === "reference" && f.severity === "warning"));
   });
+
+  test("dataset warnings are categorized", () => {
+    const root = mkdtempSync(join(tmpdir(), "sorane-validate-"));
+    const contentDir = join(root, "content");
+    mkdirSync(contentDir, { recursive: true });
+    writeFileSync(
+      join(contentDir, "data.md"),
+      "---\ntype: dataset\ntitle: D\ndescription: Demo dataset\nresource: https://ex.dev/d\nlicense: Weird\nprofile: sorane-okf/0.3\npublisher:\n  name: Org\ndistributions:\n  - title: CSV\n    format: csv\n    accessURL: https://ex.dev/a.csv\n---\n\nBody.\n",
+      "utf8",
+    );
+    const report = validateSiteContent(
+      root,
+      mergeConfig({ build: { content_dir: "content" } } as Partial<SoraneConfig>),
+    );
+    assert.equal(report.ok, true);
+    const file = report.files.find((f) => f.file === "data.md");
+    assert.ok(file?.findings.some((f) => f.category === "dataset" && f.severity === "warning"));
+  });
 });
 
 describe("validate CLI --json", () => {
