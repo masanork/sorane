@@ -26,7 +26,7 @@
   },
   "dependencies": {
     "@huggingface/transformers": "^4.2.0",
-    "@sorane/okf": "0.2.7",
+    "@sorane/okf": "0.2.8",
     "better-sqlite3": "^12.11.1",
     "remark-gfm": "^4.0.1",
     "remark-parse": "^11.0.0",

@@ -36,9 +36,9 @@
   },
   "prepublishOnly": "cd ../.. && npm run typecheck && npm test",
   "dependencies": {
-    "@sorane/core": "0.2.7",
-    "@sorane/okf": "0.2.7",
-    "@sorane/search": "0.2.7",
+    "@sorane/core": "0.2.8",
+    "@sorane/okf": "0.2.8",
+    "@sorane/search": "0.2.8",
     "js-yaml": "^4.1.0",
     "tsx": "^4.19.0"
   }
