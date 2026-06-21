@@ -1,8 +1,8 @@
-import { existsSync, mkdtempSync, readFileSync, rmSync } from "node:fs";
+import { mkdtempSync, readFileSync, rmSync } from "node:fs";
 import { join } from "node:path";
 import { tmpdir } from "node:os";
-import { execFileSync } from "node:child_process";
 import { describe, expect, test } from "./_expect.ts";
+import { mmdcCompileWorks } from "./_mmdc-probe.ts";
 import {
   compileMermaidToSvg,
   isMermaidBuildEnabled,
@@ -10,16 +10,6 @@ import {
 } from "../packages/core/src/diagrams/compile-mermaid.ts";
 import { diagramSourceHash } from "../packages/core/src/diagrams/diagram-hash.ts";
 import { DEFAULT_DIAGRAMS_CONFIG } from "../packages/core/src/config.ts";
-
-function mmdcAvailable(): boolean {
-  try {
-    const binary = resolveMmdcBinary(DEFAULT_DIAGRAMS_CONFIG);
-    execFileSync(binary, ["--version"], { stdio: "ignore" });
-    return true;
-  } catch {
-    return false;
-  }
-}
 
 describe("isMermaidBuildEnabled", () => {
   test("mode: build で true", () => {
@@ -47,8 +37,8 @@ describe("compileMermaidToSvg", () => {
     }
   });
 
-  test("mmdc 利用可能時は SVG を生成", async () => {
-    if (!mmdcAvailable()) return;
+  test("mmdc 利用可能時は SVG を生成", async (t) => {
+    if (!(await mmdcCompileWorks())) return t.skip("mmdc compile unavailable");
     const tmp = mkdtempSync(join(tmpdir(), "sorane-mmdc-"));
     try {
       const source = "flowchart LR\n  A --> B";

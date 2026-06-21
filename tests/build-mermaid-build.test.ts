@@ -1,24 +1,11 @@
 import { existsSync, mkdtempSync, mkdirSync, readFileSync, rmSync, writeFileSync } from "node:fs";
 import { join } from "node:path";
 import { tmpdir } from "node:os";
-import { execFileSync } from "node:child_process";
 import { describe, expect, test } from "./_expect.ts";
+import { mmdcCompileWorks } from "./_mmdc-probe.ts";
 import { runBuild } from "../packages/core/src/build.ts";
 import { mergeConfig, type SoraneConfig } from "../packages/core/src/config.ts";
 import { diagramSourceHash } from "../packages/core/src/diagrams/diagram-hash.ts";
-import { resolveMmdcBinary } from "../packages/core/src/diagrams/compile-mermaid.ts";
-import { DEFAULT_DIAGRAMS_CONFIG } from "../packages/core/src/config.ts";
-
-function mmdcAvailable(): boolean {
-  try {
-    execFileSync(resolveMmdcBinary(DEFAULT_DIAGRAMS_CONFIG), ["--version"], {
-      stdio: "ignore",
-    });
-    return true;
-  } catch {
-    return false;
-  }
-}
 
 const ARTICLE = `---
 type: article
@@ -32,8 +19,8 @@ flowchart LR
 `;
 
 describe("runBuild (mermaid.mode: build)", () => {
-  test("mmdc 利用可能時は img を emit し loader を出さない", async () => {
-    if (!mmdcAvailable()) return;
+  test("mmdc 利用可能時は img を emit し loader を出さない", async (t) => {
+    if (!(await mmdcCompileWorks())) return t.skip("mmdc compile unavailable");
     const root = mkdtempSync(join(tmpdir(), "sorane-mmdc-build-"));
     const outDir = join(root, "dist");
     try {
