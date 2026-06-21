@@ -151,7 +151,7 @@ Cloudflare Pages deploys `website/dist` to **sorane.dev** on push to `main` (see
 | Method | Status |
 |--------|--------|
 | `git clone` + `npm ci` | Available |
-| `npx @sorane/cli` | Ready to publish (workspace packages) |
+| `npx @sorane/cli` | Published (`@sorane/cli@0.2.2`) |
 | GitHub Release tags | Planned (`v0.2.0` + fonts tarball) |
 
 Publish workspace packages (maintainers):
