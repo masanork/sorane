@@ -151,6 +151,11 @@ import {
   renderDocsIndexBody,
   resolveDocsNav,
 } from "./docs.ts";
+import {
+  docsLandingCtas,
+  renderArticleRelatedHtml,
+  resolveRelatedLinks,
+} from "./article-related.ts";
 import type { DiagramRenderMeta } from "./diagrams/diagram-meta.ts";
 import { buildAssociatedMediaForArticle } from "./associated-media.ts";
 import { loadAssetProvenance } from "./asset-provenance.ts";
@@ -535,7 +540,27 @@ export async function runBuild(opts: BuildOptions): Promise<BuildResult> {
   }
   const docsNav = resolveDocsNav(config.docs?.nav, titleByHref);
   const docsMode = docsNav.length > 0;
+  const docsIndexLayout = config.docs?.index_layout ?? "hub";
   const docsHrefSet = new Set(docsNavLinks(docsNav).map((item) => item.href));
+
+  const relatedHtmlForPage = (
+    concept: OkfConcept,
+    outRel: string,
+    pageLang: string,
+    includeSectionPeers: boolean,
+  ): string => {
+    let links = resolveRelatedLinks({
+      frontmatter: concept.frontmatter,
+      currentHref: outRel,
+      titleByHref,
+      docsNav: includeSectionPeers ? docsNav : undefined,
+      includeSectionPeers,
+    });
+    if (!includeSectionPeers && docsMode && links.length === 0) {
+      links = docsNavLinks(docsNav).slice(0, 3);
+    }
+    return renderArticleRelatedHtml(links, outRel, pageLang);
+  };
 
   type FontProcessorType = {
     fontCssForPage: (opts: {
@@ -857,13 +882,23 @@ export async function runBuild(opts: BuildOptions): Promise<BuildResult> {
         p.concept,
         nav,
         pageLang,
-        { badgeHtml, ...bodySectionOpts(rootPrefix) },
+        {
+          badgeHtml,
+          relatedHtml: relatedHtmlForPage(p.concept, outRel, pageLang, true),
+          ...bodySectionOpts(rootPrefix),
+        },
       );
       bodyHtml = doc.bodyHtml;
       pageDiagrams = doc.diagrams;
     } else {
       const article = await renderArticleBodyWithMetaForConfig(p.concept, nav, {
         badgeHtml,
+        relatedHtml: relatedHtmlForPage(
+          p.concept,
+          outRel,
+          pageLang,
+          false,
+        ),
         lang: pageLang,
         ...bodySectionOpts(rootPrefix),
       });
@@ -1190,6 +1225,7 @@ export async function runBuild(opts: BuildOptions): Promise<BuildResult> {
     );
     indexDiagrams = mergeDiagramMeta(indexDiagrams, intro.diagrams);
 
+    const indexUsesDocsLayout = docsMode && docsIndexLayout === "hub";
     if (docsMode && useBlogLayout) {
       bodyHtml = renderDocsIndexBody({
         siteTitle: indexTitle,
@@ -1199,9 +1235,15 @@ export async function runBuild(opts: BuildOptions): Promise<BuildResult> {
         introHtml: intro.introHtml,
         docsNav,
         recentArticles: articleSummaries,
-        newsLimit: blogOpts.index_archive_limit,
+        newsLimit:
+          docsIndexLayout === "landing"
+            ? Math.min(blogOpts.index_archive_limit, 3)
+            : blogOpts.index_archive_limit,
         archiveHref: blogOpts.archives ? "archive/index.html" : undefined,
         lang: indexLang,
+        layout: docsIndexLayout,
+        landingCtas:
+          docsIndexLayout === "landing" ? docsLandingCtas(docsNav) : undefined,
       });
     } else if (useBlogLayout) {
       const featuredMode = blogOpts.featured_mode;
@@ -1269,7 +1311,9 @@ export async function runBuild(opts: BuildOptions): Promise<BuildResult> {
       searchUrl: searchActionUrl,
       licenseUrl: siteLicenseUrl,
     });
-    const indexHeaderSearch = headerSearchFor("./", { docsLayout: docsMode });
+    const indexHeaderSearch = headerSearchFor("./", {
+      docsLayout: indexUsesDocsLayout,
+    });
     const indexDiagramHead = diagramHeadForPage(
       indexDiagrams,
       "./",
@@ -1300,8 +1344,8 @@ export async function runBuild(opts: BuildOptions): Promise<BuildResult> {
       extraHead: indexExtraHead,
       showArchiveNav: showArchiveInHeader,
       searchPath: searchNavPath,
-      docsLayout: docsMode,
-      docsSidebarHtml: docsMode
+      docsLayout: indexUsesDocsLayout,
+      docsSidebarHtml: indexUsesDocsLayout
         ? docsSidebarHtml(docsNav, indexLocale.outRel, indexLocale.outRel)
         : undefined,
       headerSearchHtml: indexHeaderSearch.headerSearchHtml,

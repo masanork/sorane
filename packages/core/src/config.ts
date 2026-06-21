@@ -51,9 +51,17 @@ export type DocsNavSpec =
   | { readonly href: string; readonly title?: string }
   | { readonly section: string };
 
+export type DocsIndexLayout = "landing" | "hub";
+
 export interface DocsConfig {
   /** ドキュメントサイトのサイドバー順（href は dist 基準、例: getting-started.html） */
   readonly nav?: readonly DocsNavSpec[];
+  /**
+   * トップ（index）のレイアウト。
+   * - `landing`: 製品の顔としてシンプル（サイドバーなし・ドキュメント一覧なし）
+   * - `hub`: サイドバー + ニュース + ドキュメント一覧（従来）
+   */
+  readonly index_layout?: DocsIndexLayout;
 }
 
 export type MermaidMode = "client" | "build" | "off";
@@ -434,7 +442,12 @@ export function mergeConfig(partial: MergeConfigInput = {}): SoraneConfig {
     },
     fonts: { ...DEFAULT_CONFIG.fonts, ...rest.fonts },
     search: { ...DEFAULT_CONFIG.search, ...rest.search },
-    docs: rest.docs ? { nav: rest.docs.nav } : undefined,
+    docs: rest.docs
+      ? {
+          nav: rest.docs.nav,
+          ...(rest.docs.index_layout ? { index_layout: rest.docs.index_layout } : {}),
+        }
+      : undefined,
     okf: rest.okf,
   };
 }

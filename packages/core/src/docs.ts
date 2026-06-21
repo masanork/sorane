@@ -22,6 +22,7 @@ import {
 
 export interface DocsArticleRenderOpts extends AsyncRenderOptions {
   readonly badgeHtml?: string;
+  readonly relatedHtml?: string;
   readonly diagrams?: DiagramsConfig;
 }
 
@@ -70,6 +71,30 @@ export function isDocsNavLink(entry: DocsNavEntry): entry is DocsNavLink {
 
 export function docsNavLinks(entries: readonly DocsNavEntry[]): readonly DocsNavLink[] {
   return entries.filter(isDocsNavLink);
+}
+
+/** 同一 `docs.nav` セクション内の他ページ（現在地を除く）。 */
+export function docsSectionPeers(
+  href: string,
+  nav: readonly DocsNavEntry[],
+): readonly DocsNavLink[] {
+  const sections: DocsNavLink[][] = [];
+  let current: DocsNavLink[] = [];
+  for (const entry of nav) {
+    if (!isDocsNavLink(entry)) {
+      if (current.length > 0) sections.push(current);
+      current = [];
+      continue;
+    }
+    current.push(entry);
+  }
+  if (current.length > 0) sections.push(current);
+  for (const section of sections) {
+    if (section.some((link) => link.href === href)) {
+      return section.filter((link) => link.href !== href);
+    }
+  }
+  return [];
 }
 
 export function docsNavFor(
@@ -178,6 +203,7 @@ export function renderDocsArticleBody(
   opts?: DocsArticleRenderOpts,
 ): string {
   const badge = opts?.badgeHtml ?? "";
+  const related = opts?.relatedHtml ?? "";
   const header = `<header>\n<h1>${escapeHtml(concept.title)}</h1>\n${badge}</header>\n`;
   const toc = pageTocHtml(rendered.outline, lang);
   const revisionBlock = revisionHistoryHtml(
@@ -190,6 +216,7 @@ export function renderDocsArticleBody(
     `${toc}` +
     `<div class="article-body docs-content">\n${rendered.html}</div>\n` +
     `${revisionBlock}` +
+    `${related}` +
     `${docsPagerHtml(nav, lang)}\n` +
     `</article>\n`
   );
@@ -210,6 +237,8 @@ export function renderDocsIndexBody(opts: {
   readonly profileUrl?: string;
   readonly githubUrl?: string;
   readonly lang?: string;
+  readonly layout?: "landing" | "hub";
+  readonly landingCtas?: readonly DocsNavLink[];
 }): string {
   const labels = siteLabels(opts.lang ?? "ja");
   const links = [
@@ -224,6 +253,21 @@ export function renderDocsIndexBody(opts: {
     .join(" ");
   const profile = links ? links : "";
   const intro = opts.introHtml ? `<div class="docs-intro">${opts.introHtml}</div>` : "";
+  const layout = opts.layout ?? "hub";
+  const landingCtas =
+    layout === "landing" && opts.landingCtas && opts.landingCtas.length > 0
+      ? `<nav class="docs-landing-cta" aria-label="${escapeHtml(labels.gettingStarted)}">\n` +
+        opts.landingCtas
+          .map((cta, i) => {
+            const cls =
+              i === 0 ? "docs-landing-cta-primary" : "docs-landing-cta-secondary";
+            return (
+              `<a href="${escapeHtml(cta.href)}" class="${cls}">${escapeHtml(cta.title)}</a>`
+            );
+          })
+          .join("\n") +
+        `\n</nav>\n`
+      : "";
   const navGroupParts: string[] = [];
   let sectionTitle: string | undefined;
   let linkItems: string[] = [];
@@ -253,7 +297,7 @@ export function renderDocsIndexBody(opts: {
   flushNavGroup();
   const navBody = navGroupParts.join("");
   const navSection =
-    navBody.length > 0
+    layout === "hub" && navBody.length > 0
       ? `<section class="docs-index-nav">\n` +
         `<h2>${escapeHtml(labels.documentation)}</h2>\n` +
         `${navBody}` +
@@ -280,21 +324,25 @@ export function renderDocsIndexBody(opts: {
     opts.archiveHref && newsItems.length > 0
       ? `<p class="docs-news-more"><a href="${escapeHtml(opts.archiveHref)}">${escapeHtml(labels.allNews)}</a></p>\n`
       : "";
+  const newsClass =
+    layout === "landing" ? "docs-index-news docs-index-news--compact" : "docs-index-news";
   const newsSection =
     newsItems.length > 0
-      ? `<section class="docs-index-news">\n` +
+      ? `<section class="${newsClass}">\n` +
         `<h2>${escapeHtml(labels.news)}</h2>\n` +
         `<ul class="docs-index-list docs-news-list">\n${newsList}\n</ul>\n` +
         `${newsArchive}` +
         `</section>\n`
       : "";
+  const landingClass = layout === "landing" ? " docs-index--landing" : "";
 
   return (
-    `<div class="docs-index">\n` +
+    `<div class="docs-index${landingClass}">\n` +
     `<header class="docs-index-header">\n` +
     `<h1>${escapeHtml(opts.siteTitle)}</h1>\n` +
     (opts.description ? `<p class="blog-lead">${escapeHtml(opts.description)}</p>\n` : "") +
     (profile ? `<div class="blog-profile">${profile}</div>\n` : "") +
+    `${landingCtas}` +
     `${intro}` +
     `</header>\n` +
     `${newsSection}` +

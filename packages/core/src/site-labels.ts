@@ -28,6 +28,8 @@ export interface SiteLabels {
   readonly backToYearArchive: string;
   readonly tagTitle: string;
   readonly pageNumber: string;
+  readonly relatedPages: string;
+  readonly gettingStarted: string;
 }
 
 const JA: SiteLabels = {
@@ -60,6 +62,8 @@ const JA: SiteLabels = {
   backToYearArchive: "← 年別アーカイブ",
   tagTitle: "タグ",
   pageNumber: "ページ",
+  relatedPages: "関連ページ",
+  gettingStarted: "はじめに",
 };
 
 const EN: SiteLabels = {
@@ -92,6 +96,8 @@ const EN: SiteLabels = {
   backToYearArchive: "← Archive by year",
   tagTitle: "Tag",
   pageNumber: "Page",
+  relatedPages: "Related pages",
+  gettingStarted: "Getting started",
 };
 
 export function siteLabels(lang: string): SiteLabels {
@@ -120,6 +126,8 @@ export function siteChromeText(lang: string, siteTitle: string, includeSearch = 
     labels.nextPage,
     labels.skipToContent,
     labels.docsMenu,
+    labels.relatedPages,
+    labels.gettingStarted,
     labels.aiDisclosureAria,
     labels.aiPolicyLink,
     labels.emergencyLink,

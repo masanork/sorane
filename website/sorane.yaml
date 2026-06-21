@@ -31,9 +31,10 @@ build:
     archives: true
     tags: false
     featured_mode: off
-    index_archive_limit: 5
+    index_archive_limit: 3
 
 docs:
+  index_layout: landing
   nav:
     - section: はじめに
     - getting-started.html

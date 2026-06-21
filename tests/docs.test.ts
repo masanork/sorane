@@ -128,6 +128,19 @@ describe("renderDocsIndexBody", () => {
     expect(html).toContain("cli.html");
   });
 
+  test("landing ではドキュメント一覧を出さない", () => {
+    const html = renderDocsIndexBody({
+      siteTitle: "sorane",
+      docsNav: [{ href: "cli.html", title: "CLI" }],
+      layout: "landing",
+      landingCtas: [{ href: "getting-started.html", title: "はじめに" }],
+      lang: "ja",
+    });
+    expect(html).toContain("docs-index--landing");
+    expect(html).toContain("docs-landing-cta-primary");
+    expect(html).not.toContain("docs-index-nav");
+  });
+
   test("section 付きドキュメント一覧", () => {
     const html = renderDocsIndexBody({
       siteTitle: "sorane",

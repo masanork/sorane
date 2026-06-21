@@ -54,6 +54,17 @@ describe("mergeConfig", () => {
     expect(cfg.build.diagrams?.enabled).toBe(false);
   });
 
+  test("docs.index_layout を保持する", () => {
+    const cfg = mergeConfig({
+      docs: {
+        index_layout: "landing",
+        nav: ["getting-started.html"],
+      },
+    });
+    expect(cfg.docs?.index_layout).toBe("landing");
+    expect(cfg.docs?.nav).toEqual(["getting-started.html"]);
+  });
+
   test("diagrams を deep merge する", () => {
     const cfg = mergeConfig({
       build: {

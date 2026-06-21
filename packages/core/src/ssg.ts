@@ -458,6 +458,7 @@ export function renderArticleBodyWithMeta(
   nav?: ArticleNav,
   opts?: {
     readonly badgeHtml?: string;
+    readonly relatedHtml?: string;
     readonly lang?: string;
     readonly diagrams?: DiagramsConfig;
   } & BodySectionOptions,
@@ -471,6 +472,7 @@ export function renderArticleBodyWithMeta(
   const author =
     typeof concept.frontmatter.author === "string" ? concept.frontmatter.author : undefined;
   const badge = opts?.badgeHtml ?? "";
+  const related = opts?.relatedHtml ?? "";
   const section = renderBodySection(stripDuplicateTitleHeading(concept.body, concept.title), opts);
   const header = [
     "<header>",
@@ -487,6 +489,7 @@ export function renderArticleBodyWithMeta(
     `${header}\n` +
     `<div class="article-body">\n${section.html}\n</div>\n` +
     `${revisionBlock}` +
+    `${related}` +
     `${articleNavHtml(nav)}\n` +
     `</article>`;
   return { bodyHtml, diagrams: section.diagrams };
@@ -497,6 +500,7 @@ export async function renderArticleBodyWithMetaForConfig(
   nav?: ArticleNav,
   opts?: {
     readonly badgeHtml?: string;
+    readonly relatedHtml?: string;
     readonly lang?: string;
     readonly diagrams?: DiagramsConfig;
   } & BodySectionOptions,
@@ -510,6 +514,7 @@ export async function renderArticleBodyWithMetaForConfig(
   const author =
     typeof concept.frontmatter.author === "string" ? concept.frontmatter.author : undefined;
   const badge = opts?.badgeHtml ?? "";
+  const related = opts?.relatedHtml ?? "";
   const section = await renderBodySectionForConfig(
     stripDuplicateTitleHeading(concept.body, concept.title),
     opts,
@@ -529,6 +534,7 @@ export async function renderArticleBodyWithMetaForConfig(
     `${header}\n` +
     `<div class="article-body">\n${section.html}\n</div>\n` +
     `${revisionBlock}` +
+    `${related}` +
     `${articleNavHtml(nav)}\n` +
     `</article>`;
   return { bodyHtml, diagrams: section.diagrams };
