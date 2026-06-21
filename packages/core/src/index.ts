@@ -11,7 +11,11 @@ export {
   type RunPdfExportOptions,
   type RunPdfExportResult,
 } from "./export/pdf.ts";
-export { prepareHtmlForPdf } from "./export/pdf-html.ts";
+export {
+  prepareHtmlForPdf,
+  prepareHtmlForPdfAsync,
+  type PrepareHtmlForPdfOptions,
+} from "./export/pdf-html.ts";
 export { pandocCliAvailable, resolvePandocBinary } from "./export/pandoc-cli.ts";
 export {
   vivliostyleCliAvailable,

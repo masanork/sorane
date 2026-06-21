@@ -22,7 +22,7 @@ describe("runPdfExport", () => {
         config: { ...config, build: { ...config.build, out_dir: dist } },
         clean: true,
       });
-      const result = runPdfExport({
+      const result = await runPdfExport({
         cwd: MINIMAL,
         config: { ...config, build: { ...config.build, out_dir: dist } },
         out,
@@ -48,7 +48,7 @@ describe("runPdfExport", () => {
         config: { ...config, build: { ...config.build, out_dir: dist } },
         clean: true,
       });
-      const result = runPdfExport({
+      const result = await runPdfExport({
         cwd: MINIMAL,
         config: { ...config, build: { ...config.build, out_dir: dist } },
         out,

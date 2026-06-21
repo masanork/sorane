@@ -3,7 +3,7 @@
 | Field | Value |
 |-------|-------|
 | **Date** | 2026-06-21 |
-| **Status** | Implemented (print.css + chrome strip; diagrams deferred) |
+| **Status** | Implemented (print.css, chrome strip, diagram prerender/fallback) |
 | **Related** | `design/markup-interchange.md` |
 
 ---
@@ -74,16 +74,19 @@ Vivliostyle runs with `cwd = dist/` so relative `./assets/main.css` links resolv
 
 ## PDF HTML preparation
 
-`packages/core/src/export/pdf-html.ts` (`prepareHtmlForPdf`):
+`packages/core/src/export/pdf-html.ts` (`prepareHtmlForPdfAsync`):
 
 - Injects `assets/print.css` after `main.css` on a temporary `.print.html` sibling (deleted after export)
-- Removes `search.mjs` module scripts
+- Removes `search.mjs` and `sorane-mermaid-loader.mjs` scripts
+- **Diagram prerender**: client `pre[data-sorane-alt] > code.language-mermaid|d2` → inline SVG when `mmdc` / `d2` CLI available; otherwise static fallback figure with alt + source
+
+Build-mode diagrams (`<figure class="diagram"><img …>`) pass through unchanged.
 
 `templates/default/assets/print.css` is copied to `dist/assets/print.css` on build.
 
 ## Known limitations
 
-- **Interactive diagrams**: Mermaid/D2 client-rendered blocks may not match browser output without a pre-render pass.
+- **Graphviz client fences**: not prerendered in PDF pass (use build mode or accept fallback).
 - **404 / search-only pages**: batch export skips HTML files that are not buildable content pages.
 - **Emergency banner**: hidden via `print.css` (content not duplicated in PDF body).
 

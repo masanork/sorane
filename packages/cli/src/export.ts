@@ -49,7 +49,7 @@ export async function runExportCmd(argv: string[]): Promise<void> {
   }
 
   if (format === "pdf") {
-    const result = runPdfExport({ cwd, config, out, file, html });
+    const result = await runPdfExport({ cwd, config, out, file, html });
     for (const f of result.files) {
       process.stdout.write(`[sorane] exported ${f}\n`);
     }

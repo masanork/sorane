@@ -42,3 +42,25 @@ main img {
   max-width: 100%;
   height: auto;
 }
+
+figure.diagram {
+  margin: 1rem 0;
+  page-break-inside: avoid;
+}
+
+figure.diagram svg {
+  max-width: 100%;
+  height: auto;
+}
+
+.diagram-fallback-label {
+  font-size: 0.9em;
+  color: #555;
+  margin: 0 0 0.5rem;
+}
+
+figure.diagram--fallback pre {
+  font-size: 0.75em;
+  white-space: pre-wrap;
+  word-break: break-word;
+}

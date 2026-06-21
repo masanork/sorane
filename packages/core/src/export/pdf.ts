@@ -16,7 +16,7 @@ import {
 import type { SoraneConfig } from "../config.ts";
 import { resolveI18nContext, resolvePageLocaleInfo } from "../i18n.ts";
 import { okfValidateOptions } from "../okf-config.ts";
-import { prepareHtmlForPdf } from "./pdf-html.ts";
+import { prepareHtmlForPdfAsync } from "./pdf-html.ts";
 import {
   resolveVivliostyleInvocation,
   vivliostyleCliAvailable,
@@ -75,14 +75,18 @@ function resolveHtmlUnderDist(distDir: string, html: string): string {
   return normAbs;
 }
 
-function exportHtmlToPdf(
+async function exportHtmlToPdf(
   distDir: string,
   htmlAbs: string,
   outPath: string,
   invocation: VivliostyleInvocation,
-): void {
+  diagrams: SoraneConfig["build"]["diagrams"],
+): Promise<void> {
   const raw = readFileSync(htmlAbs, "utf8");
-  const prepared = prepareHtmlForPdf(raw);
+  const prepared = await prepareHtmlForPdfAsync(raw, {
+    distDir,
+    diagrams,
+  });
   const printHtmlAbs = htmlAbs.replace(/\.html$/i, ".print.html");
   writeFileSync(printHtmlAbs, prepared, "utf8");
   const printRel = relative(distDir, printHtmlAbs).replace(/\\/g, "/");
@@ -94,7 +98,7 @@ function exportHtmlToPdf(
 }
 
 /** `dist/` のビルド済み HTML から PDF を export する（Vivliostyle CLI 必須）。 */
-export function runPdfExport(opts: RunPdfExportOptions): RunPdfExportResult {
+export async function runPdfExport(opts: RunPdfExportOptions): Promise<RunPdfExportResult> {
   if (!vivliostyleCliAvailable()) {
     throw new Error(
       "vivliostyle CLI not found; install @vivliostyle/cli, add vivliostyle to PATH, or set VIVLIOSTYLE",
@@ -122,7 +126,7 @@ export function runPdfExport(opts: RunPdfExportOptions): RunPdfExportResult {
     const outPath = outAbs.endsWith(".pdf")
       ? outAbs
       : join(outAbs, pdfBasenameFromOutRel(relative(distDir, htmlAbs)));
-    exportHtmlToPdf(distDir, htmlAbs, outPath, invocation);
+    await exportHtmlToPdf(distDir, htmlAbs, outPath, invocation, opts.config.build.diagrams);
     files.push(outPath);
     return { files };
   }
@@ -159,7 +163,7 @@ export function runPdfExport(opts: RunPdfExportOptions): RunPdfExportResult {
     const outPath = outAbs.endsWith(".pdf")
       ? outAbs
       : join(outAbs, pdfBasenameFromOutRel(outRel));
-    exportHtmlToPdf(distDir, htmlAbs, outPath, invocation);
+    await exportHtmlToPdf(distDir, htmlAbs, outPath, invocation, opts.config.build.diagrams);
     files.push(outPath);
     return { files };
   }
@@ -182,7 +186,7 @@ export function runPdfExport(opts: RunPdfExportOptions): RunPdfExportResult {
     const pdfRel = pdfOutRelFromHtmlOutRel(outRel);
     const outPath = join(outAbs, pdfRel);
     mkdirSync(dirname(outPath), { recursive: true });
-    exportHtmlToPdf(distDir, htmlAbs, outPath, invocation);
+    await exportHtmlToPdf(distDir, htmlAbs, outPath, invocation, opts.config.build.diagrams);
     files.push(outPath);
   }
 
