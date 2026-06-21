@@ -4,20 +4,34 @@ All notable changes to sorane are documented here. Versioning follows [SemVer](h
 
 ## [Unreleased]
 
+## [0.2.8] - 2026-06-21
+
 ### Added
 
-- **Quality gates (phase 2):** `validate --json` categories `image`, `link`, `table`, `date`; `build.quality` toggles in `sorane.yaml`
-- **Findability pack (phase 1):** `site.organization`, `site.contact`, `site.findability` in `sorane.yaml`; `GovernmentOrganization` + `SearchAction` + `BreadcrumbList` JSON-LD; sitemap `lastmod` from `updated`; `robots.txt` `Disallow`; `llms.txt` publisher/contact; article fields `identifier` / `subject` / `audience` / `coverage`; search page `?q=` support for SearchAction
+- **Findability pack (public-sector sites):**
+  - `site.organization`, `site.contact`, `site.findability` — `GovernmentOrganization` / `SearchAction` / `BreadcrumbList` JSON-LD; sitemap `lastmod` from `updated`; `robots.txt` `Disallow`; `llms.txt` publisher/contact; article fields `identifier` / `subject` / `audience` / `coverage`; search page `?q=` for SearchAction
+  - **Quality gates:** `validate --json` categories `image`, `link`, `table`, `date`; `build.quality` toggles in `sorane.yaml`
+  - **i18n:** `site.i18n.locales`, locale-prefixed `content/{prefix}/`, `translation_key`, `hreflang` / `og:locale:alternate`, per-page `lang`
+  - **Emergency banner:** `site.emergency` on all pages (`role="alert"`), per-locale overrides
+  - **Revision history:** `revisions` frontmatter → accessible table; `validate` category `revision`
+  - **Cloudflare hosting hooks:** `site.hosting.provider: cloudflare` → `dist/ops/cloudflare.json`, `llms.txt` Access logs section; `templates/cloudflare/` for optional Logpush → R2
 - `npm run stats` / `stats:json` — monorepo LOC, test ratio, workspace breakdown (`scripts/project-stats.ts`)
-- CI `project-stats` job: append `stats/history.jsonl`, regenerate `stats/trend.md` on `main` (`[skip ci]` bot commit)
-- Broad unit/integration test suite; `npm run test:coverage` line gate raised to **90%** (overall ~98% with `--test-isolation=none` so coverage merges across test files)
-- Per-file line coverage brought to ~90%+ across `packages/**/*.ts` (excluding `watch.ts` main loop and `packages/search/**`)
+- CI `project-stats` job: append `stats/history.jsonl`, regenerate `stats/trend.md` on `main`
+- sorane.dev **機能** page and refreshed docs navigation
+- Broad unit/integration test suite; `npm run test:coverage` line gate **90%** (overall ~98% with `--test-isolation=none`)
+
+### Changed
+
+- Workspace packages aligned to `0.2.8`
+- sorane.dev doc examples use `npx @sorane/cli` without version pin (CI pin remains optional)
 
 ### Fixed
 
-- Custom `404.md` with empty title now uses `site.lang` for the fallback heading (was always Japanese)
+- `validate` now parses frontmatter YAML via `parseYaml` (was treating YAML as object)
+- Custom `404.md` with empty title uses `site.lang` for the fallback heading (was always Japanese)
 - OKF bundle tar: reject paths longer than 100 bytes instead of silent truncation
 - `sorane search --type article <query>` no longer treats the type value as the query
+- CI: authenticate d2 install on Pages deploy; isolate `GITHUB_SHA` in stats-history tests; `npm ci --ignore-scripts` for image-metadata job
 
 ## [0.2.7] - 2026-06-21
 
@@ -115,7 +129,8 @@ All notable changes to sorane are documented here. Versioning follows [SemVer](h
 - Blog layout: archives, tags, pagination
 - Test infrastructure with coverage gate (~90% lines)
 
-[Unreleased]: https://github.com/masanork/sorane/compare/v0.2.7...main
+[Unreleased]: https://github.com/masanork/sorane/compare/v0.2.8...main
+[0.2.8]: https://github.com/masanork/sorane/compare/v0.2.7...v0.2.8
 [0.2.7]: https://github.com/masanork/sorane/compare/v0.2.6...v0.2.7
 [0.2.6]: https://github.com/masanork/sorane/compare/v0.2.5...v0.2.6
 [0.2.5]: https://github.com/masanork/sorane/compare/v0.2.4...v0.2.5

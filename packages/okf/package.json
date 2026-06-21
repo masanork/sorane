@@ -1,6 +1,6 @@
 {
   "name": "@sorane/okf",
-  "version": "0.2.7",
+  "version": "0.2.8",
   "description": "Open Knowledge Format parsing, validation, and serialization for sorane",
   "type": "module",
   "license": "MIT",

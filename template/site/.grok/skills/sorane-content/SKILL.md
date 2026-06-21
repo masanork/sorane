@@ -19,7 +19,7 @@ You maintain a **sorane** site: `content/` + `sorane.yaml`. No admin UI.
 ## After every edit
 
 ```bash
-npx @sorane/cli@0.2.7 validate --cwd . --json
+npx @sorane/cli validate --cwd . --json
 ```
 
 Parse JSON stdout:
@@ -33,9 +33,9 @@ Parse JSON stdout:
 ## Full publish loop
 
 ```bash
-npx @sorane/cli@0.2.7 validate --cwd . --json
-npx @sorane/cli@0.2.7 index --cwd . --force    # only if content/search.md exists
-npx @sorane/cli@0.2.7 build --cwd . --clean
+npx @sorane/cli validate --cwd . --json
+npx @sorane/cli index --cwd . --force    # only if content/search.md exists
+npx @sorane/cli build --cwd . --clean
 ```
 
 ## Content rules (short)

@@ -1,6 +1,6 @@
 {
   "name": "@sorane/search",
-  "version": "0.2.7",
+  "version": "0.2.8",
   "description": "FTS and hybrid search indexing for sorane sites",
   "type": "module",
   "license": "MIT",

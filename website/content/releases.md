@@ -5,7 +5,7 @@ profile: sorane-okf/0.1
 excludeFromList: true
 ---
 
-## 現状（v0.2.7）
+## 現状（v0.2.8）
 
 | 手段 | 状態 | 用途 |
 |------|------|------|
@@ -26,6 +26,12 @@ npx @sorane/cli build --cwd ./my-site --clean
 本番 CI でビルドの再現性が必要なときだけ `@sorane/cli@x.y.z` で pin します（任意）。
 
 パッケージ一覧: https://www.npmjs.com/org/sorane
+
+### v0.2.8 の主な変更
+
+- 公的サイト向け **Findability pack**（組織 JSON-LD、品質ゲート、i18n / hreflang、緊急バナー、改訂履歴、Cloudflare ホスティング hooks）
+- `validate` category `revision`、frontmatter YAML パース修正
+- sorane.dev [機能](features.html) ページ
 
 ### v0.2.7 の主な変更
 
@@ -57,7 +63,7 @@ masanork/sorane
 
 ```yaml
 - run: npx @sorane/cli build --cwd . --clean
-# 再現性が必要なら: npx @sorane/cli@0.2.7 build --cwd . --clean
+# 再現性が必要なら: npx @sorane/cli@0.2.8 build --cwd . --clean
 ```
 
 ## サプライチェーン

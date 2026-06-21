@@ -1,6 +1,6 @@
 {
   "name": "@sorane/font",
-  "version": "0.2.7",
+  "version": "0.2.8",
   "description": "Per-page WOFF2 font subsetting for sorane (bunsen WASM)",
   "type": "module",
   "license": "MIT",

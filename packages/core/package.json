@@ -1,6 +1,6 @@
 {
   "name": "@sorane/core",
-  "version": "0.2.7",
+  "version": "0.2.8",
   "description": "OKF-native static site build engine for sorane",
   "type": "module",
   "license": "MIT",
