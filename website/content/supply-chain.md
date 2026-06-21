@@ -25,7 +25,10 @@ CBOM は C2PA 署名を **外部 `c2patool`** に委譲する前提です。sora
 - `cbom.json` / `sbom.json` と SHA-256 サイドカー
 - `sorane-vX.Y.Z.intoto.jsonl`（SLSA provenance）
 
-npm から入れる場合は provenance 付き publish を CI で行います。
+npm から入れる場合は CI で provenance 付き publish します。認証は次のいずれかです。
+
+1. **npm Trusted Publisher** — 各 `@sorane/*` パッケージの Settings で GitHub Actions を登録（`masanork/sorane`、`release.yml`）
+2. **GitHub secret `NPM_TOKEN`** — npm の Granular Access Token（Publish 権限）
 
 ```bash
 npx @sorane/cli@0.2.6 validate --cwd . --json
