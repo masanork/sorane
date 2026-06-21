@@ -136,6 +136,9 @@ profile: sorane-okf/0.1
         cwd: dir,
         config: {
           build: {
+            content_dir: "content",
+            out_dir: "dist",
+            permalink: "{{slug}}.html",
             redirects: [
               {
                 from: "2025-12-23-srn.html",
