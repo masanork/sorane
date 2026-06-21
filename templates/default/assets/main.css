@@ -98,6 +98,72 @@ article td {
   padding: 0.35rem 0.5rem;
 }
 
+.emergency-banner {
+  margin: -2rem -1.5rem 1.5rem;
+  padding: 0.75rem 1.5rem;
+  font-size: 0.95rem;
+  font-weight: var(--weight-emphasis);
+  border-bottom: 2px solid var(--border);
+}
+
+.emergency-banner-text {
+  margin: 0;
+  max-width: 45rem;
+}
+
+.emergency-banner--info {
+  background: #e8f1fe;
+  border-bottom-color: #0017c1;
+  color: #00118f;
+}
+
+.emergency-banner--warning {
+  background: #fff4e0;
+  border-bottom-color: #b78a00;
+  color: #5c4200;
+}
+
+.emergency-banner--emergency {
+  background: #fde7e7;
+  border-bottom-color: #c20000;
+  color: #8a0000;
+}
+
+.emergency-banner a {
+  color: inherit;
+  font-weight: var(--weight-heading);
+}
+
+.revision-history {
+  margin-top: 2.5rem;
+  padding-top: 1.5rem;
+  border-top: 1px solid var(--border);
+}
+
+.revision-history h2 {
+  font-size: 1.1rem;
+  margin: 0 0 0.75rem;
+}
+
+.revision-history-table {
+  width: 100%;
+  border-collapse: collapse;
+  font-size: 0.95rem;
+}
+
+.revision-history-table th,
+.revision-history-table td {
+  border: 1px solid var(--border);
+  padding: 0.45rem 0.6rem;
+  text-align: left;
+  vertical-align: top;
+}
+
+.revision-history-table thead th {
+  background: #f8f8fb;
+  font-weight: var(--weight-emphasis);
+}
+
 .site-header {
   display: flex;
   flex-wrap: wrap;

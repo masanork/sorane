@@ -50,7 +50,7 @@ Always run with `--json`. Parse stdout as JSON.
 **Severity**
 
 - `error` — must fix before commit (`category: "okf"` is frontmatter / profile)
-- `warning` — fix when practical (`diagram` = diagram alt, `heading` = hierarchy, `image` = image alt, `link` = generic link text, `table` = table headers, `date` = timestamp/updated)
+- `warning` — fix when practical (`diagram` = diagram alt, `heading` = hierarchy, `image` = image alt, `link` = generic link text, `table` = table headers, `date` = timestamp/updated, `revision` = revisions frontmatter)
 
 **Workflow**
 

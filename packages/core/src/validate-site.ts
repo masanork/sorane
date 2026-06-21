@@ -1,10 +1,11 @@
 import { existsSync, readdirSync, readFileSync, statSync } from "node:fs";
 import { join, relative, resolve } from "node:path";
-import { extract, validateSource, type ValidationIssue } from "@sorane/okf";
+import { extract, parseYaml, validateSource, type ValidationIssue } from "@sorane/okf";
 import type { SoraneConfig } from "./config.ts";
 import { validateDiagramAltWarnings } from "./diagrams/validate-diagram-alt.ts";
 import { validateHeadingWarnings } from "./validate-heading-structure.ts";
 import { validateContentQualityFindings } from "./validate-content-quality.ts";
+import { validateRevisionFindings } from "./revision-history.ts";
 
 export const VALIDATE_JSON_SCHEMA_VERSION = 1 as const;
 
@@ -16,7 +17,8 @@ export type ValidateFindingCategory =
   | "image"
   | "link"
   | "table"
-  | "date";
+  | "date"
+  | "revision";
 
 export interface ValidateFinding {
   readonly severity: ValidateFindingSeverity;
@@ -69,10 +71,16 @@ function warningToFinding(category: ValidateFindingCategory, message: string): V
   return { severity: "warning", category, message };
 }
 
-function profileFromSource(source: string): string | undefined {
+function frontmatterRecord(source: string): Record<string, unknown> {
   const { frontmatter } = extract(source);
-  if (frontmatter === null || typeof frontmatter !== "object") return undefined;
-  const profile = (frontmatter as Record<string, unknown>).profile;
+  if (frontmatter === null || frontmatter.length === 0) return {};
+  const parsed = parseYaml(frontmatter);
+  if (parsed === null || typeof parsed !== "object" || Array.isArray(parsed)) return {};
+  return parsed as Record<string, unknown>;
+}
+
+function profileFromSource(source: string): string | undefined {
+  const profile = frontmatterRecord(source).profile;
   return typeof profile === "string" ? profile : undefined;
 }
 
@@ -111,11 +119,12 @@ export function validateSiteContent(
         findings.push(warningToFinding("heading", w));
         warningCount++;
       }
-      const fm =
-        frontmatter !== null && typeof frontmatter === "object"
-          ? (frontmatter as Record<string, unknown>)
-          : {};
+      const fm = frontmatterRecord(source);
       for (const f of validateContentQualityFindings(body, fm, config.build.quality)) {
+        findings.push(warningToFinding(f.category, f.message));
+        warningCount++;
+      }
+      for (const f of validateRevisionFindings(fm)) {
         findings.push(warningToFinding(f.category, f.message));
         warningCount++;
       }

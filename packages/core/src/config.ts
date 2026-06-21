@@ -134,6 +134,7 @@ import type {
   SiteOrganizationConfig,
 } from "./findability.ts";
 import type { SiteI18nConfig } from "./i18n.ts";
+import type { SiteEmergencyConfig } from "./emergency-banner.ts";
 
 export type {
   OrganizationKind,
@@ -142,6 +143,12 @@ export type {
   SiteOrganizationConfig,
 } from "./findability.ts";
 export type { LocaleConfig, SiteI18nConfig } from "./i18n.ts";
+export type {
+  EmergencyMessageSpec,
+  EmergencySeverity,
+  SiteEmergencyConfig,
+} from "./emergency-banner.ts";
+export type { RevisionEntry } from "./revision-history.ts";
 
 export interface SoraneConfig {
   readonly site: {
@@ -157,6 +164,8 @@ export interface SoraneConfig {
     readonly findability?: SiteFindabilityConfig;
     /** 多言語（hreflang）。`locales` があるときのみ有効 */
     readonly i18n?: SiteI18nConfig;
+    /** 全ページ上部の緊急告知バナー */
+    readonly emergency?: SiteEmergencyConfig;
   };
   readonly build: {
     readonly content_dir: string;

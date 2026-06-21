@@ -597,6 +597,7 @@ export async function runBuild(opts: BuildOptions): Promise<BuildResult> {
     } else {
       const article = await renderArticleBodyWithMetaForConfig(p.concept, nav, {
         badgeHtml,
+        lang: pageLang,
         ...bodySectionOpts(rootPrefix),
       });
       bodyHtml = article.bodyHtml;
@@ -693,6 +694,7 @@ export async function runBuild(opts: BuildOptions): Promise<BuildResult> {
       baseUrl,
       fontCss,
       lang: pageLang,
+      localeId: pageLocale.localeId,
       hreflangAlternates: pageHreflang.length > 0 ? pageHreflang : undefined,
       ogLocaleAlternates:
         pageOgLocaleAlternates.length > 0 ? pageOgLocaleAlternates : undefined,
@@ -851,6 +853,7 @@ export async function runBuild(opts: BuildOptions): Promise<BuildResult> {
       baseUrl,
       fontCss,
       lang: indexLang,
+      localeId: indexLocale.localeId,
       hreflangAlternates: indexHreflang.length > 0 ? indexHreflang : undefined,
       ogLocaleAlternates:
         indexOgLocaleAlternates.length > 0 ? indexOgLocaleAlternates : undefined,
@@ -973,6 +976,7 @@ export async function runBuild(opts: BuildOptions): Promise<BuildResult> {
         baseUrl,
         fontCss: localeFontCss,
         lang: pageLocale.lang,
+        localeId: pageLocale.localeId,
         hreflangAlternates: localeHreflang.length > 0 ? localeHreflang : undefined,
         ogLocaleAlternates:
           localeOgAlternates.length > 0 ? localeOgAlternates : undefined,

@@ -7,6 +7,10 @@ import type { SoraneConfig } from "./config.ts";
 import { resolveOgImageUrl } from "./og-meta.ts";
 import { extractDescription } from "./ssg.ts";
 import type { HreflangAlternate } from "./i18n.ts";
+import {
+  emergencyBannerHtml,
+  resolveEmergencyBanner,
+} from "./emergency-banner.ts";
 
 function pageOgImage(
   frontmatter: Record<string, unknown>,
@@ -42,6 +46,7 @@ export interface EmitPageOptions {
   readonly lang?: string;
   readonly hreflangAlternates?: readonly HreflangAlternate[];
   readonly ogLocaleAlternates?: readonly string[];
+  readonly localeId?: string;
 }
 
 export function emitPage(opts: EmitPageOptions): { mdOutRel: string; canonicalUrl?: string } {
@@ -66,6 +71,11 @@ export function emitPage(opts: EmitPageOptions): { mdOutRel: string; canonicalUr
     ...(opts.fontCss ? [opts.fontCss] : []),
   ];
 
+  const pageLang = opts.lang ?? opts.config.site.lang;
+  const emergency = resolveEmergencyBanner(
+    opts.config.site,
+    opts.localeId ?? "default",
+  );
   const html = buildPage({
     title: opts.concept.title,
     siteTitle: opts.config.site.title,
@@ -73,7 +83,8 @@ export function emitPage(opts: EmitPageOptions): { mdOutRel: string; canonicalUr
     rootPrefix,
     description,
     canonicalUrl,
-    lang: opts.lang ?? opts.config.site.lang,
+    lang: pageLang,
+    emergencyBannerHtml: emergency ? emergencyBannerHtml(emergency, pageLang) : undefined,
     hreflangAlternates: opts.hreflangAlternates,
     ogLocaleAlternates: opts.ogLocaleAlternates,
     feedPath: "feed.xml",

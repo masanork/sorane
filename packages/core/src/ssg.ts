@@ -21,6 +21,10 @@ import type { DiagramRenderMeta } from "./diagrams/diagram-meta.ts";
 import { escapeHtml, stripDuplicateTitleHeading } from "./render.ts";
 import { ogLocaleFromLang } from "./og-meta.ts";
 import { siteLabels, type SiteLabels } from "./site-labels.ts";
+import {
+  parseRevisionHistory,
+  revisionHistoryHtml,
+} from "./revision-history.ts";
 
 export function extractDescription(body: string, maxLen = 200): string | null {
   const lines = body.split(/\r?\n/);
@@ -106,6 +110,7 @@ export interface PageShellOptions {
   readonly docsSidebarHtml?: string;
   readonly headerSearchHtml?: string;
   readonly ogImageUrl?: string;
+  readonly emergencyBannerHtml?: string;
 }
 
 export interface ArticleListEntry {
@@ -259,12 +264,16 @@ export function buildPage(opts: PageShellOptions): string {
       `<main id="main" class="docs-main">\n${opts.bodyHtml}\n</main>\n` +
       `</div>\n`;
   }
+  const emergencyBlock = opts.emergencyBannerHtml
+    ? `${opts.emergencyBannerHtml}\n`
+    : "";
   return (
     "<!doctype html>\n" +
     `<html lang="${escapeHtml(lang)}">\n` +
     `<head>\n${head.join("\n")}\n</head>\n` +
     `<body${bodyClass}>\n` +
     `${skipLink}` +
+    `${emergencyBlock}` +
     `<header class="site-header">\n` +
     `<a class="site-title" href="${escapeHtml(home)}">${escapeHtml(opts.siteTitle)}</a>\n` +
     `${headerEnd}` +
@@ -426,11 +435,17 @@ export interface ArticleBodyResult {
   readonly diagrams: DiagramRenderMeta;
 }
 
+function articleRevisionBlock(concept: OkfConcept, lang: string): string {
+  const revisions = parseRevisionHistory(concept.frontmatter);
+  return revisionHistoryHtml(revisions, lang);
+}
+
 export function renderArticleBodyWithMeta(
   concept: OkfConcept,
   nav?: ArticleNav,
   opts?: {
     readonly badgeHtml?: string;
+    readonly lang?: string;
     readonly diagrams?: DiagramsConfig;
   } & BodySectionOptions,
 ): ArticleBodyResult {
@@ -452,10 +467,13 @@ export function renderArticleBodyWithMeta(
     badge,
     "</header>",
   ].join("\n");
+  const lang = opts?.lang ?? "ja";
+  const revisionBlock = articleRevisionBlock(concept, lang);
   const bodyHtml =
     `<article class="article-page${articleFontClass(concept)}">\n` +
     `${header}\n` +
     `<div class="article-body">\n${section.html}\n</div>\n` +
+    `${revisionBlock}` +
     `${articleNavHtml(nav)}\n` +
     `</article>`;
   return { bodyHtml, diagrams: section.diagrams };
@@ -466,6 +484,7 @@ export async function renderArticleBodyWithMetaForConfig(
   nav?: ArticleNav,
   opts?: {
     readonly badgeHtml?: string;
+    readonly lang?: string;
     readonly diagrams?: DiagramsConfig;
   } & BodySectionOptions,
 ): Promise<ArticleBodyResult> {
@@ -490,10 +509,13 @@ export async function renderArticleBodyWithMetaForConfig(
     badge,
     "</header>",
   ].join("\n");
+  const lang = opts?.lang ?? "ja";
+  const revisionBlock = articleRevisionBlock(concept, lang);
   const bodyHtml =
     `<article class="article-page${articleFontClass(concept)}">\n` +
     `${header}\n` +
     `<div class="article-body">\n${section.html}\n</div>\n` +
+    `${revisionBlock}` +
     `${articleNavHtml(nav)}\n` +
     `</article>`;
   return { bodyHtml, diagrams: section.diagrams };

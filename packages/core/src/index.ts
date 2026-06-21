@@ -68,3 +68,14 @@ export {
   type I18nContext,
   type SiteI18nConfig,
 } from "./i18n.ts";
+export {
+  resolveEmergencyBanner,
+  emergencyBannerHtml,
+  type SiteEmergencyConfig,
+} from "./emergency-banner.ts";
+export {
+  parseRevisionHistory,
+  revisionHistoryHtml,
+  validateRevisionFindings,
+  type RevisionEntry,
+} from "./revision-history.ts";

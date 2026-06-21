@@ -14,6 +14,10 @@ import {
   type AsyncRenderOptions,
 } from "./diagrams/render-async.ts";
 import { siteLabels } from "./site-labels.ts";
+import {
+  parseRevisionHistory,
+  revisionHistoryHtml,
+} from "./revision-history.ts";
 
 export interface DocsArticleRenderOpts extends AsyncRenderOptions {
   readonly badgeHtml?: string;
@@ -142,11 +146,16 @@ export function renderDocsArticleBody(
   const badge = opts?.badgeHtml ?? "";
   const header = `<header>\n<h1>${escapeHtml(concept.title)}</h1>\n${badge}</header>\n`;
   const toc = pageTocHtml(rendered.outline, lang);
+  const revisionBlock = revisionHistoryHtml(
+    parseRevisionHistory(concept.frontmatter),
+    lang,
+  );
   return (
     `<article class="article-page docs-page${articleFontClass(concept)}">\n` +
     `${header}\n` +
     `${toc}` +
     `<div class="article-body docs-content">\n${rendered.html}</div>\n` +
+    `${revisionBlock}` +
     `${docsPagerHtml(nav, lang)}\n` +
     `</article>\n`
   );

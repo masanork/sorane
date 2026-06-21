@@ -18,6 +18,10 @@ export interface SiteLabels {
   readonly docsMenu: string;
   readonly aiDisclosureAria: string;
   readonly aiPolicyLink: string;
+  readonly emergencyLink: string;
+  readonly revisionHistory: string;
+  readonly revisionDate: string;
+  readonly revisionSummary: string;
 }
 
 const JA: SiteLabels = {
@@ -40,6 +44,10 @@ const JA: SiteLabels = {
   docsMenu: "ドキュメントメニュー",
   aiDisclosureAria: "AI コンテンツ開示",
   aiPolicyLink: "AI 開示ポリシー",
+  emergencyLink: "詳細",
+  revisionHistory: "更新履歴",
+  revisionDate: "日付",
+  revisionSummary: "内容",
 };
 
 const EN: SiteLabels = {
@@ -62,6 +70,10 @@ const EN: SiteLabels = {
   docsMenu: "Documentation menu",
   aiDisclosureAria: "AI content disclosure",
   aiPolicyLink: "AI disclosure policy",
+  emergencyLink: "Details",
+  revisionHistory: "Revision history",
+  revisionDate: "Date",
+  revisionSummary: "Summary",
 };
 
 export function siteLabels(lang: string): SiteLabels {
@@ -90,6 +102,10 @@ export function siteChromeText(lang: string, siteTitle: string, includeSearch = 
     labels.docsMenu,
     labels.aiDisclosureAria,
     labels.aiPolicyLink,
+    labels.emergencyLink,
+    labels.revisionHistory,
+    labels.revisionDate,
+    labels.revisionSummary,
     "サイト",
   ];
   if (includeSearch) parts.push(labels.search);
