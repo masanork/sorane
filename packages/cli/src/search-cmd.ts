@@ -1,7 +1,7 @@
 import { existsSync } from "node:fs";
 import { resolve } from "node:path";
-import { IndexStore, RuriEmbeddings, search, checkModelMismatch } from "@sorane/search";
 import { loadSoraneConfig, parseCwdFlag } from "./config-load.ts";
+import { loadSearchModule } from "./load-search.ts";
 
 const SEARCH_FLAGS_WITH_VALUE = new Set([
   "--cwd",
@@ -69,6 +69,11 @@ export function parseSearchArgs(argv: string[]): {
 
 export async function runSearchCmd(argv: string[]): Promise<void> {
   const args = parseSearchArgs(argv);
+  const { IndexStore, RuriEmbeddings, search, checkModelMismatch } = await loadSearchModule(
+    args.cwd,
+    "search",
+    argv,
+  );
   if (!args.query) {
     process.stderr.write(
       "usage: sorane search <query> [--cwd <dir>] [--type article|dataset|reference|glossary|glossary-term|faq] [--tag <slug>] [--k 10] [--json] [--fts-only]\n",

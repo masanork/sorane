@@ -3,7 +3,7 @@ import { join } from "node:path";
 import { tmpdir } from "node:os";
 import { describe, expect, test } from "./_expect.ts";
 import { runBuild } from "../packages/core/src/build.ts";
-import { mergeConfig, type SoraneConfig } from "../packages/core/src/config.ts";
+import { mergeConfig, type MergeConfigInput } from "../packages/core/src/config.ts";
 
 function writeFixture(root: string, files: Record<string, string>, yaml?: string): void {
   mkdirSync(join(root, "content"), { recursive: true });
@@ -55,7 +55,10 @@ describe("runBuild (diagrams)", () => {
       writeFixture(root, { "diagram.md": MERMAID_ARTICLE });
       await runBuild({
         cwd: root,
-        config: mergeConfig({ build: { out_dir: outDir } } as Partial<SoraneConfig>),
+        config: mergeConfig({
+          preset: "okf-site",
+          build: { out_dir: outDir, diagrams: { enabled: true } },
+        } as MergeConfigInput),
         clean: true,
       });
       const html = readFileSync(join(outDir, "diagram.html"), "utf8");
@@ -78,7 +81,7 @@ describe("runBuild (diagrams)", () => {
       writeFixture(root, { "plain.md": PLAIN_ARTICLE });
       await runBuild({
         cwd: root,
-        config: mergeConfig({ build: { out_dir: outDir } } as Partial<SoraneConfig>),
+        config: mergeConfig({ build: { out_dir: outDir } } as MergeConfigInput),
         clean: true,
       });
       const html = readFileSync(join(outDir, "plain.html"), "utf8");
@@ -113,8 +116,9 @@ flowchart LR
           build: {
             out_dir: outDir,
             blog: { featured_mode: "off" },
+            diagrams: { enabled: true },
           },
-        } as Partial<SoraneConfig>),
+        } as MergeConfigInput),
         clean: true,
       });
       const html = readFileSync(join(outDir, "index.html"), "utf8");
@@ -154,8 +158,9 @@ flowchart LR
           build: {
             out_dir: outDir,
             blog: { featured_mode: "full" },
+            diagrams: { enabled: true },
           },
-        } as Partial<SoraneConfig>),
+        } as MergeConfigInput),
         clean: true,
       });
       const html = readFileSync(join(outDir, "index.html"), "utf8");
@@ -173,7 +178,10 @@ flowchart LR
       writeFixture(root, { "diagram.md": MERMAID_ARTICLE });
       await runBuild({
         cwd: root,
-        config: mergeConfig({ build: { out_dir: outDir } } as Partial<SoraneConfig>),
+        config: mergeConfig({
+          preset: "okf-site",
+          build: { out_dir: outDir, diagrams: { enabled: true } },
+        } as MergeConfigInput),
         clean: true,
       });
       const llms = readFileSync(join(outDir, "llms.txt"), "utf8");

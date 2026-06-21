@@ -31,9 +31,13 @@ describe("d2SourceHash", () => {
 
 describe("isD2CompileEnabled", () => {
   test("d2.enabled で true", () => {
-    expect(isD2CompileEnabled({ ...DEFAULT_DIAGRAMS_CONFIG, d2: { enabled: true } })).toBe(
-      true,
-    );
+    expect(
+      isD2CompileEnabled({
+        ...DEFAULT_DIAGRAMS_CONFIG,
+        enabled: true,
+        d2: { enabled: true },
+      }),
+    ).toBe(true);
   });
 
   test("既定は false", () => {

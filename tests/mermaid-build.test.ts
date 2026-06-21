@@ -16,6 +16,7 @@ describe("isMermaidBuildEnabled", () => {
     expect(
       isMermaidBuildEnabled({
         ...DEFAULT_DIAGRAMS_CONFIG,
+        enabled: true,
         mermaid: { mode: "build" },
       }),
     ).toBe(true);

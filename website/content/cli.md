@@ -7,6 +7,20 @@ excludeFromList: true
 
 すべてのコマンドはプロジェクトルート（`sorane.yaml` があるディレクトリ）を `--cwd` で指定します。例では `npx @sorane/cli`（npm の最新版）を使います。CI でバージョン固定する場合は `@sorane/cli@x.y.z` を付けてください。
 
+## オプショナルパッケージ
+
+| コマンド / 設定 | 追加パッケージ |
+|-----------------|----------------|
+| `index` / `search` | `@sorane/search` |
+| `fonts.enabled: true` | `@sorane/font` |
+| `build.diagrams.enabled: true`（client） | `mermaid` |
+
+未インストール時は `npm install <pkg>` を表示します（yarn / pnpm は lockfile から自動判定）。対話端末ではインストール確認が出ます。`index` / `search` では `--yes`（または `-y`）で確認なしインストールできます。
+
+```bash
+npm install @sorane/cli @sorane/search   # 検索まで使うサイト
+```
+
 ## sorane build
 
 静的サイトを生成します。
@@ -73,8 +87,10 @@ npx @sorane/cli migrate [--cwd <dir>] [--dry-run] [--bump-profile 0.2|0.3]
 検索インデックス（SQLite FTS5、任意でベクトル）を構築します。既定は FTS のみです。
 
 ```bash
-npx @sorane/cli index [--cwd <dir>] [--force] [--hybrid] [--fts-only]
+npx @sorane/cli index [--cwd <dir>] [--force] [--hybrid] [--fts-only] [--yes]
 ```
+
+要 `@sorane/search`（未導入時は上記オプショナルパッケージの案内）。
 
 ハイブリッド（experimental）を使う場合は `search.mode: hybrid` または `--hybrid` と、先に `npm run fetch-model` で ruri-v3-30m を取得してください。
 
@@ -83,5 +99,7 @@ npx @sorane/cli index [--cwd <dir>] [--force] [--hybrid] [--fts-only]
 ローカルで検索を試します。
 
 ```bash
-npx @sorane/cli search <query> [--cwd <dir>] [--type article|dataset|reference|glossary|glossary-term|faq] [--tag <slug>] [--k 10] [--json]
+npx @sorane/cli search <query> [--cwd <dir>] [--type article|dataset|reference|glossary|glossary-term|faq] [--tag <slug>] [--k 10] [--json] [--yes]
 ```
+
+要 `@sorane/search`。

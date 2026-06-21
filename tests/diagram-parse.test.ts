@@ -7,6 +7,7 @@ import {
   remarkDiagramFences,
 } from "../packages/core/src/diagrams/parse-diagram-fence.ts";
 import { DEFAULT_DIAGRAMS_CONFIG } from "../packages/core/src/config.ts";
+import { DIAGRAMS_ON } from "./_diagrams-config.ts";
 import remarkParse from "remark-parse";
 import { unified } from "unified";
 import type { Code, Root } from "mdast";
@@ -79,7 +80,7 @@ describe("detectDiagramKind", () => {
 describe("remarkDiagramFences", () => {
   test("mermaid フェンスに soraneDiagram を付与する", () => {
     const tree = parseMarkdown('```mermaid alt="X"\nflowchart LR\n  A --> B\n```');
-    unified().use(remarkDiagramFences(DEFAULT_DIAGRAMS_CONFIG)).runSync(tree);
+    unified().use(remarkDiagramFences(DIAGRAMS_ON)).runSync(tree);
     const code = firstCode(tree);
     const meta = (code.data as { soraneDiagram?: { altText?: string; kind?: string } })
       .soraneDiagram;
@@ -92,7 +93,7 @@ describe("remarkDiagramFences", () => {
     unified()
       .use(
         remarkDiagramFences({
-          ...DEFAULT_DIAGRAMS_CONFIG,
+          ...DIAGRAMS_ON,
           mermaid: { mode: "off" },
         }),
       )
@@ -106,7 +107,7 @@ describe("remarkDiagramFences", () => {
   test("graphviz は enabled 時のみ注釈する", () => {
     const tree = parseMarkdown("```dot\na -> b\n```");
     unified()
-      .use(remarkDiagramFences({ ...DEFAULT_DIAGRAMS_CONFIG, graphviz: { enabled: true } }))
+      .use(remarkDiagramFences({ ...DIAGRAMS_ON, graphviz: { enabled: true } }))
       .runSync(tree);
     const code = firstCode(tree);
     const meta = (code.data as { soraneDiagram?: { lang?: string; kind?: string } }).soraneDiagram;
@@ -124,7 +125,7 @@ describe("remarkDiagramFences", () => {
   test("d2 は enabled 時のみ注釈する", () => {
     const tree = parseMarkdown("```d2\nx -> y\n```");
     unified()
-      .use(remarkDiagramFences({ ...DEFAULT_DIAGRAMS_CONFIG, d2: { enabled: true } }))
+      .use(remarkDiagramFences({ ...DIAGRAMS_ON, d2: { enabled: true } }))
       .runSync(tree);
     const code = firstCode(tree);
     const meta = (code.data as { soraneDiagram?: { lang?: string } }).soraneDiagram;

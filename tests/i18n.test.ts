@@ -169,7 +169,11 @@ describe("runBuild i18n", () => {
         cwd: tmp,
         config: {
           site: i18nSite,
-          build: { content_dir: "content", out_dir: join(tmp, "dist") },
+          build: {
+            content_dir: "content",
+            out_dir: join(tmp, "dist"),
+            blog: { archives: true, tags: true },
+          },
         } as Partial<SoraneConfig>,
         clean: true,
       });

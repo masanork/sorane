@@ -25,7 +25,7 @@ function d2BuildConfig(outDir: string): Partial<SoraneConfig> {
   return mergeConfig({
     build: {
       out_dir: outDir,
-      diagrams: { d2: { enabled: true } },
+      diagrams: { enabled: true, d2: { enabled: true } },
     },
   } as Partial<SoraneConfig>);
 }

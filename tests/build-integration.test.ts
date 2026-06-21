@@ -22,6 +22,7 @@ function writeSite(root: string, config: Partial<SoraneConfig>, files: Record<st
   }
   writeFileSync(
     join(root, "sorane.yaml"),
+    `preset: okf-site\n` +
     `site:\n  title: ${config.site?.title ?? "Site"}\n  description: ${config.site?.description ?? "desc"}\n  base_url: "${config.site?.base_url ?? "https://ex.dev"}"\n  lang: ${config.site?.lang ?? "ja"}\n  og_image: /assets/og.png\n` +
       (config.docs?.nav
         ? `docs:\n  nav:\n${config.docs.nav.map((n) => (typeof n === "string" ? `    - ${n}` : `    - href: ${n.href}\n      title: ${n.title}`)).join("\n")}\n`
@@ -266,6 +267,7 @@ Custom body only.
     writeFileSync(
       join(root, "sorane.yaml"),
       [
+        "preset: okf-site",
         "site:",
         "  title: Gov Site",
         '  description: "d"',

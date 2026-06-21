@@ -36,9 +36,12 @@ Parse JSON stdout:
 
 ```bash
 npx @sorane/cli validate --cwd . --json
+npm install @sorane/search                 # if using index/search (or use sorane index --yes)
 npx @sorane/cli index --cwd . --force    # only if content/search.md exists
 npx @sorane/cli build --cwd . --clean
 ```
+
+Check `sorane.yaml` `preset:` — `blog` = lite outputs; `okf-site` = full machine-readable dist. See https://sorane.dev/configuration.html#プリセット
 
 ## Content rules (short)
 

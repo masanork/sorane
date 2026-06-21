@@ -1,10 +1,11 @@
 import { existsSync } from "node:fs";
 import { resolve } from "node:path";
-import { buildSearchIndex, RuriEmbeddings } from "@sorane/search";
 import { loadSoraneConfig, parseCwdFlag } from "./config-load.ts";
+import { loadSearchModule } from "./load-search.ts";
 
 export async function runIndexCmd(argv: string[]): Promise<void> {
   const cwd = parseCwdFlag(argv);
+  const { buildSearchIndex, RuriEmbeddings } = await loadSearchModule(cwd, "index", argv);
   const config = loadSoraneConfig(cwd);
   const force = argv.includes("--force");
   const configMode = config.search.mode ?? "fts";

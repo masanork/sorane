@@ -17,11 +17,22 @@ npm run build -- --cwd examples/minimal --clean
 npm run stats                  # project size / test ratio snapshot
 ```
 
-Or install the CLI from npm (after publish):
+Or install the CLI from npm:
 
 ```bash
-npx @sorane/cli build --cwd ./my-site --clean
+npm install @sorane/cli
+npx sorane build --cwd ./my-site --clean
 ```
+
+Optional feature packages (install when needed):
+
+```bash
+npm install @sorane/search   # sorane index / search + search page assets
+npm install @sorane/font       # fonts.enabled in sorane.yaml
+npm install mermaid            # build.diagrams.enabled (client mode)
+```
+
+If a command needs a missing package, sorane prints `npm install <pkg>` and may prompt to install (TTY). Use `--yes` on `index` / `search` to install non-interactively.
 
 ## New site (AI-assisted)
 
@@ -34,11 +45,21 @@ npx @sorane/cli build [--cwd <dir>] [--clean] [--watch] [--skip-c2pa]
 npx @sorane/cli watch [--cwd <dir>] [--clean]
 npx @sorane/cli validate [--cwd <dir>]
 npx @sorane/cli migrate [--cwd <dir>] [--dry-run] [--bump-profile 0.2|0.3]
-npx @sorane/cli index [--cwd <dir>] [--force]
-npx @sorane/cli search <query> [--cwd <dir>] [--type article] [--tag <slug>] [--json]
+npx @sorane/cli index [--cwd <dir>] [--force] [--yes]
+npx @sorane/cli search <query> [--cwd <dir>] [--type article] [--tag <slug>] [--json] [--yes]
 ```
 
 Site projects keep content in a separate directory and configure the build with `sorane.yaml`.
+
+### Presets
+
+```yaml
+preset: blog        # lightweight SSG (default behaviour if omitted)
+preset: okf-site    # full machine-readable outputs, diagrams, archives/tags
+preset: gov         # okf-site + strict validate quality gates
+```
+
+See [configuration](https://sorane.dev/configuration.html#プリセット) on sorane.dev.
 
 ## OKF profile
 
@@ -71,14 +92,16 @@ See [AI content disclosure](https://sorane.dev/ai-disclosure.html) for image pro
 
 ## Build outputs
 
-| Path | Purpose |
-|---|---|
-| `*.html` | Human-readable pages |
-| `*.md` | OKF native alternate source |
-| `catalog.jsonld` | DCAT-style catalog |
-| `llms.txt` | LLM site guide |
-| `sitemap.xml` | URL index |
-| `okf/bundle.tar.gz` | OKF bundle `{type}/{slug}.md` |
+Lite defaults (no `preset:` or `preset: blog`) emit HTML, `feed.xml`, `sitemap.xml`, and `robots.txt`. Full OKF/agent outputs require `preset: okf-site` or explicit `build.outputs`:
+
+| Path | Purpose | Lite default |
+|---|---|---|
+| `*.html` | Human-readable pages | on |
+| `feed.xml` / `sitemap.xml` / `robots.txt` | Syndication / crawlers | on |
+| `*.md` | OKF native alternate source | off |
+| `catalog.jsonld` | schema.org site catalog | off |
+| `llms.txt` | LLM site guide | off |
+| `okf/bundle.tar.gz` | OKF bundle `{type}/{slug}.md` | off |
 
 ## Font subsetting
 
@@ -111,7 +134,12 @@ npm run fetch-model
 npx @sorane/cli index --cwd examples/minimal --force --hybrid
 ```
 
-Add a search page with `view: search` in frontmatter (see `examples/minimal/content/search.md`).
+Search uses two UI layers:
+
+- **Header search** (all pages after `sorane index`) — compact box, no type facet
+- **Dedicated page** (`content/search.md` with `view: search`) — full UI with OKF type facets, intro copy, `SearchAction` JSON-LD target
+
+See `examples/minimal/content/search.md`. Header-only sites can omit `search.md`; open-data / gov sites usually keep it.
 
 **OKF 0.3 open-data demo** (`dataset`, `reference`, `glossary`, `faq`, search facets):
 
@@ -162,7 +190,7 @@ Cloudflare Pages deploys `website/dist` to **sorane.dev** on push to `main` (see
 | Method | Status |
 |--------|--------|
 | `git clone` + `npm ci` | Available |
-| `npx @sorane/cli` | Published (`@sorane/cli@0.3.0`) |
+| `npx @sorane/cli` | Published (`@sorane/cli@0.4.0`) |
 | GitHub Release tags | Planned (`v0.2.0` + fonts tarball) |
 
 Publish workspace packages (maintainers):

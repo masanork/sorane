@@ -9,7 +9,7 @@ import {
   renderDefaultNotFoundBody,
 } from "../packages/core/src/not-found.ts";
 import { runBuild } from "../packages/core/src/build.ts";
-import type { SoraneConfig } from "../packages/core/src/config.ts";
+import { mergeConfig, type SoraneConfig } from "../packages/core/src/config.ts";
 import { normalizeConcept } from "../packages/okf/src/index.ts";
 
 describe("isNotFoundSource", () => {
@@ -108,10 +108,11 @@ describe("runBuild 404.html", () => {
     try {
       await runBuild({
         cwd: root,
-        config: {
+        config: mergeConfig({
+          preset: "okf-site",
           site: { title: "T", description: "d", base_url: "", lang: "en" },
           build: { content_dir: "content", out_dir: outDir, permalink: "{{slug}}.html" },
-        } as Partial<SoraneConfig>,
+        }),
         clean: true,
       });
       const html = readFileSync(join(outDir, "404.html"), "utf8");

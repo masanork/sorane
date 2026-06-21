@@ -2,7 +2,12 @@ import { existsSync, mkdtempSync, rmSync, writeFileSync } from "node:fs";
 import { tmpdir } from "node:os";
 import { join } from "node:path";
 import { describe, expect, test } from "./_expect.ts";
-import { DEFAULT_CONFIG, mergeConfig, resolvePermalink } from "../packages/core/src/config.ts";
+import {
+  DEFAULT_CONFIG,
+  mergeConfig,
+  resolvePermalink,
+} from "../packages/core/src/config.ts";
+import { resolveBuildOutputs } from "../packages/core/src/presets.ts";
 import { loadSoraneConfig, parseCwdFlag } from "../packages/cli/src/config-load.ts";
 
 describe("mergeConfig", () => {
@@ -32,6 +37,23 @@ describe("mergeConfig", () => {
     expect(cfg.build.ai_disclosure?.enabled).toBe(undefined);
   });
 
+  test("preset okf-site は機械可読出力を有効にする", () => {
+    const cfg = mergeConfig({ preset: "okf-site" });
+    const out = resolveBuildOutputs(cfg.build.outputs);
+    expect(out.okf_bundle).toBe(true);
+    expect(out.catalog).toBe(true);
+    expect(cfg.build.blog?.archives).toBe(true);
+    expect(cfg.build.diagrams?.enabled).toBe(true);
+  });
+
+  test("preset blog は軽量既定", () => {
+    const cfg = mergeConfig({ preset: "blog" });
+    const out = resolveBuildOutputs(cfg.build.outputs);
+    expect(out.okf_bundle).toBe(false);
+    expect(cfg.build.blog?.archives).toBe(false);
+    expect(cfg.build.diagrams?.enabled).toBe(false);
+  });
+
   test("diagrams を deep merge する", () => {
     const cfg = mergeConfig({
       build: {
@@ -45,7 +67,7 @@ describe("mergeConfig", () => {
         },
       },
     });
-    expect(cfg.build.diagrams?.enabled).toBe(true);
+    expect(cfg.build.diagrams?.enabled).toBe(false);
     expect(cfg.build.diagrams?.mermaid?.mode).toBe("off");
     expect(cfg.build.diagrams?.mermaid?.version).toBe("~11.15.0");
     expect(cfg.build.diagrams?.d2?.enabled).toBe(true);

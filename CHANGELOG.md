@@ -4,6 +4,31 @@ All notable changes to sorane are documented here. Versioning follows [SemVer](h
 
 ## [Unreleased]
 
+## [0.4.0] - 2026-06-21
+
+### Added
+
+- **`preset:` in `sorane.yaml`** — `blog` | `okf-site` | `gov` for site archetype defaults (blog/archives, diagrams, quality gates, machine-readable outputs)
+- **`build.outputs`** — per-artifact toggles: `md_alternate`, `okf_bundle`, `catalog`, `llms_txt`, `feed`, `sitemap`, `robots`
+- **Optional npm packages** — `@sorane/search`, `@sorane/font`, `mermaid` install on demand; CLI shows `npm install <pkg>` (or yarn/pnpm from lockfile) and prompts on TTY; `sorane index|search --yes` for non-interactive install
+- Core helpers: `requireOptionalModule`, `resolveBuildOutputs`, `presetPartial` (exported from `@sorane/core`)
+
+### Changed
+
+- **Breaking — lighter defaults** (no `preset:`): `build.diagrams.enabled: false`, `build.blog.archives/tags: false`, lite `build.outputs` (feed/sitemap/robots on; catalog / llms.txt / okf bundle / sibling `.md` off)
+- **Migration:** production OKF/agent sites should add `preset: okf-site` (or set `build.outputs` / `build.diagrams` explicitly). `website/`, `examples/open-data/`, and `template/site/` are updated
+- `@sorane/cli` — `@sorane/search` is `optionalDependencies`; `index` / `search` commands load search lazily at runtime
+- `@sorane/core` — font, search, mermaid are optional; conditional emit for catalog, llms.txt, okf bundle, md alternates, diagram assets, search assets
+- `SlugLedger` / `slugifyHeading` live in `@sorane/core` (`heading-slug.ts`); `@sorane/search` re-exports for compatibility
+
+### Removed
+
+- `@sorane/cli-lite` workspace package (single `@sorane/cli` product; optional deps instead of a second CLI)
+
+### Fixed
+
+- Build continues when optional packages are missing, with install hints instead of opaque module errors
+
 ## [0.3.0] - 2026-06-21
 
 ### Added
@@ -148,7 +173,8 @@ All notable changes to sorane are documented here. Versioning follows [SemVer](h
 - Blog layout: archives, tags, pagination
 - Test infrastructure with coverage gate (~90% lines)
 
-[Unreleased]: https://github.com/masanork/sorane/compare/v0.3.0...main
+[Unreleased]: https://github.com/masanork/sorane/compare/v0.4.0...main
+[0.4.0]: https://github.com/masanork/sorane/compare/v0.3.0...v0.4.0
 [0.3.0]: https://github.com/masanork/sorane/compare/v0.2.8...v0.3.0
 [0.2.8]: https://github.com/masanork/sorane/compare/v0.2.7...v0.2.8
 [0.2.7]: https://github.com/masanork/sorane/compare/v0.2.6...v0.2.7

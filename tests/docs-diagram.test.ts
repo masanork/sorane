@@ -4,6 +4,7 @@ import {
   renderDocsArticleFromConceptWithMeta,
 } from "../packages/core/src/docs.ts";
 import { DEFAULT_DIAGRAMS_CONFIG } from "../packages/core/src/config.ts";
+import { DIAGRAMS_ON } from "./_diagrams-config.ts";
 import { normalizeConcept } from "../packages/okf/src/index.ts";
 
 describe("renderDocsArticleFromConceptWithMeta", () => {
@@ -17,7 +18,7 @@ describe("renderDocsArticleFromConceptWithMeta", () => {
       concept,
       undefined,
       "ja",
-      { diagrams: DEFAULT_DIAGRAMS_CONFIG },
+      { diagrams: DIAGRAMS_ON },
     );
     expect(diagrams.mermaid).toBe(1);
     expect(bodyHtml).toContain("language-mermaid");
