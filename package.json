@@ -38,7 +38,7 @@
     "stats:history": "node scripts/stats-history.ts",
     "stats:trend": "node scripts/stats-history.ts trend",
     "pack:cli": "npm pack -w @sorane/cli",
-    "publish:workspaces": "npm publish -w @sorane/font --access public && npm publish -w @sorane/okf --access public && npm publish -w @sorane/search --access public && npm publish -w @sorane/core --access public && npm publish -w @sorane/cli --access public"
+    "publish:workspaces": "npm publish -w @sorane/font --access public && npm publish -w @sorane/okf --access public && npm publish -w @sorane/search --access public && npm publish -w @sorane/core --access public && npm publish -w @sorane/astro --access public && npm publish -w @sorane/cli --access public"
   },
   "engines": {
     "node": ">=23.6"

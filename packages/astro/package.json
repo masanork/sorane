@@ -1,0 +1,40 @@
+{
+  "name": "@sorane/astro",
+  "version": "0.4.0",
+  "description": "Astro integration for sorane OKF and agent-readable publishing outputs",
+  "type": "module",
+  "license": "MIT",
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/masanork/sorane.git",
+    "directory": "packages/astro"
+  },
+  "homepage": "https://ssg.sorane.dev",
+  "bugs": "https://github.com/masanork/sorane/issues",
+  "keywords": [
+    "astro",
+    "okf",
+    "open-knowledge-format",
+    "llms.txt",
+    "json-ld"
+  ],
+  "files": [
+    "src"
+  ],
+  "exports": {
+    ".": "./src/index.ts"
+  },
+  "engines": {
+    "node": ">=23.6"
+  },
+  "publishConfig": {
+    "access": "public"
+  },
+  "peerDependencies": {
+    "astro": ">=5"
+  },
+  "dependencies": {
+    "@sorane/core": "0.4.0",
+    "@sorane/okf": "0.4.0"
+  }
+}

@@ -30,6 +30,7 @@ Optional feature packages (install when needed):
 npm install @sorane/search   # sorane index / search + search page assets
 npm install @sorane/font       # fonts.enabled in sorane.yaml
 npm install mermaid            # build.diagrams.enabled (client mode)
+npm install @sorane/astro      # Astro integration for OKF / llms.txt / catalog outputs
 ```
 
 If a command needs a missing package, sorane prints `npm install <pkg>` and may prompt to install (TTY). Use `--yes` on `index` / `search` to install non-interactively.
@@ -201,7 +202,33 @@ npm run publish:workspaces
 
 Packages: `@sorane/cli`, `@sorane/core`, `@sorane/okf`, `@sorane/search`, `@sorane/font`.
 
+## Astro integration PoC
+
+`@sorane/astro` lets Astro own rendering while sorane emits OKF and agent-readable publishing artifacts after `astro build`:
+
+```ts
+// astro.config.mjs
+import { defineConfig } from "astro/config";
+import soraneAstro from "@sorane/astro";
+
+export default defineConfig({
+  integrations: [
+    soraneAstro({
+      site: {
+        title: "My Astro Site",
+        description: "Astro-rendered, sorane-readable",
+        baseUrl: "https://example.dev",
+      },
+      collections: { posts: "blog" },
+    }),
+  ],
+});
+```
+
+The PoC scans `src/content/**/*.md(x)` for OKF frontmatter and emits `catalog.jsonld`, `llms.txt`, and `okf/bundle.tar.gz` into Astro's output directory. The package boundary is file-based so OKF parsing, validation, bundle creation, and search indexing can move to Rust/WASM or a Rust CLI without changing Astro routes.
+
 ## Roadmap
 
 - SemVer tags and GitHub Releases (fonts tarball)
-- Astro theme layer (reads sorane build output)
+- Astro integration hardening: content collection loader, validation hook, search assets
+- Rust-native OKF parser/validator and bundle/search backends behind the Astro integration boundary
