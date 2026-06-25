@@ -41,6 +41,7 @@ describe("@sorane/astro", () => {
     });
 
     expect(result.concepts).toBe(1);
+    expect(result.validationErrors).toBe(0);
     expect(result.files).toContain("catalog.jsonld");
     expect(result.files).toContain("llms.txt");
     expect(result.files).toContain("okf/bundle.tar.gz");
@@ -72,5 +73,33 @@ describe("@sorane/astro", () => {
 
     expect(existsSync(join(root, "public-dist", "llms.txt"))).toBe(true);
     expect(existsSync(join(root, "public-dist", "catalog.jsonld"))).toBe(false);
+  });
+
+  test("validate error mode fails on invalid OKF content", async () => {
+    const root = mkdtempSync(join(tmpdir(), "sorane-astro-invalid-"));
+    const posts = join(root, "src", "content", "posts");
+    mkdirSync(posts, { recursive: true });
+    writeFileSync(
+      join(posts, "bad.md"),
+      `---
+title: Missing type
+---
+
+body
+`,
+    );
+
+    let threw = false;
+    try {
+      await emitSoraneAstroArtifacts({
+        root,
+        site: { title: "S", description: "D" },
+        validate: "error",
+      });
+    } catch (e) {
+      threw = e instanceof Error && e.message.includes("OKF validation");
+    }
+
+    expect(threw).toBe(true);
   });
 });

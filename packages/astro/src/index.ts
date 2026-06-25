@@ -28,6 +28,7 @@ type AstroLogger = {
 };
 
 export type SoraneAstroPermalink = "html" | "directory";
+export type SoraneAstroValidateMode = false | "warn" | "error";
 
 export interface SoraneAstroSiteConfig {
   readonly title: string;
@@ -60,12 +61,16 @@ export interface SoraneAstroOptions {
     readonly okfBundle?: boolean;
     readonly sitemap?: boolean;
   };
+  /** Validate OKF frontmatter while emitting artifacts. Default: "warn". */
+  readonly validate?: SoraneAstroValidateMode;
   readonly logger?: AstroLogger;
 }
 
 export interface SoraneAstroArtifactResult {
   readonly concepts: number;
   readonly files: readonly string[];
+  readonly validationErrors: number;
+  readonly validationWarnings: number;
 }
 
 type AstroIntegrationLike = {
@@ -157,6 +162,21 @@ function defaultOutputs(
   };
 }
 
+function validateMode(options: SoraneAstroOptions): SoraneAstroValidateMode {
+  return options.validate ?? "warn";
+}
+
+function formatValidationIssue(parsed: ParsedConcept): string[] {
+  const out: string[] = [];
+  for (const issue of parsed.validation.issues) {
+    out.push(`${parsed.relPath}: ${issue.message}`);
+  }
+  for (const warning of parsed.validation.warnings) {
+    out.push(`${parsed.relPath}: ${warning}`);
+  }
+  return out;
+}
+
 export async function emitSoraneAstroArtifacts(
   options: SoraneAstroOptions,
 ): Promise<SoraneAstroArtifactResult> {
@@ -168,17 +188,17 @@ export async function emitSoraneAstroArtifacts(
 
   if (!existsSync(contentDir)) {
     logger?.warn?.(`[sorane/astro] content directory not found: ${contentDir}`);
-    return { concepts: 0, files: [] };
+    return { concepts: 0, files: [], validationErrors: 0, validationWarnings: 0 };
   }
 
   mkdirSync(outDir, { recursive: true });
 
-  const parsed = walkContent(contentDir)
+  const allParsed = walkContent(contentDir)
     .map((abs) => {
       const rel = relative(contentDir, abs).replace(/\\/g, "/");
       return parseConcept("", rel, readFileSync(abs, "utf8"));
-    })
-    .filter(isAstroOkfContent);
+    });
+  const parsed = allParsed.filter(isAstroOkfContent);
 
   const catalogEntries: CatalogEntry[] = parsed.map((p) => {
     const urlRel = htmlRelForContent(p.relPath, options);
@@ -188,6 +208,24 @@ export async function emitSoraneAstroArtifacts(
       concept: p.concept,
     };
   });
+
+  const validationErrors = allParsed.reduce(
+    (sum, p) => sum + p.validation.issues.length,
+    0,
+  );
+  const validationWarnings = allParsed.reduce(
+    (sum, p) => sum + p.validation.warnings.length,
+    0,
+  );
+  const mode = validateMode(options);
+  if (mode !== false && validationErrors + validationWarnings > 0) {
+    const details = allParsed.flatMap(formatValidationIssue);
+    const message = `[sorane/astro] OKF validation found ${validationErrors} errors and ${validationWarnings} warnings\n${details.join("\n")}`;
+    if (mode === "error" && validationErrors > 0) {
+      throw new Error(message);
+    }
+    logger?.warn?.(message);
+  }
 
   const files: string[] = [];
 
@@ -243,7 +281,12 @@ export async function emitSoraneAstroArtifacts(
   }
 
   logger?.info?.(`[sorane/astro] emitted ${files.length} artifacts for ${parsed.length} OKF concepts`);
-  return { concepts: parsed.length, files };
+  return {
+    concepts: parsed.length,
+    files,
+    validationErrors,
+    validationWarnings,
+  };
 }
 
 export default function soraneAstro(options: SoraneAstroOptions): AstroIntegrationLike {

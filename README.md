@@ -220,12 +220,13 @@ export default defineConfig({
         baseUrl: "https://example.dev",
       },
       collections: { posts: "blog" },
+      validate: "error",
     }),
   ],
 });
 ```
 
-The PoC scans `src/content/**/*.md(x)` for OKF frontmatter and emits `catalog.jsonld`, `llms.txt`, and `okf/bundle.tar.gz` into Astro's output directory. The package boundary is file-based so OKF parsing, validation, bundle creation, and search indexing can move to Rust/WASM or a Rust CLI without changing Astro routes.
+The PoC scans `src/content/**/*.md(x)` for OKF frontmatter, validates it during the integration hook, and emits `catalog.jsonld`, `llms.txt`, and `okf/bundle.tar.gz` into Astro's output directory. See `examples/astro-minimal/` for a small Astro-shaped fixture. The package boundary is file-based so OKF parsing, validation, bundle creation, and search indexing can move to Rust/WASM or a Rust CLI without changing Astro routes.
 
 ## Roadmap
 
