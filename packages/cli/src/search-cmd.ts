@@ -2,6 +2,7 @@ import { existsSync } from "node:fs";
 import { resolve } from "node:path";
 import { loadSoraneConfig, parseCwdFlag } from "./config-load.ts";
 import { loadSearchModule } from "./load-search.ts";
+import { resolveSearchEmbeddings } from "./native-embed.ts";
 
 const SEARCH_FLAGS_WITH_VALUE = new Set([
   "--cwd",
@@ -82,8 +83,8 @@ export async function runSearchCmd(argv: string[]): Promise<void> {
   }
 
   const store = new IndexStore(args.indexPath);
-  let embeddings = null;
-  if (!args.ftsOnly && store.hasVectors()) {
+  let embeddings = resolveSearchEmbeddings(args.cwd, args.modelRoot, args.modelId);
+  if (!args.ftsOnly && store.hasVectors() && !embeddings) {
     const modelDir = resolve(args.modelRoot, args.modelId);
     if (!existsSync(modelDir)) {
       process.stderr.write(
@@ -102,6 +103,15 @@ export async function runSearchCmd(argv: string[]): Promise<void> {
       if (mismatch) {
         process.stderr.write(`[sorane] warning: ${mismatch}; consider re-indexing with --force\n`);
       }
+    }
+  } else if (embeddings) {
+    const mismatch = checkModelMismatch(
+      store.readMeta(),
+      args.modelId,
+      embeddings.dimensions,
+    );
+    if (mismatch) {
+      process.stderr.write(`[sorane] warning: ${mismatch}; consider re-indexing with --force\n`);
     }
   }
 

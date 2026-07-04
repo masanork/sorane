@@ -186,6 +186,8 @@ describe("runSearchCmd", () => {
     mkdirSync(join(root, "vendor/models/ruri-v3-30m"), { recursive: true });
     const errChunks: string[] = [];
     const origErr = process.stderr.write.bind(process.stderr);
+    const prevEmbedNative = process.env.SORANE_EMBED_NATIVE;
+    process.env.SORANE_EMBED_NATIVE = "0";
     process.stderr.write = ((chunk: string | Uint8Array) => {
       errChunks.push(String(chunk));
       return true;
@@ -203,8 +205,36 @@ describe("runSearchCmd", () => {
       expect(err).toContain("dim");
     } finally {
       process.stderr.write = origErr;
+      if (prevEmbedNative === undefined) delete process.env.SORANE_EMBED_NATIVE;
+      else process.env.SORANE_EMBED_NATIVE = prevEmbedNative;
       rmSync(root, { recursive: true, force: true });
     }
+  });
+
+  test("native embed when sorane-astro-backend is built", async (t) => {
+    const { soraneNativeEmbedAvailable, nativeHybridModelAvailable } = await import(
+      "../packages/cli/src/native-embed.ts"
+    );
+    const cwd = process.cwd();
+    if (!soraneNativeEmbedAvailable(cwd)) {
+      t.skip("sorane-astro-backend native binary not built");
+      return;
+    }
+    const modelRoot = join(cwd, "vendor/models");
+    if (!nativeHybridModelAvailable(modelRoot, "ruri-v3-30m")) {
+      t.skip("hybrid model not fetched");
+      return;
+    }
+    if (!existsSync(join(MINIMAL, ".sorane/index.db"))) {
+      t.skip("minimal index missing");
+      return;
+    }
+
+    const out = await captureStdout(() =>
+      runSearchCmd(["sorane", "--cwd", MINIMAL, "--json", "--k", "1"]),
+    );
+    const rows = JSON.parse(out) as { title?: string }[];
+    expect(rows.length > 0).toBe(true);
   });
 });
 

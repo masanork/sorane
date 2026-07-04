@@ -11,6 +11,8 @@ mod search_embed;
 #[cfg(not(target_arch = "wasm32"))]
 pub mod search_index_cmd;
 #[cfg(not(target_arch = "wasm32"))]
+pub mod search_embed_cmd;
+#[cfg(not(target_arch = "wasm32"))]
 mod search_ruri;
 #[cfg(not(target_arch = "wasm32"))]
 mod search_store;

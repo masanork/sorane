@@ -181,7 +181,7 @@ Tightening to bit-identical hybrid JSON is a future optimization (3D mean-poolin
 
 The inline TypeScript artifact backend remains supported. Do not remove it until all of the following are true:
 
-1. ~~`sorane index` can use native embeddings~~ (done when CLI is built; TS path remains fallback).
+1. ~~`sorane index` / `sorane search` can use native embeddings~~ (done when CLI is built; TS path remains fallback).
 2. WASM hybrid or a documented WASM limitation is accepted in docs/CI.
 3. Integration-layer validation policy is fixed (TS-only vs native).
 
@@ -191,6 +191,7 @@ Current shrink steps (in progress):
 2. CI job `astro-ts-fallback` runs `tests/astro-backend-ts-fallback.test.ts` **without** `cargo build` to guard `backend: "ts"` and `SORANE_ASTRO_BACKEND_NATIVE=0` resolution.
 3. Hybrid SLA documented above (≥ 0.95 cosine); native parity tests enforce it.
 4. ~~`sorane index` via native CLI~~ — `sorane-astro-backend index` JSON subcommand; `packages/cli/src/index-cmd.ts` prefers native when built (`SORANE_INDEX_NATIVE=0` opts out).
+5. ~~`sorane search` query embed via native CLI~~ — `sorane-astro-backend embed` JSON subcommand; `packages/cli/src/search-cmd.ts` prefers native when built (`SORANE_EMBED_NATIVE=0` opts out). Query prefix (`検索クエリ: `) is applied by `@sorane/search` before calling the provider, same as TypeScript.
 
 ### Native `sorane index` contract
 
@@ -201,3 +202,13 @@ echo '{"schema_version":1,"root":"/site","contentDir":"/site/content","indexPath
 ```
 
 Stdout: `{ schema_version, added, changed, removed, unchanged, chunks, fts, vec, mode, modelMissing }`.
+
+### Native `sorane search` embed contract
+
+```bash
+cargo build --manifest-path rust/sorane-astro-backend/Cargo.toml
+echo '{"schema_version":1,"root":"/site","modelRoot":"vendor/models","modelId":"ruri-v3-30m","texts":["検索クエリ: example"]}' \
+  | sorane-astro-backend embed
+```
+
+Stdout: `{ schema_version, vectors[][], modelId, dim, quant, modelSha256 }`.
