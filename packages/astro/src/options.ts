@@ -14,6 +14,8 @@ export interface SoraneAstroSiteConfig {
   readonly title: string;
   readonly description: string;
   readonly baseUrl?: string;
+  /** Primary site language (BCP 47). Default: `ja`. */
+  readonly lang?: string;
 }
 
 export interface SoraneAstroOptions {

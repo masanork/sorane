@@ -10,11 +10,24 @@ static HEADING_RE: LazyLock<Regex> =
     LazyLock::new(|| Regex::new(r"^(#{1,6})\s+").expect("heading re"));
 
 #[derive(Debug, Clone)]
+pub struct GlossaryTermItem {
+    pub label: String,
+    pub definition_markdown: String,
+    pub line: usize,
+    pub anchor_id: Option<String>,
+}
+
 struct GlossaryTerm {
     label: String,
     definition_markdown: String,
     line: usize,
     anchor_id: Option<String>,
+}
+
+pub fn term_id_from_label(label: &str) -> String {
+    let slug = label.trim().to_lowercase().replace(' ', "-");
+    let re = regex::Regex::new(r"[^a-z0-9\u3040-\u30ff\u4e00-\u9fff-]").unwrap();
+    re.replace_all(&slug, "").to_string()
 }
 
 fn parse_glossary_terms_frontmatter(fm: &serde_yaml::Mapping) -> Vec<GlossaryTerm> {
@@ -72,6 +85,19 @@ struct ResolvedGlossaryTerms {
     preamble_markdown: String,
     preamble_line: Option<usize>,
     source: &'static str,
+}
+
+pub fn resolve_glossary_term_items(body: &str, fm: &serde_yaml::Mapping) -> Vec<GlossaryTermItem> {
+    resolve_glossary_terms(body, fm)
+        .items
+        .into_iter()
+        .map(|t| GlossaryTermItem {
+            label: t.label,
+            definition_markdown: t.definition_markdown,
+            line: t.line,
+            anchor_id: t.anchor_id,
+        })
+        .collect()
 }
 
 fn resolve_glossary_terms(body: &str, fm: &serde_yaml::Mapping) -> ResolvedGlossaryTerms {

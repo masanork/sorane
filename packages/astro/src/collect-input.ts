@@ -49,6 +49,7 @@ export function buildSoraneAstroBackendInput(
       title: options.site.title,
       description: options.site.description,
       baseUrl: options.site.baseUrl,
+      lang: options.site.lang,
     },
     files,
     permalink: routes.permalink ?? options.permalink,

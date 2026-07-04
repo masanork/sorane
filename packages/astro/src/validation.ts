@@ -11,6 +11,7 @@ function astroSoraneConfig(input: SoraneAstroBackendInput) {
       title: input.site.title,
       description: input.site.description,
       base_url: input.site.baseUrl ?? "",
+      ...(input.site.lang ? { lang: input.site.lang } : {}),
     },
     build: {
       content_dir: contentRel,

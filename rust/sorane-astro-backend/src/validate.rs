@@ -1,3 +1,5 @@
+use std::collections::HashSet;
+
 use serde::Deserialize;
 use serde_json::Value;
 
@@ -6,7 +8,17 @@ use crate::diagram::validate_diagram_alt_warnings;
 use crate::directory_index::{discover_directory_index_warnings, DirectoryListingFile};
 use crate::faq::validate_faq_warnings;
 use crate::glossary::{validate_glossary_term_warnings, validate_glossary_warnings};
+use crate::i18n_validate::validate_translation_key_warning;
+use crate::lang_mixing::validate_lang_mixing_warnings;
 use crate::okf_validate::validate_okf_source;
+use crate::open_data_validate::{
+    validate_dataset_warnings, validate_eu_theme_warnings as eu_theme_for_page,
+};
+use crate::reference::validate_reference_warnings;
+use crate::redirect::validate_redirect_frontmatter;
+use crate::revision::validate_revision_warnings;
+use crate::term_links::validate_term_link_warnings;
+use crate::unsafe_links::validate_unsafe_link_warnings;
 
 #[derive(Debug, Clone)]
 pub enum ValidateMode {
@@ -42,6 +54,17 @@ pub struct BackendQuality {
     pub table_headers: Option<Value>,
     #[serde(default)]
     pub dates: Option<Value>,
+    #[serde(rename = "lang_mixing", default)]
+    pub lang_mixing: Option<Value>,
+}
+
+#[derive(Debug, Clone)]
+pub struct ValidationContext<'a> {
+    pub site_lang: &'a str,
+    pub base_url: Option<&'a str>,
+    pub glossary_term_ids: &'a HashSet<String>,
+    pub link_scheme_enabled: bool,
+    pub link_scheme_is_error: bool,
 }
 
 #[derive(Debug, Clone, Default, Deserialize)]
@@ -271,6 +294,7 @@ pub fn collect_file_validation(
     body: &str,
     quality: &Option<BackendQuality>,
     okf: &Option<BackendOkf>,
+    ctx: &ValidationContext<'_>,
 ) -> ValidationSummary {
     let mut errors = 0usize;
     let mut warnings = 0usize;
@@ -353,6 +377,22 @@ pub fn collect_file_validation(
         details.push(format!("{rel_path}: {message}"));
     }
 
+    let page_lang = yaml_str(&fm_map, "lang").unwrap_or(ctx.site_lang);
+    for message in validate_lang_mixing_warnings(body, page_lang, quality) {
+        warnings += 1;
+        details.push(format!("{rel_path}: {message}"));
+    }
+
+    for message in validate_term_link_warnings(body, ctx.glossary_term_ids) {
+        warnings += 1;
+        details.push(format!("{rel_path}: {message}"));
+    }
+
+    if let Some(message) = validate_translation_key_warning(&fm_map, false) {
+        warnings += 1;
+        details.push(format!("{rel_path}: {message}"));
+    }
+
     let okf_type = effective_type(&fm_map, okf);
     match okf_type.as_str() {
         "faq" => {
@@ -373,7 +413,52 @@ pub fn collect_file_validation(
                 details.push(format!("{rel_path}: {message}"));
             }
         }
+        "reference" => {
+            for message in validate_reference_warnings(body, &fm_map) {
+                warnings += 1;
+                details.push(format!("{rel_path}: {message}"));
+            }
+        }
+        "dataset" => {
+            for message in validate_dataset_warnings(&fm_map) {
+                warnings += 1;
+                details.push(format!("{rel_path}: {message}"));
+            }
+        }
         _ => {}
+    }
+
+    if okf_type != "dataset" {
+        let theme = yaml_str(&fm_map, "theme");
+        for message in eu_theme_for_page(theme, okf_type.as_str()) {
+            warnings += 1;
+            details.push(format!("{rel_path}: {message}"));
+        }
+    }
+
+    for message in validate_revision_warnings(&fm_map) {
+        warnings += 1;
+        details.push(format!("{rel_path}: {message}"));
+    }
+
+    for finding in validate_redirect_frontmatter(&fm_map, ctx.base_url) {
+        if finding.is_error {
+            errors += 1;
+        } else {
+            warnings += 1;
+        }
+        details.push(format!("{rel_path}: {}", finding.message));
+    }
+
+    if ctx.link_scheme_enabled {
+        for finding in validate_unsafe_link_warnings(body, true, false) {
+            if ctx.link_scheme_is_error {
+                errors += 1;
+            } else {
+                warnings += 1;
+            }
+            details.push(format!("{rel_path}: {}", finding.message));
+        }
     }
 
     ValidationSummary {

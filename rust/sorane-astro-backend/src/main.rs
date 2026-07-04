@@ -5,8 +5,17 @@ mod diagram;
 mod directory_index;
 mod faq;
 mod glossary;
+mod i18n_validate;
+mod lang_mixing;
 mod markdown_sections;
 mod okf_validate;
+mod open_data_validate;
+mod reference;
+mod redirect;
+mod revision;
+mod safe_url;
+mod term_links;
+mod unsafe_links;
 mod validate;
 
 use base64::{engine::general_purpose::STANDARD, Engine as _};
@@ -16,9 +25,11 @@ use serde::{Deserialize, Serialize};
 use serde_json::{json, Map, Value};
 use std::collections::BTreeMap;
 use std::io::Write;
+use term_links::build_glossary_term_index;
 use validate::{
     collect_file_validation, collect_site_validation, directory_listing_file_from_source,
-    merge_validation, BackendOkf, BackendQuality, ValidateMode, ValidationSummary,
+    merge_validation, BackendOkf, BackendQuality, ValidateMode, ValidationContext,
+    ValidationSummary,
 };
 
 const SCHEMA_VERSION: i32 = 1;
@@ -62,6 +73,8 @@ struct BackendSite {
     description: String,
     #[serde(rename = "baseUrl", default)]
     base_url: String,
+    #[serde(default)]
+    lang: Option<String>,
 }
 
 #[derive(Debug, Clone, Deserialize)]
@@ -1002,6 +1015,32 @@ fn run_backend(input: BackendInput) -> Result<BackendOutput, String> {
     let mut concepts = Vec::new();
 
     let validate_mode = input.validate.clone().unwrap_or(ValidateMode::Warn);
+    let glossary_term_ids = build_glossary_term_index(
+        &input
+            .files
+            .iter()
+            .map(|f| (f.rel_path.as_str(), f.source.as_str()))
+            .collect::<Vec<_>>(),
+        &input.okf,
+    );
+    let site_lang = input
+        .site
+        .lang
+        .as_deref()
+        .filter(|s| !s.is_empty())
+        .unwrap_or("ja");
+    let base_url = input.site.base_url.trim();
+    let validation_ctx = ValidationContext {
+        site_lang,
+        base_url: if base_url.is_empty() {
+            None
+        } else {
+            Some(base_url)
+        },
+        glossary_term_ids: &glossary_term_ids,
+        link_scheme_enabled: true,
+        link_scheme_is_error: false,
+    };
     let mut listing_files = Vec::new();
     for file in &input.files {
         if let Some(listing) =
@@ -1020,6 +1059,7 @@ fn run_backend(input: BackendInput) -> Result<BackendOutput, String> {
                     body,
                     &input.quality,
                     &input.okf,
+                    &validation_ctx,
                 ),
             );
         }

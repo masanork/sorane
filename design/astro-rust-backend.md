@@ -141,6 +141,7 @@ Native Rust backend parity (done):
 4. `tests/astro-backend-native-parity.test.ts` guards native ≡ TS for core artifacts (bundle compared after gunzip).
 5. Native validation Phase A: OKF JSON Schema (3 profiles), heading, content-quality (image alt, link text, table headers, dates), disclosure fields. Diagram alt matches TS default (`diagrams.enabled: false` → no warnings).
 6. Native validation Phase B: FAQ / glossary / glossary-term structure gates, directory index auto-listing hints (no i18n locale prefixes in Astro contract yet).
+7. Native validation Phase C: reference / dataset warnings, lang mixing, glossary term-link index, revision history, redirect frontmatter (same-origin via `site.baseUrl`), unsafe link scheme checks, translation_key without i18n. `site.lang` added to backend contract (default `ja`). DCAT helpers stay in `open_data.rs`; dataset validation lives in `open_data_validate.rs`.
 
 Integration-layer validation (done):
 
@@ -148,6 +149,6 @@ Integration-layer validation (done):
 
 Next:
 
-1. Expand native Rust validation toward full `validateSiteContent` parity (reference, dataset, i18n, redirects, lang mixing, term links, …).
+1. Remaining `validateSiteContent` gaps: full i18n cross-locale checks, `sorane.yaml` redirect rules, diagram alt when `diagrams.enabled`, sorane.yaml-level config parity.
 2. Move `outputs.search` indexing into the backend contract or a Rust helper.
 3. Add `backend: "wasm"` when a WASM artifact is published.
