@@ -128,7 +128,13 @@ export {
   resolveAstroPaths,
 } from "./collect-input.ts";
 export { runSoraneAstroBackendBin, resolveAstroBackendBinBackend } from "./backend-bin.ts";
-export { buildSoraneAstroTsArtifacts, runSoraneAstroTsBackend } from "./backend-ts.ts";
+export {
+  buildSoraneAstroArtifacts,
+  buildSoraneAstroTsArtifacts,
+  buildOkfArtifacts,
+  defaultBackendOutputs,
+} from "./backend-artifacts.ts";
+export { runSoraneAstroTsBackend } from "./backend-ts.ts";
 export {
   resolveSoraneAstroCliBinary,
   runSoraneAstroCliBackend,

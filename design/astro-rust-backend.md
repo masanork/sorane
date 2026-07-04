@@ -118,7 +118,8 @@ Hardening checklist (done):
 JSON backend contract (done in TypeScript):
 
 - `packages/astro/src/contract.ts` — input/output types + `schema_version`
-- `packages/astro/src/backend-ts.ts` — `runSoraneAstroTsBackend(input)`
+- `packages/astro/src/backend-artifacts.ts` — `buildSoraneAstroArtifacts(input)` (OKF + search; no validation)
+- `packages/astro/src/backend-ts.ts` — `runSoraneAstroTsBackend(input)` (TS fallback/reference + optional validation)
 - `packages/astro/src/collect-input.ts` / `write-artifacts.ts` — disk I/O boundary
 - `tests/astro-backend-contract.test.ts` — round-trip + artifact decode
 
@@ -198,7 +199,8 @@ This is intentional; do not block TS backend removal on WASM hybrid.
 | `emitSoraneAstroArtifacts` | TypeScript `validateSiteContent` via `collectBackendValidation` | Always (unless `validate: false`) |
 | `runSoraneAstroBackend` from integration | `validate: false` on backend input | Always — avoids duplicate work |
 | `sorane-astro-backend` CLI / JSON API (standalone) | Rust `validate` module | When `validate` ≠ `off` in input |
-| `runSoraneAstroTsBackend` (direct API) | TS `collectBackendValidation` | When caller passes `validate` ≠ `false` |
+| `buildSoraneAstroArtifacts` (direct API) | None | Artifact-only; use with `collectBackendValidation` when gates are needed |
+| `runSoraneAstroTsBackend` (direct API) | TS `collectBackendValidation` | TS fallback/reference; when caller passes `validate` ≠ `false` |
 
 Enforcement:
 
@@ -228,11 +230,11 @@ Current shrink steps (done):
 8. ~~Native `chunk_vectors` interop~~ — `@sorane/search` `IndexStore` reads Rust-native SQLite vector blobs for `deriveWebIndex` and `sorane search` hybrid KNN.
 9. ~~npm `sorane-astro-backend` bin~~ — `packages/astro/bin/sorane-astro-backend.mjs` prefers the Rust CLI when built (`SORANE_ASTRO_BACKEND_NATIVE=0` → TypeScript).
 
-### Phase 3 (next)
+### Phase 3 (done)
 
-1. CI: Astro job runs `tests/cli-direct.test.ts` with `cargo build` + `fetch-model` (native `sorane index` / `search` guards).
+1. ~~CI: Astro job runs `tests/cli-direct.test.ts` with `cargo build` + `fetch-model` (native `sorane index` / `search` guards).~~
 2. ~~Optional int8 `search-index.json` parity tightening~~ — shared `int8-encode.ts` / `quantize_embedding_component`; CI asserts bit-identical `vectors_b64` and min per-chunk cosine ≥ 0.99.
-3. Long-term: reduce inline TS artifact backend surface (`backend-ts.ts`) once npm consumers standardize on the Rust bin; keep integration-layer TS validation.
+3. ~~Reduce inline TS artifact backend surface~~ — `buildSoraneAstroArtifacts` in `backend-artifacts.ts`; `backend-ts.ts` is a thin TS fallback/reference wrapper (`runSoraneAstroTsBackend`). Production paths use native CLI (`backend: "auto"`, npm `sorane-astro-backend` bin). Integration-layer TS validation unchanged.
 
 ### Native `sorane index` contract
 

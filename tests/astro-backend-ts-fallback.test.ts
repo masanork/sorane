@@ -3,6 +3,7 @@ import { tmpdir } from "node:os";
 import { join } from "node:path";
 import { describe, expect, test } from "./_expect.ts";
 import {
+  buildSoraneAstroArtifacts,
   emitSoraneAstroArtifacts,
   resolveSoraneAstroBackend,
   runSoraneAstroTsBackend,
@@ -72,6 +73,35 @@ Enough body text for OKF artifact emission when the TypeScript backend is the on
     const catalog = readFileSync(join(root, "dist", "catalog.jsonld"), "utf8");
     expect(catalog).toContain("TS Fallback");
     expect(warnings.some((w) => w.includes("not available yet"))).toBe(false);
+  });
+
+  test("buildSoraneAstroArtifacts builds OKF artifacts without validation", async () => {
+    const root = mkdtempSync(join(tmpdir(), "sorane-astro-artifacts-"));
+    const contentDir = join(root, "src", "content", "posts");
+    mkdirSync(contentDir, { recursive: true });
+    writeFileSync(
+      join(contentDir, "hello.md"),
+      `---
+type: article
+title: Artifacts Only
+timestamp: 2026-07-04T00:00:00Z
+---
+
+# Artifacts Only
+`,
+    );
+    const { buildSoraneAstroBackendInput, collectSoraneAstroBackendFiles } = await import(
+      "../packages/astro/src/index.ts"
+    );
+    const files = collectSoraneAstroBackendFiles(join(root, "src", "content"));
+    const input = buildSoraneAstroBackendInput(
+      { site: { title: "S", description: "D" }, backend: "ts", validate: false },
+      { root, contentDir: join(root, "src", "content"), outDir: join(root, "dist") },
+      files,
+    );
+    const built = await buildSoraneAstroArtifacts(input);
+    expect(built.concepts).toBe(1);
+    expect(built.artifacts.some((a) => a.path === "catalog.jsonld")).toBe(true);
   });
 
   test("runSoraneAstroTsBackend remains the reference inline implementation", async () => {

@@ -1,29 +1,15 @@
 import { SORANE_ASTRO_BACKEND_SCHEMA_VERSION } from "./contract.ts";
-import type {
-  SoraneAstroBackendArtifact,
-  SoraneAstroBackendInput,
-  SoraneAstroBackendOutput,
-} from "./contract.ts";
-import { buildOkfArtifacts } from "./backend-artifacts.ts";
-import { isAstroOkfContent, parseBackendFiles } from "./content.ts";
-import { buildSearchArtifacts } from "./search-backend.ts";
+import type { SoraneAstroBackendInput, SoraneAstroBackendOutput } from "./contract.ts";
+import { buildSoraneAstroTsArtifacts } from "./backend-artifacts.ts";
 import { collectBackendValidation } from "./validation.ts";
 
-/** OKF artifacts only (no validation). Used by integration and parity tests. */
-export async function buildSoraneAstroTsArtifacts(
-  input: SoraneAstroBackendInput,
-): Promise<{ concepts: number; artifacts: SoraneAstroBackendArtifact[] }> {
-  const parsed = parseBackendFiles(input.files).filter(isAstroOkfContent);
-  const artifacts = await buildOkfArtifacts(input, parsed);
+export { buildSoraneAstroTsArtifacts } from "./backend-artifacts.ts";
 
-  if (input.outputs?.search) {
-    artifacts.push(...(await buildSearchArtifacts(input)));
-  }
-
-  return { concepts: parsed.length, artifacts };
-}
-
-/** TypeScript backend: deterministic OKF semantics over the JSON contract. */
+/**
+ * TypeScript fallback/reference backend (parity tests, `backend: "ts"`, npm bin
+ * when native is unavailable). Prefer `runSoraneAstroBackend` / `runSoraneAstroBackendBin`
+ * for production artifact emission.
+ */
 export async function runSoraneAstroTsBackend(
   input: SoraneAstroBackendInput,
 ): Promise<SoraneAstroBackendOutput> {

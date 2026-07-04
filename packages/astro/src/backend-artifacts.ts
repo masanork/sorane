@@ -14,7 +14,8 @@ import type {
   SoraneAstroBackendInput,
   SoraneAstroBackendOutputsInput,
 } from "./contract.ts";
-import { hasAiDisclosure, slugForParsed } from "./content.ts";
+import { hasAiDisclosure, isAstroOkfContent, parseBackendFiles, slugForParsed } from "./content.ts";
+import { buildSearchArtifacts } from "./search-backend.ts";
 import type { ParsedConcept } from "@sorane/okf";
 import { absoluteUrl, htmlRelForContent } from "./routes.ts";
 
@@ -131,3 +132,20 @@ export async function buildOkfArtifacts(
 
   return artifacts;
 }
+
+/** Build all artifact-backend outputs (OKF + optional search). No validation. */
+export async function buildSoraneAstroArtifacts(
+  input: SoraneAstroBackendInput,
+): Promise<{ concepts: number; artifacts: SoraneAstroBackendArtifact[] }> {
+  const parsed = parseBackendFiles(input.files).filter(isAstroOkfContent);
+  const artifacts = await buildOkfArtifacts(input, parsed);
+
+  if (input.outputs?.search) {
+    artifacts.push(...(await buildSearchArtifacts(input)));
+  }
+
+  return { concepts: parsed.length, artifacts };
+}
+
+/** @deprecated Prefer `buildSoraneAstroArtifacts`. Kept for parity tests and TS fallback CI. */
+export const buildSoraneAstroTsArtifacts = buildSoraneAstroArtifacts;

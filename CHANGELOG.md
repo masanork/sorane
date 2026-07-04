@@ -34,6 +34,7 @@ All notable changes to sorane are documented here. Versioning follows [SemVer](h
 
 ### Changed
 
+- Phase 3 TS backend shrink — `buildSoraneAstroArtifacts` is the canonical artifact builder in `backend-artifacts.ts`; `backend-ts.ts` is fallback/reference + optional validation only.
 - Native `model_available` requires `onnx/model_quantized.onnx` and `tokenizer.json`, not only a model directory.
 - Documented runtime split: native CLI uses Rust ONNX; TypeScript backend and `sorane index` still use `@sorane/search`.
 - `resolveSoraneAstroBackend` respects `SORANE_ASTRO_BACKEND_NATIVE=0` (skips native CLI in `auto` / `cli`).
