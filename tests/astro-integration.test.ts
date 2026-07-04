@@ -480,6 +480,56 @@ This article has enough body text to produce at least one search chunk when
     expect(index).toContain("blog/searchable.html");
   });
 
+  test("native auto backend emits search assets without TS artifact fallback", async (t) => {
+    const { soraneAstroNativeCliAvailable } = await import(
+      "../packages/astro/src/backend-cli.ts"
+    );
+    if (!soraneAstroNativeCliAvailable()) {
+      t.skip("sorane-astro-backend native binary not built");
+      return;
+    }
+
+    const root = mkdtempSync(join(tmpdir(), "sorane-astro-native-emit-search-"));
+    const posts = join(root, "src", "content", "posts");
+    mkdirSync(posts, { recursive: true });
+    writeFileSync(
+      join(posts, "searchable.md"),
+      `---
+type: article
+title: Native Emit Search
+description: integration native search path
+timestamp: 2026-07-04T00:00:00Z
+---
+
+# Native Emit Search
+
+Enough body text for FTS search indexing when the native artifact backend runs
+from emitSoraneAstroArtifacts with outputs.search enabled.
+`,
+    );
+
+    const result = await emitSoraneAstroArtifacts({
+      root,
+      outDir: join(root, "dist"),
+      backend: "auto",
+      site: { title: "S", description: "D", baseUrl: "https://example.dev" },
+      collections: { posts: "blog" },
+      outputs: {
+        catalog: false,
+        llmsTxt: false,
+        okfBundle: false,
+        sitemap: false,
+        search: true,
+      },
+      search: { force: true, mode: "fts" },
+    });
+
+    expect(result.files).toContain("assets/search-index.json");
+    expect(result.files).toContain("assets/search.mjs");
+    const index = readFileSync(join(root, "dist", "assets", "search-index.json"), "utf8");
+    expect(index).toContain("blog/searchable.html");
+  });
+
   test("search-backend prefers native index when CLI is built", async (t) => {
     const { soraneAstroNativeCliAvailable } = await import(
       "../packages/astro/src/backend-cli.ts"

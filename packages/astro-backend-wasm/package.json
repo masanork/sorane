@@ -1,6 +1,6 @@
 {
   "name": "@sorane/astro-backend-wasm",
-  "version": "0.4.0",
+  "version": "0.5.0",
   "description": "WASM build of sorane-astro-backend for @sorane/astro (no native CLI install)",
   "type": "module",
   "license": "MIT",

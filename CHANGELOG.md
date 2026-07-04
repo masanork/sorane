@@ -4,42 +4,31 @@ All notable changes to sorane are documented here. Versioning follows [SemVer](h
 
 ## [Unreleased]
 
+## [0.5.0] - 2026-07-04
+
 ### Added
 
-- **Native hybrid search embeddings** — `rust/sorane-astro-backend/src/search_ruri.rs` runs ruri-v3-30m via `ort` + `tokenizers` (no Node `embed-batch` bridge). Parity unit test against `@sorane/search` reference vectors.
-- **Hybrid native parity test** — `tests/astro-backend-native-parity.test.ts` compares TS and native hybrid `assets/search-index.json` (chunks/model/schema; embedding cosine ≥ 0.95 on int8 vectors). CI runs `npm run fetch-model`.
-- **Astro TS fallback CI guard** — job `astro-ts-fallback` runs `tests/astro-backend-ts-fallback.test.ts` without building the native CLI.
+- **Native hybrid search embeddings** — `rust/sorane-astro-backend/src/search_ruri.rs` runs ruri-v3-30m via `ort` + `tokenizers` (no Node `embed-batch` bridge).
+- **Hybrid native parity tests** — `tests/astro-backend-native-parity.test.ts` compares TS and native `assets/search-index.json`; CI runs `npm run fetch-model` after `cargo build`.
+- **Shared int8 embed contract** — `packages/search/src/int8-encode.ts`; Rust `quantize_embedding_component` in `search.rs`. Parity asserts bit-identical `vectors_b64` and min per-chunk cosine ≥ 0.99.
 - **Native `sorane index`** — `sorane-astro-backend index` subcommand; `@sorane/cli` `index` prefers native when built (`SORANE_INDEX_NATIVE=0` opts out).
-- **Native `sorane search` query embed** — `sorane-astro-backend embed` subcommand; `@sorane/cli` `search` prefers native ONNX for hybrid query vectors when built (`SORANE_EMBED_NATIVE=0` opts out).
-- **Astro TS search fallback** — `packages/astro/src/search-backend.ts` prefers native `index` when the CLI is built (`SORANE_INDEX_NATIVE=0` opts out); companion assets use ONNX presence for hybrid vendoring.
-
-### Changed
-
-- Documented native CLI env vars (`SORANE_INDEX_NATIVE`, `SORANE_EMBED_NATIVE`, …) in `website/content/cli.md` and `website/content/astro-integration.md`.
-- Documented WASM FTS-only hybrid policy and Astro validation ownership in `design/astro-rust-backend.md` (integration layer = TS `validateSiteContent`; backends called with `validate: false`).
-- Integration tests guard validation deduplication (`validate:false`, native backend not double-counting).
-
-### Added
-
-- **Shared int8 embed contract** — `packages/search/src/int8-encode.ts`; Rust `quantize_embedding_component` in `search.rs`. Hybrid parity CI asserts bit-identical `vectors_b64` and min per-chunk cosine ≥ 0.99.
+- **Native `sorane search` query embed** — `sorane-astro-backend embed` subcommand; `@sorane/cli` `search` prefers native ONNX when built (`SORANE_EMBED_NATIVE=0` opts out).
 - **npm `sorane-astro-backend` bin** — prefers Rust JSON CLI when built; `SORANE_ASTRO_BACKEND_NATIVE=0` falls back to TypeScript (`packages/astro/src/backend-bin.ts`).
-- `buildSoraneAstroTsArtifacts` — TypeScript artifact build without validation (`backend-ts.ts` shrink).
-- `@sorane/search` `IndexStore` reads Rust `chunk_vectors` blobs for hybrid export and KNN when `vec_chunks` is absent.
+- **`buildSoraneAstroArtifacts`** — canonical TypeScript artifact builder in `backend-artifacts.ts`; `backend-ts.ts` is fallback/reference + optional validation.
+- **`@sorane/search` `chunk_vectors` interop** — `IndexStore` reads Rust SQLite vector blobs for hybrid export and KNN when `vec_chunks` is absent.
+- **Astro TS fallback CI guard** — job `astro-ts-fallback` runs without `cargo build`.
+- **Astro TS search path** — `search-backend.ts` prefers native `index` when the CLI is built.
 
 ### Changed
 
-- README / `website/content/configuration.md` — native CLI hybrid routing and env opt-outs.
-- Documented f32 embedding parity between native ONNX and transformers.js; int8 web index SLA remains ≥ 0.95 cosine.
 - Astro CI job runs `tests/cli-direct.test.ts` (native index/search) after `cargo build` and `fetch-model`.
-
-### Changed
-
-- Phase 3 TS backend shrink — `buildSoraneAstroArtifacts` is the canonical artifact builder in `backend-artifacts.ts`; `backend-ts.ts` is fallback/reference + optional validation only.
-- Native `model_available` requires `onnx/model_quantized.onnx` and `tokenizer.json`, not only a model directory.
-- Documented runtime split: native CLI uses Rust ONNX; TypeScript backend and `sorane index` still use `@sorane/search`.
-- `resolveSoraneAstroBackend` respects `SORANE_ASTRO_BACKEND_NATIVE=0` (skips native CLI in `auto` / `cli`).
+- `resolveSoraneAstroBackend` and npm bin respect `SORANE_ASTRO_BACKEND_NATIVE=0`.
+- Documented native CLI env vars, WASM FTS-only hybrid policy, and Astro validation ownership (`design/astro-rust-backend.md`, `website/content/cli.md`, `website/content/astro-integration.md`).
+- Integration tests guard validation deduplication (`validate: false` on artifact backends).
+- README / `website/content/configuration.md` — native CLI hybrid routing and env opt-outs.
+- Native `model_available` requires `onnx/model_quantized.onnx` and `tokenizer.json`.
 - Removed unused `packages/search/scripts/embed-batch.mjs`.
-- Documented hybrid embedding SLA (cosine ≥ 0.95) in `design/astro-rust-backend.md`.
+- Hybrid embedding SLA: bit-identical `vectors_b64` when aligned; min per-chunk cosine ≥ 0.99.
 
 ## [0.4.0] - 2026-06-21
 
@@ -48,9 +37,7 @@ All notable changes to sorane are documented here. Versioning follows [SemVer](h
 - **`preset:` in `sorane.yaml`** — `blog` | `okf-site` | `gov` for site archetype defaults (blog/archives, diagrams, quality gates, machine-readable outputs)
 - **`build.outputs`** — per-artifact toggles: `md_alternate`, `okf_bundle`, `catalog`, `llms_txt`, `feed`, `sitemap`, `robots`
 - **Optional npm packages** — `@sorane/search`, `@sorane/font`, `mermaid` install on demand; CLI shows `npm install <pkg>` (or yarn/pnpm from lockfile) and prompts on TTY; `sorane index|search --yes` for non-interactive install
-- Core helpers: `requireOptionalModule`, `resolveBuildOutputs`, `presetPartial` (exported from `@sorane/core`)
-
-### Changed
+- Core helpers: `requireOptionalModule`, `resolveBuildOutputs`, `presetPartial` (exported from `@sorane/core`)### Changed
 
 - **Breaking — lighter defaults** (no `preset:`): `build.diagrams.enabled: false`, `build.blog.archives/tags: false`, lite `build.outputs` (feed/sitemap/robots on; catalog / llms.txt / okf bundle / sibling `.md` off)
 - **Migration:** production OKF/agent sites should add `preset: okf-site` (or set `build.outputs` / `build.diagrams` explicitly). `website/`, `examples/open-data/`, and `template/site/` are updated

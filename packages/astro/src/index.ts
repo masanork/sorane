@@ -11,7 +11,15 @@ import { resolveAstroRoutePlan } from "./route-loader.ts";
 import { buildSearchArtifacts, writeSearchCompanionAssets } from "./search-backend.ts";
 import { writeSoraneAstroBackendArtifacts } from "./write-artifacts.ts";
 import { collectBackendValidation } from "./validation.ts";
+import type { SoraneAstroBackendArtifact } from "./contract.ts";
 import type { SoraneAstroArtifactResult, SoraneAstroOptions } from "./options.ts";
+
+/** Artifact backends (native / WASM) may omit search; TS / `search-backend` fills the gap. */
+function backendIncludesSearchIndex(
+  artifacts: readonly SoraneAstroBackendArtifact[],
+): boolean {
+  return artifacts.some((a) => a.path === "assets/search-index.json");
+}
 
 type AstroIntegrationLike = {
   readonly name: string;
@@ -63,10 +71,7 @@ export async function emitSoraneAstroArtifacts(
   // (design/astro-rust-backend.md — "Validation policy (Astro integration)").
   let output = await runSoraneAstroBackend(resolved, { ...input, validate: false });
 
-  if (
-    options.outputs?.search &&
-    !output.artifacts.some((a) => a.path === "assets/search-index.json")
-  ) {
+  if (options.outputs?.search && !backendIncludesSearchIndex(output.artifacts)) {
     const searchArtifacts = await buildSearchArtifacts(
       { ...input, validate: false },
       logger,

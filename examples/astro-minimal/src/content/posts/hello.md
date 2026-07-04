@@ -11,4 +11,5 @@ digitalSourceType: trainedAlgorithmicMedia
 
 This fixture is intentionally small. It proves that `@sorane/astro` can read
 Astro content and emit machine-readable sorane artifacts without owning the page
-renderer.
+renderer. Extra body text ensures at least one FTS search chunk in
+`assets/search-index.json` when `outputs.search` is enabled.

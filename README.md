@@ -199,7 +199,7 @@ Cloudflare Pages deploys `website/dist` to **ssg.sorane.dev** on push to `main` 
 | Method | Status |
 |--------|--------|
 | `git clone` + `npm ci` | Available |
-| `npx @sorane/cli` | Published (`@sorane/cli@0.4.0`) |
+| `npx @sorane/cli` | Published (`@sorane/cli@0.5.0`) |
 | GitHub Release tags | Planned (`v0.2.0` + fonts tarball) |
 
 Publish workspace packages (maintainers):
@@ -208,7 +208,7 @@ Publish workspace packages (maintainers):
 npm run publish:workspaces
 ```
 
-Packages: `@sorane/cli`, `@sorane/core`, `@sorane/okf`, `@sorane/search`, `@sorane/font`.
+Packages: `@sorane/cli`, `@sorane/core`, `@sorane/okf`, `@sorane/search`, `@sorane/font`, `@sorane/astro`, `@sorane/astro-backend-wasm`.
 
 ## Astro integration
 
@@ -234,7 +234,7 @@ export default defineConfig({
 });
 ```
 
-The integration scans `src/content/**/*.md(x)` for OKF frontmatter, runs quality gates (heading, OKF type, and more via the active backend), and emits `catalog.jsonld`, `llms.txt`, `okf/bundle.tar.gz`, optional `catalog-dcat.jsonld`, `sitemap.xml`, and search assets into Astro's output directory. With `backend: "auto"` (default), a built `sorane-astro-backend` Rust CLI handles core artifacts when available. See `examples/astro-minimal/` for a runnable fixture and [Astro 連携](https://ssg.sorane.dev/astro-integration.html) for setup details.
+The integration scans `src/content/**/*.md(x)` for OKF frontmatter, runs quality gates in TypeScript (`validateSiteContent`), and emits `catalog.jsonld`, `llms.txt`, `okf/bundle.tar.gz`, optional `catalog-dcat.jsonld`, `sitemap.xml`, and search assets into Astro's output directory. With `backend: "auto"` (default), a built `sorane-astro-backend` Rust CLI handles artifacts (including hybrid search when the model is present). Set `SORANE_ASTRO_BACKEND_NATIVE=0` to force the TypeScript fallback. See `examples/astro-minimal/` for a runnable fixture and [Astro 連携](https://ssg.sorane.dev/astro-integration.html) for setup details.
 
 ## Roadmap
 

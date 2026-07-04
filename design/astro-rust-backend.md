@@ -236,6 +236,13 @@ Current shrink steps (done):
 2. ~~Optional int8 `search-index.json` parity tightening~~ — shared `int8-encode.ts` / `quantize_embedding_component`; CI asserts bit-identical `vectors_b64` and min per-chunk cosine ≥ 0.99.
 3. ~~Reduce inline TS artifact backend surface~~ — `buildSoraneAstroArtifacts` in `backend-artifacts.ts`; `backend-ts.ts` is a thin TS fallback/reference wrapper (`runSoraneAstroTsBackend`). Production paths use native CLI (`backend: "auto"`, npm `sorane-astro-backend` bin). Integration-layer TS validation unchanged.
 
+### Phase 4 — integration closure (done)
+
+1. ~~Release 0.5.0~~ — consolidated `CHANGELOG.md`; workspace packages bumped to `0.5.0`.
+2. ~~`examples/astro-minimal`~~ — `outputs.search` + FTS `search` config; documents companion assets.
+3. ~~Integration search dedup~~ — `emitSoraneAstroArtifacts` calls `buildSearchArtifacts` only when the resolved backend omitted `assets/search-index.json` (WASM / TS paths). Native CLI includes search in artifact output when `outputs.search` is set.
+4. ~~Smoke / integration tests~~ — `tests/astro-smoke.test.ts` and native emit search test in `tests/astro-integration.test.ts`.
+
 ### Native `sorane index` contract
 
 ```bash

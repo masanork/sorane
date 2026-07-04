@@ -8,12 +8,13 @@ validation and agent-readable publishing artifacts:
 - `catalog.jsonld`
 - `llms.txt`
 - `okf/bundle.tar.gz`
-- `sitemap.xml` / `assets/search-index.json` (optional via `outputs`)
+- `sitemap.xml` (optional via `outputs`)
+- `assets/search-index.json` + `assets/search.mjs` (`outputs.search`; FTS by default in `astro.config.mjs`)
 
 Run inside a real Astro project after installing Astro:
 
 ```bash
-npm install astro @sorane/astro
+npm install astro @sorane/astro @sorane/search
 npx astro build
 ```
 

@@ -1,6 +1,6 @@
 {
   "name": "@sorane/astro",
-  "version": "0.4.0",
+  "version": "0.5.0",
   "description": "Astro integration for sorane OKF and agent-readable publishing outputs",
   "type": "module",
   "license": "MIT",
@@ -38,9 +38,9 @@
     "astro": ">=5"
   },
   "dependencies": {
-    "@sorane/astro-backend-wasm": "0.4.0",
-    "@sorane/core": "0.4.0",
-    "@sorane/okf": "0.4.0",
-    "@sorane/search": "0.4.0"
+    "@sorane/astro-backend-wasm": "0.5.0",
+    "@sorane/core": "0.5.0",
+    "@sorane/okf": "0.5.0",
+    "@sorane/search": "0.5.0"
   }
 }

@@ -34,5 +34,15 @@ describe("examples/astro-minimal", () => {
     const catalog = readFileSync(join(exampleDir, "dist", "catalog.jsonld"), "utf8");
     expect(catalog).toContain("Hello Astro");
     expect(catalog).toContain("https://example.dev/blog/hello.html");
+
+    expect(existsSync(join(exampleDir, "dist", "assets", "search-index.json"))).toBe(
+      true,
+    );
+    expect(existsSync(join(exampleDir, "dist", "assets", "search.mjs"))).toBe(true);
+    const searchIndex = readFileSync(
+      join(exampleDir, "dist", "assets", "search-index.json"),
+      "utf8",
+    );
+    expect(searchIndex).toContain("blog/hello.html");
   });
 });
