@@ -1,7 +1,7 @@
 # Tag-triggered SLSA v1.0 Build-L3 release (npm pack tarballs + source + SBOM + CBOM).
 #
 # Job DAG:
-#   supply-chain-gate ─┬─> pack (npm pack ×5)
+#   supply-chain-gate ─┬─> pack (npm pack ×7)
 #                      ├─> publish npm (--provenance)
 #                      ├─> source + cbom
 #                      └─> sbom
@@ -81,7 +81,7 @@ jobs:
             echo "::error::npm $npm_version is too old for Trusted Publisher (need >= 11.5.1)"
             exit 1
           fi
-          for ws in @sorane/font @sorane/okf @sorane/search @sorane/core @sorane/cli; do
+          for ws in @sorane/font @sorane/okf @sorane/search @sorane/core @sorane/astro-backend-wasm @sorane/astro @sorane/cli; do
             published="$(npm view "$ws" version 2>/dev/null || true)"
             target="$(node -p "require('./packages/${ws#@sorane/}/package.json').version")"
             if [[ "$published" == "$target" ]]; then
@@ -110,7 +110,7 @@ jobs:
         run: |
           set -euo pipefail
           mkdir -p packs
-          for ws in @sorane/font @sorane/okf @sorane/search @sorane/core @sorane/cli; do
+          for ws in @sorane/font @sorane/okf @sorane/search @sorane/core @sorane/astro-backend-wasm @sorane/astro @sorane/cli; do
             npm pack -w "$ws" --pack-destination packs
           done
           if ! compgen -G "packs/*.tgz" > /dev/null; then
