@@ -173,9 +173,9 @@ Native Rust ONNX and `@sorane/search` (transformers.js) are **not required to be
 Accepted parity for CI and releases:
 
 - **Structural:** `mode`, `chunks[]`, `model` metadata, and `embeddings` shape (`dim`, `encoding`, `scale`) must match between native and TypeScript backends.
-- **Semantic:** decoded int8 vectors must have **cosine similarity ≥ 0.95** per chunk (`HYBRID_MIN_COSINE` in `tests/astro-backend-native-parity.test.ts`).
+- **Semantic:** decoded int8 vectors must have **minimum per-chunk cosine ≥ 0.99** (`HYBRID_MIN_COSINE` in `tests/astro-backend-native-parity.test.ts`). When chunking and f32 embeddings align, `vectors_b64` is **bit-identical** between native and TypeScript.
 
-Float32 embeddings from native ONNX match `@sorane/search` (transformers.js) on probe and document-length text; remaining hybrid JSON differences come mainly from int8 quantization in `search-index.json` export (cosine ≥ 0.95 per chunk in CI).
+Float32 embeddings from native ONNX match `@sorane/search` (transformers.js) on probe and document-length text. Int8 export uses the shared contract in `packages/search/src/int8-encode.ts` and Rust `quantize_embedding_component` (`search.rs`).
 
 ## WASM hybrid policy
 
@@ -220,7 +220,7 @@ Current shrink steps (done):
 
 1. ~~Remove dead Node `embed-batch.mjs` bridge~~ (removed; native uses `search_ruri.rs`).
 2. CI job `astro-ts-fallback` runs `tests/astro-backend-ts-fallback.test.ts` **without** `cargo build` to guard `backend: "ts"` and `SORANE_ASTRO_BACKEND_NATIVE=0` resolution.
-3. Hybrid SLA documented above (≥ 0.95 cosine); native parity tests enforce it.
+3. ~~Hybrid SLA documented above (min per-chunk cosine ≥ 0.99; bit-identical `vectors_b64` when aligned)~~ — native parity tests enforce it.
 4. ~~`sorane index` via native CLI~~ — `sorane-astro-backend index` JSON subcommand; `packages/cli/src/index-cmd.ts` prefers native when built (`SORANE_INDEX_NATIVE=0` opts out).
 5. ~~`sorane search` query embed via native CLI~~ — `sorane-astro-backend embed` JSON subcommand; `packages/cli/src/search-cmd.ts` prefers native when built (`SORANE_EMBED_NATIVE=0` opts out). Query prefix (`検索クエリ: `) is applied by `@sorane/search` before calling the provider, same as TypeScript.
 6. ~~Astro TS `search-backend.ts` native index~~ — when the native CLI is built, `buildSearchArtifacts` uses `sorane-astro-backend index` before falling back to `@sorane/search` (`SORANE_INDEX_NATIVE=0` opts out).
@@ -231,7 +231,7 @@ Current shrink steps (done):
 ### Phase 3 (next)
 
 1. CI: Astro job runs `tests/cli-direct.test.ts` with `cargo build` + `fetch-model` (native `sorane index` / `search` guards).
-2. Optional int8 `search-index.json` parity tightening (beyond cosine ≥ 0.95); f32 ONNX already matches transformers.js.
+2. ~~Optional int8 `search-index.json` parity tightening~~ — shared `int8-encode.ts` / `quantize_embedding_component`; CI asserts bit-identical `vectors_b64` and min per-chunk cosine ≥ 0.99.
 3. Long-term: reduce inline TS artifact backend surface (`backend-ts.ts`) once npm consumers standardize on the Rust bin; keep integration-layer TS validation.
 
 ### Native `sorane index` contract

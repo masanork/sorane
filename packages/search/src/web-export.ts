@@ -1,9 +1,9 @@
-import { Buffer } from "node:buffer";
 import type { ChunkRow } from "./store.ts";
+import { encodeInt8VectorsB64, INT8_SCALE } from "./int8-encode.ts";
 
+export { INT8_SCALE } from "./int8-encode.ts";
 export const WEB_INDEX_SCHEMA_VERSION = 3;
 export const FTS_WEB_INDEX_SCHEMA_VERSION = 4;
-export const INT8_SCALE = 127;
 export const SNIPPET_LEN = 220;
 
 export interface WebChunk {
@@ -84,16 +84,10 @@ export function buildWebIndex(
     kept.push({ row: rows[i]!, vec });
   }
 
-  const buf = new Int8Array(kept.length * dim);
-  for (let i = 0; i < kept.length; i++) {
-    const v = kept[i]!.vec;
-    if (v.length !== dim) throw new Error(`dimension mismatch chunk[${i}]: ${v.length} != ${dim}`);
-    for (let j = 0; j < dim; j++) {
-      const q = Math.round(v[j]! * INT8_SCALE);
-      buf[i * dim + j] = q < -127 ? -127 : q > 127 ? 127 : q;
-    }
-  }
-  const vectors_b64 = Buffer.from(buf.buffer, buf.byteOffset, buf.byteLength).toString("base64");
+  const vectors_b64 = encodeInt8VectorsB64(
+    kept.map((k) => k.vec),
+    dim,
+  );
 
   const chunks: WebChunk[] = kept.map(({ row: r }) => {
     const chunk: WebChunk = {

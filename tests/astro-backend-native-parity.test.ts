@@ -5,6 +5,10 @@ import { dirname, join, resolve } from "node:path";
 import { fileURLToPath } from "node:url";
 import { describe, expect, test } from "./_expect.ts";
 import {
+  decodeInt8VectorsB64,
+  minCosineSimilarity,
+} from "../packages/search/src/int8-encode.ts";
+import {
   buildSoraneAstroBackendInput,
   collectSoraneAstroBackendFiles,
   runSoraneAstroTsBackend,
@@ -53,7 +57,7 @@ digitalSourceType: trainedAlgorithmicMedia
 }
 
 /** Must match hybrid embedding SLA in design/astro-rust-backend.md */
-export const HYBRID_MIN_COSINE = 0.95;
+export const HYBRID_MIN_COSINE = 0.99;
 
 function normalizeSearchIndex(content: string): string {
   const parsed = JSON.parse(content) as Record<string, unknown>;
@@ -65,27 +69,7 @@ function normalizeSearchIndex(content: string): string {
   return JSON.stringify(parsed);
 }
 
-function decodeInt8Vector(b64: string, dim: number): number[] {
-  const buf = Buffer.from(b64, "base64");
-  const arr = new Int8Array(buf.buffer, buf.byteOffset, buf.byteLength);
-  const out = new Array<number>(dim);
-  for (let j = 0; j < dim; j++) out[j] = arr[j]! / 127;
-  return out;
-}
-
-function cosineSimilarity(a: readonly number[], b: readonly number[]): number {
-  let dot = 0;
-  let na = 0;
-  let nb = 0;
-  for (let i = 0; i < a.length; i++) {
-    dot += a[i]! * b[i]!;
-    na += a[i]! * a[i]!;
-    nb += b[i]! * b[i]!;
-  }
-  return dot / (Math.sqrt(na) * Math.sqrt(nb));
-}
-
-function hybridEmbeddingCosine(tsContent: string, nativeContent: string): number {
+function hybridEmbeddingMinCosine(tsContent: string, nativeContent: string): number {
   const ts = JSON.parse(tsContent) as {
     embeddings?: { dim?: number; vectors_b64?: string };
   };
@@ -96,7 +80,10 @@ function hybridEmbeddingCosine(tsContent: string, nativeContent: string): number
   const tsB64 = ts.embeddings?.vectors_b64 ?? "";
   const natB64 = nat.embeddings?.vectors_b64 ?? "";
   if (!tsB64 || !natB64) return 0;
-  return cosineSimilarity(decodeInt8Vector(tsB64, dim), decodeInt8Vector(natB64, dim));
+  return minCosineSimilarity(
+    decodeInt8VectorsB64(tsB64, dim),
+    decodeInt8VectorsB64(natB64, dim),
+  );
 }
 
 function artifactContentEqual(
@@ -342,10 +329,91 @@ indexed in hybrid mode for native and TypeScript backend parity comparison.
         nativeArtifact?.content ?? "",
       ),
     ).toBe(true);
-    const cosine = hybridEmbeddingCosine(
+    const tsIndexFull = JSON.parse(tsArtifact?.content ?? "{}") as {
+      embeddings?: { vectors_b64?: string };
+    };
+    const nativeIndexFull = JSON.parse(nativeArtifact?.content ?? "{}") as {
+      embeddings?: { vectors_b64?: string };
+    };
+    expect(tsIndexFull.embeddings?.vectors_b64).toBe(nativeIndexFull.embeddings?.vectors_b64);
+
+    const minCosine = hybridEmbeddingMinCosine(
       tsArtifact?.content ?? "",
       nativeArtifact?.content ?? "",
     );
-    expect(cosine >= HYBRID_MIN_COSINE).toBe(true);
+    expect(minCosine >= HYBRID_MIN_COSINE).toBe(true);
+  });
+
+  test("native hybrid int8 vectors match on multi-chunk document", async (t) => {
+    if (!soraneAstroNativeCliAvailable()) {
+      t.skip("sorane-astro-backend native binary not built");
+      return;
+    }
+    const modelRoot = repoHybridModelRoot();
+    if (modelRoot === null) {
+      t.skip("vendor/models not present (run npm run fetch-model)");
+      return;
+    }
+
+    const root = mkdtempSync(join(tmpdir(), "sorane-astro-native-hybrid-multi-"));
+    const contentDir = join(root, "src", "content");
+    const posts = join(contentDir, "posts");
+    mkdirSync(posts, { recursive: true });
+    const body =
+      "Opening section with enough words to produce the first hybrid search chunk reliably. ".repeat(
+        6,
+      ) +
+      "\n\n## Second Section\n\n" +
+      "Follow-up section body with sufficient length for a second indexed chunk in parity tests. ".repeat(
+        6,
+      );
+    writeFileSync(
+      join(posts, "multi.md"),
+      `---
+type: article
+title: Multi Chunk
+description: int8 parity
+timestamp: 2026-07-04T00:00:00Z
+---
+
+${body}
+`,
+    );
+    const paths = { root, contentDir, outDir: join(root, "dist") };
+    const files = collectSoraneAstroBackendFiles(contentDir);
+    const input = buildSoraneAstroBackendInput(
+      {
+        site: { title: "Parity", description: "parity", baseUrl: "https://example.dev" },
+        collections: { posts: "blog" },
+        validate: false,
+        outputs: {
+          catalog: false,
+          llmsTxt: false,
+          okfBundle: false,
+          search: true,
+        },
+        search: { mode: "hybrid", force: true, modelRoot, modelId: "ruri-v3-30m" },
+      },
+      paths,
+      files,
+    );
+
+    const ts = await runSoraneAstroTsBackend(input);
+    const { runSoraneAstroCliBackend } = await import("../packages/astro/src/backend-cli.ts");
+    const native = runSoraneAstroCliBackend(input);
+
+    const tsArtifact = ts.artifacts.find((a) => a.path === "assets/search-index.json");
+    const nativeArtifact = native.artifacts.find((a) => a.path === "assets/search-index.json");
+    const tsIndex = JSON.parse(tsArtifact?.content ?? "{}") as {
+      chunks?: unknown[];
+      embeddings?: { vectors_b64?: string };
+    };
+    const nativeIndex = JSON.parse(nativeArtifact?.content ?? "{}") as {
+      chunks?: unknown[];
+      embeddings?: { vectors_b64?: string };
+    };
+    expect((tsIndex.chunks?.length ?? 0) >= 2).toBe(true);
+    expect(tsIndex.chunks?.length).toBe(nativeIndex.chunks?.length);
+    expect(tsIndex.embeddings?.vectors_b64).toBe(nativeIndex.embeddings?.vectors_b64);
   });
 });

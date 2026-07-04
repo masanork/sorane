@@ -52,6 +52,13 @@ export {
   type FtsWebIndex,
   type FtsWebChunk,
 } from "./web-export.ts";
+export {
+  quantizeEmbeddingComponent,
+  quantizeEmbeddingVector,
+  encodeInt8VectorsB64,
+  decodeInt8VectorsB64,
+  minCosineSimilarity,
+} from "./int8-encode.ts";
 export { deriveWebIndex, type DeriveResult, type WebSearchMode } from "./derive-web-index.ts";
 export {
   vendorModel,

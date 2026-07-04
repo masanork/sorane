@@ -21,6 +21,7 @@ All notable changes to sorane are documented here. Versioning follows [SemVer](h
 
 ### Added
 
+- **Shared int8 embed contract** — `packages/search/src/int8-encode.ts`; Rust `quantize_embedding_component` in `search.rs`. Hybrid parity CI asserts bit-identical `vectors_b64` and min per-chunk cosine ≥ 0.99.
 - **npm `sorane-astro-backend` bin** — prefers Rust JSON CLI when built; `SORANE_ASTRO_BACKEND_NATIVE=0` falls back to TypeScript (`packages/astro/src/backend-bin.ts`).
 - `buildSoraneAstroTsArtifacts` — TypeScript artifact build without validation (`backend-ts.ts` shrink).
 - `@sorane/search` `IndexStore` reads Rust `chunk_vectors` blobs for hybrid export and KNN when `vec_chunks` is absent.

@@ -13,6 +13,12 @@ pub const WEB_INDEX_SCHEMA_VERSION: i32 = 3;
 pub const SNIPPET_LEN: usize = 220;
 pub const INT8_SCALE: i32 = 127;
 
+/** Quantize one normalized embedding dimension (must match `@sorane/search` int8-encode.ts). */
+pub fn quantize_embedding_component(v: f32) -> i8 {
+    let q = (v * INT8_SCALE as f32).round() as i32;
+    q.clamp(-127, 127) as i8
+}
+
 const IPTC_BASE: &str = "http://cv.iptc.org/newscodes/digitalsourcetype";
 const PHASE1_CODES: &[&str] = &[
     "trainedAlgorithmicMedia",
@@ -236,9 +242,7 @@ fn build_hybrid_web_index(
             ));
         }
         for (j, v) in vec.iter().enumerate() {
-            let q = (*v * INT8_SCALE as f32).round() as i32;
-            let q = q.clamp(-127, 127) as i8;
-            buf[i * dim as usize + j] = q;
+            buf[i * dim as usize + j] = quantize_embedding_component(*v);
         }
     }
     let vectors_b64 = STANDARD.encode(bytemuck_cast_i8_slice(&buf));
@@ -510,6 +514,14 @@ mod tests {
     #[test]
     fn snippet_collapses_whitespace() {
         assert_eq!(to_snippet("a\n\nb\tc", 100), "a b c");
+    }
+
+    #[test]
+    fn quantize_embedding_matches_typescript_contract() {
+        assert_eq!(quantize_embedding_component(0.1), 13);
+        assert_eq!(quantize_embedding_component(-1.0), -127);
+        assert_eq!(quantize_embedding_component(1.5), 127);
+        assert_eq!(quantize_embedding_component(0.008850927), 1);
     }
 
     #[test]
