@@ -132,7 +132,13 @@ export {
   soraneAstroCliAvailable,
   soraneAstroNativeCliAvailable,
 } from "./backend-cli.ts";
-export { runSoraneAstroBackend, resolveSoraneAstroBackend, type ResolvedSoraneAstroBackend, type SoraneAstroBackend } from "./backend.ts";
+export {
+  runSoraneAstroBackend,
+  resolveSoraneAstroBackend,
+  soraneAstroNativeCliEnabled,
+  type ResolvedSoraneAstroBackend,
+  type SoraneAstroBackend,
+} from "./backend.ts";
 export { decodeBackendArtifact, writeSoraneAstroBackendArtifacts } from "./write-artifacts.ts";
 export {
   discoverAstroCollectionRoutes,

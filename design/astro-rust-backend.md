@@ -165,3 +165,28 @@ Hybrid search (done):
 1. Native CLI: SQLite incremental index + hybrid JSON export (schema v3). Embeddings via pure-Rust ONNX (`search_ruri.rs`); parity-tested against `@sorane/search` reference vectors.
 2. TypeScript backend / `sorane index` CLI: hybrid still uses `@sorane/search` (`@huggingface/transformers` + ONNX runtime).
 3. WASM target: FTS-only direct JSON (no SQLite / ort on wasm32).
+
+### Hybrid embedding SLA (native vs TypeScript)
+
+Native Rust ONNX and `@sorane/search` (transformers.js) are **not required to be bit-identical** on every chunk. Short probe strings can match exactly; longer chunks may differ slightly between runtimes.
+
+Accepted parity for CI and releases:
+
+- **Structural:** `mode`, `chunks[]`, `model` metadata, and `embeddings` shape (`dim`, `encoding`, `scale`) must match between native and TypeScript backends.
+- **Semantic:** decoded int8 vectors must have **cosine similarity ≥ 0.95** per chunk (`HYBRID_MIN_COSINE` in `tests/astro-backend-native-parity.test.ts`).
+
+Tightening to bit-identical hybrid JSON is a future optimization (3D mean-pooling / ONNX output alignment), not a blocker for native-default Astro builds.
+
+## TypeScript backend retention
+
+The inline TypeScript artifact backend remains supported. Do not remove it until all of the following are true:
+
+1. `sorane index` can use native embeddings (or Astro-only native is an explicit product decision).
+2. WASM hybrid or a documented WASM limitation is accepted in docs/CI.
+3. Integration-layer validation policy is fixed (TS-only vs native).
+
+Current shrink steps (in progress):
+
+1. ~~Remove dead Node `embed-batch.mjs` bridge~~ (removed; native uses `search_ruri.rs`).
+2. CI job `astro-ts-fallback` runs `tests/astro-backend-ts-fallback.test.ts` **without** `cargo build` to guard `backend: "ts"` and `SORANE_ASTRO_BACKEND_NATIVE=0` resolution.
+3. Hybrid SLA documented above (≥ 0.95 cosine); native parity tests enforce it.

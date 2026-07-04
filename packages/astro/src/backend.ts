@@ -7,6 +7,15 @@ import type { AstroLogger } from "./options.ts";
 export type SoraneAstroBackend = "auto" | "ts" | "wasm" | "cli";
 export type ResolvedSoraneAstroBackend = "ts" | "wasm" | "cli";
 
+/** Native Rust CLI is built and not opted out via `SORANE_ASTRO_BACKEND_NATIVE=0`. */
+export function soraneAstroNativeCliEnabled(): boolean {
+  return process.env.SORANE_ASTRO_BACKEND_NATIVE !== "0";
+}
+
+function nativeCliResolvable(root?: string): boolean {
+  return soraneAstroNativeCliEnabled() && soraneAstroCliAvailable(root);
+}
+
 /** Resolve the active artifact backend. `auto` prefers CLI when built. */
 export function resolveSoraneAstroBackend(
   backend: SoraneAstroBackend | undefined,
@@ -15,8 +24,14 @@ export function resolveSoraneAstroBackend(
 ): ResolvedSoraneAstroBackend {
   const requested = backend ?? "auto";
   if (requested === "cli") {
-    if (soraneAstroCliAvailable(root)) return "cli";
-    logger?.warn?.("[sorane/astro] backend \"cli\" requested but binary not found; using TypeScript");
+    if (nativeCliResolvable(root)) return "cli";
+    if (!soraneAstroNativeCliEnabled()) {
+      logger?.warn?.(
+        "[sorane/astro] native backend disabled (SORANE_ASTRO_BACKEND_NATIVE=0); using TypeScript",
+      );
+    } else {
+      logger?.warn?.("[sorane/astro] backend \"cli\" requested but binary not found; using TypeScript");
+    }
     return "ts";
   }
   if (requested === "ts") return "ts";
@@ -28,7 +43,7 @@ export function resolveSoraneAstroBackend(
     return "ts";
   }
   if (requested === "auto") {
-    if (soraneAstroCliAvailable(root)) return "cli";
+    if (nativeCliResolvable(root)) return "cli";
     if (soraneAstroWasmAvailable()) return "wasm";
     return "ts";
   }

@@ -8,11 +8,15 @@ All notable changes to sorane are documented here. Versioning follows [SemVer](h
 
 - **Native hybrid search embeddings** — `rust/sorane-astro-backend/src/search_ruri.rs` runs ruri-v3-30m via `ort` + `tokenizers` (no Node `embed-batch` bridge). Parity unit test against `@sorane/search` reference vectors.
 - **Hybrid native parity test** — `tests/astro-backend-native-parity.test.ts` compares TS and native hybrid `assets/search-index.json` (chunks/model/schema; embedding cosine ≥ 0.95 on int8 vectors). CI runs `npm run fetch-model`.
+- **Astro TS fallback CI guard** — job `astro-ts-fallback` runs `tests/astro-backend-ts-fallback.test.ts` without building the native CLI.
 
 ### Changed
 
 - Native `model_available` requires `onnx/model_quantized.onnx` and `tokenizer.json`, not only a model directory.
 - Documented runtime split: native CLI uses Rust ONNX; TypeScript backend and `sorane index` still use `@sorane/search`.
+- `resolveSoraneAstroBackend` respects `SORANE_ASTRO_BACKEND_NATIVE=0` (skips native CLI in `auto` / `cli`).
+- Removed unused `packages/search/scripts/embed-batch.mjs`.
+- Documented hybrid embedding SLA (cosine ≥ 0.95) in `design/astro-rust-backend.md`.
 
 ## [0.4.0] - 2026-06-21
 

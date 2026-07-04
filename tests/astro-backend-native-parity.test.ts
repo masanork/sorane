@@ -52,7 +52,8 @@ digitalSourceType: trainedAlgorithmicMedia
   );
 }
 
-const HYBRID_MIN_COSINE = 0.95;
+/** Must match hybrid embedding SLA in design/astro-rust-backend.md */
+export const HYBRID_MIN_COSINE = 0.95;
 
 function normalizeSearchIndex(content: string): string {
   const parsed = JSON.parse(content) as Record<string, unknown>;
