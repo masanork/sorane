@@ -5,6 +5,14 @@ import { conceptToOkfMarkdown } from "./serialize.ts";
 export interface BundleEntry {
   readonly path: string;
   readonly content: string;
+  readonly mtime: number;
+}
+
+function conceptMtime(concept: OkfConcept): number {
+  if (!concept.timestamp) return 0;
+  const ms = Date.parse(concept.timestamp);
+  if (Number.isNaN(ms)) return 0;
+  return Math.floor(ms / 1000);
 }
 
 export interface BundleConcept {
@@ -24,6 +32,7 @@ export function buildBundleEntries(concepts: readonly BundleConcept[]): BundleEn
     .map((c) => ({
       path: `${c.concept.type}/${c.slug}.md`,
       content: conceptToOkfMarkdown(c.concept),
+      mtime: conceptMtime(c.concept),
     }));
 }
 
@@ -42,7 +51,7 @@ function tarEntries(entries: readonly BundleEntry[]): Buffer {
     header.write("0000000\0", 108, "ascii");
     header.write("0000000\0", 116, "ascii");
     header.write(content.length.toString(8).padStart(11, "0") + "\0", 124, "ascii");
-    header.write(Math.floor(Date.now() / 1000).toString(8).padStart(11, "0") + "\0", 136, "ascii");
+    header.write(entry.mtime.toString(8).padStart(11, "0") + "\0", 136, "ascii");
     header.write("        ", 148, "ascii");
     header.write("ustar\0", 257, "ascii");
     header.write("00", 263, "ascii");

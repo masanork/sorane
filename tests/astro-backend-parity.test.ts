@@ -43,6 +43,9 @@ digitalSourceType: trainedAlgorithmicMedia
 
 describe("Astro backend parity", () => {
   test("Node CLI output matches inline TypeScript backend", async () => {
+    const prev = process.env.SORANE_ASTRO_BACKEND_NATIVE;
+    process.env.SORANE_ASTRO_BACKEND_NATIVE = "0";
+    try {
     const input = parityFixture();
     const ts = await runSoraneAstroTsBackend(input);
     const cli = runSoraneAstroCliBackend(input);
@@ -57,6 +60,13 @@ describe("Astro backend parity", () => {
       expect(cliArtifact !== undefined).toBe(true);
       expect(cliArtifact?.kind).toBe(tsArtifact.kind);
       expect(cliArtifact?.content).toBe(tsArtifact.content);
+    }
+    } finally {
+      if (prev === undefined) {
+        delete process.env.SORANE_ASTRO_BACKEND_NATIVE;
+      } else {
+        process.env.SORANE_ASTRO_BACKEND_NATIVE = prev;
+      }
     }
   });
 });

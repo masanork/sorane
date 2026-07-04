@@ -294,7 +294,7 @@ body
     expect(warnings.some((w) => w.includes("content validation"))).toBe(true);
   });
 
-  test("backend auto resolves to TypeScript", async () => {
+  test("backend auto prefers native CLI when built", async () => {
     const root = fixtureRoot();
     const warnings: string[] = [];
     const result = await emitSoraneAstroArtifacts({

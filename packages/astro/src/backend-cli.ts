@@ -56,13 +56,12 @@ function spawnCli(command: string, args: string[], input: SoraneAstroBackendInpu
   return JSON.parse(result.stdout) as SoraneAstroBackendOutput;
 }
 
-/** Run the JSON contract CLI (Node TS backend by default; native Rust when opted in). */
+/** Run the JSON contract CLI (native Rust when built; Node TS backend as fallback). */
 export function runSoraneAstroCliBackend(
   input: SoraneAstroBackendInput,
 ): SoraneAstroBackendOutput {
-  const useNative =
-    process.env.SORANE_ASTRO_BACKEND_NATIVE === "1" && soraneAstroNativeCliAvailable(input.root);
-  if (useNative) {
+  const forceNode = process.env.SORANE_ASTRO_BACKEND_NATIVE === "0";
+  if (!forceNode && soraneAstroNativeCliAvailable(input.root)) {
     const binary = nativeCliBinary(input.root)!;
     return spawnCli(binary, [], input);
   }
