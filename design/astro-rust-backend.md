@@ -115,10 +115,17 @@ Hardening checklist (done):
 - optional search assets (`outputs.search`)
 - CI job for Astro unit + smoke tests
 
+JSON backend contract (done in TypeScript):
+
+- `packages/astro/src/contract.ts` — input/output types + `schema_version`
+- `packages/astro/src/backend-ts.ts` — `runSoraneAstroTsBackend(input)`
+- `packages/astro/src/collect-input.ts` / `write-artifacts.ts` — disk I/O boundary
+- `tests/astro-backend-contract.test.ts` — round-trip + artifact decode
+
 Before adding Rust:
 
-1. Formalize the JSON backend contract in TypeScript (`backend.ts` → dedicated module).
-2. Add Astro content-collection route loader to reduce URL inference drift.
-3. Extend quality gates to `.mdx`.
+1. Add Astro content-collection route loader to reduce URL inference drift.
+2. Extend quality gates to `.mdx`.
+3. Implement `backend: "cli"` / `"wasm"` against the same JSON contract.
 
 Only after that should a Rust crate be introduced.

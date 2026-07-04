@@ -188,7 +188,7 @@ jobs:
         run: npm ci --no-audit --no-fund
 
       - name: Astro unit + smoke tests
-        run: node --test tests/astro-integration.test.ts tests/astro-smoke.test.ts
+        run: node --test tests/astro-backend-contract.test.ts tests/astro-integration.test.ts tests/astro-smoke.test.ts
 
   image-metadata:
     runs-on: ubuntu-latest

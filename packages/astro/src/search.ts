@@ -1,11 +1,7 @@
 import { isOptionalModuleMissing, warnOptionalPackageMissing } from "@sorane/core";
 import { existsSync, mkdirSync } from "node:fs";
 import { dirname, resolve } from "node:path";
-
-type AstroLogger = {
-  info?: (message: string) => void;
-  warn?: (message: string) => void;
-};
+import type { AstroLogger } from "./options.ts";
 
 export type SoraneAstroSearchMode = "fts" | "hybrid";
 
