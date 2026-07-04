@@ -107,17 +107,17 @@ soraneAstro({
 
 | 値 | 動作 |
 |----|------|
-| `auto`（既定） | ネイティブ Rust CLI（`cargo build` 済み）→ インライン TS |
+| `auto`（既定） | ネイティブ Rust CLI（`cargo build` 済み）→ WASM → インライン TS |
 | `cli` | ネイティブ Rust CLI（未ビルド時は TS にフォールバック） |
 | `ts` | インライン TypeScript backend |
-| `wasm` | 未実装（警告のうえ TS にフォールバック） |
+| `wasm` | `@sorane/astro-backend-wasm`（ネイティブ CLI 不要） |
 
 環境変数:
 
 - `SORANE_ASTRO_BACKEND_NATIVE=0` — ネイティブ CLI を無効化（`backend: "ts"` を使う）
 - `SORANE_ASTRO_BACKEND_CLI` — ネイティブバイナリのパスを上書き
 
-リポジトリ開発時は `cargo build --manifest-path rust/sorane-astro-backend/Cargo.toml` でネイティブ CLI を生成します。
+リポジトリ開発時は `cargo build --manifest-path rust/sorane-astro-backend/Cargo.toml` でネイティブ CLI を生成します。WASM は `npm run build:astro-backend-wasm`（`@sorane/astro-backend-wasm`）で再ビルドできます。
 
 ## 制限（現時点）
 
@@ -125,6 +125,4 @@ soraneAstro({
 - コンテンツ検証は統合層が常に TypeScript の `validateSiteContent` を実行します（`backend: "auto"` でもネイティブと同じゲート）。artifact backend は `validate: false` で呼ばれ、重複検証しません。
 - ネイティブ Rust backend の validation: Phase A–D + `validateConfigSecurity`（緊急バナー URL、カスタムバイナリ拒否）。統合層は引き続き常に TypeScript の `validateSiteContent` を実行します。
 - `outputs.search` は backend contract 経由（`assets/search-index.json` を artifact として返す）。`search.mjs` 等の companion は書き出し後にコピーされます。ネイティブ CLI は FTS 索引を実装済み（hybrid 埋め込みと SQLite 増分索引は TypeScript/`@sorane/search`）。
-- `outputs.search` のインデックス生成は TypeScript 側（`emitAstroSearchAssets`）が担当します。
-
 設計の詳細はリポジトリ内 `design/astro-rust-backend.md` を参照してください。

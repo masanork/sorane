@@ -1,0 +1,38 @@
+{
+  "name": "@sorane/astro-backend-wasm",
+  "version": "0.4.0",
+  "description": "WASM build of sorane-astro-backend for @sorane/astro (no native CLI install)",
+  "type": "module",
+  "license": "MIT",
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/masanork/sorane.git",
+    "directory": "packages/astro-backend-wasm"
+  },
+  "homepage": "https://ssg.sorane.dev",
+  "bugs": "https://github.com/masanork/sorane/issues",
+  "keywords": [
+    "astro",
+    "okf",
+    "wasm",
+    "webassembly"
+  ],
+  "files": [
+    "src",
+    "wasm/sorane_astro_backend.js",
+    "wasm/sorane_astro_backend.d.ts",
+    "wasm/sorane_astro_backend_bg.wasm"
+  ],
+  "exports": {
+    ".": "./src/index.ts"
+  },
+  "scripts": {
+    "build:wasm": "wasm-pack build ../../rust/sorane-astro-backend --target web --release --out-dir ../../packages/astro-backend-wasm/wasm --out-name sorane_astro_backend && rm -f wasm/package.json wasm/.gitignore"
+  },
+  "engines": {
+    "node": ">=23.6"
+  },
+  "publishConfig": {
+    "access": "public"
+  }
+}

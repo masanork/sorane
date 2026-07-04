@@ -38,7 +38,8 @@
     "stats:history": "node scripts/stats-history.ts",
     "stats:trend": "node scripts/stats-history.ts trend",
     "pack:cli": "npm pack -w @sorane/cli",
-    "publish:workspaces": "npm publish -w @sorane/font --access public && npm publish -w @sorane/okf --access public && npm publish -w @sorane/search --access public && npm publish -w @sorane/core --access public && npm publish -w @sorane/astro --access public && npm publish -w @sorane/cli --access public"
+    "build:astro-backend-wasm": "npm run build:wasm -w @sorane/astro-backend-wasm",
+    "publish:workspaces": "npm publish -w @sorane/font --access public && npm publish -w @sorane/okf --access public && npm publish -w @sorane/search --access public && npm publish -w @sorane/core --access public && npm publish -w @sorane/astro-backend-wasm --access public && npm publish -w @sorane/astro --access public && npm publish -w @sorane/cli --access public"
   },
   "engines": {
     "node": ">=23.6"

@@ -179,26 +179,22 @@ describe("resolveSoraneAstroBackend", () => {
     expect(output.validationErrors).toBe(0);
   });
 
-  test("wasm resolves to ts with warning", () => {
-    const warnings: string[] = [];
-    expect(resolveSoraneAstroBackend("wasm", { warn: (m) => warnings.push(m) })).toBe("ts");
-    expect(warnings.some((w) => w.includes('backend "wasm"'))).toBe(true);
+  test("wasm resolves to wasm when package is linked", () => {
+    expect(resolveSoraneAstroBackend("wasm")).toBe("wasm");
   });
 
-  test("runSoraneAstroWasmBackend throws until artifact ships", async () => {
+  test("runSoraneAstroWasmBackend matches TypeScript output", async () => {
     const { root, contentDir, outDir, files } = contentFixture();
     const input = buildSoraneAstroBackendInput(
       { site: { title: "S", description: "D" }, validate: false },
       { root, contentDir, outDir },
       files,
     );
-    let threw = false;
-    try {
-      await runSoraneAstroBackend("wasm", input);
-    } catch (e) {
-      threw = e instanceof Error && e.message.includes("WASM backend is not published");
-    }
-    expect(threw).toBe(true);
+    const ts = await runSoraneAstroTsBackend(input);
+    const wasm = await runSoraneAstroBackend("wasm", input);
+    expect(wasm.concepts).toBe(ts.concepts);
+    expect(wasm.validationErrors).toBe(ts.validationErrors);
+    expect(wasm.artifacts.length).toBe(ts.artifacts.length);
   });
 });
 

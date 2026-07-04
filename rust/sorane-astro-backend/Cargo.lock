@@ -222,9 +222,11 @@ source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "899def5c37c4fd7b2664648c28120ecec138e4d395b459e5ca34f9cce2dd77fd"
 dependencies = [
  "cfg-if",
+ "js-sys",
  "libc",
  "r-efi",
  "wasip2",
+ "wasm-bindgen",
 ]
 
 [[package]]
@@ -802,6 +804,7 @@ version = "0.1.0"
 dependencies = [
  "base64",
  "flate2",
+ "getrandom",
  "jsonschema",
  "once_cell",
  "pulldown-cmark",
@@ -809,6 +812,7 @@ dependencies = [
  "serde",
  "serde_json",
  "serde_yaml",
+ "wasm-bindgen",
 ]
 
 [[package]]

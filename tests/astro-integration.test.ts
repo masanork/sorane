@@ -344,10 +344,10 @@ timestamp: 2026-07-04T00:00:00Z
     expect(warnings.some((w) => w.includes("not available yet"))).toBe(false);
   });
 
-  test("backend wasm falls back to TypeScript with warning", async () => {
+  test("backend wasm emits artifacts via @sorane/astro-backend-wasm", async () => {
     const root = fixtureRoot();
     const warnings: string[] = [];
-    await emitSoraneAstroArtifacts({
+    const result = await emitSoraneAstroArtifacts({
       root,
       outDir: join(root, "dist-wasm"),
       site: { title: "S", description: "D" },
@@ -355,7 +355,9 @@ timestamp: 2026-07-04T00:00:00Z
       validate: false,
       logger: { warn: (m) => warnings.push(m) },
     });
-    expect(warnings.some((w) => w.includes('backend "wasm" is not published yet'))).toBe(true);
+    expect(result.concepts).toBe(1);
+    expect(result.files).toContain("catalog.jsonld");
+    expect(warnings.some((w) => w.includes("astro-backend-wasm is unavailable"))).toBe(false);
   });
 
   test("search output is off by default and emits assets when enabled", async () => {

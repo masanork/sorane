@@ -22,11 +22,14 @@ export function resolveSoraneAstroBackend(
   if (requested === "ts") return "ts";
   if (requested === "wasm") {
     if (soraneAstroWasmAvailable()) return "wasm";
-    logger?.warn?.("[sorane/astro] backend \"wasm\" is not published yet; using TypeScript");
+    logger?.warn?.(
+      "[sorane/astro] backend \"wasm\" requested but @sorane/astro-backend-wasm is unavailable; using TypeScript",
+    );
     return "ts";
   }
   if (requested === "auto") {
     if (soraneAstroCliAvailable(root)) return "cli";
+    if (soraneAstroWasmAvailable()) return "wasm";
     return "ts";
   }
   return "ts";
