@@ -64,7 +64,7 @@ fonts:
 
 kototoi:
   endpoint: https://ask.sorane.dev
-  site_id: d6daa500-6dee-4099-8eb1-a74c31830330
+  site_id: be0d228a-c582-4220-85c3-fd887e9e68fd
   form:
     title: お問い合わせ
     intro: ご質問・ご要望は下記フォームからお送りください。
