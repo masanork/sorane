@@ -50,6 +50,7 @@ export function buildSoraneAstroBackendInput(
       description: options.site.description,
       baseUrl: options.site.baseUrl,
       lang: options.site.lang,
+      i18n: options.site.i18n,
     },
     files,
     permalink: routes.permalink ?? options.permalink,
@@ -66,6 +67,9 @@ export function buildSoraneAstroBackendInput(
     quality: options.quality,
     okf: options.okf,
     openData: options.openData,
+    diagrams: options.diagrams,
+    redirects: options.redirects,
+    security: options.security,
   };
 }
 

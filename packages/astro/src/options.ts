@@ -1,4 +1,8 @@
-import type { OkfConfig, SoraneConfig } from "@sorane/core";
+import type { DiagramsConfig, OkfConfig, RedirectRuleConfig, SoraneConfig } from "@sorane/core";
+import type {
+  SoraneAstroBackendSecurityInput,
+  SoraneAstroBackendSiteI18nInput,
+} from "./contract.ts";
 import type { SoraneAstroSearchConfig } from "./search.ts";
 import type { SoraneAstroBackend } from "./backend.ts";
 
@@ -16,6 +20,7 @@ export interface SoraneAstroSiteConfig {
   readonly baseUrl?: string;
   /** Primary site language (BCP 47). Default: `ja`. */
   readonly lang?: string;
+  readonly i18n?: SoraneAstroBackendSiteI18nInput;
 }
 
 export interface SoraneAstroOptions {
@@ -58,6 +63,12 @@ export interface SoraneAstroOptions {
   readonly quality?: SoraneConfig["build"]["quality"];
   /** OKF profile defaults passed through to site validation. */
   readonly okf?: OkfConfig;
+  /** Diagram fences (alt gates when `enabled: true`). */
+  readonly diagrams?: DiagramsConfig;
+  /** sorane.yaml `build.redirects` parity for validation. */
+  readonly redirects?: readonly RedirectRuleConfig[];
+  /** Security options passed through to validation. */
+  readonly security?: SoraneAstroBackendSecurityInput;
   /** Artifact backend. `auto` prefers native Rust CLI when built, then inline `ts`. */
   readonly backend?: SoraneAstroBackend;
   readonly logger?: AstroLogger;

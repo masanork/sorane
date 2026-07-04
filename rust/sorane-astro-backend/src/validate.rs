@@ -4,7 +4,11 @@ use serde::Deserialize;
 use serde_json::Value;
 
 use crate::content_quality::validate_content_quality_warnings;
-use crate::diagram::validate_diagram_alt_warnings;
+use crate::diagram::{validate_diagram_alt_warnings, BackendDiagrams};
+use crate::i18n::{validate_i18n_warnings, I18nEntry, I18nContext};
+use crate::redirect::{
+    collect_redirect_config_validation, BackendRedirectRule, RedirectContentEntry,
+};
 use crate::directory_index::{discover_directory_index_warnings, DirectoryListingFile};
 use crate::faq::validate_faq_warnings;
 use crate::glossary::{validate_glossary_term_warnings, validate_glossary_warnings};
@@ -61,10 +65,12 @@ pub struct BackendQuality {
 #[derive(Debug, Clone)]
 pub struct ValidationContext<'a> {
     pub site_lang: &'a str,
-    pub base_url: Option<&'a str>,
+    pub redirect_same_origin_base: Option<&'a str>,
     pub glossary_term_ids: &'a HashSet<String>,
     pub link_scheme_enabled: bool,
     pub link_scheme_is_error: bool,
+    pub diagrams: &'a Option<BackendDiagrams>,
+    pub i18n_enabled: bool,
 }
 
 #[derive(Debug, Clone, Default, Deserialize)]
@@ -372,7 +378,7 @@ pub fn collect_file_validation(
         details.push(format!("{rel_path}: {message}"));
     }
 
-    for message in validate_diagram_alt_warnings(body) {
+    for message in validate_diagram_alt_warnings(body, ctx.diagrams) {
         warnings += 1;
         details.push(format!("{rel_path}: {message}"));
     }
@@ -388,7 +394,7 @@ pub fn collect_file_validation(
         details.push(format!("{rel_path}: {message}"));
     }
 
-    if let Some(message) = validate_translation_key_warning(&fm_map, false) {
+    if let Some(message) = validate_translation_key_warning(&fm_map, ctx.i18n_enabled) {
         warnings += 1;
         details.push(format!("{rel_path}: {message}"));
     }
@@ -441,7 +447,7 @@ pub fn collect_file_validation(
         details.push(format!("{rel_path}: {message}"));
     }
 
-    for finding in validate_redirect_frontmatter(&fm_map, ctx.base_url) {
+    for finding in validate_redirect_frontmatter(&fm_map, ctx.redirect_same_origin_base) {
         if finding.is_error {
             errors += 1;
         } else {
@@ -472,6 +478,46 @@ pub fn merge_validation(target: &mut ValidationSummary, other: ValidationSummary
     target.errors += other.errors;
     target.warnings += other.warnings;
     target.details.extend(other.details);
+}
+
+pub fn collect_config_validation(
+    redirect_rules: &[BackendRedirectRule],
+    redirect_content: &[RedirectContentEntry],
+    i18n_entries: &[I18nEntry],
+    i18n_ctx: &I18nContext,
+    same_origin_base: Option<&str>,
+) -> ValidationSummary {
+    let mut errors = 0usize;
+    let mut warnings = 0usize;
+    let mut details = Vec::new();
+
+    for finding in collect_redirect_config_validation(
+        redirect_rules,
+        redirect_content,
+        i18n_ctx,
+        same_origin_base,
+    ) {
+        if finding.is_error {
+            errors += 1;
+        } else {
+            warnings += 1;
+        }
+        details.push(format!("sorane.yaml: {}", finding.message));
+    }
+
+    let i18n_warnings = validate_i18n_warnings(i18n_entries, i18n_ctx);
+    for (rel_path, messages) in i18n_warnings {
+        for message in messages {
+            warnings += 1;
+            details.push(format!("{rel_path}: {message}"));
+        }
+    }
+
+    ValidationSummary {
+        errors,
+        warnings,
+        details,
+    }
 }
 
 #[cfg(test)]

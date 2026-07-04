@@ -1,7 +1,21 @@
-import type { OkfConfig, SoraneConfig } from "@sorane/core";
+import type { DiagramsConfig, OkfConfig, RedirectRuleConfig, SoraneConfig } from "@sorane/core";
 import type { SoraneAstroPermalink, SoraneAstroValidateMode } from "./options.ts";
 
 export const SORANE_ASTRO_BACKEND_SCHEMA_VERSION = 1 as const;
+
+export interface SoraneAstroBackendLocaleInput {
+  readonly lang: string;
+  readonly pathPrefix: string;
+}
+
+export interface SoraneAstroBackendSiteI18nInput {
+  readonly default?: string;
+  readonly locales?: Readonly<Record<string, SoraneAstroBackendLocaleInput>>;
+}
+
+export interface SoraneAstroBackendSecurityInput {
+  readonly redirectSameOrigin?: boolean;
+}
 
 export interface SoraneAstroBackendFileInput {
   readonly relPath: string;
@@ -14,6 +28,7 @@ export interface SoraneAstroBackendSiteInput {
   readonly baseUrl?: string;
   /** Primary site language (BCP 47). Default: `ja`. */
   readonly lang?: string;
+  readonly i18n?: SoraneAstroBackendSiteI18nInput;
 }
 
 export interface SoraneAstroBackendOutputsInput {
@@ -44,6 +59,9 @@ export interface SoraneAstroBackendInput {
   readonly quality?: SoraneConfig["build"]["quality"];
   readonly okf?: OkfConfig;
   readonly openData?: SoraneAstroBackendOpenDataInput;
+  readonly diagrams?: DiagramsConfig;
+  readonly redirects?: readonly RedirectRuleConfig[];
+  readonly security?: SoraneAstroBackendSecurityInput;
 }
 
 export type SoraneAstroArtifactKind = "text" | "base64";

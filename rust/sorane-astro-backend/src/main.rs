@@ -5,6 +5,7 @@ mod diagram;
 mod directory_index;
 mod faq;
 mod glossary;
+mod i18n;
 mod i18n_validate;
 mod lang_mixing;
 mod markdown_sections;
@@ -26,8 +27,12 @@ use serde_json::{json, Map, Value};
 use std::collections::BTreeMap;
 use std::io::Write;
 use term_links::build_glossary_term_index;
+use diagram::BackendDiagrams;
+use i18n::{resolve_i18n_context, BackendSiteI18n, I18nEntry};
+use redirect::{BackendRedirectRule, RedirectContentEntry};
 use validate::{
-    collect_file_validation, collect_site_validation, directory_listing_file_from_source,
+    collect_config_validation, collect_file_validation, collect_site_validation,
+    directory_listing_file_from_source, effective_type, extract_frontmatter_for_validation,
     merge_validation, BackendOkf, BackendQuality, ValidateMode, ValidationContext,
     ValidationSummary,
 };
@@ -75,6 +80,14 @@ struct BackendSite {
     base_url: String,
     #[serde(default)]
     lang: Option<String>,
+    #[serde(default)]
+    i18n: Option<BackendSiteI18n>,
+}
+
+#[derive(Debug, Clone, Default, Deserialize)]
+struct BackendSecurity {
+    #[serde(rename = "redirectSameOrigin", default)]
+    redirect_same_origin: bool,
 }
 
 #[derive(Debug, Clone, Deserialize)]
@@ -143,6 +156,12 @@ struct BackendInput {
     okf: Option<BackendOkf>,
     #[serde(rename = "openData", default)]
     open_data: Option<BackendOpenData>,
+    #[serde(default)]
+    diagrams: Option<BackendDiagrams>,
+    #[serde(default)]
+    redirects: Option<Vec<BackendRedirectRule>>,
+    #[serde(default)]
+    security: Option<BackendSecurity>,
 }
 
 #[derive(Debug, Serialize)]
@@ -1029,19 +1048,30 @@ fn run_backend(input: BackendInput) -> Result<BackendOutput, String> {
         .as_deref()
         .filter(|s| !s.is_empty())
         .unwrap_or("ja");
+    let i18n_ctx = resolve_i18n_context(site_lang, &input.site.i18n);
     let base_url = input.site.base_url.trim();
+    let redirect_same_origin = input
+        .security
+        .as_ref()
+        .map(|s| s.redirect_same_origin)
+        .unwrap_or(false);
+    let same_origin_base = if redirect_same_origin && !base_url.is_empty() {
+        Some(base_url)
+    } else {
+        None
+    };
     let validation_ctx = ValidationContext {
         site_lang,
-        base_url: if base_url.is_empty() {
-            None
-        } else {
-            Some(base_url)
-        },
+        redirect_same_origin_base: same_origin_base,
         glossary_term_ids: &glossary_term_ids,
         link_scheme_enabled: true,
         link_scheme_is_error: false,
+        diagrams: &input.diagrams,
+        i18n_enabled: i18n_ctx.enabled,
     };
     let mut listing_files = Vec::new();
+    let mut redirect_content = Vec::new();
+    let mut i18n_entries = Vec::new();
     for file in &input.files {
         if let Some(listing) =
             directory_listing_file_from_source(&file.rel_path, &file.source, &input.okf)
@@ -1062,6 +1092,42 @@ fn run_backend(input: BackendInput) -> Result<BackendOutput, String> {
                     &validation_ctx,
                 ),
             );
+            if let Some((fm_raw, _)) = extract_frontmatter_for_validation(&file.source) {
+                if let Ok(fm_yaml) = serde_yaml::from_str::<serde_yaml::Value>(fm_raw) {
+                    if let Some(fm_map) = fm_yaml.as_mapping() {
+                        let okf_type = effective_type(fm_map, &input.okf);
+                        let translation_key = fm_map
+                            .get(serde_yaml::Value::String("translation_key".into()))
+                            .and_then(|v| v.as_str())
+                            .map(str::trim)
+                            .filter(|s| !s.is_empty())
+                            .map(|s| s.to_string());
+                        i18n_entries.push(I18nEntry {
+                            rel_path: file.rel_path.clone(),
+                            translation_key,
+                        });
+                        let redirect_target = fm_map
+                            .get(serde_yaml::Value::String("redirect".into()))
+                            .and_then(|v| v.as_str())
+                            .map(|s| s.to_string());
+                        if redirect_target.is_some() {
+                            let status = fm_map
+                                .get(serde_yaml::Value::String("redirect_status".into()))
+                                .or_else(|| {
+                                    fm_map.get(serde_yaml::Value::String("redirectStatus".into()))
+                                })
+                                .and_then(|v| v.as_i64())
+                                .unwrap_or(301);
+                            redirect_content.push(RedirectContentEntry {
+                                rel_path: file.rel_path.clone(),
+                                okf_type,
+                                redirect_target,
+                                redirect_status: status,
+                            });
+                        }
+                    }
+                }
+            }
         }
 
         if let Ok(concept) = parse_concept(file, &input) {
@@ -1073,6 +1139,17 @@ fn run_backend(input: BackendInput) -> Result<BackendOutput, String> {
 
     if !matches!(validate_mode, ValidateMode::Off) {
         merge_validation(&mut validation, collect_site_validation(&listing_files));
+        let redirect_rules = input.redirects.as_deref().unwrap_or(&[]);
+        merge_validation(
+            &mut validation,
+            collect_config_validation(
+                redirect_rules,
+                &redirect_content,
+                &i18n_entries,
+                &i18n_ctx,
+                same_origin_base,
+            ),
+        );
     }
 
     let mut artifacts = Vec::new();

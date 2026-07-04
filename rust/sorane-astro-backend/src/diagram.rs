@@ -1,4 +1,5 @@
 use regex::Regex;
+use serde::Deserialize;
 use std::sync::LazyLock;
 
 static FENCE_OPEN_RE: LazyLock<Regex> =
@@ -10,20 +11,55 @@ static ALT_SINGLE_RE: LazyLock<Regex> =
 static ALT_COMMENT_RE: LazyLock<Regex> =
     LazyLock::new(|| Regex::new(r"(?m)^\s*%%\s*alt\s*:\s*(.+?)\s*$").expect("alt comment re"));
 
-fn is_graphviz_lang(lang: &str) -> bool {
-    matches!(lang, "dot" | "graphviz" | "neato" | "fdp" | "circo" | "twopi" | "osage" | "patchwork")
+#[derive(Debug, Clone, Default, Deserialize)]
+pub struct BackendMermaidConfig {
+    #[serde(default)]
+    pub mode: Option<String>,
 }
 
-/// Default sorane diagrams config: enabled=false (matches `DEFAULT_DIAGRAMS_CONFIG`).
-fn is_diagram_lang_active(lang: &str) -> bool {
+#[derive(Debug, Clone, Default, Deserialize)]
+pub struct BackendD2Config {
+    #[serde(default)]
+    pub enabled: Option<bool>,
+}
+
+#[derive(Debug, Clone, Default, Deserialize)]
+pub struct BackendGraphvizConfig {
+    #[serde(default)]
+    pub enabled: Option<bool>,
+}
+
+#[derive(Debug, Clone, Default, Deserialize)]
+pub struct BackendDiagrams {
+    #[serde(default)]
+    pub enabled: Option<bool>,
+    #[serde(default)]
+    pub mermaid: Option<BackendMermaidConfig>,
+    #[serde(default)]
+    pub d2: Option<BackendD2Config>,
+    #[serde(default)]
+    pub graphviz: Option<BackendGraphvizConfig>,
+}
+
+fn is_graphviz_lang(lang: &str) -> bool {
+    matches!(
+        lang,
+        "dot" | "graphviz" | "neato" | "fdp" | "circo" | "twopi" | "osage" | "patchwork"
+    )
+}
+
+fn is_diagram_lang_active(lang: &str, config: &BackendDiagrams) -> bool {
+    if config.enabled == Some(false) {
+        return false;
+    }
     if lang == "mermaid" {
-        return true;
+        return config.mermaid.as_ref().and_then(|m| m.mode.as_deref()) != Some("off");
     }
     if lang == "d2" {
-        return false;
+        return config.d2.as_ref().and_then(|d| d.enabled) == Some(true);
     }
     if is_graphviz_lang(lang) {
-        return false;
+        return config.graphviz.as_ref().and_then(|g| g.enabled) == Some(true);
     }
     false
 }
@@ -53,14 +89,12 @@ fn extract_alt_text(meta: &str, source: &str) -> Option<String> {
     parse_alt_from_meta(meta).or_else(|| parse_alt_comment(source))
 }
 
-/// Diagram alt warnings (default config: diagrams disabled, so mermaid-only when enabled=false in TS).
-/// Astro `mergeConfig` uses `enabled: false`, which skips all diagram langs in TS.
-pub fn validate_diagram_alt_warnings(_body: &str) -> Vec<String> {
-    Vec::new()
-}
-
-/// Validate diagram fences when diagram emission is enabled.
-pub fn validate_diagram_alt_warnings_enabled(body: &str) -> Vec<String> {
+/// Default sorane diagrams config: enabled=false (matches `DEFAULT_DIAGRAMS_CONFIG`).
+pub fn validate_diagram_alt_warnings(body: &str, config: &Option<BackendDiagrams>) -> Vec<String> {
+    let config = config.as_ref().cloned().unwrap_or_default();
+    if config.enabled != Some(true) {
+        return Vec::new();
+    }
     let mut warnings = Vec::new();
     let lines: Vec<&str> = body.lines().collect();
     let mut i = 0usize;
@@ -88,7 +122,7 @@ pub fn validate_diagram_alt_warnings_enabled(body: &str) -> Vec<String> {
             i += 1;
         }
         i += 1;
-        if !is_diagram_lang_active(lang) {
+        if !is_diagram_lang_active(lang, &config) {
             continue;
         }
         if extract_alt_text(meta, &block.join("\n")).is_some() {
@@ -108,6 +142,18 @@ mod tests {
     #[test]
     fn default_config_skips_diagram_warnings() {
         let body = "```mermaid\nflowchart LR\nA-->B\n```";
-        assert!(validate_diagram_alt_warnings(body).is_empty());
+        assert!(validate_diagram_alt_warnings(body, &None).is_empty());
+    }
+
+    #[test]
+    fn enabled_config_warns_without_alt() {
+        let body = "```mermaid\nflowchart LR\nA-->B\n```";
+        let config = BackendDiagrams {
+            enabled: Some(true),
+            ..Default::default()
+        };
+        let warnings = validate_diagram_alt_warnings(body, &Some(config));
+        assert_eq!(warnings.len(), 1);
+        assert!(warnings[0].contains("mermaid"));
     }
 }
