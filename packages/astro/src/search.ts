@@ -1,7 +1,6 @@
-import { isOptionalModuleMissing, warnOptionalPackageMissing } from "@sorane/core";
-import { existsSync, mkdirSync } from "node:fs";
-import { dirname, resolve } from "node:path";
 import type { AstroLogger } from "./options.ts";
+import { buildSearchArtifacts, writeSearchCompanionAssets } from "./search-backend.ts";
+import type { SoraneAstroBackendInput } from "./contract.ts";
 
 export type SoraneAstroSearchMode = "fts" | "hybrid";
 
@@ -25,71 +24,31 @@ export interface EmitAstroSearchOptions {
   readonly logger?: AstroLogger;
 }
 
+/** @deprecated Prefer backend contract `outputs.search` + `buildSearchArtifacts`. */
 export async function emitAstroSearchAssets(
   options: EmitAstroSearchOptions,
 ): Promise<readonly string[]> {
-  const logger = options.logger;
-  const log = (message: string) => logger?.info?.(`[sorane/astro] ${message}`);
-
-  try {
-    const { buildSearchIndex, emitSearchAssets, RuriEmbeddings } = await import(
-      "@sorane/search"
-    );
-    const search = options.search;
-    const indexPath = resolve(options.root, search?.indexPath ?? ".sorane/index.db");
-    mkdirSync(dirname(indexPath), { recursive: true });
-
-    const mode = search?.mode ?? "fts";
-    const modelRoot = resolve(options.root, search?.modelRoot ?? "vendor/models");
-    const modelId = search?.modelId ?? "ruri-v3-30m";
-
-    let embeddings = null;
-    if (mode === "hybrid") {
-      const modelDir = resolve(modelRoot, modelId);
-      if (!existsSync(modelDir)) {
-        logger?.warn?.(
-          `[sorane/astro] hybrid search model not found at ${modelDir}; indexing FTS-only`,
-        );
-      } else {
-        embeddings = new RuriEmbeddings({ modelRoot, modelId });
-      }
-    }
-
-    await buildSearchIndex({
-      contentDir: options.contentDir,
-      indexPath,
-      force: search?.force ?? false,
-      embeddings,
-      onProgress: log,
-    });
-
-    const result = await emitSearchAssets({
-      cwd: options.root,
-      outDir: options.outDir,
-      indexPath,
-      mode: embeddings ? "hybrid" : "fts",
-      modelRoot: search?.modelRoot ?? "vendor/models",
-      modelId,
-      contentDir: options.contentDir,
-      sourceToUrl: options.sourceToUrl,
-      onProgress: log,
-    });
-
-    const files: string[] = [];
-    if (result.written) files.push("assets/search-index.json");
-    if (existsSync(resolve(options.outDir, "assets", "search.mjs"))) {
-      files.push("assets/search.mjs");
-    }
-    return files;
-  } catch (err) {
-    if (isOptionalModuleMissing(err)) {
-      warnOptionalPackageMissing(
-        { packageName: "@sorane/search", feature: "Astro search assets" },
-        options.root,
-      );
-      logger?.warn?.("[sorane/astro] skipping search assets");
-      return [];
-    }
-    throw err;
+  const input: SoraneAstroBackendInput = {
+    schema_version: 1,
+    root: options.root,
+    contentDir: options.contentDir,
+    outDir: options.outDir,
+    site: { title: "", description: "" },
+    files: [],
+    outputs: { search: true },
+    search: options.search,
+    validate: false,
+  };
+  const artifacts = await buildSearchArtifacts(input, options.logger);
+  const { writeFileSync, mkdirSync } = await import("node:fs");
+  const { dirname, join } = await import("node:path");
+  const files: string[] = [];
+  for (const artifact of artifacts) {
+    const target = join(options.outDir, artifact.path);
+    mkdirSync(dirname(target), { recursive: true });
+    writeFileSync(target, artifact.content);
+    files.push(artifact.path);
   }
+  files.push(...(await writeSearchCompanionAssets(options.outDir, input, options.logger)));
+  return files;
 }

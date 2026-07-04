@@ -8,8 +8,7 @@ import {
 } from "./collect-input.ts";
 import { resolveSoraneAstroBackend, runSoraneAstroBackend } from "./backend.ts";
 import { resolveAstroRoutePlan } from "./route-loader.ts";
-import { htmlRelForContent } from "./routes.ts";
-import { emitAstroSearchAssets } from "./search.ts";
+import { buildSearchArtifacts, writeSearchCompanionAssets } from "./search-backend.ts";
 import { writeSoraneAstroBackendArtifacts } from "./write-artifacts.ts";
 import { collectBackendValidation } from "./validation.ts";
 import type { SoraneAstroArtifactResult, SoraneAstroOptions } from "./options.ts";
@@ -60,7 +59,18 @@ export async function emitSoraneAstroArtifacts(
   const files = collectSoraneAstroBackendFiles(paths.contentDir);
   const input = buildSoraneAstroBackendInput(options, paths, files, routePlan);
   const validation = collectBackendValidation(input, options.validate ?? "warn");
-  const output = await runSoraneAstroBackend(resolved, { ...input, validate: false });
+  let output = await runSoraneAstroBackend(resolved, { ...input, validate: false });
+
+  if (
+    options.outputs?.search &&
+    !output.artifacts.some((a) => a.path === "assets/search-index.json")
+  ) {
+    const searchArtifacts = await buildSearchArtifacts(
+      { ...input, validate: false },
+      logger,
+    );
+    output = { ...output, artifacts: [...output.artifacts, ...searchArtifacts] };
+  }
 
   applyValidationPolicy(
     options,
@@ -70,22 +80,7 @@ export async function emitSoraneAstroArtifacts(
   );
 
   const written = [...writeSoraneAstroBackendArtifacts(paths.outDir, output)];
-
-  if (options.outputs?.search) {
-    const searchFiles = await emitAstroSearchAssets({
-      root: paths.root,
-      contentDir: paths.contentDir,
-      outDir: paths.outDir,
-      sourceToUrl: (source) =>
-        htmlRelForContent(source, {
-          permalink: routePlan.permalink ?? options.permalink,
-          collections: routePlan.collections,
-        }),
-      search: options.search,
-      logger,
-    });
-    written.push(...searchFiles);
-  }
+  written.push(...(await writeSearchCompanionAssets(paths.outDir, input, logger)));
 
   logger?.info?.(
     `[sorane/astro] emitted ${written.length} artifacts for ${output.concepts} OKF concepts`,

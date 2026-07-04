@@ -15,18 +15,24 @@ static ALT_COMMENT_RE: LazyLock<Regex> =
 pub struct BackendMermaidConfig {
     #[serde(default)]
     pub mode: Option<String>,
+    #[serde(default)]
+    pub mmdc: Option<String>,
 }
 
 #[derive(Debug, Clone, Default, Deserialize)]
 pub struct BackendD2Config {
     #[serde(default)]
     pub enabled: Option<bool>,
+    #[serde(default)]
+    pub binary: Option<String>,
 }
 
 #[derive(Debug, Clone, Default, Deserialize)]
 pub struct BackendGraphvizConfig {
     #[serde(default)]
     pub enabled: Option<bool>,
+    #[serde(default)]
+    pub binary: Option<String>,
 }
 
 #[derive(Debug, Clone, Default, Deserialize)]

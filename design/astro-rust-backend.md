@@ -148,8 +148,13 @@ Integration-layer validation (done):
 
 1. `emitSoraneAstroArtifacts` always runs `validateSiteContent` via TypeScript before artifact backends; backends receive `validate: false` to avoid duplicate gates. Native/TS artifact backends stay interchangeable without weakening `validate: "error"`.
 
+Search + config security (done):
+
+1. `outputs.search` + `search` config on the backend contract; TypeScript backend emits `assets/search-index.json` as an artifact (`search-backend.ts`). Companion assets (`search.mjs`, hybrid runtime) are written after artifact flush.
+2. `validateConfigSecurity` parity: emergency banner href checks, custom-binary rejection when `security.allowCustomBinaries: false`.
+3. `backend-artifacts.ts` extracts OKF artifact builders from `backend-ts.ts`; `backend-wasm.ts` stub throws until a WASM package ships (`resolve` still falls back to TypeScript).
+
 Next:
 
-1. Remaining gaps: sorane.yaml security/config parity beyond redirects, `outputs.search` indexing in backend contract.
-2. Move `outputs.search` indexing into the backend contract or a Rust helper.
-3. Add `backend: "wasm"` when a WASM artifact is published.
+1. Native Rust `outputs.search` indexing (optional; SQLite + embeddings remain TypeScript/`@sorane/search` today).
+2. Publish `@sorane/astro-backend-wasm` and wire `backend: "wasm"`.

@@ -185,7 +185,7 @@ describe("resolveSoraneAstroBackend", () => {
     expect(warnings.some((w) => w.includes('backend "wasm"'))).toBe(true);
   });
 
-  test("runSoraneAstroBackend rejects unsupported resolved backend", async () => {
+  test("runSoraneAstroWasmBackend throws until artifact ships", async () => {
     const { root, contentDir, outDir, files } = contentFixture();
     const input = buildSoraneAstroBackendInput(
       { site: { title: "S", description: "D" }, validate: false },
@@ -196,7 +196,7 @@ describe("resolveSoraneAstroBackend", () => {
     try {
       await runSoraneAstroBackend("wasm", input);
     } catch (e) {
-      threw = e instanceof Error && e.message.includes("unsupported backend");
+      threw = e instanceof Error && e.message.includes("WASM backend is not published");
     }
     expect(threw).toBe(true);
   });

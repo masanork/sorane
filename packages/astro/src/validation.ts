@@ -7,6 +7,7 @@ function astroSoraneConfig(input: SoraneAstroBackendInput) {
     ? input.contentDir.slice(input.root.length).replace(/^[/\\]+/, "")
     : input.contentDir;
   const i18nLocales = input.site.i18n?.locales;
+  const emergencyLocales = input.site.emergency?.locales;
   return mergeConfig({
     site: {
       title: input.site.title,
@@ -30,14 +31,48 @@ function astroSoraneConfig(input: SoraneAstroBackendInput) {
             },
           }
         : {}),
+      ...(input.site.emergency
+        ? {
+            emergency: {
+              ...(input.site.emergency.message
+                ? { message: input.site.emergency.message }
+                : {}),
+              ...(input.site.emergency.href ? { href: input.site.emergency.href } : {}),
+              ...(emergencyLocales
+                ? {
+                    locales: Object.fromEntries(
+                      Object.entries(emergencyLocales).map(([id, spec]) => [
+                        id,
+                        {
+                          ...(spec.message ? { message: spec.message } : {}),
+                          ...(spec.href ? { href: spec.href } : {}),
+                        },
+                      ]),
+                    ),
+                  }
+                : {}),
+            },
+          }
+        : {}),
     },
     build: {
       content_dir: contentRel,
       ...(input.quality ? { quality: input.quality } : {}),
       ...(input.diagrams ? { diagrams: input.diagrams } : {}),
       ...(input.redirects ? { redirects: input.redirects } : {}),
-      ...(input.security?.redirectSameOrigin !== undefined
-        ? { security: { redirect_same_origin: input.security.redirectSameOrigin } }
+      ...(input.imageMetadata ? { image_metadata: input.imageMetadata } : {}),
+      ...(input.c2pa ? { c2pa: input.c2pa } : {}),
+      ...(input.security
+        ? {
+            security: {
+              ...(input.security.redirectSameOrigin !== undefined
+                ? { redirect_same_origin: input.security.redirectSameOrigin }
+                : {}),
+              ...(input.security.allowCustomBinaries !== undefined
+                ? { allow_custom_binaries: input.security.allowCustomBinaries }
+                : {}),
+            },
+          }
         : {}),
     },
     ...(input.okf ? { okf: input.okf } : {}),

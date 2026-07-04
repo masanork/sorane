@@ -123,7 +123,8 @@ soraneAstro({
 
 - ルート検出は `getCollection()` の静的解析ベースで、動的ルートすべてをカバーしません。
 - コンテンツ検証は統合層が常に TypeScript の `validateSiteContent` を実行します（`backend: "auto"` でもネイティブと同じゲート）。artifact backend は `validate: false` で呼ばれ、重複検証しません。
-- ネイティブ Rust backend の validation: Phase A–D（OKF / quality / FAQ / glossary / reference / dataset / lang / term links / revision / redirect / unsafe links / diagram alt / `build.redirects` / `site.i18n`）。統合層は引き続き常に TypeScript の `validateSiteContent` を実行します。backend contract から `diagrams`、`redirects`、`security.redirectSameOrigin`、`site.i18n` を渡せます。
+- ネイティブ Rust backend の validation: Phase A–D + `validateConfigSecurity`（緊急バナー URL、カスタムバイナリ拒否）。統合層は引き続き常に TypeScript の `validateSiteContent` を実行します。
+- `outputs.search` は backend contract 経由（`assets/search-index.json` を artifact として返す）。`search.mjs` 等の companion は書き出し後にコピーされます。ネイティブ CLI は search 未実装（TypeScript backend のみ）。
 - `outputs.search` のインデックス生成は TypeScript 側（`emitAstroSearchAssets`）が担当します。
 
 設計の詳細はリポジトリ内 `design/astro-rust-backend.md` を参照してください。

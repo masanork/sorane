@@ -1,5 +1,6 @@
 import type { DiagramsConfig, OkfConfig, RedirectRuleConfig, SoraneConfig } from "@sorane/core";
 import type { SoraneAstroPermalink, SoraneAstroValidateMode } from "./options.ts";
+import type { SoraneAstroSearchConfig } from "./search.ts";
 
 export const SORANE_ASTRO_BACKEND_SCHEMA_VERSION = 1 as const;
 
@@ -13,8 +14,28 @@ export interface SoraneAstroBackendSiteI18nInput {
   readonly locales?: Readonly<Record<string, SoraneAstroBackendLocaleInput>>;
 }
 
+export interface SoraneAstroBackendEmergencyLocaleInput {
+  readonly message?: string;
+  readonly href?: string;
+}
+
+export interface SoraneAstroBackendEmergencyInput {
+  readonly message?: string;
+  readonly href?: string;
+  readonly locales?: Readonly<Record<string, SoraneAstroBackendEmergencyLocaleInput>>;
+}
+
 export interface SoraneAstroBackendSecurityInput {
   readonly redirectSameOrigin?: boolean;
+  readonly allowCustomBinaries?: boolean;
+}
+
+export interface SoraneAstroBackendImageMetadataInput {
+  readonly exiftool?: string;
+}
+
+export interface SoraneAstroBackendC2paInput {
+  readonly binary?: string;
 }
 
 export interface SoraneAstroBackendFileInput {
@@ -29,6 +50,7 @@ export interface SoraneAstroBackendSiteInput {
   /** Primary site language (BCP 47). Default: `ja`. */
   readonly lang?: string;
   readonly i18n?: SoraneAstroBackendSiteI18nInput;
+  readonly emergency?: SoraneAstroBackendEmergencyInput;
 }
 
 export interface SoraneAstroBackendOutputsInput {
@@ -37,6 +59,7 @@ export interface SoraneAstroBackendOutputsInput {
   readonly okfBundle?: boolean;
   readonly sitemap?: boolean;
   readonly dcatCatalog?: boolean;
+  readonly search?: boolean;
 }
 
 export interface SoraneAstroBackendOpenDataInput {
@@ -62,6 +85,9 @@ export interface SoraneAstroBackendInput {
   readonly diagrams?: DiagramsConfig;
   readonly redirects?: readonly RedirectRuleConfig[];
   readonly security?: SoraneAstroBackendSecurityInput;
+  readonly search?: SoraneAstroSearchConfig;
+  readonly imageMetadata?: SoraneAstroBackendImageMetadataInput;
+  readonly c2pa?: SoraneAstroBackendC2paInput;
 }
 
 export type SoraneAstroArtifactKind = "text" | "base64";

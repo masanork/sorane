@@ -1,5 +1,8 @@
 import type { DiagramsConfig, OkfConfig, RedirectRuleConfig, SoraneConfig } from "@sorane/core";
 import type {
+  SoraneAstroBackendC2paInput,
+  SoraneAstroBackendEmergencyInput,
+  SoraneAstroBackendImageMetadataInput,
   SoraneAstroBackendSecurityInput,
   SoraneAstroBackendSiteI18nInput,
 } from "./contract.ts";
@@ -21,6 +24,7 @@ export interface SoraneAstroSiteConfig {
   /** Primary site language (BCP 47). Default: `ja`. */
   readonly lang?: string;
   readonly i18n?: SoraneAstroBackendSiteI18nInput;
+  readonly emergency?: SoraneAstroBackendEmergencyInput;
 }
 
 export interface SoraneAstroOptions {
@@ -69,6 +73,8 @@ export interface SoraneAstroOptions {
   readonly redirects?: readonly RedirectRuleConfig[];
   /** Security options passed through to validation. */
   readonly security?: SoraneAstroBackendSecurityInput;
+  readonly imageMetadata?: SoraneAstroBackendImageMetadataInput;
+  readonly c2pa?: SoraneAstroBackendC2paInput;
   /** Artifact backend. `auto` prefers native Rust CLI when built, then inline `ts`. */
   readonly backend?: SoraneAstroBackend;
   readonly logger?: AstroLogger;

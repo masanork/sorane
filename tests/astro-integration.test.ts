@@ -355,7 +355,7 @@ timestamp: 2026-07-04T00:00:00Z
       validate: false,
       logger: { warn: (m) => warnings.push(m) },
     });
-    expect(warnings.some((w) => w.includes('backend "wasm" is not available yet'))).toBe(true);
+    expect(warnings.some((w) => w.includes('backend "wasm" is not published yet'))).toBe(true);
   });
 
   test("search output is off by default and emits assets when enabled", async () => {

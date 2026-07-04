@@ -464,3 +464,38 @@ body
     expect(native.validationWarnings).toBe(1);
   });
 });
+
+describe("Astro backend validation parity (config security)", () => {
+  test("native validation counts match TypeScript for custom binary rejection", async (t) => {
+    if (!soraneAstroNativeCliAvailable()) {
+      t.skip("sorane-astro-backend native binary not built");
+      return;
+    }
+
+    const input = validationInput(
+      {
+        "index.md": `---
+type: index
+title: Home
+---
+
+body
+`,
+      },
+      {
+        security: { allowCustomBinaries: false },
+        diagrams: {
+          enabled: false,
+          d2: { enabled: false, binary: "/usr/bin/evil" },
+        },
+      },
+    );
+    const ts = await runSoraneAstroTsBackend(input);
+    const { runSoraneAstroCliBackend } = await import("../packages/astro/src/backend-cli.ts");
+    const native = runSoraneAstroCliBackend(input);
+
+    expect(native.validationErrors).toBe(ts.validationErrors);
+    expect(native.validationWarnings).toBe(ts.validationWarnings);
+    expect(native.validationErrors).toBe(1);
+  });
+});

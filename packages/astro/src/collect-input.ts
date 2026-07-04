@@ -51,6 +51,7 @@ export function buildSoraneAstroBackendInput(
       baseUrl: options.site.baseUrl,
       lang: options.site.lang,
       i18n: options.site.i18n,
+      emergency: options.site.emergency,
     },
     files,
     permalink: routes.permalink ?? options.permalink,
@@ -62,6 +63,7 @@ export function buildSoraneAstroBackendInput(
       sitemap: options.outputs?.sitemap,
       dcatCatalog:
         options.outputs?.dcatCatalog ?? options.openData?.dcatCatalog ?? false,
+      search: options.outputs?.search,
     },
     validate: options.validate,
     quality: options.quality,
@@ -70,6 +72,9 @@ export function buildSoraneAstroBackendInput(
     diagrams: options.diagrams,
     redirects: options.redirects,
     security: options.security,
+    search: options.search,
+    imageMetadata: options.imageMetadata,
+    c2pa: options.c2pa,
   };
 }
 

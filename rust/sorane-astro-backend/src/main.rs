@@ -1,5 +1,6 @@
 mod dcat;
 mod open_data;
+mod config_security;
 mod content_quality;
 mod diagram;
 mod directory_index;
@@ -27,6 +28,7 @@ use serde_json::{json, Map, Value};
 use std::collections::BTreeMap;
 use std::io::Write;
 use term_links::build_glossary_term_index;
+use config_security::{BackendC2pa, BackendEmergency, BackendImageMetadata};
 use diagram::BackendDiagrams;
 use i18n::{resolve_i18n_context, BackendSiteI18n, I18nEntry};
 use redirect::{BackendRedirectRule, RedirectContentEntry};
@@ -82,12 +84,16 @@ struct BackendSite {
     lang: Option<String>,
     #[serde(default)]
     i18n: Option<BackendSiteI18n>,
+    #[serde(default)]
+    emergency: Option<BackendEmergency>,
 }
 
 #[derive(Debug, Clone, Default, Deserialize)]
 struct BackendSecurity {
     #[serde(rename = "redirectSameOrigin", default)]
     redirect_same_origin: bool,
+    #[serde(rename = "allowCustomBinaries", default)]
+    allow_custom_binaries: Option<bool>,
 }
 
 #[derive(Debug, Clone, Deserialize)]
@@ -162,6 +168,10 @@ struct BackendInput {
     redirects: Option<Vec<BackendRedirectRule>>,
     #[serde(default)]
     security: Option<BackendSecurity>,
+    #[serde(rename = "imageMetadata", default)]
+    image_metadata: Option<BackendImageMetadata>,
+    #[serde(default)]
+    c2pa: Option<BackendC2pa>,
 }
 
 #[derive(Debug, Serialize)]
@@ -1140,6 +1150,11 @@ fn run_backend(input: BackendInput) -> Result<BackendOutput, String> {
     if !matches!(validate_mode, ValidateMode::Off) {
         merge_validation(&mut validation, collect_site_validation(&listing_files));
         let redirect_rules = input.redirects.as_deref().unwrap_or(&[]);
+        let allow_custom_binaries = input
+            .security
+            .as_ref()
+            .and_then(|s| s.allow_custom_binaries)
+            .unwrap_or(true);
         merge_validation(
             &mut validation,
             collect_config_validation(
@@ -1148,6 +1163,11 @@ fn run_backend(input: BackendInput) -> Result<BackendOutput, String> {
                 &i18n_entries,
                 &i18n_ctx,
                 same_origin_base,
+                &input.site.emergency,
+                allow_custom_binaries,
+                &input.diagrams,
+                &input.image_metadata,
+                &input.c2pa,
             ),
         );
     }

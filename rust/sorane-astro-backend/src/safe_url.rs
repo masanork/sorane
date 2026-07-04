@@ -51,6 +51,17 @@ pub fn validate_link_href(url: &str) -> Option<String> {
         .map(|reason| format!("unsafe link URL ({reason}): {url}"))
 }
 
+pub fn validate_http_nav_url(url: &str) -> Option<String> {
+    let trimmed = url.trim();
+    if trimmed.is_empty() {
+        return Some("URL is empty".to_string());
+    }
+    if let Some(reason) = unsafe_url_reason(trimmed) {
+        return Some(format!("{reason}: {trimmed}"));
+    }
+    None
+}
+
 fn origin_of(url: &str) -> Option<String> {
     ORIGIN_RE.captures(url).and_then(|c| c.get(1).map(|m| m.as_str().to_string()))
 }

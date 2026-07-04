@@ -1,6 +1,7 @@
 import type { SoraneAstroBackendInput, SoraneAstroBackendOutput } from "./contract.ts";
 import { runSoraneAstroTsBackend } from "./backend-ts.ts";
 import { runSoraneAstroCliBackend, soraneAstroCliAvailable } from "./backend-cli.ts";
+import { runSoraneAstroWasmBackend, soraneAstroWasmAvailable } from "./backend-wasm.ts";
 import type { AstroLogger } from "./options.ts";
 
 export type SoraneAstroBackend = "auto" | "ts" | "wasm" | "cli";
@@ -19,13 +20,15 @@ export function resolveSoraneAstroBackend(
     return "ts";
   }
   if (requested === "ts") return "ts";
+  if (requested === "wasm") {
+    if (soraneAstroWasmAvailable()) return "wasm";
+    logger?.warn?.("[sorane/astro] backend \"wasm\" is not published yet; using TypeScript");
+    return "ts";
+  }
   if (requested === "auto") {
     if (soraneAstroCliAvailable(root)) return "cli";
     return "ts";
   }
-  logger?.warn?.(
-    `[sorane/astro] backend "${requested}" is not available yet; using TypeScript`,
-  );
   return "ts";
 }
 
@@ -38,6 +41,8 @@ export async function runSoraneAstroBackend(
       return runSoraneAstroCliBackend(input);
     case "ts":
       return runSoraneAstroTsBackend(input);
+    case "wasm":
+      return runSoraneAstroWasmBackend(input);
     default:
       throw new Error(`[sorane/astro] unsupported backend: ${resolved}`);
   }

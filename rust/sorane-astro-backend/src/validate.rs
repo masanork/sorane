@@ -4,6 +4,10 @@ use serde::Deserialize;
 use serde_json::Value;
 
 use crate::content_quality::validate_content_quality_warnings;
+use crate::config_security::{
+    validate_config_security, validate_emergency_banner_urls, BackendC2pa, BackendEmergency,
+    BackendImageMetadata,
+};
 use crate::diagram::{validate_diagram_alt_warnings, BackendDiagrams};
 use crate::i18n::{validate_i18n_warnings, I18nEntry, I18nContext};
 use crate::redirect::{
@@ -486,6 +490,11 @@ pub fn collect_config_validation(
     i18n_entries: &[I18nEntry],
     i18n_ctx: &I18nContext,
     same_origin_base: Option<&str>,
+    emergency: &Option<BackendEmergency>,
+    allow_custom_binaries: bool,
+    diagrams: &Option<BackendDiagrams>,
+    image_metadata: &Option<BackendImageMetadata>,
+    c2pa: &Option<BackendC2pa>,
 ) -> ValidationSummary {
     let mut errors = 0usize;
     let mut warnings = 0usize;
@@ -511,6 +520,29 @@ pub fn collect_config_validation(
             warnings += 1;
             details.push(format!("{rel_path}: {message}"));
         }
+    }
+
+    for finding in validate_emergency_banner_urls(emergency) {
+        if finding.is_error {
+            errors += 1;
+        } else {
+            warnings += 1;
+        }
+        details.push(format!("sorane.yaml: {}", finding.message));
+    }
+
+    for finding in validate_config_security(
+        allow_custom_binaries,
+        diagrams,
+        image_metadata,
+        c2pa,
+    ) {
+        if finding.is_error {
+            errors += 1;
+        } else {
+            warnings += 1;
+        }
+        details.push(format!("sorane.yaml: {}", finding.message));
     }
 
     ValidationSummary {
