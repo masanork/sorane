@@ -294,6 +294,42 @@ body
     expect(warnings.some((w) => w.includes("content validation"))).toBe(true);
   });
 
+  test("integration-layer validation applies with native backend", async (t) => {
+    const { soraneAstroNativeCliAvailable } = await import(
+      "../packages/astro/src/backend-cli.ts"
+    );
+    if (!soraneAstroNativeCliAvailable()) {
+      t.skip("sorane-astro-backend native binary not built");
+      return;
+    }
+
+    const root = mkdtempSync(join(tmpdir(), "sorane-astro-native-val-"));
+    const posts = join(root, "src", "content", "posts");
+    mkdirSync(posts, { recursive: true });
+    writeFileSync(
+      join(posts, "img.md"),
+      `---
+type: article
+title: Image Alt
+timestamp: 2026-07-04T00:00:00Z
+---
+
+![](assets/photo.png)
+`,
+    );
+
+    const warnings: string[] = [];
+    await emitSoraneAstroArtifacts({
+      root,
+      site: { title: "S", description: "D" },
+      backend: "auto",
+      validate: "warn",
+      logger: { warn: (m) => warnings.push(m) },
+    });
+
+    expect(warnings.some((w) => w.includes("image missing alt text"))).toBe(true);
+  });
+
   test("backend auto prefers native CLI when built", async () => {
     const root = fixtureRoot();
     const warnings: string[] = [];

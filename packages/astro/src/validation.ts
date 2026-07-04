@@ -20,6 +20,7 @@ function astroSoraneConfig(input: SoraneAstroBackendInput) {
   } as Parameters<typeof mergeConfig>[0]);
 }
 
+/** Site validation for the Astro integration layer (always TypeScript; backends use `validate: false`). */
 export function collectBackendValidation(
   input: SoraneAstroBackendInput,
   mode: SoraneAstroValidateMode,

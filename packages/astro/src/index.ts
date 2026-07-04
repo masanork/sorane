@@ -11,6 +11,7 @@ import { resolveAstroRoutePlan } from "./route-loader.ts";
 import { htmlRelForContent } from "./routes.ts";
 import { emitAstroSearchAssets } from "./search.ts";
 import { writeSoraneAstroBackendArtifacts } from "./write-artifacts.ts";
+import { collectBackendValidation } from "./validation.ts";
 import type { SoraneAstroArtifactResult, SoraneAstroOptions } from "./options.ts";
 
 type AstroIntegrationLike = {
@@ -58,13 +59,14 @@ export async function emitSoraneAstroArtifacts(
   });
   const files = collectSoraneAstroBackendFiles(paths.contentDir);
   const input = buildSoraneAstroBackendInput(options, paths, files, routePlan);
-  const output = await runSoraneAstroBackend(resolved, input);
+  const validation = collectBackendValidation(input, options.validate ?? "warn");
+  const output = await runSoraneAstroBackend(resolved, { ...input, validate: false });
 
   applyValidationPolicy(
     options,
-    output.validationErrors,
-    output.validationWarnings,
-    output.validationDetails,
+    validation.errors,
+    validation.warnings,
+    validation.details,
   );
 
   const written = [...writeSoraneAstroBackendArtifacts(paths.outDir, output)];
@@ -91,8 +93,8 @@ export async function emitSoraneAstroArtifacts(
   return {
     concepts: output.concepts,
     files: written,
-    validationErrors: output.validationErrors,
-    validationWarnings: output.validationWarnings,
+    validationErrors: validation.errors,
+    validationWarnings: validation.warnings,
   };
 }
 

@@ -140,10 +140,14 @@ Native Rust backend parity (done):
 2. `backend: "auto"` prefers native Rust when `cargo build` has produced the binary; falls back to Node CLI, then inline `ts`.
 3. `SORANE_ASTRO_BACKEND_NATIVE=0` forces Node CLI (parity tests); `SORANE_ASTRO_BACKEND_CLI` overrides the binary path.
 4. `tests/astro-backend-native-parity.test.ts` guards native ≡ TS for core artifacts (bundle compared after gunzip).
-5. Native validation covers OKF `type` required and heading quality gates; full `validateSiteContent` parity is not complete.
+5. Native validation Phase A: OKF JSON Schema (3 profiles), heading, content-quality (image alt, link text, table headers, dates), disclosure fields. Diagram alt matches TS default (`diagrams.enabled: false` → no warnings). Directory index / i18n / FAQ / glossary remain TS-only.
+
+Integration-layer validation (done):
+
+1. `emitSoraneAstroArtifacts` always runs `validateSiteContent` via TypeScript before artifact backends; backends receive `validate: false` to avoid duplicate gates. Native/TS artifact backends stay interchangeable without weakening `validate: "error"`.
 
 Next:
 
-1. Expand native Rust validation toward full `validateSiteContent` parity (diagram, FAQ, glossary, i18n, OKF JSON Schema, …).
+1. Expand native Rust validation toward full `validateSiteContent` parity (directory index, FAQ, glossary, i18n, …).
 2. Move `outputs.search` indexing into the backend contract or a Rust helper.
 3. Add `backend: "wasm"` when a WASM artifact is published.

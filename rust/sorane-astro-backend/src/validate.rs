@@ -1,6 +1,10 @@
 use serde::Deserialize;
 use serde_json::Value;
 
+use crate::content_quality::validate_content_quality_warnings;
+use crate::diagram::validate_diagram_alt_warnings;
+use crate::okf_validate::validate_okf_source;
+
 #[derive(Debug, Clone)]
 pub enum ValidateMode {
     Off,
@@ -27,6 +31,22 @@ impl<'de> Deserialize<'de> for ValidateMode {
 pub struct BackendQuality {
     #[serde(default)]
     pub heading: Option<Value>,
+    #[serde(rename = "image_alt", default)]
+    pub image_alt: Option<Value>,
+    #[serde(rename = "link_text", default)]
+    pub link_text: Option<Value>,
+    #[serde(rename = "table_headers", default)]
+    pub table_headers: Option<Value>,
+    #[serde(default)]
+    pub dates: Option<Value>,
+}
+
+#[derive(Debug, Clone, Default, Deserialize)]
+pub struct BackendOkf {
+    #[serde(rename = "default_profile", default)]
+    pub default_profile: Option<String>,
+    #[serde(rename = "unknown_type", default)]
+    pub unknown_type: Option<String>,
 }
 
 #[derive(Debug, Clone)]
@@ -118,30 +138,12 @@ pub fn validate_heading_warnings(body: &str) -> Vec<String> {
     warnings
 }
 
-pub fn validate_okf_type(type_value: Option<&str>, profile: Option<&str>) -> Option<String> {
-    let Some(type_value) = type_value else {
-        return Some("OKF 必須フィールド `type` がありません".to_string());
-    };
-    if type_value.is_empty() {
-        return Some("OKF 必須フィールド `type` がありません".to_string());
-    }
-    if profile == Some("sorane-okf/0.3") {
-        return None;
-    }
-    if type_value == "article" || type_value == "index" {
-        return None;
-    }
-    let profile_label = profile.unwrap_or("sorane-okf/0.1");
-    Some(format!(
-        "未サポートの type: {type_value}（{profile_label} は article / index のみ）"
-    ))
-}
-
 pub fn collect_file_validation(
     rel_path: &str,
     frontmatter: Option<&str>,
     body: &str,
     quality: &Option<BackendQuality>,
+    okf: &Option<BackendOkf>,
 ) -> ValidationSummary {
     let mut errors = 0usize;
     let mut warnings = 0usize;
@@ -175,16 +177,30 @@ pub fn collect_file_validation(
         },
     };
 
-    let fm_map = fm_yaml.as_mapping();
-    let okf_type = fm_map
-        .and_then(|m| m.get(serde_yaml::Value::String("type".into())))
-        .and_then(|v| v.as_str());
-    let profile = fm_map
-        .and_then(|m| m.get(serde_yaml::Value::String("profile".into())))
-        .and_then(|v| v.as_str());
+    let fm_map = match fm_yaml {
+        serde_yaml::Value::Mapping(m) => m,
+        _ => {
+            errors += 1;
+            details.push(format!("{rel_path}: frontmatter が YAML マッピングではありません"));
+            return ValidationSummary {
+                errors,
+                warnings,
+                details,
+            };
+        }
+    };
 
-    if let Some(message) = validate_okf_type(okf_type, profile) {
-        errors += 1;
+    let (okf_findings, okf_warnings) = validate_okf_source(rel_path, &fm_map, body, okf);
+    for finding in okf_findings {
+        if finding.is_error {
+            errors += 1;
+        } else {
+            warnings += 1;
+        }
+        details.push(format!("{rel_path}: {}", finding.message));
+    }
+    for message in okf_warnings {
+        warnings += 1;
         details.push(format!("{rel_path}: {message}"));
     }
 
@@ -200,6 +216,16 @@ pub fn collect_file_validation(
         }
     }
 
+    for message in validate_content_quality_warnings(body, &fm_map, quality) {
+        warnings += 1;
+        details.push(format!("{rel_path}: {message}"));
+    }
+
+    for message in validate_diagram_alt_warnings(body) {
+        warnings += 1;
+        details.push(format!("{rel_path}: {message}"));
+    }
+
     ValidationSummary {
         errors,
         warnings,
@@ -211,4 +237,16 @@ pub fn merge_validation(target: &mut ValidationSummary, other: ValidationSummary
     target.errors += other.errors;
     target.warnings += other.warnings;
     target.details.extend(other.details);
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    #[test]
+    fn heading_skip_warning() {
+        let warnings = validate_heading_warnings("### skip h2\n");
+        assert_eq!(warnings.len(), 1);
+        assert!(warnings[0].contains("first heading in body is h3"));
+    }
 }

@@ -1,5 +1,8 @@
 mod dcat;
 mod open_data;
+mod content_quality;
+mod diagram;
+mod okf_validate;
 mod validate;
 
 use base64::{engine::general_purpose::STANDARD, Engine as _};
@@ -10,7 +13,8 @@ use serde_json::{json, Map, Value};
 use std::collections::BTreeMap;
 use std::io::Write;
 use validate::{
-    collect_file_validation, merge_validation, BackendQuality, ValidateMode, ValidationSummary,
+    collect_file_validation, merge_validation, BackendOkf, BackendQuality, ValidateMode,
+    ValidationSummary,
 };
 
 const SCHEMA_VERSION: i32 = 1;
@@ -118,6 +122,8 @@ struct BackendInput {
     validate: Option<ValidateMode>,
     #[serde(default)]
     quality: Option<BackendQuality>,
+    #[serde(default)]
+    okf: Option<BackendOkf>,
     #[serde(rename = "openData", default)]
     open_data: Option<BackendOpenData>,
 }
@@ -1002,6 +1008,7 @@ fn run_backend(input: BackendInput) -> Result<BackendOutput, String> {
                     fm,
                     body,
                     &input.quality,
+                    &input.okf,
                 ),
             );
         }

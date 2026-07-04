@@ -122,7 +122,8 @@ soraneAstro({
 ## 制限（現時点）
 
 - ルート検出は `getCollection()` の静的解析ベースで、動的ルートすべてをカバーしません。
-- ネイティブ Rust backend は OKF 必須フィールドと見出し品質ゲートを実装済み。diagram / FAQ / glossary など `sorane validate` の全ゲートとの完全パリティは未完了です。
+- コンテンツ検証は統合層が常に TypeScript の `validateSiteContent` を実行します（`backend: "auto"` でもネイティブと同じゲート）。artifact backend は `validate: false` で呼ばれ、重複検証しません。
+- ネイティブ Rust backend の validation Phase A: OKF JSON Schema、見出し、content-quality（image alt / link text / table / dates）。directory index / FAQ / glossary などは未移植です。
 - `outputs.search` のインデックス生成は TypeScript 側（`emitAstroSearchAssets`）が担当します。
 
 設計の詳細はリポジトリ内 `design/astro-rust-backend.md` を参照してください。
