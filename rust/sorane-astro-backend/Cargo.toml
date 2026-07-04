@@ -1,0 +1,18 @@
+[package]
+name = "sorane-astro-backend"
+version = "0.1.0"
+edition = "2021"
+description = "JSON contract backend for @sorane/astro OKF artifact emission"
+license = "MIT"
+
+[[bin]]
+name = "sorane-astro-backend"
+path = "src/main.rs"
+
+[dependencies]
+base64 = "0.22"
+flate2 = "1"
+serde = { version = "1", features = ["derive"] }
+serde_json = "1"
+serde_yaml = "0.9"
+tar = "0.4"

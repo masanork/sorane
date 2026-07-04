@@ -82,7 +82,7 @@ function walkMarkdown(root: string): string[] {
     for (const name of readdirSync(dir).sort()) {
       const abs = join(dir, name);
       if (statSync(abs).isDirectory()) visit(abs);
-      else if (name.endsWith(".md")) out.push(abs);
+      else if (/\.(md|mdx)$/i.test(name)) out.push(abs);
     }
   }
   visit(root);

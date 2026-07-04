@@ -7,6 +7,7 @@ import {
   resolveAstroPaths,
 } from "./collect-input.ts";
 import { resolveSoraneAstroBackend, runSoraneAstroBackend } from "./backend.ts";
+import { resolveAstroRoutePlan } from "./route-loader.ts";
 import { htmlRelForContent } from "./routes.ts";
 import { emitAstroSearchAssets } from "./search.ts";
 import { writeSoraneAstroBackendArtifacts } from "./write-artifacts.ts";
@@ -42,7 +43,7 @@ export async function emitSoraneAstroArtifacts(
 ): Promise<SoraneAstroArtifactResult> {
   const paths = resolveAstroPaths(options);
   const logger = options.logger;
-  const resolved = resolveSoraneAstroBackend(options.backend, logger);
+  const resolved = resolveSoraneAstroBackend(options.backend, logger, paths.root);
 
   if (!contentDirExists(paths.contentDir)) {
     logger?.warn?.(`[sorane/astro] content directory not found: ${paths.contentDir}`);
@@ -51,8 +52,12 @@ export async function emitSoraneAstroArtifacts(
 
   mkdirSync(paths.outDir, { recursive: true });
 
+  const routePlan = resolveAstroRoutePlan(paths.root, {
+    collections: options.collections,
+    permalink: options.permalink,
+  });
   const files = collectSoraneAstroBackendFiles(paths.contentDir);
-  const input = buildSoraneAstroBackendInput(options, paths, files);
+  const input = buildSoraneAstroBackendInput(options, paths, files, routePlan);
   const output = await runSoraneAstroBackend(resolved, input);
 
   applyValidationPolicy(
@@ -71,8 +76,8 @@ export async function emitSoraneAstroArtifacts(
       outDir: paths.outDir,
       sourceToUrl: (source) =>
         htmlRelForContent(source, {
-          permalink: options.permalink,
-          collections: options.collections,
+          permalink: routePlan.permalink ?? options.permalink,
+          collections: routePlan.collections,
         }),
       search: options.search,
       logger,
@@ -123,8 +128,20 @@ export {
   resolveAstroPaths,
 } from "./collect-input.ts";
 export { runSoraneAstroTsBackend } from "./backend-ts.ts";
+export {
+  resolveSoraneAstroCliBinary,
+  runSoraneAstroCliBackend,
+  soraneAstroCliAvailable,
+} from "./backend-cli.ts";
 export { runSoraneAstroBackend, resolveSoraneAstroBackend, type ResolvedSoraneAstroBackend, type SoraneAstroBackend } from "./backend.ts";
 export { decodeBackendArtifact, writeSoraneAstroBackendArtifacts } from "./write-artifacts.ts";
+export {
+  discoverAstroCollectionRoutes,
+  mergeCollectionRouteMap,
+  resolveAstroRoutePlan,
+  type AstroDiscoveredCollectionRoute,
+  type AstroRoutePlan,
+} from "./route-loader.ts";
 export { htmlRelForContent, absoluteUrl } from "./routes.ts";
 export type {
   AstroLogger,

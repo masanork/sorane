@@ -39,7 +39,7 @@ export async function runSoraneAstroTsBackend(
   };
   const allParsed = parseBackendFiles(input.files);
   const parsed = allParsed.filter(isAstroOkfContent);
-  const validation = collectBackendValidation(input, allParsed, input.validate ?? "warn");
+  const validation = collectBackendValidation(input, input.validate ?? "warn");
 
   const catalogEntries: CatalogEntry[] = parsed.map((p) => {
     const urlRel = htmlRelForContent(p.relPath, routeOpts);

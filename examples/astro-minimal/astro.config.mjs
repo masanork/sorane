@@ -9,9 +9,6 @@ export default defineConfig({
         description: "Astro-rendered content with sorane OKF outputs",
         baseUrl: "https://example.dev",
       },
-      collections: {
-        posts: "blog",
-      },
       validate: "error",
     }),
   ],

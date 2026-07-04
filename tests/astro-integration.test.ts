@@ -370,6 +370,37 @@ This article has enough body text to produce at least one search chunk when
     expect(index).toContain("blog/searchable.html");
   });
 
+  test("mdx quality gate uses validateSiteContent parity", async () => {
+    const root = mkdtempSync(join(tmpdir(), "sorane-astro-mdx-"));
+    const posts = join(root, "src", "content", "posts");
+    mkdirSync(posts, { recursive: true });
+    writeFileSync(
+      join(posts, "bad-heading.mdx"),
+      `---
+type: article
+title: MDX Bad Heading
+description: mdx gate
+timestamp: 2026-07-04T00:00:00Z
+---
+
+### skipped level
+`,
+    );
+
+    let threw = false;
+    try {
+      await emitSoraneAstroArtifacts({
+        root,
+        site: { title: "S", description: "D" },
+        validate: "error",
+        quality: { heading: "error" },
+      });
+    } catch (e) {
+      threw = e instanceof Error && e.message.includes("content validation");
+    }
+    expect(threw).toBe(true);
+  });
+
   test("quality gate parity via validateSiteContent", async () => {
     const root = mkdtempSync(join(tmpdir(), "sorane-astro-quality-"));
     const posts = join(root, "src", "content", "posts");

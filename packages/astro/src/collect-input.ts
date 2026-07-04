@@ -6,6 +6,7 @@ import {
   type SoraneAstroBackendInput,
 } from "./contract.ts";
 import type { SoraneAstroOptions } from "./options.ts";
+import { resolveAstroRoutePlan, type AstroRoutePlan } from "./route-loader.ts";
 
 function walkContent(root: string): string[] {
   const out: string[] = [];
@@ -31,7 +32,14 @@ export function buildSoraneAstroBackendInput(
   options: SoraneAstroOptions,
   paths: { root: string; contentDir: string; outDir: string },
   files: readonly SoraneAstroBackendFileInput[],
+  routePlan?: AstroRoutePlan,
 ): SoraneAstroBackendInput {
+  const routes =
+    routePlan ??
+    resolveAstroRoutePlan(paths.root, {
+      collections: options.collections,
+      permalink: options.permalink,
+    });
   return {
     schema_version: SORANE_ASTRO_BACKEND_SCHEMA_VERSION,
     root: paths.root,
@@ -43,8 +51,8 @@ export function buildSoraneAstroBackendInput(
       baseUrl: options.site.baseUrl,
     },
     files,
-    permalink: options.permalink,
-    collections: options.collections,
+    permalink: routes.permalink ?? options.permalink,
+    collections: routes.collections,
     outputs: options.outputs
       ? {
           catalog: options.outputs.catalog,

@@ -10,12 +10,16 @@ function trimSlashes(s: string): string {
 }
 
 export function htmlRelForContent(relPath: string, opts: RouteMappingOptions): string {
-  const withoutExt = relPath.replace(/\\/g, "/").replace(/\.(md|mdx)$/i, "");
+  const normalized = relPath.replace(/\\/g, "/");
+  const withoutExt = normalized.replace(/\.(md|mdx)$/i, "");
   const parts = withoutExt.split("/");
   const collection = parts[0] ?? "";
+  const entryTail = parts.slice(1).join("/");
   const routeBase = opts.collections?.[collection];
   const routeParts =
-    routeBase === undefined ? parts : [trimSlashes(routeBase), ...parts.slice(1)];
+    routeBase === undefined
+      ? parts
+      : [trimSlashes(routeBase), ...(entryTail.length > 0 ? [entryTail] : [])];
   const cleanParts = routeParts.filter((p) => p.length > 0);
   const route = cleanParts.join("/");
   if (route === "" || route === "index") return "index.html";

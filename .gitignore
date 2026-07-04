@@ -3,6 +3,7 @@ dist/
 website/dist/
 website/.sorane/
 .astro/
+rust/**/target/
 .DS_Store
 .env
 *.log

@@ -231,5 +231,5 @@ The integration scans `src/content/**/*.md(x)` for OKF frontmatter, runs `sorane
 ## Roadmap
 
 - SemVer tags and GitHub Releases (fonts tarball)
-- Astro integration: content collection route loader, MDX quality gates, DCAT catalog output
-- Rust-native OKF parser/validator and bundle/search backends behind the Astro integration boundary (JSON contract first)
+- Astro integration: DCAT catalog output, TS/CLI backend parity, WASM backend
+- Expand Rust `sorane-astro-backend` toward full `@sorane/okf` validation and bundle semantics

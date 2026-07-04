@@ -92,10 +92,25 @@ npm install
 npm run build
 ```
 
+## ルート自動検出
+
+`src/pages` 内の `getCollection('posts')` などを静的解析し、`collections` の手動指定が無い場合は URL ベースを推論します。手動 `collections` は検出結果より優先されます。
+
+## バックエンド
+
+```js
+soraneAstro({
+  backend: "ts", // auto | ts | cli | wasm
+});
+```
+
+- `ts`: 組み込み TypeScript backend（既定）
+- `cli`: `rust/sorane-astro-backend` の JSON 契約 CLI（ビルド済みまたは `SORANE_ASTRO_BACKEND_CLI`）
+- `auto`: 現状は `ts`。`SORANE_ASTRO_BACKEND_PREFER_CLI=1` で CLI 優先を試せます
+
 ## 制限（現時点）
 
-- URL はファイルパスと `collections` から**推論**します。Astro の動的ルートとは一致しない場合があります。
-- 品質ゲート（`validateSiteContent`）は `.md` のみ。`.mdx` は OKF frontmatter 検証のみ。
-- `backend: "auto"` は TypeScript 実装にフォールバックします（Rust/WASM は今後）。
+- ルート検出は `getCollection()` の静的解析ベースで、動的ルートすべてをカバーしません。
+- Rust CLI は OKF コア出力の初期実装です（品質ゲートは TS backend が担当）。
 
 設計の詳細はリポジトリ内 `design/astro-rust-backend.md` を参照してください。

@@ -122,10 +122,14 @@ JSON backend contract (done in TypeScript):
 - `packages/astro/src/collect-input.ts` / `write-artifacts.ts` — disk I/O boundary
 - `tests/astro-backend-contract.test.ts` — round-trip + artifact decode
 
-Before adding Rust:
+Route loader + MDX gates + Rust CLI scaffold (done):
 
-1. Add Astro content-collection route loader to reduce URL inference drift.
-2. Extend quality gates to `.mdx`.
-3. Implement `backend: "cli"` / `"wasm"` against the same JSON contract.
+1. `packages/astro/src/route-loader.ts` — `getCollection()` static route discovery
+2. `validate-site.ts` — `.mdx` included in quality gates
+3. `rust/sorane-astro-backend` — JSON contract CLI (`backend: "cli"`)
 
-Only after that should a Rust crate be introduced.
+Next:
+
+1. Reach TS/CLI output parity (then enable CLI in `backend: "auto"` by default).
+2. Expand Rust validation and bundle serialization to match `@sorane/okf`.
+3. Add `backend: "wasm"` when a WASM artifact is published.
