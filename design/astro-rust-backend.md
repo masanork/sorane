@@ -175,7 +175,7 @@ Accepted parity for CI and releases:
 - **Structural:** `mode`, `chunks[]`, `model` metadata, and `embeddings` shape (`dim`, `encoding`, `scale`) must match between native and TypeScript backends.
 - **Semantic:** decoded int8 vectors must have **cosine similarity ≥ 0.95** per chunk (`HYBRID_MIN_COSINE` in `tests/astro-backend-native-parity.test.ts`).
 
-Tightening to bit-identical hybrid JSON is a future optimization (3D mean-pooling / ONNX output alignment), not a blocker for native-default Astro builds.
+Float32 embeddings from native ONNX match `@sorane/search` (transformers.js) on probe and document-length text; remaining hybrid JSON differences come mainly from int8 quantization in `search-index.json` export (cosine ≥ 0.95 per chunk in CI).
 
 ## WASM hybrid policy
 
@@ -224,6 +224,8 @@ Current shrink steps (in progress):
 4. ~~`sorane index` via native CLI~~ — `sorane-astro-backend index` JSON subcommand; `packages/cli/src/index-cmd.ts` prefers native when built (`SORANE_INDEX_NATIVE=0` opts out).
 5. ~~`sorane search` query embed via native CLI~~ — `sorane-astro-backend embed` JSON subcommand; `packages/cli/src/search-cmd.ts` prefers native when built (`SORANE_EMBED_NATIVE=0` opts out). Query prefix (`検索クエリ: `) is applied by `@sorane/search` before calling the provider, same as TypeScript.
 6. ~~Astro TS `search-backend.ts` native index~~ — when the native CLI is built, `buildSearchArtifacts` uses `sorane-astro-backend index` before falling back to `@sorane/search` (`SORANE_INDEX_NATIVE=0` opts out).
+7. ~~`buildSoraneAstroTsArtifacts` split~~ — artifact build without validation; integration calls `validate: false` on backends (`backend-ts.ts`).
+8. ~~Native `chunk_vectors` interop~~ — `@sorane/search` `IndexStore` reads Rust-native SQLite vector blobs for `deriveWebIndex` and `sorane search` hybrid KNN.
 
 ### Native `sorane index` contract
 

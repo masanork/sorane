@@ -334,4 +334,58 @@ Keyword matching works without embedding models in the browser search index expo
       rmSync(dir, { recursive: true, force: true });
     }
   });
+
+  test("Rust native chunk_vectors DB exports hybrid web index", async (t) => {
+    const { soraneNativeIndexAvailable } = await import("../packages/cli/src/native-index.ts");
+    const { nativeHybridModelAvailable } = await import("../packages/cli/src/native-embed.ts");
+    const cwd = process.cwd();
+    if (!soraneNativeIndexAvailable(cwd)) {
+      t.skip("sorane-astro-backend native binary not built");
+      return;
+    }
+    const modelRoot = join(cwd, "vendor/models");
+    if (!nativeHybridModelAvailable(modelRoot, "ruri-v3-30m")) {
+      t.skip("hybrid model not fetched");
+      return;
+    }
+
+    const dir = mkdtempSync(join(tmpdir(), "sorane-search-native-db-"));
+    const contentDir = join(dir, "content");
+    const indexPath = join(dir, "index.db");
+    try {
+      mkdirSync(contentDir, { recursive: true });
+      writeFileSync(
+        join(contentDir, "doc.md"),
+        `---
+type: article
+title: Native DB
+---
+Body text long enough to produce a search chunk from the Rust native index command.
+`,
+      );
+      const { runNativeSearchIndex } = await import("../packages/cli/src/native-index.ts");
+      const out = runNativeSearchIndex({
+        root: dir,
+        contentDir,
+        indexPath,
+        force: true,
+        hybrid: true,
+        modelRoot,
+        modelId: "ruri-v3-30m",
+      });
+      expect(out.mode).toBe("hybrid");
+      expect(out.vec > 0).toBe(true);
+
+      const store = new IndexStore(indexPath);
+      expect(store.hasVectors()).toBe(true);
+      store.close();
+
+      const webIndexPath = join(dir, "search-index.json");
+      const derived = await deriveWebIndex(indexPath, webIndexPath, () => "doc.html", "hybrid");
+      expect(derived.mode).toBe("hybrid");
+      expect(derived.written).toBe(true);
+    } finally {
+      rmSync(dir, { recursive: true, force: true });
+    }
+  });
 });

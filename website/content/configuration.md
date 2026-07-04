@@ -382,6 +382,8 @@ search:
 - `sorane index` … FTS（既定）。要 `npm install @sorane/search`
 - `sorane index --hybrid` … ベクトル付きインデックス（要 `npm run fetch-model`）
 
+リポジトリ開発時や `cargo build` 済み環境では、`sorane index` / `sorane search` がネイティブ Rust ONNX を優先します（`@sorane/search` / transformers.js はフォールバック）。`SORANE_INDEX_NATIVE=0` / `SORANE_EMBED_NATIVE=0` で無効化できます。詳細は [CLI リファレンス](cli.html#ネイティブ-rust-バックエンドcli) と [Astro 連携](astro-integration.html#バックエンド) を参照してください。
+
 ### 検索 UI（ヘッダー vs 専用ページ）
 
 | | ヘッダー検索 | `content/search.md`（`view: search`） |

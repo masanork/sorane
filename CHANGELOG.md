@@ -19,6 +19,16 @@ All notable changes to sorane are documented here. Versioning follows [SemVer](h
 - Documented WASM FTS-only hybrid policy and Astro validation ownership in `design/astro-rust-backend.md` (integration layer = TS `validateSiteContent`; backends called with `validate: false`).
 - Integration tests guard validation deduplication (`validate:false`, native backend not double-counting).
 
+### Added
+
+- `buildSoraneAstroTsArtifacts` — TypeScript artifact build without validation (`backend-ts.ts` shrink).
+- `@sorane/search` `IndexStore` reads Rust `chunk_vectors` blobs for hybrid export and KNN when `vec_chunks` is absent.
+
+### Changed
+
+- README / `website/content/configuration.md` — native CLI hybrid routing and env opt-outs.
+- Documented f32 embedding parity between native ONNX and transformers.js; int8 web index SLA remains ≥ 0.95 cosine.
+
 ### Changed
 
 - Native `model_available` requires `onnx/model_quantized.onnx` and `tokenizer.json`, not only a model directory.

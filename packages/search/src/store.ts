@@ -138,10 +138,35 @@ export class IndexStore {
     );
   }
 
-  hasVectors(): boolean {
+  /** Rust native index (`chunk_vectors` BLOB) vs TS/sqlite-vec (`vec_chunks`). */
+  private hasVecChunks(): boolean {
     if (!this.tableExists("vec_chunks")) return false;
     const n = (this.db.prepare("SELECT COUNT(*) c FROM vec_chunks").get() as { c: number }).c;
     return n > 0;
+  }
+
+  private hasChunkVectors(): boolean {
+    if (!this.tableExists("chunk_vectors")) return false;
+    const n = (this.db.prepare("SELECT COUNT(*) c FROM chunk_vectors").get() as { c: number }).c;
+    return n > 0;
+  }
+
+  hasVectors(): boolean {
+    return this.hasVecChunks() || this.hasChunkVectors();
+  }
+
+  private readChunkVectorBlob(chunkId: number): number[] {
+    const row = this.db
+      .prepare("SELECT embedding FROM chunk_vectors WHERE chunk_id = ?")
+      .get(chunkId) as { embedding: Buffer | Uint8Array } | undefined;
+    if (!row) return [];
+    const buf = row.embedding;
+    const f32 = new Float32Array(
+      buf.buffer,
+      buf.byteOffset,
+      buf.byteLength / Float32Array.BYTES_PER_ELEMENT,
+    );
+    return Array.from(f32);
   }
 
   clear(): void {
@@ -237,14 +262,51 @@ export class IndexStore {
 
   counts(): Counts {
     const n = (sql: string) => (this.db.prepare(sql).get() as { c: number }).c;
+    const vec = this.hasVecChunks()
+      ? n("SELECT COUNT(*) c FROM vec_chunks")
+      : this.hasChunkVectors()
+        ? n("SELECT COUNT(*) c FROM chunk_vectors")
+        : 0;
     return {
       chunks: n("SELECT COUNT(*) c FROM chunks"),
       fts: n("SELECT COUNT(*) c FROM chunks_fts"),
-      vec: this.tableExists("vec_chunks") ? n("SELECT COUNT(*) c FROM vec_chunks") : 0,
+      vec,
     };
   }
 
+  private vecKnnNativeBlob(queryVec: number[], k: number, filter: MetaFilter): VecHit[] {
+    const { clause, binds } = buildWhere(filter);
+    const sql = `
+      SELECT ${CHUNK_COLS}, cv.embedding AS embedding
+      FROM chunks c
+      JOIN chunk_vectors cv ON cv.chunk_id = c.id
+      ${clause ? `WHERE ${clause}` : ""}`;
+    const rows = this.db.prepare(sql).all(...binds) as (ChunkRow & {
+      embedding: Buffer | Uint8Array;
+    })[];
+    const scored = rows.map((row) => {
+      const buf = row.embedding;
+      const emb = new Float32Array(
+        buf.buffer,
+        buf.byteOffset,
+        buf.byteLength / Float32Array.BYTES_PER_ELEMENT,
+      );
+      let dist = 0;
+      for (let i = 0; i < queryVec.length; i++) {
+        const d = queryVec[i]! - emb[i]!;
+        dist += d * d;
+      }
+      const { embedding: _omit, ...chunk } = row;
+      return { ...chunk, distance: dist } as VecHit;
+    });
+    scored.sort((a, b) => a.distance - b.distance);
+    return scored.slice(0, k);
+  }
+
   vecKnn(queryVec: number[], k: number, filter: MetaFilter = {}): VecHit[] {
+    if (this.hasChunkVectors() && !this.hasVecChunks()) {
+      return this.vecKnnNativeBlob(queryVec, k, filter);
+    }
     if (!this.tableExists("vec_chunks")) return [];
     const { clause, binds } = buildWhere(filter);
     const knnLimit = clause ? Math.max(k * 8, 64) : k;
@@ -266,7 +328,13 @@ export class IndexStore {
     const rows = this.db
       .prepare(`SELECT ${CHUNK_COLS} FROM chunks c ORDER BY c.id`)
       .all() as ChunkRow[];
-    if (!this.tableExists("vec_chunks") || rows.length === 0) {
+    if (rows.length === 0) {
+      return { rows, vectors: [] };
+    }
+    if (this.hasChunkVectors() && !this.hasVecChunks()) {
+      return { rows, vectors: rows.map((r) => this.readChunkVectorBlob(r.id)) };
+    }
+    if (!this.tableExists("vec_chunks")) {
       return { rows, vectors: rows.map(() => []) };
     }
     const getVec = this.db.prepare("SELECT embedding FROM vec_chunks WHERE rowid = ?");

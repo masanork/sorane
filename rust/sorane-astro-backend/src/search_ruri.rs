@@ -224,6 +224,21 @@ mod tests {
     }
 
     #[test]
+    fn long_document_embedding_matches_typescript_reference() {
+        let Some((root, model_root)) = repo_model_root() else {
+            return;
+        };
+        let text = format!(
+            "{DOC_PREFIX}This article has enough body text to produce at least one search chunk when indexed in hybrid mode for native and TypeScript backend parity comparison."
+        );
+        let (vectors, _) =
+            embed_batch(&root, &model_root, "ruri-v3-30m", &[text.clone()]).expect("embed");
+        assert_eq!(vectors[0].len(), EMBED_DIM as usize);
+        // Reference from @sorane/search on the same string (f32 cosine ≈ 1.0).
+        assert!((vectors[0][0] - (-0.06388350576162338)).abs() < 1e-4);
+    }
+
+    #[test]
     fn matches_typescript_reference_embedding() {
         let Some((root, model_root)) = repo_model_root() else {
             return;

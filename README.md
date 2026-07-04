@@ -131,9 +131,17 @@ npx @sorane/cli build --cwd examples/minimal --clean
 Hybrid (experimental):
 
 ```bash
-npm run fetch-model
+npm run fetch-model   # onnx/model_quantized.onnx + tokenizer.json
 npx @sorane/cli index --cwd examples/minimal --force --hybrid
 ```
+
+When `sorane-astro-backend` is built (`cargo build --manifest-path rust/sorane-astro-backend/Cargo.toml`), `sorane index` and `sorane search` prefer **native Rust ONNX** for indexing and query embeddings. Set `SORANE_INDEX_NATIVE=0` or `SORANE_EMBED_NATIVE=0` to force the `@sorane/search` (transformers.js) path. Missing or incomplete model dirs fall back to FTS-only indexing.
+
+| Layer | Hybrid indexing | Query embed (CLI) |
+|-------|-----------------|-------------------|
+| Native CLI (when built) | Rust ONNX | Rust ONNX |
+| `@sorane/search` fallback | transformers.js | transformers.js |
+| `@sorane/astro` WASM backend | FTS only | — |
 
 Search uses two UI layers:
 
@@ -231,4 +239,4 @@ The integration scans `src/content/**/*.md(x)` for OKF frontmatter, runs quality
 ## Roadmap
 
 - SemVer tags and GitHub Releases (fonts tarball)
-- Astro: WASM hybrid search (blocked on wasm32 ort/SQLite); tighten native hybrid embedding parity beyond cosine ≥ 0.95
+- Astro: WASM hybrid search (blocked on wasm32 ort/SQLite); optional tighter int8 `search-index.json` parity beyond cosine ≥ 0.95
