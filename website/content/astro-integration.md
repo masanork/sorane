@@ -81,6 +81,7 @@ soraneAstro({
 | `okfBundle` | on | `okf/bundle.tar.gz` |
 | `sitemap` | off | `sitemap.xml` |
 | `search` | off | FTS 検索用 `assets/search-index.json` + `assets/search.mjs` |
+| `dcatCatalog` | off | `catalog-dcat.jsonld`（`type: dataset` のみ） |
 
 ## サンプル
 
@@ -104,9 +105,10 @@ soraneAstro({
 });
 ```
 
-- `ts`: 組み込み TypeScript backend（既定）
-- `cli`: `rust/sorane-astro-backend` の JSON 契約 CLI（ビルド済みまたは `SORANE_ASTRO_BACKEND_CLI`）
-- `auto`: 現状は `ts`。`SORANE_ASTRO_BACKEND_PREFER_CLI=1` で CLI 優先を試せます
+- `ts`: 組み込み TypeScript backend
+- `cli`: Node JSON CLI（`sorane-astro-backend`、TS backend と同一出力）
+- `auto`: 既定で `cli`（Node CLI）を使用
+- ネイティブ Rust CLI は `SORANE_ASTRO_BACKEND_NATIVE=1` で有効（`cargo build` 済みが必要）
 
 ## 制限（現時点）
 

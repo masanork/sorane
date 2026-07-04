@@ -19,8 +19,12 @@
     "json-ld"
   ],
   "files": [
-    "src"
+    "src",
+    "bin"
   ],
+  "bin": {
+    "sorane-astro-backend": "./bin/sorane-astro-backend.mjs"
+  },
   "exports": {
     ".": "./src/index.ts"
   },

@@ -128,8 +128,14 @@ Route loader + MDX gates + Rust CLI scaffold (done):
 2. `validate-site.ts` — `.mdx` included in quality gates
 3. `rust/sorane-astro-backend` — JSON contract CLI (`backend: "cli"`)
 
+TS/CLI parity + DCAT (done):
+
+1. Node JSON CLI (`packages/astro/src/cli-main.ts`) delegates to `runSoraneAstroTsBackend` — byte-identical to inline `ts`.
+2. `backend: "auto"` prefers Node CLI; native Rust via `SORANE_ASTRO_BACKEND_NATIVE=1`.
+3. `outputs.dcatCatalog` / `openData.dcatCatalog` emit `catalog-dcat.jsonld`.
+4. `tests/astro-backend-parity.test.ts` guards CLI ≡ TS output.
+
 Next:
 
-1. Reach TS/CLI output parity (then enable CLI in `backend: "auto"` by default).
-2. Expand Rust validation and bundle serialization to match `@sorane/okf`.
-3. Add `backend: "wasm"` when a WASM artifact is published.
+1. Expand native Rust validation and bundle serialization to pass parity tests without Node delegation.
+2. Add `backend: "wasm"` when a WASM artifact is published.

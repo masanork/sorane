@@ -1,6 +1,10 @@
 import type { SoraneAstroBackendInput, SoraneAstroBackendOutput } from "./contract.ts";
 import { runSoraneAstroTsBackend } from "./backend-ts.ts";
-import { runSoraneAstroCliBackend, soraneAstroCliAvailable } from "./backend-cli.ts";
+import {
+  runSoraneAstroCliBackend,
+  soraneAstroCliAvailable,
+  soraneAstroNodeCliAvailable,
+} from "./backend-cli.ts";
 import type { AstroLogger } from "./options.ts";
 
 export type SoraneAstroBackend = "auto" | "ts" | "wasm" | "cli";
@@ -20,13 +24,7 @@ export function resolveSoraneAstroBackend(
   }
   if (requested === "ts") return "ts";
   if (requested === "auto") {
-    // Prefer CLI only when explicitly enabled until output parity with TS is complete.
-    if (
-      process.env.SORANE_ASTRO_BACKEND_PREFER_CLI === "1" &&
-      soraneAstroCliAvailable(root)
-    ) {
-      return "cli";
-    }
+    if (soraneAstroNodeCliAvailable() || soraneAstroCliAvailable(root)) return "cli";
     return "ts";
   }
   logger?.warn?.(

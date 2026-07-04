@@ -19,6 +19,12 @@ export interface SoraneAstroBackendOutputsInput {
   readonly llmsTxt?: boolean;
   readonly okfBundle?: boolean;
   readonly sitemap?: boolean;
+  readonly dcatCatalog?: boolean;
+}
+
+export interface SoraneAstroBackendOpenDataInput {
+  readonly dcatCatalog?: boolean;
+  readonly defaultLicense?: string;
 }
 
 /** File-based input contract for OKF artifact backends (TS / WASM / CLI). */
@@ -35,6 +41,7 @@ export interface SoraneAstroBackendInput {
   readonly validate?: SoraneAstroValidateMode;
   readonly quality?: SoraneConfig["build"]["quality"];
   readonly okf?: OkfConfig;
+  readonly openData?: SoraneAstroBackendOpenDataInput;
 }
 
 export type SoraneAstroArtifactKind = "text" | "base64";

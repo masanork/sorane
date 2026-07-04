@@ -53,17 +53,18 @@ export function buildSoraneAstroBackendInput(
     files,
     permalink: routes.permalink ?? options.permalink,
     collections: routes.collections,
-    outputs: options.outputs
-      ? {
-          catalog: options.outputs.catalog,
-          llmsTxt: options.outputs.llmsTxt,
-          okfBundle: options.outputs.okfBundle,
-          sitemap: options.outputs.sitemap,
-        }
-      : undefined,
+    outputs: {
+      catalog: options.outputs?.catalog,
+      llmsTxt: options.outputs?.llmsTxt,
+      okfBundle: options.outputs?.okfBundle,
+      sitemap: options.outputs?.sitemap,
+      dcatCatalog:
+        options.outputs?.dcatCatalog ?? options.openData?.dcatCatalog ?? false,
+    },
     validate: options.validate,
     quality: options.quality,
     okf: options.okf,
+    openData: options.openData,
   };
 }
 

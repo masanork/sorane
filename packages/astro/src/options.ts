@@ -40,7 +40,13 @@ export interface SoraneAstroOptions {
     readonly llmsTxt?: boolean;
     readonly okfBundle?: boolean;
     readonly sitemap?: boolean;
+    readonly dcatCatalog?: boolean;
     readonly search?: boolean;
+  };
+  /** Open data options (DCAT catalog emission). */
+  readonly openData?: {
+    readonly dcatCatalog?: boolean;
+    readonly defaultLicense?: string;
   };
   /** Search index + web assets (`assets/search-index.json`). Requires `@sorane/search`. */
   readonly search?: SoraneAstroSearchConfig;

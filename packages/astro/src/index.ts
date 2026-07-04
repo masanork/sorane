@@ -119,6 +119,7 @@ export {
   type SoraneAstroBackendFileInput,
   type SoraneAstroBackendInput,
   type SoraneAstroBackendOutput,
+  type SoraneAstroBackendOpenDataInput,
   type SoraneAstroBackendOutputsInput,
   type SoraneAstroBackendSiteInput,
 } from "./contract.ts";
@@ -132,6 +133,8 @@ export {
   resolveSoraneAstroCliBinary,
   runSoraneAstroCliBackend,
   soraneAstroCliAvailable,
+  soraneAstroNativeCliAvailable,
+  soraneAstroNodeCliAvailable,
 } from "./backend-cli.ts";
 export { runSoraneAstroBackend, resolveSoraneAstroBackend, type ResolvedSoraneAstroBackend, type SoraneAstroBackend } from "./backend.ts";
 export { decodeBackendArtifact, writeSoraneAstroBackendArtifacts } from "./write-artifacts.ts";

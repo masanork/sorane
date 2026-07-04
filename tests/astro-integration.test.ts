@@ -370,6 +370,41 @@ This article has enough body text to produce at least one search chunk when
     expect(index).toContain("blog/searchable.html");
   });
 
+  test("dcat catalog output when openData.dcatCatalog is enabled", async () => {
+    const root = mkdtempSync(join(tmpdir(), "sorane-astro-dcat-"));
+    const data = join(root, "src", "content", "data");
+    mkdirSync(data, { recursive: true });
+    writeFileSync(
+      join(data, "stats.md"),
+      `---
+type: dataset
+title: Open Stats
+description: sample dataset
+timestamp: 2026-07-04T00:00:00Z
+identifier: stats-001
+distribution:
+  - title: CSV
+    format: text/csv
+    accessURL: stats.csv
+---
+body
+`,
+    );
+
+    const result = await emitSoraneAstroArtifacts({
+      root,
+      site: { title: "S", description: "D", baseUrl: "https://example.dev" },
+      openData: { dcatCatalog: true, defaultLicense: "CC-BY-4.0" },
+      outputs: { catalog: true, llmsTxt: false, okfBundle: false, sitemap: false },
+      validate: false,
+    });
+
+    expect(result.files).toContain("catalog-dcat.jsonld");
+    const dcat = readFileSync(join(root, "dist", "catalog-dcat.jsonld"), "utf8");
+    expect(dcat).toContain("dcat:Dataset");
+    expect(dcat).toContain("Open Stats");
+  });
+
   test("mdx quality gate uses validateSiteContent parity", async () => {
     const root = mkdtempSync(join(tmpdir(), "sorane-astro-mdx-"));
     const posts = join(root, "src", "content", "posts");
