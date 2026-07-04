@@ -30,6 +30,7 @@ import {
   type ResolvedSoraneAstroBackend,
   type SoraneAstroBackend,
 } from "./backend.ts";
+import { emitAstroSearchAssets, type SoraneAstroSearchConfig } from "./search.ts";
 
 type AstroLogger = {
   info?: (message: string) => void;
@@ -69,7 +70,10 @@ export interface SoraneAstroOptions {
     readonly llmsTxt?: boolean;
     readonly okfBundle?: boolean;
     readonly sitemap?: boolean;
+    readonly search?: boolean;
   };
+  /** Search index + web assets (`assets/search-index.json`). Requires `@sorane/search`. */
+  readonly search?: SoraneAstroSearchConfig;
   /** Validate OKF frontmatter while emitting artifacts. Default: "warn". */
   readonly validate?: SoraneAstroValidateMode;
   /** Quality gates aligned with `sorane validate` (heading, diagram alt, links, …). */
@@ -174,6 +178,7 @@ function defaultOutputs(
     llmsTxt: outputs?.llmsTxt ?? true,
     okfBundle: outputs?.okfBundle ?? true,
     sitemap: outputs?.sitemap ?? false,
+    search: outputs?.search ?? false,
   };
 }
 
@@ -349,6 +354,18 @@ export async function emitSoraneAstroArtifacts(
     files.push("sitemap.xml");
   }
 
+  if (outputs.search) {
+    const searchFiles = await emitAstroSearchAssets({
+      root,
+      contentDir,
+      outDir,
+      sourceToUrl: (source) => htmlRelForContent(source, options),
+      search: options.search,
+      logger,
+    });
+    files.push(...searchFiles);
+  }
+
   logger?.info?.(`[sorane/astro] emitted ${files.length} artifacts for ${parsed.length} OKF concepts`);
   return {
     concepts: parsed.length,
@@ -379,3 +396,8 @@ export {
   type ResolvedSoraneAstroBackend,
   type SoraneAstroBackend,
 } from "./backend.ts";
+export {
+  emitAstroSearchAssets,
+  type SoraneAstroSearchConfig,
+  type SoraneAstroSearchMode,
+} from "./search.ts";

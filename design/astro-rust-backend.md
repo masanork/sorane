@@ -1,6 +1,6 @@
 # Astro integration and Rust backend boundary
 
-Status: design note after the `@sorane/astro` PoC.
+Status: design note after `@sorane/astro` hardening (validation, route mapping, search, smoke test).
 
 ## Positioning
 
@@ -106,11 +106,19 @@ semantics.
 
 ## Next implementation step
 
-Before adding Rust, harden `@sorane/astro` with:
+Hardening checklist (done):
 
 - real Astro fixture smoke test
 - `validateSiteContent` parity for quality gates
 - content collection route mapping tests
 - backend selection interface with only `ts` implemented
+- optional search assets (`outputs.search`)
+- CI job for Astro unit + smoke tests
+
+Before adding Rust:
+
+1. Formalize the JSON backend contract in TypeScript (`backend.ts` → dedicated module).
+2. Add Astro content-collection route loader to reduce URL inference drift.
+3. Extend quality gates to `.mdx`.
 
 Only after that should a Rust crate be introduced.

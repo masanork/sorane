@@ -43,6 +43,7 @@ docs:
     - section: リファレンス
     - cli.html
     - configuration.html
+    - astro-integration.html
     - diagrams.html
     - section: OKF・オープンデータ
     - okf-profile.html

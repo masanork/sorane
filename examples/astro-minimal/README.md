@@ -8,6 +8,7 @@ validation and agent-readable publishing artifacts:
 - `catalog.jsonld`
 - `llms.txt`
 - `okf/bundle.tar.gz`
+- `sitemap.xml` / `assets/search-index.json` (optional via `outputs`)
 
 Run inside a real Astro project after installing Astro:
 

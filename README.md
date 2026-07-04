@@ -202,7 +202,7 @@ npm run publish:workspaces
 
 Packages: `@sorane/cli`, `@sorane/core`, `@sorane/okf`, `@sorane/search`, `@sorane/font`.
 
-## Astro integration PoC
+## Astro integration
 
 `@sorane/astro` lets Astro own rendering while sorane emits OKF and agent-readable publishing artifacts after `astro build`:
 
@@ -226,10 +226,10 @@ export default defineConfig({
 });
 ```
 
-The PoC scans `src/content/**/*.md(x)` for OKF frontmatter, validates it during the integration hook, and emits `catalog.jsonld`, `llms.txt`, and `okf/bundle.tar.gz` into Astro's output directory. See `examples/astro-minimal/` for a small Astro-shaped fixture. The package boundary is file-based so OKF parsing, validation, bundle creation, and search indexing can move to Rust/WASM or a Rust CLI without changing Astro routes.
+The integration scans `src/content/**/*.md(x)` for OKF frontmatter, runs `sorane validate`-compatible quality gates on `.md` files, and emits `catalog.jsonld`, `llms.txt`, `okf/bundle.tar.gz`, and optional `sitemap.xml` / search assets into Astro's output directory. See `examples/astro-minimal/` for a runnable fixture and [Astro 連携](https://ssg.sorane.dev/astro-integration.html) for setup details. The package boundary is file-based so OKF parsing, validation, bundle creation, and search indexing can move to Rust/WASM or a Rust CLI without changing Astro routes.
 
 ## Roadmap
 
 - SemVer tags and GitHub Releases (fonts tarball)
-- Astro integration hardening: content collection loader, validation hook, search assets
-- Rust-native OKF parser/validator and bundle/search backends behind the Astro integration boundary
+- Astro integration: content collection route loader, MDX quality gates, DCAT catalog output
+- Rust-native OKF parser/validator and bundle/search backends behind the Astro integration boundary (JSON contract first)

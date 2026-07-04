@@ -322,6 +322,54 @@ body
     expect(warnings.some((w) => w.includes('backend "wasm" is not available yet'))).toBe(true);
   });
 
+  test("search output is off by default and emits assets when enabled", async () => {
+    const root = mkdtempSync(join(tmpdir(), "sorane-astro-search-"));
+    const posts = join(root, "src", "content", "posts");
+    mkdirSync(posts, { recursive: true });
+    writeFileSync(
+      join(posts, "searchable.md"),
+      `---
+type: article
+title: Searchable Post
+description: search output test
+timestamp: 2026-07-04T00:00:00Z
+---
+
+# Searchable
+
+This article has enough body text to produce at least one search chunk when
+@sorane/astro indexes Astro content during the integration hook.
+`,
+    );
+
+    await emitSoraneAstroArtifacts({
+      root,
+      site: { title: "S", description: "D" },
+      outputs: { catalog: false, llmsTxt: false, okfBundle: false, sitemap: false },
+    });
+    expect(existsSync(join(root, "dist", "assets", "search-index.json"))).toBe(false);
+
+    const result = await emitSoraneAstroArtifacts({
+      root,
+      outDir: join(root, "dist-search"),
+      site: { title: "S", description: "D", baseUrl: "https://example.dev" },
+      collections: { posts: "blog" },
+      outputs: {
+        catalog: false,
+        llmsTxt: false,
+        okfBundle: false,
+        sitemap: false,
+        search: true,
+      },
+      search: { force: true },
+    });
+
+    expect(result.files).toContain("assets/search-index.json");
+    expect(existsSync(join(root, "dist-search", "assets", "search-index.json"))).toBe(true);
+    const index = readFileSync(join(root, "dist-search", "assets", "search-index.json"), "utf8");
+    expect(index).toContain("blog/searchable.html");
+  });
+
   test("quality gate parity via validateSiteContent", async () => {
     const root = mkdtempSync(join(tmpdir(), "sorane-astro-quality-"));
     const posts = join(root, "src", "content", "posts");

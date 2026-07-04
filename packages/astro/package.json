@@ -35,6 +35,7 @@
   },
   "dependencies": {
     "@sorane/core": "0.4.0",
-    "@sorane/okf": "0.4.0"
+    "@sorane/okf": "0.4.0",
+    "@sorane/search": "0.4.0"
   }
 }
