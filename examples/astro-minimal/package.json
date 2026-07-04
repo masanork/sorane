@@ -1,0 +1,12 @@
+{
+  "name": "sorane-astro-minimal",
+  "private": true,
+  "type": "module",
+  "scripts": {
+    "build": "astro build"
+  },
+  "dependencies": {
+    "@sorane/astro": "file:../../packages/astro",
+    "astro": "^5.7.0"
+  }
+}

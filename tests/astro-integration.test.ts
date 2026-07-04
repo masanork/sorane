@@ -97,9 +97,259 @@ body
         validate: "error",
       });
     } catch (e) {
-      threw = e instanceof Error && e.message.includes("OKF validation");
+      threw = e instanceof Error && e.message.includes("content validation");
     }
 
+    expect(threw).toBe(true);
+  });
+
+  test("permalink:directory produces index.html paths", async () => {
+    const root = mkdtempSync(join(tmpdir(), "sorane-astro-dir-"));
+    const posts = join(root, "src", "content", "posts");
+    mkdirSync(posts, { recursive: true });
+    writeFileSync(
+      join(posts, "my-post.md"),
+      `---
+type: article
+title: Dir Post
+description: permalink test
+timestamp: 2026-07-04T00:00:00Z
+---
+body
+`,
+    );
+
+    const result = await emitSoraneAstroArtifacts({
+      root,
+      site: { title: "S", description: "D", baseUrl: "https://example.dev" },
+      permalink: "directory",
+      collections: { posts: "blog" },
+      outputs: { catalog: true, llmsTxt: false, okfBundle: false },
+    });
+
+    expect(result.concepts).toBe(1);
+    const catalog = readFileSync(join(root, "dist", "catalog.jsonld"), "utf8");
+    expect(catalog).toContain("https://example.dev/blog/my-post/index.html");
+  });
+
+  test("index.md at collection root maps to index.html", async () => {
+    const root = mkdtempSync(join(tmpdir(), "sorane-astro-idx-"));
+    const docs = join(root, "src", "content", "docs");
+    mkdirSync(docs, { recursive: true });
+    writeFileSync(
+      join(docs, "index.md"),
+      `---
+type: index
+title: Docs Index
+description: index page
+timestamp: 2026-07-04T00:00:00Z
+---
+body
+`,
+    );
+    writeFileSync(
+      join(docs, "guide.md"),
+      `---
+type: article
+title: Guide
+description: guide
+timestamp: 2026-07-04T00:00:00Z
+---
+body
+`,
+    );
+
+    const result = await emitSoraneAstroArtifacts({
+      root,
+      site: { title: "S", description: "D", baseUrl: "https://example.dev" },
+      collections: { docs: "docs" },
+      outputs: { catalog: true, sitemap: true, llmsTxt: false, okfBundle: false },
+    });
+
+    expect(result.concepts).toBe(2);
+    const catalog = readFileSync(join(root, "dist", "catalog.jsonld"), "utf8");
+    // index type は catalog.hasPart から除外される（sorane 本体と同じ）
+    expect(catalog).toContain("https://example.dev/docs/guide.html");
+    const sitemap = readFileSync(join(root, "dist", "sitemap.xml"), "utf8");
+    expect(sitemap).toContain("https://example.dev/docs/index.html");
+  });
+
+  test("nested subdirectory preserves path segments", async () => {
+    const root = mkdtempSync(join(tmpdir(), "sorane-astro-nest-"));
+    const nested = join(root, "src", "content", "docs", "api", "v2");
+    mkdirSync(nested, { recursive: true });
+    writeFileSync(
+      join(nested, "endpoints.md"),
+      `---
+type: reference
+title: API v2 Endpoints
+description: reference
+timestamp: 2026-07-04T00:00:00Z
+---
+body
+`,
+    );
+
+    const result = await emitSoraneAstroArtifacts({
+      root,
+      site: { title: "S", description: "D", baseUrl: "https://example.dev" },
+      outputs: { catalog: true, llmsTxt: false, okfBundle: false },
+    });
+
+    expect(result.concepts).toBe(1);
+    const catalog = readFileSync(join(root, "dist", "catalog.jsonld"), "utf8");
+    expect(catalog).toContain("https://example.dev/docs/api/v2/endpoints.html");
+  });
+
+  test("collection mapped to root (empty string) strips prefix", async () => {
+    const root = mkdtempSync(join(tmpdir(), "sorane-astro-rootmap-"));
+    const pages = join(root, "src", "content", "pages");
+    mkdirSync(pages, { recursive: true });
+    writeFileSync(
+      join(pages, "about.md"),
+      `---
+type: article
+title: About
+description: about page
+timestamp: 2026-07-04T00:00:00Z
+---
+body
+`,
+    );
+
+    const result = await emitSoraneAstroArtifacts({
+      root,
+      site: { title: "S", description: "D", baseUrl: "https://example.dev" },
+      collections: { pages: "" },
+      outputs: { catalog: true, llmsTxt: false, okfBundle: false },
+    });
+
+    expect(result.concepts).toBe(1);
+    const catalog = readFileSync(join(root, "dist", "catalog.jsonld"), "utf8");
+    expect(catalog).toContain("https://example.dev/about.html");
+  });
+
+  test("sitemap output is off by default and toggleable", async () => {
+    const root = fixtureRoot();
+
+    // Default: sitemap off
+    await emitSoraneAstroArtifacts({
+      root,
+      site: { title: "S", description: "D" },
+    });
+    expect(existsSync(join(root, "dist", "sitemap.xml"))).toBe(false);
+
+    // Explicitly enabled
+    const result = await emitSoraneAstroArtifacts({
+      root,
+      outDir: join(root, "dist2"),
+      site: { title: "S", description: "D", baseUrl: "https://example.dev" },
+      outputs: { sitemap: true, catalog: false, llmsTxt: false, okfBundle: false },
+    });
+    expect(result.files).toContain("sitemap.xml");
+    expect(existsSync(join(root, "dist2", "sitemap.xml"))).toBe(true);
+  });
+
+  test("missing content directory returns empty result without throwing", async () => {
+    const root = mkdtempSync(join(tmpdir(), "sorane-astro-empty-"));
+    const warnings: string[] = [];
+    const result = await emitSoraneAstroArtifacts({
+      root,
+      site: { title: "S", description: "D" },
+      logger: { warn: (m) => warnings.push(m) },
+    });
+
+    expect(result.concepts).toBe(0);
+    expect(result.files.length).toBe(0);
+    expect(warnings.some((w) => w.includes("content directory not found"))).toBe(true);
+  });
+
+  test("validate:warn collects warnings but does not throw", async () => {
+    const root = mkdtempSync(join(tmpdir(), "sorane-astro-warn-"));
+    const posts = join(root, "src", "content", "posts");
+    mkdirSync(posts, { recursive: true });
+    writeFileSync(
+      join(posts, "no-type.md"),
+      `---
+title: No Type Here
+---
+body
+`,
+    );
+
+    const warnings: string[] = [];
+    let threw = false;
+    try {
+      await emitSoraneAstroArtifacts({
+        root,
+        site: { title: "S", description: "D" },
+        validate: "warn",
+        logger: { warn: (m) => warnings.push(m) },
+      });
+    } catch {
+      threw = true;
+    }
+
+    expect(threw).toBe(false);
+    expect(warnings.some((w) => w.includes("content validation"))).toBe(true);
+  });
+
+  test("backend auto resolves to TypeScript", async () => {
+    const root = fixtureRoot();
+    const warnings: string[] = [];
+    const result = await emitSoraneAstroArtifacts({
+      root,
+      site: { title: "S", description: "D" },
+      backend: "auto",
+      validate: false,
+      logger: { warn: (m) => warnings.push(m) },
+    });
+    expect(result.concepts).toBe(1);
+    expect(warnings.some((w) => w.includes("not available yet"))).toBe(false);
+  });
+
+  test("backend wasm falls back to TypeScript with warning", async () => {
+    const root = fixtureRoot();
+    const warnings: string[] = [];
+    await emitSoraneAstroArtifacts({
+      root,
+      outDir: join(root, "dist-wasm"),
+      site: { title: "S", description: "D" },
+      backend: "wasm",
+      validate: false,
+      logger: { warn: (m) => warnings.push(m) },
+    });
+    expect(warnings.some((w) => w.includes('backend "wasm" is not available yet'))).toBe(true);
+  });
+
+  test("quality gate parity via validateSiteContent", async () => {
+    const root = mkdtempSync(join(tmpdir(), "sorane-astro-quality-"));
+    const posts = join(root, "src", "content", "posts");
+    mkdirSync(posts, { recursive: true });
+    writeFileSync(
+      join(posts, "bad-heading.md"),
+      `---
+type: article
+title: Bad Heading
+description: heading gate
+timestamp: 2026-07-04T00:00:00Z
+---
+
+### skipped level
+`,
+    );
+
+    let threw = false;
+    try {
+      await emitSoraneAstroArtifacts({
+        root,
+        site: { title: "S", description: "D" },
+        validate: "error",
+        quality: { heading: "error" },
+      });
+    } catch (e) {
+      threw = e instanceof Error && e.message.includes("content validation");
+    }
     expect(threw).toBe(true);
   });
 });

@@ -2,8 +2,12 @@ import {
   buildCatalogJsonLd,
   buildLlmsTxt,
   buildSitemapXml,
+  mergeConfig,
+  validateSiteContent,
   type CatalogEntry,
+  type OkfConfig,
   type SiteEntry,
+  type SoraneConfig,
 } from "@sorane/core";
 import {
   buildOkfBundle,
@@ -21,6 +25,11 @@ import {
 } from "node:fs";
 import { fileURLToPath } from "node:url";
 import { join, relative, resolve } from "node:path";
+import {
+  resolveSoraneAstroBackend,
+  type ResolvedSoraneAstroBackend,
+  type SoraneAstroBackend,
+} from "./backend.ts";
 
 type AstroLogger = {
   info?: (message: string) => void;
@@ -63,6 +72,12 @@ export interface SoraneAstroOptions {
   };
   /** Validate OKF frontmatter while emitting artifacts. Default: "warn". */
   readonly validate?: SoraneAstroValidateMode;
+  /** Quality gates aligned with `sorane validate` (heading, diagram alt, links, …). */
+  readonly quality?: SoraneConfig["build"]["quality"];
+  /** OKF profile defaults passed through to site validation. */
+  readonly okf?: OkfConfig;
+  /** Artifact backend. Only `ts` is implemented; `auto` falls back to TypeScript. */
+  readonly backend?: SoraneAstroBackend;
   readonly logger?: AstroLogger;
 }
 
@@ -166,15 +181,63 @@ function validateMode(options: SoraneAstroOptions): SoraneAstroValidateMode {
   return options.validate ?? "warn";
 }
 
-function formatValidationIssue(parsed: ParsedConcept): string[] {
-  const out: string[] = [];
-  for (const issue of parsed.validation.issues) {
-    out.push(`${parsed.relPath}: ${issue.message}`);
+function astroSoraneConfig(options: SoraneAstroOptions) {
+  const contentDir = options.contentDir ?? "src/content";
+  return mergeConfig({
+    site: {
+      title: options.site.title,
+      description: options.site.description,
+      base_url: options.site.baseUrl ?? "",
+    },
+    build: {
+      content_dir: contentDir,
+      ...(options.quality ? { quality: options.quality } : {}),
+    },
+    ...(options.okf ? { okf: options.okf } : {}),
+  } as Parameters<typeof mergeConfig>[0]);
+}
+
+function collectMdxValidation(parsed: ParsedConcept[]): {
+  errors: number;
+  warnings: number;
+  details: string[];
+} {
+  const details: string[] = [];
+  let errors = 0;
+  let warnings = 0;
+  for (const p of parsed) {
+    if (!/\.mdx$/i.test(p.relPath)) continue;
+    for (const issue of p.validation.issues) {
+      details.push(`${p.relPath}: ${issue.message}`);
+      errors++;
+    }
+    for (const warning of p.validation.warnings) {
+      details.push(`${p.relPath}: ${warning}`);
+      warnings++;
+    }
   }
-  for (const warning of parsed.validation.warnings) {
-    out.push(`${parsed.relPath}: ${warning}`);
-  }
-  return out;
+  return { errors, warnings, details };
+}
+
+function collectValidation(
+  root: string,
+  contentDir: string,
+  allParsed: ParsedConcept[],
+  options: SoraneAstroOptions,
+): { errors: number; warnings: number; details: string[] } {
+  const report = validateSiteContent(root, astroSoraneConfig(options));
+  const mdx = collectMdxValidation(allParsed);
+  const details = [
+    ...report.files.flatMap((f) =>
+      f.findings.map((finding) => `${f.file}: ${finding.message}`),
+    ),
+    ...mdx.details,
+  ];
+  return {
+    errors: report.error_count + mdx.errors,
+    warnings: report.warning_count + mdx.warnings,
+    details,
+  };
 }
 
 export async function emitSoraneAstroArtifacts(
@@ -185,6 +248,10 @@ export async function emitSoraneAstroArtifacts(
   const outDir = resolve(root, options.outDir ?? "dist");
   const outputs = defaultOutputs(options.outputs);
   const logger = options.logger;
+  const activeBackend: ResolvedSoraneAstroBackend = resolveSoraneAstroBackend(
+    options.backend,
+    logger,
+  );
 
   if (!existsSync(contentDir)) {
     logger?.warn?.(`[sorane/astro] content directory not found: ${contentDir}`);
@@ -209,22 +276,24 @@ export async function emitSoraneAstroArtifacts(
     };
   });
 
-  const validationErrors = allParsed.reduce(
-    (sum, p) => sum + p.validation.issues.length,
-    0,
-  );
-  const validationWarnings = allParsed.reduce(
-    (sum, p) => sum + p.validation.warnings.length,
-    0,
-  );
   const mode = validateMode(options);
-  if (mode !== false && validationErrors + validationWarnings > 0) {
-    const details = allParsed.flatMap(formatValidationIssue);
-    const message = `[sorane/astro] OKF validation found ${validationErrors} errors and ${validationWarnings} warnings\n${details.join("\n")}`;
-    if (mode === "error" && validationErrors > 0) {
-      throw new Error(message);
+  let validationErrors = 0;
+  let validationWarnings = 0;
+  if (mode !== false) {
+    const validation = collectValidation(root, contentDir, allParsed, options);
+    validationErrors = validation.errors;
+    validationWarnings = validation.warnings;
+    if (validationErrors + validationWarnings > 0) {
+      const message = `[sorane/astro] content validation found ${validationErrors} errors and ${validationWarnings} warnings\n${validation.details.join("\n")}`;
+      if (mode === "error" && validationErrors > 0) {
+        throw new Error(message);
+      }
+      logger?.warn?.(message);
     }
-    logger?.warn?.(message);
+  }
+
+  if (activeBackend !== "ts") {
+    throw new Error(`[sorane/astro] unsupported backend: ${activeBackend}`);
   }
 
   const files: string[] = [];
@@ -305,3 +374,8 @@ export default function soraneAstro(options: SoraneAstroOptions): AstroIntegrati
 }
 
 export { soraneAstro };
+export {
+  resolveSoraneAstroBackend,
+  type ResolvedSoraneAstroBackend,
+  type SoraneAstroBackend,
+} from "./backend.ts";
