@@ -21,6 +21,7 @@ All notable changes to sorane are documented here. Versioning follows [SemVer](h
 
 ### Added
 
+- **npm `sorane-astro-backend` bin** — prefers Rust JSON CLI when built; `SORANE_ASTRO_BACKEND_NATIVE=0` falls back to TypeScript (`packages/astro/src/backend-bin.ts`).
 - `buildSoraneAstroTsArtifacts` — TypeScript artifact build without validation (`backend-ts.ts` shrink).
 - `@sorane/search` `IndexStore` reads Rust `chunk_vectors` blobs for hybrid export and KNN when `vec_chunks` is absent.
 
@@ -28,6 +29,7 @@ All notable changes to sorane are documented here. Versioning follows [SemVer](h
 
 - README / `website/content/configuration.md` — native CLI hybrid routing and env opt-outs.
 - Documented f32 embedding parity between native ONNX and transformers.js; int8 web index SLA remains ≥ 0.95 cosine.
+- Astro CI job runs `tests/cli-direct.test.ts` (native index/search) after `cargo build` and `fetch-model`.
 
 ### Changed
 

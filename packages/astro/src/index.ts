@@ -127,6 +127,7 @@ export {
   collectSoraneAstroBackendFiles,
   resolveAstroPaths,
 } from "./collect-input.ts";
+export { runSoraneAstroBackendBin, resolveAstroBackendBinBackend } from "./backend-bin.ts";
 export { buildSoraneAstroTsArtifacts, runSoraneAstroTsBackend } from "./backend-ts.ts";
 export {
   resolveSoraneAstroCliBinary,

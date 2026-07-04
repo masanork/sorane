@@ -210,7 +210,7 @@ jobs:
         run: npm run fetch-model
 
       - name: Astro unit + smoke tests
-        run: node --test tests/astro-backend-contract.test.ts tests/astro-backend-parity.test.ts tests/astro-backend-native-parity.test.ts tests/astro-backend-validation-parity.test.ts tests/astro-backend-cli.test.ts tests/astro-backend-ts.test.ts tests/astro-route-loader.test.ts tests/astro-integration.test.ts tests/astro-smoke.test.ts
+        run: node --test tests/astro-backend-contract.test.ts tests/astro-backend-parity.test.ts tests/astro-backend-native-parity.test.ts tests/astro-backend-validation-parity.test.ts tests/astro-backend-cli.test.ts tests/astro-backend-ts.test.ts tests/astro-route-loader.test.ts tests/astro-integration.test.ts tests/astro-smoke.test.ts tests/cli-direct.test.ts
 
   image-metadata:
     runs-on: ubuntu-latest

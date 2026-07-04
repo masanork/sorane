@@ -121,7 +121,7 @@ soraneAstro({
 | `SORANE_INDEX_NATIVE=0` | TS `search-backend` / `sorane index` の索引を `@sorane/search` のみに固定 |
 | `SORANE_EMBED_NATIVE=0` | ブラウザ外のクエリ埋め込みを transformers.js のみに固定（CLI） |
 
-リポジトリ開発時は `cargo build --manifest-path rust/sorane-astro-backend/Cargo.toml` でネイティブ CLI を生成します。WASM は `npm run build:astro-backend-wasm`（`@sorane/astro-backend-wasm`）で再ビルドできます。
+リポジトリ開発時は `cargo build --manifest-path rust/sorane-astro-backend/Cargo.toml` でネイティブ CLI を生成します。npm の `sorane-astro-backend` コマンド（`@sorane/astro` パッケージ）も、バイナリがあれば Rust を優先し、無ければインライン TypeScript にフォールバックします。WASM は `npm run build:astro-backend-wasm`（`@sorane/astro-backend-wasm`）で再ビルドできます。
 
 ### 検索（`outputs.search`）
 

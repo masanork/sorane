@@ -6,6 +6,8 @@ import { describe, expect, test } from "./_expect.ts";
 import {
   buildSoraneAstroBackendInput,
   collectSoraneAstroBackendFiles,
+  resolveAstroBackendBinBackend,
+  runSoraneAstroBackendBin,
   runSoraneAstroCliBackend,
   soraneAstroCliAvailable,
 } from "../packages/astro/src/index.ts";
@@ -52,5 +54,57 @@ timestamp: 2026-07-04T00:00:00Z
     const bundle = output.artifacts.find((a) => a.path === "okf/bundle.tar.gz");
     const tar = gunzipSync(Buffer.from(String(bundle?.content), "base64"));
     expect(tar.toString("utf8")).toContain("article/posts-hello.md");
+  });
+
+  test("npm bin entry prefers native when binary is built", async (t) => {
+    if (!soraneAstroCliAvailable()) return t.skip("sorane-astro-backend CLI not built");
+
+    const root = mkdtempSync(join(tmpdir(), "sorane-astro-bin-"));
+    const contentDir = join(root, "src", "content");
+    mkdirSync(join(contentDir, "posts"), { recursive: true });
+    writeFileSync(
+      join(contentDir, "posts", "bin.md"),
+      "---\ntype: article\ntitle: Bin\n---\n\nBin entry routes to native when the Rust CLI is built.\n",
+    );
+    const paths = { root, contentDir, outDir: join(root, "dist") };
+    const input = buildSoraneAstroBackendInput(
+      { site: { title: "Bin", description: "d" }, validate: false },
+      paths,
+      collectSoraneAstroBackendFiles(contentDir),
+    );
+
+    expect(resolveAstroBackendBinBackend(root)).toBe("cli");
+    const output = await runSoraneAstroBackendBin(input);
+    expect(output.concepts).toBe(1);
+    expect(output.artifacts.some((a) => a.path === "catalog.jsonld")).toBe(true);
+  });
+
+  test("npm bin entry uses TypeScript when SORANE_ASTRO_BACKEND_NATIVE=0", async () => {
+    if (!soraneAstroCliAvailable()) return;
+
+    const root = mkdtempSync(join(tmpdir(), "sorane-astro-bin-ts-"));
+    const contentDir = join(root, "src", "content");
+    mkdirSync(join(contentDir, "posts"), { recursive: true });
+    writeFileSync(
+      join(contentDir, "posts", "ts.md"),
+      "---\ntype: article\ntitle: TS Bin\n---\n\nTypeScript fallback for npm bin when native is opted out.\n",
+    );
+    const paths = { root, contentDir, outDir: join(root, "dist") };
+    const input = buildSoraneAstroBackendInput(
+      { site: { title: "TS Bin", description: "d" }, validate: false },
+      paths,
+      collectSoraneAstroBackendFiles(contentDir),
+    );
+
+    const prev = process.env.SORANE_ASTRO_BACKEND_NATIVE;
+    process.env.SORANE_ASTRO_BACKEND_NATIVE = "0";
+    try {
+      expect(resolveAstroBackendBinBackend(root)).toBe("ts");
+      const output = await runSoraneAstroBackendBin(input);
+      expect(output.concepts).toBe(1);
+    } finally {
+      if (prev === undefined) delete process.env.SORANE_ASTRO_BACKEND_NATIVE;
+      else process.env.SORANE_ASTRO_BACKEND_NATIVE = prev;
+    }
   });
 });

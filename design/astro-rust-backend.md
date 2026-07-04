@@ -131,7 +131,7 @@ Route loader + MDX gates + Rust CLI scaffold (done):
 TS/CLI parity + DCAT (done):
 
 1. `outputs.dcatCatalog` / `openData.dcatCatalog` emit `catalog-dcat.jsonld`.
-2. `bin/sorane-astro-backend.mjs` (npm) runs inline TypeScript for external subprocess use.
+2. `bin/sorane-astro-backend.mjs` (npm) prefers the Rust CLI when built; falls back to inline TypeScript for external subprocess use.
 
 Native Rust backend parity (done):
 
@@ -216,7 +216,7 @@ The inline TypeScript artifact backend remains supported. Do not remove it until
 2. ~~WASM hybrid or a documented WASM limitation is accepted in docs/CI~~ (FTS-only; documented above and in `website/content/astro-integration.md`).
 3. ~~Integration-layer validation policy is fixed (TS-only vs native)~~ (integration TS-only gate; backends `validate: false`; standalone native parity tested).
 
-Current shrink steps (in progress):
+Current shrink steps (done):
 
 1. ~~Remove dead Node `embed-batch.mjs` bridge~~ (removed; native uses `search_ruri.rs`).
 2. CI job `astro-ts-fallback` runs `tests/astro-backend-ts-fallback.test.ts` **without** `cargo build` to guard `backend: "ts"` and `SORANE_ASTRO_BACKEND_NATIVE=0` resolution.
@@ -226,6 +226,13 @@ Current shrink steps (in progress):
 6. ~~Astro TS `search-backend.ts` native index~~ — when the native CLI is built, `buildSearchArtifacts` uses `sorane-astro-backend index` before falling back to `@sorane/search` (`SORANE_INDEX_NATIVE=0` opts out).
 7. ~~`buildSoraneAstroTsArtifacts` split~~ — artifact build without validation; integration calls `validate: false` on backends (`backend-ts.ts`).
 8. ~~Native `chunk_vectors` interop~~ — `@sorane/search` `IndexStore` reads Rust-native SQLite vector blobs for `deriveWebIndex` and `sorane search` hybrid KNN.
+9. ~~npm `sorane-astro-backend` bin~~ — `packages/astro/bin/sorane-astro-backend.mjs` prefers the Rust CLI when built (`SORANE_ASTRO_BACKEND_NATIVE=0` → TypeScript).
+
+### Phase 3 (next)
+
+1. CI: Astro job runs `tests/cli-direct.test.ts` with `cargo build` + `fetch-model` (native `sorane index` / `search` guards).
+2. Optional int8 `search-index.json` parity tightening (beyond cosine ≥ 0.95); f32 ONNX already matches transformers.js.
+3. Long-term: reduce inline TS artifact backend surface (`backend-ts.ts`) once npm consumers standardize on the Rust bin; keep integration-layer TS validation.
 
 ### Native `sorane index` contract
 
