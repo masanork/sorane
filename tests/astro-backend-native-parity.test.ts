@@ -156,4 +156,69 @@ indexed in FTS mode for native and TypeScript backend parity comparison.
       ),
     ).toBe(true);
   });
+
+  test("native hybrid without model falls back to FTS search index", async (t) => {
+    if (!soraneAstroNativeCliAvailable()) {
+      t.skip("sorane-astro-backend native binary not built");
+      return;
+    }
+
+    const root = mkdtempSync(join(tmpdir(), "sorane-astro-native-hybrid-fallback-"));
+    const contentDir = join(root, "src", "content");
+    const posts = join(contentDir, "posts");
+    mkdirSync(posts, { recursive: true });
+    writeFileSync(
+      join(posts, "findme.md"),
+      `---
+type: article
+title: Find Me
+description: hybrid fallback
+timestamp: 2026-07-04T00:00:00Z
+---
+
+# Find Me
+
+This article has enough body text to produce at least one search chunk when
+indexed in FTS-only fallback mode without a hybrid embedding model directory.
+`,
+    );
+    const paths = { root, contentDir, outDir: join(root, "dist") };
+    const files = collectSoraneAstroBackendFiles(contentDir);
+    const input = buildSoraneAstroBackendInput(
+      {
+        site: { title: "Parity", description: "parity" },
+        collections: { posts: "blog" },
+        validate: false,
+        outputs: {
+          catalog: false,
+          llmsTxt: false,
+          okfBundle: false,
+          search: true,
+        },
+        search: { mode: "hybrid", force: true, modelRoot: "vendor/missing-models" },
+      },
+      paths,
+      files,
+    );
+
+    const ts = await runSoraneAstroTsBackend(input);
+    const { runSoraneAstroCliBackend } = await import("../packages/astro/src/backend-cli.ts");
+    const native = runSoraneAstroCliBackend(input);
+
+    const tsArtifact = ts.artifacts.find((a) => a.path === "assets/search-index.json");
+    const nativeArtifact = native.artifacts.find((a) => a.path === "assets/search-index.json");
+    expect(tsArtifact !== undefined).toBe(true);
+    expect(nativeArtifact !== undefined).toBe(true);
+    const tsIndex = JSON.parse(tsArtifact?.content ?? "{}") as { mode?: string };
+    const nativeIndex = JSON.parse(nativeArtifact?.content ?? "{}") as { mode?: string };
+    expect(tsIndex.mode).toBe("fts");
+    expect(nativeIndex.mode).toBe("fts");
+    expect(
+      artifactContentEqual(
+        "assets/search-index.json",
+        tsArtifact?.content ?? "",
+        nativeArtifact?.content ?? "",
+      ),
+    ).toBe(true);
+  });
 });

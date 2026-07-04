@@ -4,6 +4,12 @@ mod config_security;
 mod heading_slug;
 mod search;
 mod search_chunker;
+#[cfg(not(target_arch = "wasm32"))]
+mod search_build;
+#[cfg(not(target_arch = "wasm32"))]
+mod search_embed;
+#[cfg(not(target_arch = "wasm32"))]
+mod search_store;
 mod content_quality;
 mod diagram;
 mod directory_index;
@@ -178,6 +184,8 @@ struct BackendInput {
     image_metadata: Option<BackendImageMetadata>,
     #[serde(default)]
     c2pa: Option<BackendC2pa>,
+    #[serde(default)]
+    search: Option<search::BackendSearchInput>,
 }
 
 #[derive(Debug, Serialize)]
@@ -1226,9 +1234,14 @@ pub fn run_backend(input: BackendInput) -> Result<BackendOutput, String> {
             .map(|f| (f.rel_path.as_str(), f.source.as_str()))
             .collect();
         let permalink = input.permalink.as_deref().unwrap_or("html");
-        if let Some(content) =
-            search::build_search_index_json(&file_refs, permalink, &input.collections)
-        {
+        let (content, _) = search::build_search_index_json(
+            &input.root,
+            &file_refs,
+            permalink,
+            &input.collections,
+            input.search.as_ref(),
+        );
+        if let Some(content) = content {
             artifacts.push(BackendArtifact {
                 path: "assets/search-index.json".to_string(),
                 kind: "text".to_string(),

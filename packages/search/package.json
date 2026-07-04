@@ -13,7 +13,8 @@
   "bugs": "https://github.com/masanork/sorane/issues",
   "files": [
     "src",
-    "assets"
+    "assets",
+    "scripts"
   ],
   "exports": {
     ".": "./src/index.ts"
