@@ -177,13 +177,44 @@ Accepted parity for CI and releases:
 
 Tightening to bit-identical hybrid JSON is a future optimization (3D mean-pooling / ONNX output alignment), not a blocker for native-default Astro builds.
 
+## WASM hybrid policy
+
+`@sorane/astro-backend-wasm` (wasm32) implements **FTS-only** `assets/search-index.json`. There is no `ort` / ONNX on wasm32; hybrid vectors are not produced by the WASM artifact backend.
+
+Accepted product behavior:
+
+- **`backend: "wasm"`** — FTS search JSON for agent-readable export; no hybrid index in WASM.
+- **Browser hybrid** — still `@sorane/search` client (`search.mjs`) with optional model vendoring from the integration layer; unrelated to WASM backend vectors.
+- **CI** — WASM job does not fetch ruri model; native CLI job does (`fetch-model`).
+
+This is intentional; do not block TS backend removal on WASM hybrid.
+
+## Validation policy (Astro integration)
+
+**Decision:** the Astro integration layer owns content validation; artifact backends do not re-validate during `emitSoraneAstroArtifacts`.
+
+| Context | Validator | When |
+|---------|-----------|------|
+| `emitSoraneAstroArtifacts` | TypeScript `validateSiteContent` via `collectBackendValidation` | Always (unless `validate: false`) |
+| `runSoraneAstroBackend` from integration | `validate: false` on backend input | Always — avoids duplicate work |
+| `sorane-astro-backend` CLI / JSON API (standalone) | Rust `validate` module | When `validate` ≠ `off` in input |
+| `runSoraneAstroTsBackend` (direct API) | TS `collectBackendValidation` | When caller passes `validate` ≠ `false` |
+
+Enforcement:
+
+- `packages/astro/src/index.ts` — integration validation → policy → backend with `validate: false`.
+- `tests/astro-integration.test.ts` — native backend still surfaces integration-layer warnings (e.g. image alt).
+- `tests/astro-backend-validation-parity.test.ts` — native vs TS validation counts when backends run standalone with `validate: "warn"`.
+
+Do not move Astro build gates to Rust until parity tests cover any new rules. Removing the TS artifact backend does **not** require removing integration-layer TS validation.
+
 ## TypeScript backend retention
 
 The inline TypeScript artifact backend remains supported. Do not remove it until all of the following are true:
 
 1. ~~`sorane index` / `sorane search` can use native embeddings~~ (done when CLI is built; TS path remains fallback).
-2. WASM hybrid or a documented WASM limitation is accepted in docs/CI.
-3. Integration-layer validation policy is fixed (TS-only vs native).
+2. ~~WASM hybrid or a documented WASM limitation is accepted in docs/CI~~ (FTS-only; documented above and in `website/content/astro-integration.md`).
+3. ~~Integration-layer validation policy is fixed (TS-only vs native)~~ (integration TS-only gate; backends `validate: false`; standalone native parity tested).
 
 Current shrink steps (in progress):
 

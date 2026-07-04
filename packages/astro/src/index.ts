@@ -59,6 +59,8 @@ export async function emitSoraneAstroArtifacts(
   const files = collectSoraneAstroBackendFiles(paths.contentDir);
   const input = buildSoraneAstroBackendInput(options, paths, files, routePlan);
   const validation = collectBackendValidation(input, options.validate ?? "warn");
+  // Validation policy: integration-layer TS gate only; artifact backends always validate: false
+  // (design/astro-rust-backend.md — "Validation policy (Astro integration)").
   let output = await runSoraneAstroBackend(resolved, { ...input, validate: false });
 
   if (

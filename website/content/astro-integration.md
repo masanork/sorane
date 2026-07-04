@@ -114,15 +114,36 @@ soraneAstro({
 
 環境変数:
 
-- `SORANE_ASTRO_BACKEND_NATIVE=0` — ネイティブ CLI を無効化（`backend: "ts"` を使う）
-- `SORANE_ASTRO_BACKEND_CLI` — ネイティブバイナリのパスを上書き
+| 変数 | 効果 |
+|------|------|
+| `SORANE_ASTRO_BACKEND_NATIVE=0` | ネイティブ artifact backend を無効化（`backend: "ts"` 相当） |
+| `SORANE_ASTRO_BACKEND_CLI` | ネイティブバイナリのパスを上書き |
+| `SORANE_INDEX_NATIVE=0` | TS `search-backend` / `sorane index` の索引を `@sorane/search` のみに固定 |
+| `SORANE_EMBED_NATIVE=0` | ブラウザ外のクエリ埋め込みを transformers.js のみに固定（CLI） |
 
 リポジトリ開発時は `cargo build --manifest-path rust/sorane-astro-backend/Cargo.toml` でネイティブ CLI を生成します。WASM は `npm run build:astro-backend-wasm`（`@sorane/astro-backend-wasm`）で再ビルドできます。
+
+### 検索（`outputs.search`）
+
+| backend | hybrid 索引 | クエリ埋め込み（CLI） |
+|---------|-------------|------------------------|
+| ネイティブ CLI（`auto` / `cli`） | Rust ONNX（`search_ruri.rs`） | —（artifact のみ） |
+| TS `search-backend`（フォールバック） | ネイティブ `index` 優先 → 無ければ `@sorane/search` | — |
+| WASM | **FTS のみ**（wasm32 に ort なし） | — |
+| `sorane search`（ローカル試行） | 索引に依存 | ネイティブ `embed` 優先 → 無ければ transformers.js |
+
+ハイブリッドには `onnx/model_quantized.onnx` と `tokenizer.json` が必要です。モデルが無い場合は FTS-only にフォールバックします。
+
+## コンテンツ検証
+
+Astro 統合（`emitSoraneAstroArtifacts`）では **TypeScript の `validateSiteContent` が唯一のゲート** です。`validate: "warn"` / `"error"` はこの層だけが解釈し、artifact backend（ネイティブ / WASM / TS）は常に `validate: false` で呼ばれます（重複検証なし）。
+
+ネイティブ Rust backend 単体（`sorane-astro-backend` を JSON で直接実行）では Rust 側 validation も利用できます。CI の parity テスト（`tests/astro-backend-validation-parity.test.ts`）で TS と件数一致を監視しています。
 
 ## 制限（現時点）
 
 - ルート検出は `getCollection()` の静的解析ベースで、動的ルートすべてをカバーしません。
-- コンテンツ検証は統合層が常に TypeScript の `validateSiteContent` を実行します（`backend: "auto"` でもネイティブと同じゲート）。artifact backend は `validate: false` で呼ばれ、重複検証しません。
-- ネイティブ Rust backend の validation: Phase A–D + `validateConfigSecurity`（緊急バナー URL、カスタムバイナリ拒否）。統合層は引き続き常に TypeScript の `validateSiteContent` を実行します。
-- `outputs.search` は backend contract 経由（`assets/search-index.json` を artifact として返す）。`search.mjs` 等の companion は書き出し後にコピーされます。ネイティブ CLI は FTS + hybrid（SQLite 増分索引、埋め込みは pure-Rust ONNX / ruri-v3-30m）を実装済み。`backend: "ts"` や `sorane index` の hybrid は引き続き `@sorane/search`（transformers.js）を使います。WASM は FTS のみ。
+- **WASM hybrid 非対応**: `@sorane/astro-backend-wasm` は FTS 検索 JSON のみ。ブラウザ hybrid（`search.mjs`）は別途 `@sorane/search` + モデル vendoring が必要です。
+- `outputs.search` の companion（`search.mjs`、hybrid 時の `models/`）は dist 書き出し後にコピーされます。
+
 設計の詳細はリポジトリ内 `design/astro-rust-backend.md` を参照してください。

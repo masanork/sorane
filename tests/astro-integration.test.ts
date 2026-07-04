@@ -330,6 +330,78 @@ timestamp: 2026-07-04T00:00:00Z
     expect(warnings.some((w) => w.includes("image missing alt text"))).toBe(true);
   });
 
+  test("validate:false skips integration validation", async () => {
+    const root = mkdtempSync(join(tmpdir(), "sorane-astro-no-val-"));
+    const posts = join(root, "src", "content", "posts");
+    mkdirSync(posts, { recursive: true });
+    writeFileSync(
+      join(posts, "img.md"),
+      `---
+type: article
+title: No Validate
+timestamp: 2026-07-04T00:00:00Z
+---
+
+![](assets/photo.png)
+`,
+    );
+
+    const result = await emitSoraneAstroArtifacts({
+      root,
+      site: { title: "S", description: "D" },
+      validate: false,
+    });
+
+    expect(result.validationErrors).toBe(0);
+    expect(result.validationWarnings).toBe(0);
+  });
+
+  test("integration validation is not duplicated by native backend", async (t) => {
+    const { runSoraneAstroCliBackend, soraneAstroNativeCliAvailable } = await import(
+      "../packages/astro/src/backend-cli.ts"
+    );
+    const { buildSoraneAstroBackendInput, collectSoraneAstroBackendFiles } = await import(
+      "../packages/astro/src/index.ts"
+    );
+    if (!soraneAstroNativeCliAvailable()) {
+      t.skip("sorane-astro-backend native binary not built");
+      return;
+    }
+
+    const root = mkdtempSync(join(tmpdir(), "sorane-astro-val-dedup-"));
+    const posts = join(root, "src", "content", "posts");
+    mkdirSync(posts, { recursive: true });
+    writeFileSync(
+      join(posts, "img.md"),
+      `---
+type: article
+title: Dedup
+timestamp: 2026-07-04T00:00:00Z
+---
+
+![](assets/photo.png)
+`,
+    );
+
+    const files = collectSoraneAstroBackendFiles(join(root, "src", "content"));
+    const input = buildSoraneAstroBackendInput(
+      { site: { title: "S", description: "D" }, validate: "warn" },
+      { root, contentDir: join(root, "src", "content"), outDir: join(root, "dist") },
+      files,
+    );
+
+    const standalone = runSoraneAstroCliBackend(input);
+    expect(standalone.validationWarnings).toBe(1);
+
+    const integrated = await emitSoraneAstroArtifacts({
+      root,
+      site: { title: "S", description: "D" },
+      backend: "cli",
+      validate: "warn",
+    });
+    expect(integrated.validationWarnings).toBe(1);
+  });
+
   test("backend auto prefers native CLI when built", async () => {
     const root = fixtureRoot();
     const warnings: string[] = [];

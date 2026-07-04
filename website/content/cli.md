@@ -99,16 +99,34 @@ npx @sorane/cli migrate [--cwd <dir>] [--dry-run] [--bump-profile 0.2|0.3]
 npx @sorane/cli index [--cwd <dir>] [--force] [--hybrid] [--fts-only] [--yes]
 ```
 
-要 `@sorane/search`（未導入時は上記オプショナルパッケージの案内）。
+要 `@sorane/search`（未導入時は上記オプショナルパッケージの案内）。リポジトリ開発時や `cargo build` 済み環境では、ネイティブ Rust CLI（`sorane-astro-backend index`）を優先し、埋め込みは pure-Rust ONNX（ruri-v3-30m）を使います。バイナリが無い場合は `@sorane/search`（transformers.js）にフォールバックします。
 
-ハイブリッド（experimental）を使う場合は `search.mode: hybrid` または `--hybrid` と、先に `npm run fetch-model` で ruri-v3-30m を取得してください。
+ハイブリッド（experimental）を使う場合は `search.mode: hybrid` または `--hybrid` と、先に `npm run fetch-model` で ruri-v3-30m を取得してください（`vendor/models/ruri-v3-30m/onnx/model_quantized.onnx` と `tokenizer.json` が必要です）。
 
 ## sorane search
 
 ローカルで検索を試します。
 
 ```bash
-npx @sorane/cli search <query> [--cwd <dir>] [--type article|dataset|reference|glossary|glossary-term|faq] [--tag <slug>] [--k 10] [--json] [--yes]
+npx @sorane/cli search <query> [--cwd <dir>] [--type article|dataset|reference|glossary|glossary-term|faq] [--tag <slug>] [--k 10] [--json] [--fts-only] [--yes]
 ```
 
-要 `@sorane/search`。
+要 `@sorane/search`。ハイブリッド索引があるとき、クエリ埋め込みもネイティブ ONNX を優先します（ビルド済みかつモデルあり）。FTS のみの索引では `--fts-only` 不要（ベクトル列が無ければ自動で FTS のみ）。
+
+## ネイティブ Rust バックエンド（CLI）
+
+`rust/sorane-astro-backend` をビルドすると、`sorane index` / `sorane search` が TypeScript より先にネイティブ経路を試します。
+
+```bash
+cargo build --manifest-path rust/sorane-astro-backend/Cargo.toml
+```
+
+| 環境変数 | 効果 |
+|----------|------|
+| `SORANE_INDEX_NATIVE=0` | `sorane index` を `@sorane/search` のみに固定 |
+| `SORANE_EMBED_NATIVE=0` | `sorane search` のクエリ埋め込みを transformers.js のみに固定 |
+| `SORANE_ASTRO_BACKEND_CLI` | ネイティブバイナリのパスを上書き（index / embed / Astro backend 共通） |
+| `SORANE_INDEX_NATIVE_CLI` | `sorane index` 用バイナリパス（`SORANE_ASTRO_BACKEND_CLI` より優先されない） |
+| `SORANE_EMBED_NATIVE_CLI` | `sorane search` 用バイナリパス |
+
+モデルが無い・不完全な場合は FTS-only にフォールバックし、ビルドは続行します。
