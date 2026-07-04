@@ -192,6 +192,7 @@ Current shrink steps (in progress):
 3. Hybrid SLA documented above (≥ 0.95 cosine); native parity tests enforce it.
 4. ~~`sorane index` via native CLI~~ — `sorane-astro-backend index` JSON subcommand; `packages/cli/src/index-cmd.ts` prefers native when built (`SORANE_INDEX_NATIVE=0` opts out).
 5. ~~`sorane search` query embed via native CLI~~ — `sorane-astro-backend embed` JSON subcommand; `packages/cli/src/search-cmd.ts` prefers native when built (`SORANE_EMBED_NATIVE=0` opts out). Query prefix (`検索クエリ: `) is applied by `@sorane/search` before calling the provider, same as TypeScript.
+6. ~~Astro TS `search-backend.ts` native index~~ — when the native CLI is built, `buildSearchArtifacts` uses `sorane-astro-backend index` before falling back to `@sorane/search` (`SORANE_INDEX_NATIVE=0` opts out).
 
 ### Native `sorane index` contract
 

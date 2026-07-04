@@ -11,6 +11,7 @@ All notable changes to sorane are documented here. Versioning follows [SemVer](h
 - **Astro TS fallback CI guard** — job `astro-ts-fallback` runs `tests/astro-backend-ts-fallback.test.ts` without building the native CLI.
 - **Native `sorane index`** — `sorane-astro-backend index` subcommand; `@sorane/cli` `index` prefers native when built (`SORANE_INDEX_NATIVE=0` opts out).
 - **Native `sorane search` query embed** — `sorane-astro-backend embed` subcommand; `@sorane/cli` `search` prefers native ONNX for hybrid query vectors when built (`SORANE_EMBED_NATIVE=0` opts out).
+- **Astro TS search fallback** — `packages/astro/src/search-backend.ts` prefers native `index` when the CLI is built (`SORANE_INDEX_NATIVE=0` opts out); companion assets use ONNX presence for hybrid vendoring.
 
 ### Changed
 

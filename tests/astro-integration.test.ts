@@ -408,6 +408,52 @@ This article has enough body text to produce at least one search chunk when
     expect(index).toContain("blog/searchable.html");
   });
 
+  test("search-backend prefers native index when CLI is built", async (t) => {
+    const { soraneAstroNativeCliAvailable } = await import(
+      "../packages/astro/src/backend-cli.ts"
+    );
+    const { buildSearchArtifacts } = await import("../packages/astro/src/search-backend.ts");
+    const { SORANE_ASTRO_BACKEND_SCHEMA_VERSION } = await import(
+      "../packages/astro/src/contract.ts"
+    );
+    if (!soraneAstroNativeCliAvailable()) {
+      t.skip("sorane-astro-backend native binary not built");
+      return;
+    }
+
+    const root = mkdtempSync(join(tmpdir(), "sorane-astro-native-search-"));
+    const contentDir = join(root, "src", "content", "posts");
+    mkdirSync(contentDir, { recursive: true });
+    const source = `---
+type: article
+title: Native Search Index
+timestamp: 2026-07-04T00:00:00Z
+---
+
+Enough body text for native search index path via Astro search-backend fallback.
+`;
+    writeFileSync(join(contentDir, "native-index.md"), source, "utf8");
+
+    const infos: string[] = [];
+    const artifacts = await buildSearchArtifacts(
+      {
+        schema_version: SORANE_ASTRO_BACKEND_SCHEMA_VERSION,
+        root,
+        contentDir: join(root, "src", "content"),
+        outDir: join(root, "dist"),
+        site: { title: "S", description: "D", baseUrl: "https://example.dev" },
+        files: [{ relPath: "posts/native-index.md", source }],
+        collections: { posts: "blog" },
+        outputs: { search: true },
+        search: { force: true },
+      },
+      { info: (m) => infos.push(m) },
+    );
+
+    expect(artifacts.some((a) => a.path === "assets/search-index.json")).toBe(true);
+    expect(infos.some((m) => m.includes("(native)"))).toBe(true);
+  });
+
   test("dcat catalog output when openData.dcatCatalog is enabled", async () => {
     const root = mkdtempSync(join(tmpdir(), "sorane-astro-dcat-"));
     const data = join(root, "src", "content", "data");

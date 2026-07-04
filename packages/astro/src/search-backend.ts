@@ -7,6 +7,11 @@ import type {
   SoraneAstroBackendInput,
 } from "./contract.ts";
 import type { AstroLogger } from "./options.ts";
+import {
+  nativeHybridModelAvailable,
+  runNativeSearchIndex,
+  soraneAstroNativeIndexAvailable,
+} from "./native-search-index.ts";
 import { htmlRelForContent } from "./routes.ts";
 import type { SoraneAstroSearchConfig } from "./search.ts";
 
@@ -35,26 +40,49 @@ export async function buildSearchArtifacts(
     const mode = search?.mode ?? "fts";
     const modelRoot = resolve(input.root, search?.modelRoot ?? "vendor/models");
     const modelId = search?.modelId ?? "ruri-v3-30m";
+    const hybrid = mode === "hybrid";
+    let indexMode: "hybrid" | "fts" = hybrid ? "hybrid" : "fts";
 
-    let embeddings = null;
-    if (mode === "hybrid") {
-      const modelDir = resolve(modelRoot, modelId);
-      if (!existsSync(modelDir)) {
-        logger?.warn?.(
-          `[sorane/astro] hybrid search model not found at ${modelDir}; indexing FTS-only`,
-        );
-      } else {
-        embeddings = new RuriEmbeddings({ modelRoot, modelId });
+    if (soraneAstroNativeIndexAvailable(input.root)) {
+      const native = runNativeSearchIndex(
+        {
+          root: input.root,
+          contentDir: input.contentDir,
+          indexPath,
+          force: search?.force ?? false,
+          hybrid,
+          modelRoot: search?.modelRoot ?? "vendor/models",
+          modelId,
+        },
+        (stderr) => logger?.warn?.(stderr.trimEnd()),
+      );
+      indexMode = native.mode === "hybrid" ? "hybrid" : "fts";
+      log(
+        `indexed ${native.chunks} chunk(s) [${native.mode}] (native) ` +
+          `added=${native.added} changed=${native.changed} removed=${native.removed}`,
+      );
+    } else {
+      let embeddings = null;
+      if (hybrid) {
+        const modelDir = resolve(modelRoot, modelId);
+        if (!existsSync(modelDir)) {
+          logger?.warn?.(
+            `[sorane/astro] hybrid search model not found at ${modelDir}; indexing FTS-only`,
+          );
+        } else {
+          embeddings = new RuriEmbeddings({ modelRoot, modelId });
+        }
       }
-    }
 
-    await buildSearchIndex({
-      contentDir: input.contentDir,
-      indexPath,
-      force: search?.force ?? false,
-      embeddings,
-      onProgress: log,
-    });
+      await buildSearchIndex({
+        contentDir: input.contentDir,
+        indexPath,
+        force: search?.force ?? false,
+        embeddings,
+        onProgress: log,
+      });
+      indexMode = embeddings ? "hybrid" : "fts";
+    }
 
     const tmpDir = mkdtempSync(join(tmpdir(), "sorane-search-artifact-"));
     try {
@@ -63,7 +91,7 @@ export async function buildSearchArtifacts(
         indexPath,
         tmpIndex,
         (source) => sourceToUrl(input, source),
-        embeddings ? "hybrid" : "fts",
+        indexMode,
         { contentDir: input.contentDir },
       );
       if (!webIdx.written) {
@@ -112,7 +140,7 @@ export async function writeSearchCompanionAssets(
 
     if (copySearchScript(outDir)) files.push("assets/search.mjs");
 
-    if (mode === "hybrid" && existsSync(resolve(modelRoot, modelId))) {
+    if (mode === "hybrid" && nativeHybridModelAvailable(modelRoot, modelId)) {
       if (vendorModel(modelRoot, modelId, outDir)) files.push(`models/${modelId}`);
       if (vendorRuntime(outDir)) files.push("assets/search/lib");
     }
