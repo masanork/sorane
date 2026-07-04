@@ -9,6 +9,8 @@ mod search_build;
 #[cfg(not(target_arch = "wasm32"))]
 mod search_embed;
 #[cfg(not(target_arch = "wasm32"))]
+mod search_ruri;
+#[cfg(not(target_arch = "wasm32"))]
 mod search_store;
 mod content_quality;
 mod diagram;

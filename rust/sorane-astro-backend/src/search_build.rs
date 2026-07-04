@@ -1,5 +1,5 @@
 use crate::search_chunker::chunk_document;
-use crate::search_embed::{embed_batch, model_available, EmbedMeta};
+use crate::search_embed::{embed_batch, model_available, EmbedMeta, DOC_PREFIX};
 use crate::search_store::{hash_content, IndexMeta, IndexStore};
 use std::collections::HashMap;
 use std::path::Path;
@@ -100,7 +100,10 @@ pub fn build_search_index(
             continue;
         }
         let vectors = if hybrid_enabled {
-            let texts: Vec<String> = chunks.iter().map(|c| c.text.clone()).collect();
+            let texts: Vec<String> = chunks
+                .iter()
+                .map(|c| format!("{DOC_PREFIX}{}", c.text))
+                .collect();
             let (vecs, meta) = embed_batch(cfg.root, cfg.model_root, cfg.model_id, &texts)?;
             if embed_meta.is_none() {
                 embed_meta = Some(meta);

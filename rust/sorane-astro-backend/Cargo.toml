@@ -26,6 +26,8 @@ pulldown-cmark = "0.13"
 flate2 = { version = "1", default-features = false, features = ["zlib"] }
 rusqlite = { version = "0.34", features = ["bundled"] }
 sha2 = "0.10"
+ort = { version = "2.0.0-rc.12", default-features = false, features = ["std", "download-binaries", "tls-rustls"] }
+tokenizers = { version = "0.21", default-features = false, features = ["onig"] }
 
 [target.'cfg(target_arch = "wasm32")'.dependencies]
 flate2 = { version = "1", default-features = false, features = ["rust_backend"] }
