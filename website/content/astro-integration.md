@@ -107,14 +107,14 @@ soraneAstro({
 
 | 値 | 動作 |
 |----|------|
-| `auto`（既定） | ネイティブ Rust CLI（`cargo build` 済み）→ Node JSON CLI → インライン TS |
-| `cli` | 上記と同じ解決順（バイナリ未ビルド時は Node CLI） |
+| `auto`（既定） | ネイティブ Rust CLI（`cargo build` 済み）→ インライン TS |
+| `cli` | ネイティブ Rust CLI（未ビルド時は TS にフォールバック） |
 | `ts` | インライン TypeScript backend |
 | `wasm` | 未実装（警告のうえ TS にフォールバック） |
 
 環境変数:
 
-- `SORANE_ASTRO_BACKEND_NATIVE=0` — Node JSON CLI を強制（CI の TS パリティテストなど）
+- `SORANE_ASTRO_BACKEND_NATIVE=0` — ネイティブ CLI を無効化（`backend: "ts"` を使う）
 - `SORANE_ASTRO_BACKEND_CLI` — ネイティブバイナリのパスを上書き
 
 リポジトリ開発時は `cargo build --manifest-path rust/sorane-astro-backend/Cargo.toml` でネイティブ CLI を生成します。

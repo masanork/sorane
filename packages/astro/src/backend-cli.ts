@@ -7,10 +7,6 @@ function repoRootFromModule(): string {
   return resolve(import.meta.dirname, "../../..");
 }
 
-function nodeCliScript(): string {
-  return resolve(import.meta.dirname, "cli-main.ts");
-}
-
 function nativeCliBinary(root?: string): string | null {
   const env = process.env.SORANE_ASTRO_BACKEND_CLI;
   if (env && existsSync(env)) return env;
@@ -27,17 +23,13 @@ function nativeCliBinary(root?: string): string | null {
   return null;
 }
 
-export function soraneAstroNodeCliAvailable(): boolean {
-  return existsSync(nodeCliScript());
-}
-
 export function soraneAstroNativeCliAvailable(root?: string): boolean {
   return nativeCliBinary(root) !== null;
 }
 
-/** Node or native JSON CLI is available. */
+/** Native Rust JSON CLI is available. */
 export function soraneAstroCliAvailable(root?: string): boolean {
-  return soraneAstroNodeCliAvailable() || soraneAstroNativeCliAvailable(root);
+  return soraneAstroNativeCliAvailable(root);
 }
 
 function spawnCli(command: string, args: string[], input: SoraneAstroBackendInput): SoraneAstroBackendOutput {
@@ -56,28 +48,24 @@ function spawnCli(command: string, args: string[], input: SoraneAstroBackendInpu
   return JSON.parse(result.stdout) as SoraneAstroBackendOutput;
 }
 
-/** Run the JSON contract CLI (native Rust when built; Node TS backend as fallback). */
+/** Run the native Rust JSON contract CLI. */
 export function runSoraneAstroCliBackend(
   input: SoraneAstroBackendInput,
 ): SoraneAstroBackendOutput {
-  const forceNode = process.env.SORANE_ASTRO_BACKEND_NATIVE === "0";
-  if (!forceNode && soraneAstroNativeCliAvailable(input.root)) {
-    const binary = nativeCliBinary(input.root)!;
-    return spawnCli(binary, [], input);
-  }
-  if (soraneAstroNodeCliAvailable()) {
-    return spawnCli(process.execPath, [nodeCliScript()], input);
+  if (process.env.SORANE_ASTRO_BACKEND_NATIVE === "0") {
+    throw new Error(
+      "[sorane/astro] native backend disabled (SORANE_ASTRO_BACKEND_NATIVE=0); use backend \"ts\"",
+    );
   }
   const binary = nativeCliBinary(input.root);
-  if (binary) {
-    return spawnCli(binary, [], input);
+  if (!binary) {
+    throw new Error(
+      "[sorane/astro] sorane-astro-backend native CLI not built (cargo build --manifest-path rust/sorane-astro-backend/Cargo.toml)",
+    );
   }
-  throw new Error(
-    "[sorane/astro] sorane-astro-backend CLI not found (Node script missing and native binary not built)",
-  );
+  return spawnCli(binary, [], input);
 }
 
 export function resolveSoraneAstroCliBinary(root?: string): string | null {
-  if (soraneAstroNodeCliAvailable()) return nodeCliScript();
   return nativeCliBinary(root);
 }

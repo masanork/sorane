@@ -130,15 +130,14 @@ Route loader + MDX gates + Rust CLI scaffold (done):
 
 TS/CLI parity + DCAT (done):
 
-1. Node JSON CLI (`packages/astro/src/cli-main.ts`) delegates to `runSoraneAstroTsBackend` — byte-identical to inline `ts`.
-2. `outputs.dcatCatalog` / `openData.dcatCatalog` emit `catalog-dcat.jsonld`.
-3. `tests/astro-backend-parity.test.ts` guards Node CLI ≡ TS output (`SORANE_ASTRO_BACKEND_NATIVE=0`).
+1. `outputs.dcatCatalog` / `openData.dcatCatalog` emit `catalog-dcat.jsonld`.
+2. `bin/sorane-astro-backend.mjs` (npm) runs inline TypeScript for external subprocess use.
 
 Native Rust backend parity (done):
 
 1. `rust/sorane-astro-backend` — JSON contract CLI for `catalog.jsonld`, `llms.txt`, `okf/bundle.tar.gz`, `catalog-dcat.jsonld`, `sitemap.xml`.
-2. `backend: "auto"` prefers native Rust when `cargo build` has produced the binary; falls back to Node CLI, then inline `ts`.
-3. `SORANE_ASTRO_BACKEND_NATIVE=0` forces Node CLI (parity tests); `SORANE_ASTRO_BACKEND_CLI` overrides the binary path.
+2. `backend: "auto"` prefers native Rust when `cargo build` has produced the binary; falls back to inline `ts`.
+3. `SORANE_ASTRO_BACKEND_NATIVE=0` disables native in `runSoraneAstroCliBackend`; `SORANE_ASTRO_BACKEND_CLI` overrides the binary path.
 4. `tests/astro-backend-native-parity.test.ts` guards native ≡ TS for core artifacts (bundle compared after gunzip).
 5. Native validation Phase A: OKF JSON Schema (3 profiles), heading, content-quality (image alt, link text, table headers, dates), disclosure fields. Diagram alt matches TS default (`diagrams.enabled: false` → no warnings). Directory index / i18n / FAQ / glossary remain TS-only.
 

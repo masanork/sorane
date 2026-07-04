@@ -56,7 +56,7 @@ export interface SoraneAstroOptions {
   readonly quality?: SoraneConfig["build"]["quality"];
   /** OKF profile defaults passed through to site validation. */
   readonly okf?: OkfConfig;
-  /** Artifact backend. `auto` prefers native Rust CLI when built, then Node CLI, then `ts`. */
+  /** Artifact backend. `auto` prefers native Rust CLI when built, then inline `ts`. */
   readonly backend?: SoraneAstroBackend;
   readonly logger?: AstroLogger;
 }
