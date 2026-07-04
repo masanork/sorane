@@ -231,4 +231,4 @@ The integration scans `src/content/**/*.md(x)` for OKF frontmatter, runs quality
 ## Roadmap
 
 - SemVer tags and GitHub Releases (fonts tarball)
-- Astro: optional `sorane index` via native CLI; WASM hybrid search (blocked on wasm32 ort/SQLite)
+- Astro: WASM hybrid search (blocked on wasm32 ort/SQLite); tighten native hybrid embedding parity beyond cosine ≥ 0.95

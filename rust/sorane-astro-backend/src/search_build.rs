@@ -53,6 +53,13 @@ pub struct SearchBuildConfig<'a> {
 
 #[derive(Debug)]
 pub struct SearchBuildOutcome {
+    pub added: usize,
+    pub changed: usize,
+    pub removed: usize,
+    pub unchanged: usize,
+    pub chunks: usize,
+    pub fts: usize,
+    pub vec: usize,
     pub hybrid: bool,
     pub model_missing: bool,
     pub embed_meta: Option<EmbedMeta>,
@@ -139,6 +146,13 @@ pub fn build_search_index(
     }
 
     Ok(SearchBuildOutcome {
+        added: plan.added.len(),
+        changed: plan.changed.len(),
+        removed: plan.removed.len(),
+        unchanged: plan.unchanged.len(),
+        chunks: usize::try_from(chunks).map_err(|_| "chunk count overflow".to_string())?,
+        fts: usize::try_from(fts).map_err(|_| "fts count overflow".to_string())?,
+        vec: usize::try_from(vec).map_err(|_| "vec count overflow".to_string())?,
         hybrid: hybrid_enabled,
         model_missing,
         embed_meta,

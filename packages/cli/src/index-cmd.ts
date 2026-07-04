@@ -2,10 +2,10 @@ import { existsSync } from "node:fs";
 import { resolve } from "node:path";
 import { loadSoraneConfig, parseCwdFlag } from "./config-load.ts";
 import { loadSearchModule } from "./load-search.ts";
+import { runNativeSearchIndex, soraneNativeIndexAvailable } from "./native-index.ts";
 
 export async function runIndexCmd(argv: string[]): Promise<void> {
   const cwd = parseCwdFlag(argv);
-  const { buildSearchIndex, RuriEmbeddings } = await loadSearchModule(cwd, "index", argv);
   const config = loadSoraneConfig(cwd);
   const force = argv.includes("--force");
   const configMode = config.search.mode ?? "fts";
@@ -23,6 +23,26 @@ export async function runIndexCmd(argv: string[]): Promise<void> {
   const contentDir = resolve(cwd, config.build.content_dir);
   const modelRoot = resolve(cwd, get("--model", config.search.model));
   const modelId = get("--model-id", config.search.model_id);
+
+  if (soraneNativeIndexAvailable(cwd)) {
+    const result = runNativeSearchIndex({
+      root: cwd,
+      contentDir,
+      indexPath,
+      force,
+      hybrid,
+      modelRoot: get("--model", config.search.model),
+      modelId,
+    });
+    process.stdout.write(
+      `[sorane] indexed ${result.chunks} chunk(s) [${result.mode}] → ${indexPath} (native)\n` +
+        `  added=${result.added} changed=${result.changed} removed=${result.removed} unchanged=${result.unchanged}\n` +
+        (result.mode === "hybrid" ? `  vec=${result.vec}\n` : ""),
+    );
+    return;
+  }
+
+  const { buildSearchIndex, RuriEmbeddings } = await loadSearchModule(cwd, "index", argv);
 
   let embeddings = null;
   if (hybrid) {

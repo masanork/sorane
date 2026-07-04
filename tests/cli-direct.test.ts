@@ -209,6 +209,38 @@ describe("runSearchCmd", () => {
 });
 
 describe("runIndexCmd", () => {
+  test("native index when sorane-astro-backend is built", async (t) => {
+    const { soraneNativeIndexAvailable } = await import("../packages/cli/src/native-index.ts");
+    const cwd = process.cwd();
+    if (!soraneNativeIndexAvailable(cwd)) {
+      t.skip("sorane-astro-backend native binary not built");
+      return;
+    }
+
+    const root = mkdtempSync(join(tmpdir(), "sorane-cli-native-index-"));
+    mkdirSync(join(root, "content"), { recursive: true });
+    writeFileSync(
+      join(root, "content", "index.md"),
+      "---\ntype: index\ntitle: Home\nprofile: sorane-okf/0.1\n---\n\nNative index path with enough body text to produce chunks.\n",
+      "utf8",
+    );
+    writeFileSync(
+      join(root, "sorane.yaml"),
+      "site:\n  title: T\n  description: d\n  lang: ja\nbuild:\n  content_dir: content\n  out_dir: dist\nsearch:\n  index: .sorane/native-index.db\n",
+      "utf8",
+    );
+    try {
+      const out = await captureStdout(() =>
+        runIndexCmd(["--cwd", root, "--fts-only", "--force", "--out", ".sorane/native-index.db"]),
+      );
+      expect(out).toContain("indexed");
+      expect(out).toContain("(native)");
+      expect(existsSync(join(root, ".sorane/native-index.db"))).toBe(true);
+    } finally {
+      rmSync(root, { recursive: true, force: true });
+    }
+  });
+
   test("FTS-only で index する", async () => {
     const root = mkdtempSync(join(tmpdir(), "sorane-cli-direct-index-"));
     mkdirSync(join(root, "content"), { recursive: true });
@@ -255,6 +287,7 @@ describe("runIndexCmd", () => {
     try {
       const out = await captureStdout(() => runIndexCmd(["--cwd", root, "--force", "--hybrid"]));
       expect(out).toContain("indexed");
+      expect(out.includes("[fts-only]") || out.includes("fts-only")).toBe(true);
       expect(errChunks.join("")).toContain("model not found");
     } finally {
       process.stderr.write = origErr;
