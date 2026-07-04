@@ -153,8 +153,9 @@ Search + config security (done):
 1. `outputs.search` + `search` config on the backend contract; TypeScript backend emits `assets/search-index.json` as an artifact (`search-backend.ts`). Companion assets (`search.mjs`, hybrid runtime) are written after artifact flush.
 2. `validateConfigSecurity` parity: emergency banner href checks, custom-binary rejection when `security.allowCustomBinaries: false`.
 3. `backend-artifacts.ts` extracts OKF artifact builders from `backend-ts.ts`; `backend-wasm.ts` stub throws until a WASM package ships (`resolve` still falls back to TypeScript).
+4. Native Rust `outputs.search`: FTS `assets/search-index.json` via `search.rs` / `search_chunker.rs` (chunk parity with `@sorane/search`; hybrid embeddings + SQLite incremental index remain TypeScript/`@sorane/search`).
 
 Next:
 
-1. Native Rust `outputs.search` indexing (optional; SQLite + embeddings remain TypeScript/`@sorane/search` today).
-2. Publish `@sorane/astro-backend-wasm` and wire `backend: "wasm"`.
+1. Publish `@sorane/astro-backend-wasm` and wire `backend: "wasm"`.
+2. Optional: native hybrid search (embeddings + SQLite) when a Rust `@sorane/search` port exists.

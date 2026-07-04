@@ -1,6 +1,9 @@
 mod dcat;
 mod open_data;
 mod config_security;
+mod heading_slug;
+mod search;
+mod search_chunker;
 mod content_quality;
 mod diagram;
 mod directory_index;
@@ -108,6 +111,8 @@ struct BackendOutputs {
     sitemap: bool,
     #[serde(rename = "dcatCatalog", default)]
     dcat_catalog: bool,
+    #[serde(default)]
+    search: bool,
 }
 
 fn default_true() -> bool {
@@ -122,6 +127,7 @@ impl Default for BackendOutputs {
             okf_bundle: true,
             sitemap: false,
             dcat_catalog: false,
+            search: false,
         }
     }
 }
@@ -1212,6 +1218,23 @@ fn run_backend(input: BackendInput) -> Result<BackendOutput, String> {
             kind: "base64".to_string(),
             content: build_bundle(&concepts)?,
         });
+    }
+    if outputs.search {
+        let file_refs: Vec<(&str, &str)> = input
+            .files
+            .iter()
+            .map(|f| (f.rel_path.as_str(), f.source.as_str()))
+            .collect();
+        let permalink = input.permalink.as_deref().unwrap_or("html");
+        if let Some(content) =
+            search::build_search_index_json(&file_refs, permalink, &input.collections)
+        {
+            artifacts.push(BackendArtifact {
+                path: "assets/search-index.json".to_string(),
+                kind: "text".to_string(),
+                content,
+            });
+        }
     }
     if outputs.sitemap {
         let base = input.site.base_url.trim_end_matches('/');
