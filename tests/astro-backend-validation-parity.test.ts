@@ -83,6 +83,97 @@ timestamp: 2026-07-04T00:00:00Z
     expect(native.validationWarnings).toBe(1);
   });
 
+  test("native validation counts match TypeScript for FAQ structure", async (t) => {
+    if (!soraneAstroNativeCliAvailable()) {
+      t.skip("sorane-astro-backend native binary not built");
+      return;
+    }
+
+    const input = validationInput({
+      "faq.md": `---
+type: faq
+title: FAQ
+timestamp: 2026-07-04T00:00:00Z
+profile: sorane-okf/0.3
+---
+
+Just text.
+`,
+    });
+    const ts = await runSoraneAstroTsBackend(input);
+    const { runSoraneAstroCliBackend } = await import("../packages/astro/src/backend-cli.ts");
+    const native = runSoraneAstroCliBackend(input);
+
+    expect(native.validationErrors).toBe(ts.validationErrors);
+    expect(native.validationWarnings).toBe(ts.validationWarnings);
+    expect(native.validationWarnings).toBe(1);
+  });
+
+  test("native validation counts match TypeScript for glossary structure", async (t) => {
+    if (!soraneAstroNativeCliAvailable()) {
+      t.skip("sorane-astro-backend native binary not built");
+      return;
+    }
+
+    const input = validationInput({
+      "glossary.md": `---
+type: glossary
+title: Glossary
+timestamp: 2026-07-04T00:00:00Z
+profile: sorane-okf/0.3
+---
+
+Intro only.
+`,
+    });
+    const ts = await runSoraneAstroTsBackend(input);
+    const { runSoraneAstroCliBackend } = await import("../packages/astro/src/backend-cli.ts");
+    const native = runSoraneAstroCliBackend(input);
+
+    expect(native.validationErrors).toBe(ts.validationErrors);
+    expect(native.validationWarnings).toBe(ts.validationWarnings);
+    expect(native.validationWarnings).toBe(1);
+  });
+
+  test("native validation counts match TypeScript for directory index hint", async (t) => {
+    if (!soraneAstroNativeCliAvailable()) {
+      t.skip("sorane-astro-backend native binary not built");
+      return;
+    }
+
+    const root = mkdtempSync(join(tmpdir(), "sorane-astro-val-parity-dir-"));
+    const posts = join(root, "src", "content", "posts");
+    mkdirSync(posts, { recursive: true });
+    const article = `---
+type: article
+title: Post
+timestamp: 2026-07-04T00:00:00Z
+profile: sorane-okf/0.3
+---
+
+body
+`;
+    writeFileSync(join(posts, "a.md"), article);
+    writeFileSync(join(posts, "b.md"), article.replace("Post", "Post B"));
+    const paths = { root, contentDir: join(root, "src", "content"), outDir: join(root, "dist") };
+    const input = buildSoraneAstroBackendInput(
+      {
+        site: { title: "Val", description: "parity", baseUrl: "https://example.dev" },
+        validate: "warn",
+      },
+      paths,
+      collectSoraneAstroBackendFiles(paths.contentDir),
+    );
+    const ts = await runSoraneAstroTsBackend(input);
+    const { runSoraneAstroCliBackend } = await import("../packages/astro/src/backend-cli.ts");
+    const native = runSoraneAstroCliBackend(input);
+
+    expect(native.validationErrors).toBe(ts.validationErrors);
+    expect(native.validationWarnings).toBe(ts.validationWarnings);
+    expect(native.validationWarnings).toBe(1);
+    expect(native.validationDetails.some((d) => d.includes("posts/"))).toBe(true);
+  });
+
   test("native validation counts match TypeScript for heading skip", async (t) => {
     if (!soraneAstroNativeCliAvailable()) {
       t.skip("sorane-astro-backend native binary not built");

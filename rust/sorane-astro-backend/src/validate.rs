@@ -3,6 +3,9 @@ use serde_json::Value;
 
 use crate::content_quality::validate_content_quality_warnings;
 use crate::diagram::validate_diagram_alt_warnings;
+use crate::directory_index::{discover_directory_index_warnings, DirectoryListingFile};
+use crate::faq::validate_faq_warnings;
+use crate::glossary::{validate_glossary_term_warnings, validate_glossary_warnings};
 use crate::okf_validate::validate_okf_source;
 
 #[derive(Debug, Clone)]
@@ -85,6 +88,130 @@ fn fence_marker_for_line(line: &str) -> Option<&str> {
         }
     }
     None
+}
+
+const TYPES_03: &[&str] = &[
+    "article",
+    "index",
+    "dataset",
+    "reference",
+    "glossary",
+    "glossary-term",
+    "faq",
+];
+
+fn yaml_str<'a>(map: &'a serde_yaml::Mapping, key: &str) -> Option<&'a str> {
+    map.get(serde_yaml::Value::String(key.into()))
+        .and_then(|v| v.as_str())
+        .filter(|s| !s.is_empty())
+}
+
+fn yaml_bool(map: &serde_yaml::Mapping, key: &str) -> bool {
+    matches!(
+        map.get(serde_yaml::Value::String(key.into())),
+        Some(serde_yaml::Value::Bool(true))
+    )
+}
+
+fn resolve_profile(map: &serde_yaml::Mapping, _okf: &Option<BackendOkf>) -> Option<String> {
+    let profile = yaml_str(map, "profile")?;
+    if regex::Regex::new(r"^sorane-okf/(0\.[123])$")
+        .ok()?
+        .is_match(profile)
+    {
+        Some(profile.to_string())
+    } else {
+        None
+    }
+}
+
+pub fn effective_type(map: &serde_yaml::Mapping, okf: &Option<BackendOkf>) -> String {
+    let mut okf_type = yaml_str(map, "type").unwrap_or("").to_string();
+    if okf_type.is_empty() {
+        if let Some(kind) = yaml_str(map, "kind") {
+            okf_type = kind.to_string();
+        }
+    }
+    let profile = resolve_profile(map, okf).or_else(|| {
+        okf.as_ref()
+            .and_then(|o| o.default_profile.as_deref())
+            .and_then(|p| {
+                if regex::Regex::new(r"^sorane-okf/(0\.[123])$")
+                    .ok()?
+                    .is_match(p)
+                {
+                    Some(p.to_string())
+                } else {
+                    None
+                }
+            })
+    });
+    if profile.as_deref() == Some("sorane-okf/0.3") && !TYPES_03.contains(&okf_type.as_str()) {
+        return "article".to_string();
+    }
+    okf_type
+}
+
+pub fn directory_listing_file_from_source(
+    rel_path: &str,
+    source: &str,
+    okf: &Option<BackendOkf>,
+) -> Option<DirectoryListingFile> {
+    let (fm, _) = extract_frontmatter_for_validation(source)?;
+    let fm_map = serde_yaml::from_str::<serde_yaml::Value>(fm)
+        .ok()?
+        .as_mapping()
+        .cloned()?;
+    let okf_type = effective_type(&fm_map, okf);
+    if okf_type.is_empty() {
+        return None;
+    }
+    let title = yaml_str(&fm_map, "title")
+        .map(|s| s.to_string())
+        .unwrap_or_else(|| crate::okf_validate::slug_from_path(rel_path));
+    Some(DirectoryListingFile {
+        rel_path: rel_path.to_string(),
+        okf_type,
+        title,
+        is_system: yaml_bool(&fm_map, "isSystem"),
+        is_redirect: yaml_str(&fm_map, "redirect").is_some(),
+        is_search_view: yaml_str(&fm_map, "view") == Some("search"),
+    })
+}
+
+pub fn extract_frontmatter_for_validation(source: &str) -> Option<(&str, &str)> {
+    let rest = source.strip_prefix("---\n").or_else(|| source.strip_prefix("---\r\n"))?;
+    for (idx, _) in rest.match_indices("\n---") {
+        let fm = &rest[..idx];
+        let after = &rest[idx + 1..];
+        if let Some(body) = after
+            .strip_prefix("---\n")
+            .or_else(|| after.strip_prefix("---\r\n"))
+        {
+            return Some((fm, body));
+        }
+        if after == "---" {
+            return Some((fm, ""));
+        }
+        if let Some(body) = after.strip_prefix("---\r") {
+            return Some((fm, body));
+        }
+    }
+    None
+}
+
+pub fn collect_site_validation(files: &[DirectoryListingFile]) -> ValidationSummary {
+    let discovered = discover_directory_index_warnings(files);
+    let warnings = discovered.len();
+    let details: Vec<String> = discovered
+        .into_iter()
+        .map(|(virtual_file, message)| format!("{virtual_file}: {message}"))
+        .collect();
+    ValidationSummary {
+        errors: 0,
+        warnings,
+        details,
+    }
 }
 
 pub fn validate_heading_warnings(body: &str) -> Vec<String> {
@@ -224,6 +351,29 @@ pub fn collect_file_validation(
     for message in validate_diagram_alt_warnings(body) {
         warnings += 1;
         details.push(format!("{rel_path}: {message}"));
+    }
+
+    let okf_type = effective_type(&fm_map, okf);
+    match okf_type.as_str() {
+        "faq" => {
+            for message in validate_faq_warnings(body) {
+                warnings += 1;
+                details.push(format!("{rel_path}: {message}"));
+            }
+        }
+        "glossary" => {
+            for message in validate_glossary_warnings(body, &fm_map) {
+                warnings += 1;
+                details.push(format!("{rel_path}: {message}"));
+            }
+        }
+        "glossary-term" => {
+            for message in validate_glossary_term_warnings(body, &fm_map) {
+                warnings += 1;
+                details.push(format!("{rel_path}: {message}"));
+            }
+        }
+        _ => {}
     }
 
     ValidationSummary {

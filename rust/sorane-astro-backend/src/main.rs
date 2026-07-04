@@ -2,6 +2,10 @@ mod dcat;
 mod open_data;
 mod content_quality;
 mod diagram;
+mod directory_index;
+mod faq;
+mod glossary;
+mod markdown_sections;
 mod okf_validate;
 mod validate;
 
@@ -13,8 +17,8 @@ use serde_json::{json, Map, Value};
 use std::collections::BTreeMap;
 use std::io::Write;
 use validate::{
-    collect_file_validation, merge_validation, BackendOkf, BackendQuality, ValidateMode,
-    ValidationSummary,
+    collect_file_validation, collect_site_validation, directory_listing_file_from_source,
+    merge_validation, BackendOkf, BackendQuality, ValidateMode, ValidationSummary,
 };
 
 const SCHEMA_VERSION: i32 = 1;
@@ -998,7 +1002,14 @@ fn run_backend(input: BackendInput) -> Result<BackendOutput, String> {
     let mut concepts = Vec::new();
 
     let validate_mode = input.validate.clone().unwrap_or(ValidateMode::Warn);
+    let mut listing_files = Vec::new();
     for file in &input.files {
+        if let Some(listing) =
+            directory_listing_file_from_source(&file.rel_path, &file.source, &input.okf)
+        {
+            listing_files.push(listing);
+        }
+
         if !matches!(validate_mode, ValidateMode::Off) {
             let (fm, body) = extract_frontmatter(&file.source);
             merge_validation(
@@ -1018,6 +1029,10 @@ fn run_backend(input: BackendInput) -> Result<BackendOutput, String> {
                 concepts.push(concept);
             }
         }
+    }
+
+    if !matches!(validate_mode, ValidateMode::Off) {
+        merge_validation(&mut validation, collect_site_validation(&listing_files));
     }
 
     let mut artifacts = Vec::new();
