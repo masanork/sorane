@@ -153,7 +153,7 @@ Search + config security (done):
 1. `outputs.search` + `search` config on the backend contract; TypeScript backend emits `assets/search-index.json` as an artifact (`search-backend.ts`). Companion assets (`search.mjs`, hybrid runtime) are written after artifact flush.
 2. `validateConfigSecurity` parity: emergency banner href checks, custom-binary rejection when `security.allowCustomBinaries: false`.
 3. `backend-artifacts.ts` extracts OKF artifact builders from `backend-ts.ts`; `@sorane/astro-backend-wasm` ships the Rust backend for `backend: "wasm"`.
-4. Native Rust `outputs.search`: FTS + hybrid `assets/search-index.json` via `search.rs` / `search_chunker.rs` / `search_store.rs` (SQLite incremental index at `.sorane/index.db`). Hybrid embeddings call `@sorane/search/scripts/embed-batch.mjs` (Node bridge) when the model directory exists; missing model → FTS-only fallback (parity with TypeScript).
+4. Native Rust `outputs.search`: FTS + hybrid `assets/search-index.json` via `search.rs` / `search_chunker.rs` / `search_store.rs` / `search_ruri.rs` (SQLite incremental index at `.sorane/index.db`). Hybrid embeddings use pure-Rust ONNX (`ort` + `tokenizers`, ruri-v3-30m) when `onnx/model_quantized.onnx` and `tokenizer.json` exist; missing model → FTS-only fallback (parity with TypeScript).
 
 WASM backend (done):
 
@@ -162,5 +162,6 @@ WASM backend (done):
 
 Hybrid search (done):
 
-1. Native CLI: SQLite incremental index + hybrid JSON export (schema v3). Embeddings via Node bridge to `@sorane/search` (ONNX/transformers.js); pure-Rust ONNX is a future optimization.
-2. WASM target: FTS-only direct JSON (no SQLite / Node on wasm32).
+1. Native CLI: SQLite incremental index + hybrid JSON export (schema v3). Embeddings via pure-Rust ONNX (`search_ruri.rs`); parity-tested against `@sorane/search` reference vectors.
+2. TypeScript backend / `sorane index` CLI: hybrid still uses `@sorane/search` (`@huggingface/transformers` + ONNX runtime).
+3. WASM target: FTS-only direct JSON (no SQLite / ort on wasm32).

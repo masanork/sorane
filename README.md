@@ -231,4 +231,4 @@ The integration scans `src/content/**/*.md(x)` for OKF frontmatter, runs quality
 ## Roadmap
 
 - SemVer tags and GitHub Releases (fonts tarball)
-- Astro integration: WASM backend, full `validateSiteContent` parity in native Rust, search indexing in backend contract
+- Astro: optional `sorane index` via native CLI; WASM hybrid search (blocked on wasm32 ort/SQLite)

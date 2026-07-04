@@ -1,6 +1,8 @@
 #!/usr/bin/env node
 /**
- * Batch embedding bridge for the native sorane-astro-backend hybrid indexer.
+ * Optional stdin/stdout embedding helper for debugging and external tooling.
+ * The native sorane-astro-backend hybrid indexer uses pure-Rust ONNX instead.
+ *
  * Reads JSON from stdin: { modelRoot, modelId, texts: string[] }
  * Writes JSON to stdout: { vectors: number[][], modelId, dim, quant, modelSha256 }
  */

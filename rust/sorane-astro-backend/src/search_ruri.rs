@@ -242,4 +242,5 @@ mod tests {
         assert!((vectors[0][0] - 0.008850927).abs() < 1e-4);
         assert!((vectors[0][4] - 0.1640235).abs() < 1e-3);
     }
+
 }

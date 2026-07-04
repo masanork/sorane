@@ -124,5 +124,5 @@ soraneAstro({
 - ルート検出は `getCollection()` の静的解析ベースで、動的ルートすべてをカバーしません。
 - コンテンツ検証は統合層が常に TypeScript の `validateSiteContent` を実行します（`backend: "auto"` でもネイティブと同じゲート）。artifact backend は `validate: false` で呼ばれ、重複検証しません。
 - ネイティブ Rust backend の validation: Phase A–D + `validateConfigSecurity`（緊急バナー URL、カスタムバイナリ拒否）。統合層は引き続き常に TypeScript の `validateSiteContent` を実行します。
-- `outputs.search` は backend contract 経由（`assets/search-index.json` を artifact として返す）。`search.mjs` 等の companion は書き出し後にコピーされます。ネイティブ CLI は FTS + hybrid（SQLite 増分索引、埋め込みは `@sorane/search` Node bridge）を実装済み。WASM は FTS のみ。
+- `outputs.search` は backend contract 経由（`assets/search-index.json` を artifact として返す）。`search.mjs` 等の companion は書き出し後にコピーされます。ネイティブ CLI は FTS + hybrid（SQLite 増分索引、埋め込みは pure-Rust ONNX / ruri-v3-30m）を実装済み。`backend: "ts"` や `sorane index` の hybrid は引き続き `@sorane/search`（transformers.js）を使います。WASM は FTS のみ。
 設計の詳細はリポジトリ内 `design/astro-rust-backend.md` を参照してください。
