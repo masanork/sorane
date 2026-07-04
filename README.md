@@ -226,10 +226,9 @@ export default defineConfig({
 });
 ```
 
-The integration scans `src/content/**/*.md(x)` for OKF frontmatter, runs `sorane validate`-compatible quality gates on `.md` files, and emits `catalog.jsonld`, `llms.txt`, `okf/bundle.tar.gz`, and optional `sitemap.xml` / search assets into Astro's output directory. See `examples/astro-minimal/` for a runnable fixture and [Astro 連携](https://ssg.sorane.dev/astro-integration.html) for setup details. The package boundary is file-based so OKF parsing, validation, bundle creation, and search indexing can move to Rust/WASM or a Rust CLI without changing Astro routes.
+The integration scans `src/content/**/*.md(x)` for OKF frontmatter, runs quality gates (heading, OKF type, and more via the active backend), and emits `catalog.jsonld`, `llms.txt`, `okf/bundle.tar.gz`, optional `catalog-dcat.jsonld`, `sitemap.xml`, and search assets into Astro's output directory. With `backend: "auto"` (default), a built `sorane-astro-backend` Rust CLI handles core artifacts when available. See `examples/astro-minimal/` for a runnable fixture and [Astro 連携](https://ssg.sorane.dev/astro-integration.html) for setup details.
 
 ## Roadmap
 
 - SemVer tags and GitHub Releases (fonts tarball)
-- Astro integration: DCAT catalog output, TS/CLI backend parity, WASM backend
-- Expand Rust `sorane-astro-backend` toward full `@sorane/okf` validation and bundle semantics
+- Astro integration: WASM backend, full `validateSiteContent` parity in native Rust, search indexing in backend contract

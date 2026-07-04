@@ -101,18 +101,28 @@ npm run build
 
 ```js
 soraneAstro({
-  backend: "ts", // auto | ts | cli | wasm
+  backend: "auto", // auto | ts | cli | wasm
 });
 ```
 
-- `ts`: 組み込み TypeScript backend
-- `cli`: Node JSON CLI（`sorane-astro-backend`、TS backend と同一出力）
-- `auto`: 既定で `cli`（Node CLI）を使用
-- ネイティブ Rust CLI は `SORANE_ASTRO_BACKEND_NATIVE=1` で有効（`cargo build` 済みが必要）
+| 値 | 動作 |
+|----|------|
+| `auto`（既定） | ネイティブ Rust CLI（`cargo build` 済み）→ Node JSON CLI → インライン TS |
+| `cli` | 上記と同じ解決順（バイナリ未ビルド時は Node CLI） |
+| `ts` | インライン TypeScript backend |
+| `wasm` | 未実装（警告のうえ TS にフォールバック） |
+
+環境変数:
+
+- `SORANE_ASTRO_BACKEND_NATIVE=0` — Node JSON CLI を強制（CI の TS パリティテストなど）
+- `SORANE_ASTRO_BACKEND_CLI` — ネイティブバイナリのパスを上書き
+
+リポジトリ開発時は `cargo build --manifest-path rust/sorane-astro-backend/Cargo.toml` でネイティブ CLI を生成します。
 
 ## 制限（現時点）
 
 - ルート検出は `getCollection()` の静的解析ベースで、動的ルートすべてをカバーしません。
-- Rust CLI は OKF コア出力の初期実装です（品質ゲートは TS backend が担当）。
+- ネイティブ Rust backend は OKF 必須フィールドと見出し品質ゲートを実装済み。diagram / FAQ / glossary など `sorane validate` の全ゲートとの完全パリティは未完了です。
+- `outputs.search` のインデックス生成は TypeScript 側（`emitAstroSearchAssets`）が担当します。
 
 設計の詳細はリポジトリ内 `design/astro-rust-backend.md` を参照してください。

@@ -1,6 +1,6 @@
 # Astro integration and Rust backend boundary
 
-Status: design note after `@sorane/astro` hardening (validation, route mapping, search, smoke test).
+Status: design note after native `sorane-astro-backend` parity (catalog, llms, bundle, DCAT, basic validation).
 
 ## Positioning
 
@@ -111,7 +111,7 @@ Hardening checklist (done):
 - real Astro fixture smoke test
 - `validateSiteContent` parity for quality gates
 - content collection route mapping tests
-- backend selection interface with only `ts` implemented
+- backend selection interface (`auto` | `ts` | `cli` | `wasm`)
 - optional search assets (`outputs.search`)
 - CI job for Astro unit + smoke tests
 
@@ -131,11 +131,19 @@ Route loader + MDX gates + Rust CLI scaffold (done):
 TS/CLI parity + DCAT (done):
 
 1. Node JSON CLI (`packages/astro/src/cli-main.ts`) delegates to `runSoraneAstroTsBackend` — byte-identical to inline `ts`.
-2. `backend: "auto"` prefers Node CLI; native Rust via `SORANE_ASTRO_BACKEND_NATIVE=1`.
-3. `outputs.dcatCatalog` / `openData.dcatCatalog` emit `catalog-dcat.jsonld`.
-4. `tests/astro-backend-parity.test.ts` guards CLI ≡ TS output.
+2. `outputs.dcatCatalog` / `openData.dcatCatalog` emit `catalog-dcat.jsonld`.
+3. `tests/astro-backend-parity.test.ts` guards Node CLI ≡ TS output (`SORANE_ASTRO_BACKEND_NATIVE=0`).
+
+Native Rust backend parity (done):
+
+1. `rust/sorane-astro-backend` — JSON contract CLI for `catalog.jsonld`, `llms.txt`, `okf/bundle.tar.gz`, `catalog-dcat.jsonld`, `sitemap.xml`.
+2. `backend: "auto"` prefers native Rust when `cargo build` has produced the binary; falls back to Node CLI, then inline `ts`.
+3. `SORANE_ASTRO_BACKEND_NATIVE=0` forces Node CLI (parity tests); `SORANE_ASTRO_BACKEND_CLI` overrides the binary path.
+4. `tests/astro-backend-native-parity.test.ts` guards native ≡ TS for core artifacts (bundle compared after gunzip).
+5. Native validation covers OKF `type` required and heading quality gates; full `validateSiteContent` parity is not complete.
 
 Next:
 
-1. Expand native Rust validation and bundle serialization to pass parity tests without Node delegation.
-2. Add `backend: "wasm"` when a WASM artifact is published.
+1. Expand native Rust validation toward full `validateSiteContent` parity (diagram, FAQ, glossary, i18n, OKF JSON Schema, …).
+2. Move `outputs.search` indexing into the backend contract or a Rust helper.
+3. Add `backend: "wasm"` when a WASM artifact is published.
