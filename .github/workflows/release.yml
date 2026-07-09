@@ -93,15 +93,32 @@ jobs:
             echo "::error::npm $npm_version is too old for Trusted Publisher (need >= 11.5.1)"
             exit 1
           fi
-          for ws in @sorane/font @sorane/okf @sorane/search @sorane/core @sorane/astro-backend-wasm @sorane/astro @sorane/cli; do
+          # Existing packages first so a first-publish 404 on new names does not block @sorane/cli.
+          # Brand-new package names need a one-time create (NPM_TOKEN) before OIDC Trusted Publisher works.
+          failed=0
+          skipped_new=0
+          for ws in @sorane/font @sorane/okf @sorane/search @sorane/core @sorane/cli @sorane/astro-backend-wasm @sorane/astro; do
             published="$(npm view "$ws" version 2>/dev/null || true)"
             target="$(node -p "require('./packages/${ws#@sorane/}/package.json').version")"
             if [[ "$published" == "$target" ]]; then
               echo "skip ${ws}@${target} (already on npm)"
               continue
             fi
-            npm publish -w "$ws" --provenance --access public
+            if [[ -z "${published}" && -z "${NPM_TOKEN:-}" ]]; then
+              echo "::warning::skip ${ws}@${target} — package not on npm yet; create it once with NPM_TOKEN or manual publish, then enable Trusted Publisher"
+              skipped_new=1
+              continue
+            fi
+            if ! npm publish -w "$ws" --provenance --access public; then
+              echo "::error::failed to publish ${ws}@${target}"
+              failed=1
+              continue
+            fi
           done
+          if [[ "$skipped_new" -eq 1 ]]; then
+            echo "::notice::Some new @sorane/* packages were skipped (no npm registry entry + no NPM_TOKEN)."
+          fi
+          exit "$failed"
 
   pack:
     name: npm pack
