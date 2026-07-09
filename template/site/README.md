@@ -1,6 +1,6 @@
-# My sorane site
+# My 空音 site
 
-Static site powered by [sorane](https://github.com/masanork/sorane). Content lives in `content/`; HTML is generated to `dist/`.
+Static site powered by [空音 (sorane)](https://github.com/masanork/sorane). Content lives in `content/`; HTML is generated to `dist/`.
 
 ## For humans
 

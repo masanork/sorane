@@ -6,9 +6,9 @@ description: >
   the user mentions sorane site, OKF frontmatter, AGENTS.md, or /sorane-content.
 ---
 
-# sorane content editing
+# 空音 content editing
 
-You maintain a **sorane** site: `content/` + `sorane.yaml`. No admin UI.
+You maintain a **空音 (sorane)** site: `content/` + `sorane.yaml`. No admin UI.
 
 ## Before editing
 

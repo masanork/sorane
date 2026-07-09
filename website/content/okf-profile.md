@@ -5,7 +5,7 @@ profile: sorane-okf/0.1
 excludeFromList: true
 ---
 
-sorane は [Open Knowledge Format (OKF) v0.1](https://cloud.google.com/blog/products/data-analytics/how-the-open-knowledge-format-can-improve-data-sharing) を実装します。各ページの frontmatter に `profile: sorane-okf/<version>` を書き、JSON Schema で検証します。
+空音は [Open Knowledge Format (OKF) v0.1](https://cloud.google.com/blog/products/data-analytics/how-the-open-knowledge-format-can-improve-data-sharing) を実装します。各ページの frontmatter に `profile: sorane-okf/<version>` を書き、JSON Schema で検証します。
 
 ## サポートする concept 型
 

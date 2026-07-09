@@ -5,7 +5,7 @@ profile: sorane-okf/0.1
 excludeFromList: true
 ---
 
-sorane は **OKF（Open Knowledge Format）ネイティブ**の静的サイトジェネレータです。Markdown を書くだけで、人間向け HTML と（必要なら）エージェント向けの機械可読出力を同じビルドから得られます。
+空音は **OKF（Open Knowledge Format）ネイティブ**の静的サイトジェネレータです。Markdown を書くだけで、人間向け HTML と（必要なら）エージェント向けの機械可読出力を同じビルドから得られます。
 
 ## プリセット（軽量 vs フル OKF）
 

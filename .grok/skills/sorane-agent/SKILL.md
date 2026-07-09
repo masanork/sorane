@@ -6,9 +6,9 @@ description: >
   AGENTS.md or agent skills, or when the user says sorane development or /sorane-agent.
 ---
 
-# sorane monorepo development
+# 空音 (sorane) monorepo development
 
-Repository: OKF-native SSG. Workspaces under `packages/*`, tests in `tests/`.
+Repository: OKF-native SSG for **空音** (Japanese product name; CLI/npm keep `sorane`). Workspaces under `packages/*`, tests in `tests/`.
 
 ## Verify changes
 

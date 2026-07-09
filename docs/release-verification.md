@@ -10,7 +10,7 @@ release workflow.
 
 | Asset | What it is |
 |-------|------------|
-| `sorane-*.tgz` (×5) | npm pack outputs for `@sorane/font`, `@sorane/okf`, `@sorane/search`, `@sorane/core`, `@sorane/cli` |
+| `sorane-*.tgz` (×7) | npm pack outputs for `@sorane/font`, `@sorane/okf`, `@sorane/search`, `@sorane/core`, `@sorane/astro-backend-wasm`, `@sorane/astro`, `@sorane/cli` |
 | `sorane-<tag>.tar.gz` | tag-pinned source archive |
 | `cbom.json` | Cryptography BOM: in-process hash algorithms sorane dispatches |
 | `sbom.json` | Software BOM: third-party npm packages from `package-lock.json` |

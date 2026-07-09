@@ -5,7 +5,7 @@ profile: sorane-okf/0.1
 excludeFromList: true
 ---
 
-Astro でページを描画しつつ、sorane が OKF とエージェント向けの機械可読出力を担う統合です。
+Astro でページを描画しつつ、空音が OKF とエージェント向けの機械可読出力を担う統合です。
 
 ## 役割分担
 

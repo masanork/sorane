@@ -5,7 +5,7 @@ profile: sorane-okf/0.1
 excludeFromList: true
 ---
 
-[sorane](https://ssg.sorane.dev) 静的サイトに [kototoi](https://github.com/masanork/kototoi)（Passkey 問い合わせ）を埋め込む手順と運用メモです。
+[空音](https://ssg.sorane.dev) 静的サイトに [kototoi](https://github.com/masanork/kototoi)（Passkey 問い合わせ）を埋め込む手順と運用メモです。
 
 ## 構成
 
@@ -14,7 +14,7 @@ excludeFromList: true
 | `ssg.sorane.dev`（Pages） | 静的 HTML・`kototoi-form.js` / `.css`（同一オリジン） |
 | `ask.sorane.dev`（Worker） | API・管理 UI・D1 |
 
-フォーム JS は sorane ビルド成果物に同梱し、API 呼び出しだけ `ask.sorane.dev` 向けになります（CORS + `credentials: 'include'`）。Passkey の `rpId` は親ドメイン `sorane.dev` です。
+フォーム JS は空音のビルド成果物に同梱し、API 呼び出しだけ `ask.sorane.dev` 向けになります（CORS + `credentials: 'include'`）。Passkey の `rpId` は親ドメイン `sorane.dev` です。
 
 ```
 ssg.sorane.dev/contact  →  kototoi-form.js（同一オリジン）
@@ -79,7 +79,7 @@ Passkey で認証します。
 
 ## ビルド・CI
 
-sorane 単体の `build` のあと、次を実行します（sorane 公式 CI も同順）。
+空音単体の `build` のあと、次を実行します（空音公式 CI も同順）。
 
 ```bash
 node website/scripts/emit-kototoi.mjs
@@ -105,12 +105,12 @@ CI では kototoi リポジトリが無いため、`website/static/` に JS/CSS 
 # kototoi リポジトリで
 npm run build:client
 
-# sorane リポジトリで
+# 空音リポジトリで
 cp ../kototoi/packages/client/dist/kototoi-form.{js,css} website/static/
 git add website/static/kototoi-form.js website/static/kototoi-form.css
 ```
 
-その後 sorane をビルド・デプロイしてください。
+その後空音をビルド・デプロイしてください。
 
 ## フォーム定義の API 同期
 
@@ -146,11 +146,11 @@ curl -X POST "$KOTOTOI_API_URL/api/v1/operator/sites/<site-id>/admin-invites" \
 | サービス | コマンド例 |
 |----------|------------|
 | kototoi API | `npm run dev`（`localhost:8787`） |
-| sorane プレビュー | `npx @sorane/cli preview --cwd website` |
+| 空音プレビュー | `npx @sorane/cli preview --cwd website` |
 
 ローカル用 `kototoi.endpoint` / `site_id` / `rpId: localhost` は kototoi の dev サイト登録に合わせます。本番 `sorane.yaml` とは別ファイル（ブランチや上書き）で管理するのが安全です。
 
 ## 関連
 
-- sorane 公式の実装: `website/sorane.yaml`・`website/scripts/`・[お問い合わせ](contact.html)
+- 空音公式の実装: `website/sorane.yaml`・`website/scripts/`・[お問い合わせ](contact.html)
 - kototoi 設計: [sorane-plugin.md](https://github.com/masanork/kototoi/blob/main/design/sorane-plugin.md)・[deployment-sorane-dev.md](https://github.com/masanork/kototoi/blob/main/design/deployment-sorane-dev.md)

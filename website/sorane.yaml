@@ -1,7 +1,7 @@
 preset: okf-site
 
 site:
-  title: sorane
+  title: 空音
   description: OKF-native static site generator
   base_url: https://ssg.sorane.dev
   lang: ja

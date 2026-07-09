@@ -5,7 +5,7 @@ profile: sorane-okf/0.1
 excludeFromList: true
 ---
 
-sorane は Markdown のコードフェンスで書いた図を HTML で表示します。ソースは `.md` 代替ファイルと OKF バンドルにそのまま残ります（bunsen Strategy A）。
+空音は Markdown のコードフェンスで書いた図を HTML で表示します。ソースは `.md` 代替ファイルと OKF バンドルにそのまま残ります（bunsen Strategy A）。
 
 ## Mermaid（クライアント）
 

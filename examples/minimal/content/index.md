@@ -1,6 +1,6 @@
 ---
 type: index
-title: Sorane Example
+title: 空音 Example
 description: OKF-native static site example
 profile: sorane-okf/0.1
 ---

@@ -67,6 +67,7 @@ export {
   type SoraneConfig,
   type OkfConfig,
   type UnknownTypePolicy,
+  type DiagramsConfig,
 } from "./config.ts";
 export {
   presetPartial,

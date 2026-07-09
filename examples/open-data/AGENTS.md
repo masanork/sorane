@@ -1,4 +1,4 @@
-# sorane open-data example (monorepo)
+# 空音 open-data example (monorepo)
 
 In-repo demo for **`sorane-okf/0.3`**: `dataset`, `reference`, `glossary`, `faq`, plus search.
 

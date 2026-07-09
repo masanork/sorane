@@ -1,6 +1,6 @@
 ---
 type: index
-title: sorane
+title: 空音
 description: OKF-native static site generator
 profile: sorane-okf/0.1
 ---

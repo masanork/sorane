@@ -5,7 +5,7 @@ profile: sorane-okf/0.1
 excludeFromList: true
 ---
 
-sorane のタグ付きリリース（`v*`）には SLSA v1.0 Build-L3 provenance、SBOM、CBOM が含まれます。
+空音のタグ付きリリース（`v*`）には SLSA v1.0 Build-L3 provenance、SBOM、CBOM が含まれます。
 
 ## 現在の状態
 
@@ -43,13 +43,13 @@ sorane のタグ付きリリース（`v*`）には SLSA v1.0 Build-L3 provenance
 | CBOM | プロセス内で使うハッシュ（SHA-256） | [cbom.json](/cbom.json) |
 | SBOM | npm 依存ツリー | [GitHub Release](https://github.com/masanork/sorane/releases/latest) の `sbom.json` |
 
-CBOM は C2PA 署名を **外部 `c2patool`** に委譲する前提です。sorane 本体は署名鍵を持ちません。
+CBOM は C2PA 署名を **外部 `c2patool`** に委譲する前提です。空音本体は署名鍵を持ちません。
 
 ## リリース成果物
 
 `v*` タグの GitHub Release には次があります。
 
-- `@sorane/*` の npm pack tarball ×5
+- `@sorane/*` の npm pack tarball ×7
 - source tarball（`sorane-vX.Y.Z.tar.gz`）
 - `cbom.json` / `sbom.json` と SHA-256 サイドカー
 - `sorane-vX.Y.Z.intoto.jsonl`（SLSA provenance）

@@ -1,4 +1,4 @@
-# sorane minimal example (monorepo)
+# 空音 minimal example (monorepo)
 
 This directory is an **in-repo** example. For a standalone content repository, use [`template/site/`](../../template/site/) instead.
 

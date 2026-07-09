@@ -31,7 +31,13 @@ jobs:
           node-version: "23"
 
       - name: Install dependencies
-        run: npm ci
+        run: |
+          for i in 1 2 3; do
+            npm ci && exit 0
+            echo "npm ci failed (attempt $i); retrying..."
+            sleep $((i * 15))
+          done
+          exit 1
 
       - name: Typecheck
         run: npm run typecheck
@@ -62,7 +68,13 @@ jobs:
           registry-url: https://registry.npmjs.org
 
       - name: Install dependencies
-        run: npm ci
+        run: |
+          for i in 1 2 3; do
+            npm ci && exit 0
+            echo "npm ci failed (attempt $i); retrying..."
+            sleep $((i * 15))
+          done
+          exit 1
 
       # Trusted Publisher (OIDC): configure each @sorane/* on npmjs.com → release.yml
       # Or set GitHub Actions secret NPM_TOKEN (granular publish token).
@@ -102,8 +114,9 @@ jobs:
         with:
           node-version: "23"
 
+      # Pack needs package metadata only; skip native postinstall (onnxruntime) flakiness.
       - name: Install dependencies
-        run: npm ci
+        run: npm ci --ignore-scripts
 
       - name: Pack workspace tarballs + sha256
         shell: bash
@@ -206,7 +219,7 @@ jobs:
           node-version: "23"
 
       - name: Install dependencies
-        run: npm ci
+        run: npm ci --ignore-scripts
 
       - name: Generate SBOM + sha256
         shell: bash

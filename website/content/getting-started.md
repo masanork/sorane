@@ -11,7 +11,7 @@ excludeFromList: true
 
 ## クイックスタート
 
-sorane は npm で公開されています。`sorane.yaml` があるディレクトリで次を実行します。
+空音は npm で公開されています。`sorane.yaml` があるディレクトリで次を実行します。
 
 ```bash
 npm install @sorane/cli
@@ -32,7 +32,7 @@ npx sorane build --cwd . --clean
 
 機能の全体像は [機能](features.html)。AI 向けの詳細は [AI 向け解説](ai-onboarding.html)。設定は [設定（YAML）](configuration.html)。
 
-## sorane 本体の開発
+## 空音本体の開発
 
 monorepo 全体を扱う場合はリポジトリを clone します。
 

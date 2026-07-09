@@ -1,6 +1,6 @@
-# sorane site — agent instructions
+# 空音 site — agent instructions
 
-You edit a **sorane** static site: Markdown + YAML frontmatter in `content/`, configured by `sorane.yaml`. There is no admin UI. Humans and agents publish by committing to Git.
+You edit a **空音 (sorane)** static site: Markdown + YAML frontmatter in `content/`, configured by `sorane.yaml`. There is no admin UI. Humans and agents publish by committing to Git.
 
 **Core loop:** edit `content/` → `validate --json` → fix errors → `build --clean` → commit.
 
@@ -161,7 +161,7 @@ Body in Markdown. Start headings at `##` (page title is already h1).
 | `glossary` | `## Term {#id}` per entry | Or `terms:` in frontmatter when body has no `##` |
 | `faq` | `## Question?` then answer | One question per `##` heading |
 
-Full examples: [examples/open-data/](https://github.com/masanork/sorane/tree/main/examples/open-data) in the sorane repo.
+Full examples: [examples/open-data/](https://github.com/masanork/sorane/tree/main/examples/open-data) in the 空音 repo.
 
 ### Search (optional)
 

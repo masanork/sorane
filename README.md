@@ -1,6 +1,8 @@
-# sorane
+# 空音 (sorane)
 
 OKF-native static site generator. Markdown concepts with YAML frontmatter become a static site with machine-readable outputs for agents and search tools.
+
+Japanese product name: **空音** (sorane). CLI and npm packages keep the `sorane` identifier.
 
 - **Product site:** https://ssg.sorane.dev/ (built from `website/` in this repo)
 
@@ -64,7 +66,7 @@ See [configuration](https://ssg.sorane.dev/configuration.html#プリセット) o
 
 ## OKF profile
 
-sorane implements [Open Knowledge Format (OKF)](https://cloud.google.com/blog/products/data-analytics/how-the-open-knowledge-format-can-improve-data-sharing) with profiles `sorane-okf/0.1` through `0.3` (extended types and open-data metadata in `0.3`).
+空音 implements [Open Knowledge Format (OKF)](https://cloud.google.com/blog/products/data-analytics/how-the-open-knowledge-format-can-improve-data-sharing) with profiles `sorane-okf/0.1` through `0.3` (extended types and open-data metadata in `0.3`).
 
 Supported concept types:
 
@@ -186,7 +188,7 @@ Requires `content/asset-provenance.yaml` and external tools (`exiftool`, `c2pato
 
 ## Docs site
 
-The product site lives in `website/` and is built with sorane itself:
+The product site lives in `website/` and is built with 空音 itself:
 
 ```bash
 npm run build -- --cwd website --clean

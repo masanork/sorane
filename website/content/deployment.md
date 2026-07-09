@@ -7,7 +7,7 @@ excludeFromList: true
 
 ## Cloudflare Pages
 
-サイト用リポジトリの CI では npm から sorane を呼び出します。テンプレートは `template/site/.github/workflows/pages.yml` を参照してください。
+サイト用リポジトリの CI では npm から空音 CLI を呼び出します。テンプレートは `template/site/.github/workflows/pages.yml` を参照してください。
 
 ```yaml
 # .github/workflows/pages.yml
@@ -21,7 +21,7 @@ excludeFromList: true
 
 初回のみ Cloudflare で Pages プロジェクトを作成してください。シークレットに `CLOUDFLARE_API_TOKEN` と `CLOUDFLARE_ACCOUNT_ID` を設定します。
 
-[sorane 公式サイト](https://ssg.sorane.dev/) は sorane リポジトリ内の `website/` を dogfooding してビルドしています。
+[空音公式サイト](https://ssg.sorane.dev/) は空音リポジトリ内の `website/` を dogfooding してビルドしています。
 
 問い合わせ（kototoi）を有効にしているサイトは、`build` のあとに埋め込み資産の配置と `contact.html` のパッチが必要です。手順は [kototoi 問い合わせフォーム](kototoi.html) を参照してください。公式 CI（`.github/workflows/pages.yml`）では次を追加しています。
 
@@ -86,7 +86,7 @@ profile: sorane-okf/0.2
 | `status` | 301（既定）/ 302 / 303 / 307 / 308 |
 | 出力 | `redirect` 付き記事は HTML・サイトマップ・feed・ブログ一覧から除外 |
 
-`static/_redirects` に置いても **効きません**（`dist/static/` 配下になるため）。必ず sorane の `build.redirects` か記事 `redirect` を使ってください。
+`static/_redirects` に置いても **効きません**（`dist/static/` 配下になるため）。必ず空音の `build.redirects` か記事 `redirect` を使ってください。
 
 ### 図表（D2 / Mermaid）
 
@@ -99,7 +99,7 @@ Mermaid は次の 2 モードがあります。
 | `mermaid.mode: client`（既定） | なし（`mermaid` npm パッケージのみ） | **採用** — Pages ビルドに Chromium 不要 |
 | `mermaid.mode: build` | `@mermaid-js/mermaid-cli`（mmdc）+ Chromium | 未使用 — 静的 SVG が必要なサイト向け |
 
-`mermaid.mode: build` を使うサイトは CI で Chromium を用意し、`PUPPETEER_EXECUTABLE_PATH` を設定してください。sorane リポジトリの `test.yml` `e2e` ジョブは Playwright の Chromium を mmdc に流用してビルドテストしています。
+`mermaid.mode: build` を使うサイトは CI で Chromium を用意し、`PUPPETEER_EXECUTABLE_PATH` を設定してください。空音リポジトリの `test.yml` `e2e` ジョブは Playwright の Chromium を mmdc に流用してビルドテストしています。
 
 ## 大規模サイト
 
@@ -112,7 +112,7 @@ Mermaid は次の 2 モードがあります。
 - wrangler pages deploy dist --project-name <name>
 ```
 
-sorane ソースを checkout する構成も可能です。`AGENTS.md` の `SORANE_ROOT` を参照してください。
+空音ソースを checkout する構成も可能です。`AGENTS.md` の `SORANE_ROOT` を参照してください。
 
 ### 検索・大容量資産
 
@@ -131,13 +131,13 @@ sorane ソースを checkout する構成も可能です。`AGENTS.md` の `SORA
 
 ## アクセス解析・ログ（Cloudflare）
 
-sorane は HTML にアナリティクス JS を埋め込みません。計測は Cloudflare ゾーン側で行います。
+空音は HTML にアナリティクス JS を埋め込みません。計測は Cloudflare ゾーン側で行います。
 
 ### アクセス解析（無料プラン）
 
 Cloudflare には名前が似た製品が2つあります。**ゾーンの HTTP Traffic で「Upgrade to Pro」が出るのは正常**です（詳細な PV / Visits は Pro 以上）。
 
-| 製品 | 場所 | 無料 | PV 相当 | sorane HTML |
+| 製品 | 場所 | 無料 | PV 相当 | 空音 HTML |
 |------|------|------|---------|-------------|
 | **Pages Web Analytics** | Workers & Pages → プロジェクト → **Metrics** → Enable | ○ | ○（Core Web Vitals 含む） | ビルド成果物に CF がスニペット注入（ソース Markdown には書かない） |
 | **ゾーン HTTP Traffic** | ゾーン → Analytics & Logs → HTTP Traffic | 基本のみ | Pro 以上で Page views / Visits | エッジ集計（JS 不要） |

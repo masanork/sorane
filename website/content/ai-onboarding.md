@@ -5,7 +5,7 @@ profile: sorane-okf/0.1
 excludeFromList: true
 ---
 
-sorane サイトは管理画面なしで、Markdown と frontmatter を Git で管理します。AI アシスタントは `content/` の編集とビルド検証を担当します。
+空音サイトは管理画面なしで、Markdown と frontmatter を Git で管理します。AI アシスタントは `content/` の編集とビルド検証を担当します。
 
 ## テンプレート
 
