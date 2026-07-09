@@ -323,12 +323,22 @@ fn html_rel_for_content(
 }
 
 fn iso_timestamp_now() -> String {
-    use std::time::{SystemTime, UNIX_EPOCH};
-    let dur = SystemTime::now()
-        .duration_since(UNIX_EPOCH)
-        .unwrap_or_default();
-    let secs = dur.as_secs();
-    let nanos = dur.subsec_nanos();
+    // SystemTime::now() traps as `unreachable` on wasm32 without WASI clocks.
+    #[cfg(target_arch = "wasm32")]
+    let (secs, millis) = {
+        let ms = js_sys::Date::now();
+        let secs = (ms / 1000.0).floor() as u64;
+        let millis = (ms % 1000.0).floor() as u32;
+        (secs, millis)
+    };
+    #[cfg(not(target_arch = "wasm32"))]
+    let (secs, millis) = {
+        use std::time::{SystemTime, UNIX_EPOCH};
+        let dur = SystemTime::now()
+            .duration_since(UNIX_EPOCH)
+            .unwrap_or_default();
+        (dur.as_secs(), dur.subsec_millis())
+    };
     let days = secs / 86_400;
     let time_of_day = secs % 86_400;
     let hours = time_of_day / 3600;
@@ -336,8 +346,7 @@ fn iso_timestamp_now() -> String {
     let seconds = time_of_day % 60;
     let (year, month, day) = civil_from_days(days as i64);
     format!(
-        "{year:04}-{month:02}-{day:02}T{hours:02}:{minutes:02}:{seconds:02}.{:03}Z",
-        nanos / 1_000_000
+        "{year:04}-{month:02}-{day:02}T{hours:02}:{minutes:02}:{seconds:02}.{millis:03}Z",
     )
 }
 

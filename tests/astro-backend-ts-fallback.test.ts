@@ -16,12 +16,15 @@ import { soraneAstroNativeCliAvailable } from "../packages/astro/src/backend-cli
  * CI job `astro-ts-fallback` runs this file without `cargo build`.
  */
 describe("Astro TypeScript fallback (CI guard)", () => {
-  test("backend auto resolves to ts when native CLI is not built", () => {
+  test("backend auto prefers wasm or ts when native CLI is not built", () => {
     if (soraneAstroNativeCliAvailable()) {
       // Local dev machines with cargo build use native; skip resolution check.
       return;
     }
-    expect(resolveSoraneAstroBackend("auto")).toBe("ts");
+    // auto: cli → wasm (if package present) → ts
+    const resolved = resolveSoraneAstroBackend("auto");
+    expect(resolved === "wasm" || resolved === "ts").toBe(true);
+    expect(resolved).not.toBe("cli");
   });
 
   test("backend auto skips native when SORANE_ASTRO_BACKEND_NATIVE=0", () => {

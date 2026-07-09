@@ -20,7 +20,7 @@ function ensureInit(): void {
       "[sorane/astro-backend-wasm] WASM artifact missing; run npm run build:wasm -w @sorane/astro-backend-wasm",
     );
   }
-  initSync(readFileSync(wasmPath));
+  initSync({ module: readFileSync(wasmPath) });
   initialized = true;
 }
 
