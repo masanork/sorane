@@ -84,13 +84,47 @@ function topK(query, vectors, dim, k, allow) {
   return heap.sort((a, b) => b.score - a.score);
 }
 
-function ftsSearch(index, query, type, k = TOP_K) {
+const AI_SOURCE_CODES = [
+  "trainedAlgorithmicMedia",
+  "compositeWithTrainedAlgorithmicMedia",
+  "algorithmicMedia",
+  "compositeSynthetic",
+  "algorithmicallyEnhanced",
+];
+const HUMAN_SOURCE_CODES = [
+  "digitalCapture",
+  "digitalCreation",
+  "humanEdits",
+  "compositeCapture",
+  "dataDrivenMedia",
+  "negativeFilm",
+  "positiveFilm",
+  "print",
+];
+
+function matchesSourceFacet(digitalSourceType, facet) {
+  if (!facet) return true;
+  const dst = (digitalSourceType || "").trim();
+  if (facet === "disclosed") return dst.length > 0;
+  if (dst.length === 0) return false;
+  const lower = dst.toLowerCase();
+  if (facet === "ai-generated") {
+    return AI_SOURCE_CODES.some((code) => lower.includes(code.toLowerCase()));
+  }
+  if (facet === "human") {
+    return HUMAN_SOURCE_CODES.some((code) => lower.includes(code.toLowerCase()));
+  }
+  return true;
+}
+
+function ftsSearch(index, query, type, source, k = TOP_K) {
   const terms = tokenizeQuery(query);
   if (terms.length === 0) return [];
   const hits = [];
   for (let i = 0; i < index.chunks.length; i++) {
     const chunk = index.chunks[i];
     if (type && chunk.doc_type !== type) continue;
+    if (!matchesSourceFacet(chunk.digital_source_type, source)) continue;
     const hay = [
       chunk.text || "",
       chunk.title || "",
@@ -138,7 +172,8 @@ function showEmptyState(resultsEl, root, message, labels) {
 function setup(root) {
   const form = root.querySelector(".search-form");
   const input = root.querySelector(".search-input");
-  const facet = root.querySelector(".search-facet");
+  const facet = root.querySelector(".search-facet:not(.search-facet--source)");
+  const sourceFacet = root.querySelector(".search-facet--source");
   const status = root.querySelector("[data-search-status]");
   const resultsEl = root.querySelector("[data-search-results]");
   const indexUrl = root.getAttribute("data-index");
@@ -257,7 +292,8 @@ function setup(root) {
     const idx = await loadIndex();
     setStatus(labels.searching);
     const type = facet ? facet.value : "";
-    const ranked = ftsSearch(idx, query, type);
+    const source = sourceFacet ? sourceFacet.value : "";
+    const ranked = ftsSearch(idx, query, type, source);
     render(
       ranked.map((r) => ({ chunk: r.chunk, score: r.score })),
       query,
@@ -270,7 +306,13 @@ function setup(root) {
     setStatus(labels.searching);
     const qv = await e(query);
     const type = facet ? facet.value : "";
-    const allow = type ? (i) => idx.chunks[i].doc_type === type : null;
+    const source = sourceFacet ? sourceFacet.value : "";
+    const allow = (i) => {
+      const chunk = idx.chunks[i];
+      if (type && chunk.doc_type !== type) return false;
+      if (!matchesSourceFacet(chunk.digital_source_type, source)) return false;
+      return true;
+    };
     const ranked = topK(qv, idx.vectors, idx.embeddings.dim, TOP_K, allow);
     const scale = idx.embeddings.scale || 1;
     render(

@@ -4,7 +4,7 @@
 |-------|-------|
 | **Author** | _(TBD)_ |
 | **Date** | 2026-06-20 |
-| **Status** | Phase 1–3 + Graphviz shipped (PR1–PR11; PR6 Playwright E2E in `test.yml`) |
+| **Status** | Phase 1–3 + Graphviz + PlantUML/Kroki shipped (PR1–PR12; PR6 Playwright E2E in `test.yml`) |
 | **Profile target** | None (body syntax only; `sorane-okf/0.1` and `0.2` unchanged) |
 
 ---
@@ -517,7 +517,7 @@ PR4’s render inventory applies equally to Phase 2 — D2 fences must compile i
 |---------|----------|-----------|-------|
 | Mermaid `build` mode | `@mermaid-js/mermaid-cli` + Chromium | Gated in `test.yml` `e2e` (Playwright Chromium → mmdc) | ✅ shipped (PR10); opt-in per site |
 | Graphviz | `dot` CLI (build + PDF prerender) | Optional binary on PATH | ✅ shipped (PR11); WASM not pursued |
-| PlantUML | Kroki HTTP API | External dep + network | Deferred in bunsen |
+| PlantUML | Kroki HTTP API | External dep + network | ✅ shipped (PR12); opt-in `plantuml.enabled` |
 
 ---
 
@@ -823,13 +823,13 @@ No new commands. `sorane build` respects `sorane.yaml` `build.diagrams`. No root
 | **PR8** | `ci: install d2 on Pages workflow (optional sorane.dev)` | `.github/workflows/pages.yml`, `website/sorane.yaml`, `website/content/deployment.md` | PR7 | Pin d2 version; document opt-in. **Accept:** pages workflow installs d2 when sorane.dev enables `d2.enabled: true`. |
 | **PR9** | `docs: mirror design doc to design/diagram-formats.md` | `design/diagram-formats.md` | PR5 | Optional repo-local design mirror for agents. **Accept:** file exists or explicitly skipped with PR5 covering public docs. |
 
-### Phase 3+ (future PRs, not scheduled)
+### Phase 3+ (shipped + optional)
 
 | # | Title | Notes |
 |---|-------|-------|
 | PR10 | `feat(core): mermaid build mode via mmdc` | ✅ `compile-mermaid.ts` + async render; CI in `test.yml` `e2e`; PDF prerender uses same binary |
 | PR11 | `feat(core): graphviz fence via dot CLI` | ✅ `compile-graphviz.ts`; build SVG + PDF prerender; opt-in `graphviz.enabled` |
-| PR12 | `feat(core): plantuml via Kroki (opt-in URL)` | Site config `kroki_url`; network dependency |
+| PR12 | `feat(core): plantuml via Kroki (opt-in URL)` | ✅ `compile-plantuml.ts`; `plantuml.enabled` + `kroki_url`; SSRF-guarded HTTP; network dependency |
 
 ---
 

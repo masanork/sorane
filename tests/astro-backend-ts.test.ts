@@ -220,15 +220,22 @@ indexed in FTS-only fallback mode without a hybrid embedding model directory.
 `,
     );
     const warnings: string[] = [];
-    const files = await emitAstroSearchAssets({
-      root,
-      contentDir,
-      outDir: join(root, "dist"),
-      sourceToUrl: () => "posts/findme.html",
-      search: { mode: "hybrid", force: true, modelRoot: "vendor/missing-models" },
-      logger: { warn: (m) => warnings.push(m) },
-    });
-    expect(files).toContain("assets/search-index.json");
-    expect(warnings.some((w) => w.includes("hybrid search model not found"))).toBe(true);
+    const prev = process.env.SORANE_INDEX_NATIVE;
+    process.env.SORANE_INDEX_NATIVE = "0";
+    try {
+      const files = await emitAstroSearchAssets({
+        root,
+        contentDir,
+        outDir: join(root, "dist"),
+        sourceToUrl: () => "posts/findme.html",
+        search: { mode: "hybrid", force: true, modelRoot: "vendor/missing-models" },
+        logger: { warn: (m) => warnings.push(m) },
+      });
+      expect(files).toContain("assets/search-index.json");
+      expect(warnings.some((w) => w.includes("hybrid search model not found"))).toBe(true);
+    } finally {
+      if (prev === undefined) delete process.env.SORANE_INDEX_NATIVE;
+      else process.env.SORANE_INDEX_NATIVE = prev;
+    }
   });
 });

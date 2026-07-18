@@ -17,16 +17,16 @@ describe("mergeDiagramMeta", () => {
   test("カウントを合算する", () => {
     expect(
       mergeDiagramMeta(
-        { mermaid: 2, d2: 1, graphviz: 1 },
-        { mermaid: 1, d2: 3, graphviz: 2 },
+        { mermaid: 2, d2: 1, graphviz: 1, plantuml: 0 },
+        { mermaid: 1, d2: 3, graphviz: 2, plantuml: 0 },
       ),
-    ).toEqual({ mermaid: 3, d2: 4, graphviz: 3 });
+    ).toEqual({ mermaid: 3, d2: 4, graphviz: 3, plantuml: 0 });
   });
 });
 
 describe("emptyDiagramMeta", () => {
   test("ゼロ初期化", () => {
-    expect(emptyDiagramMeta()).toEqual({ mermaid: 0, d2: 0, graphviz: 0 });
+    expect(emptyDiagramMeta()).toEqual({ mermaid: 0, d2: 0, graphviz: 0, plantuml: 0 });
   });
 });
 
@@ -64,7 +64,19 @@ describe("countDiagramsForConfig", () => {
       mermaid: 0,
       d2: 0,
       graphviz: 0,
+      plantuml: 0,
     });
+  });
+
+  test("plantuml を数える", () => {
+    const tree = unified()
+      .use(remarkParse)
+      .parse("```plantuml\n@startuml\nA -> B\n@enduml\n```\n") as Root;
+    const counts = countDiagramsForConfig(tree, {
+      ...DIAGRAMS_ON,
+      plantuml: { enabled: true },
+    });
+    expect(counts.plantuml).toBe(1);
   });
 });
 
@@ -85,7 +97,7 @@ describe("resolveMermaidMode", () => {
 describe("diagramHeadForPage", () => {
   test("mermaid ありで loader script", () => {
     const head = diagramHeadForPage(
-      { mermaid: 1, d2: 0, graphviz: 0 },
+      { mermaid: 1, d2: 0, graphviz: 0, plantuml: 0 },
       "./",
       DIAGRAMS_ON,
     );
@@ -102,7 +114,7 @@ describe("diagramHeadForPage", () => {
   test("mode: off では undefined", () => {
     expect(
       diagramHeadForPage(
-        { mermaid: 1, d2: 0, graphviz: 0 },
+        { mermaid: 1, d2: 0, graphviz: 0, plantuml: 0 },
         "./",
         { ...DIAGRAMS_ON, mermaid: { mode: "off" } },
       ),
@@ -112,7 +124,7 @@ describe("diagramHeadForPage", () => {
   test("mode: build では loader 無し", () => {
     expect(
       diagramHeadForPage(
-        { mermaid: 1, d2: 0, graphviz: 0 },
+        { mermaid: 1, d2: 0, graphviz: 0, plantuml: 0 },
         "./",
         { ...DIAGRAMS_ON, mermaid: { mode: "build" } },
       ),

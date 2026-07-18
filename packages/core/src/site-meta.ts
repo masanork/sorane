@@ -141,7 +141,7 @@ export function buildLlmsTxt(opts: LlmsTxtOptions): string {
       "",
       "Articles may declare `digitalSourceType` (IPTC NewsCodes / schema.org) in OKF frontmatter.",
       "Published HTML includes JSON-LD `digitalSourceType` and optional EU transparency badges.",
-      "Search index (`assets/search-index.json`) exposes `digital_source_type` per chunk when set.",
+      "Search index (`assets/search-index.json`) exposes `digital_source_type` per chunk when set; browser search has a source facet (ai-generated / human / disclosed).",
       "Atom feed (`feed.xml`) includes `category term` when disclosure is present.",
       "",
       `Labeled articles: ${opts.aiLabeledCount}`,

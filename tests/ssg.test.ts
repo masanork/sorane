@@ -227,6 +227,8 @@ describe("buildSearchMount", () => {
     expect(html).toContain('value="dataset"');
     expect(html).toContain('value="glossary"');
     expect(html).toContain("データセット");
+    expect(html).toContain("search-facet--source");
+    expect(html).toContain('value="ai-generated"');
   });
 });
 

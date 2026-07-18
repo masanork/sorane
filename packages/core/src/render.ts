@@ -2,6 +2,7 @@ import type { DiagramsConfig } from "./config.ts";
 import { DEFAULT_DIAGRAMS_CONFIG } from "./config.ts";
 import {
   countDiagramsForConfig,
+  emptyDiagramMeta,
   type DiagramRenderMeta,
 } from "./diagrams/diagram-meta.ts";
 import type { GlossaryLinkIndex } from "./markup/glossary-link-index.ts";
@@ -60,7 +61,7 @@ export function renderMarkdownDocument(
 ): RenderedMarkdown {
   const diagramConfig = opts?.diagrams ?? DEFAULT_DIAGRAMS_CONFIG;
   const outline: TocEntry[] = [];
-  const diagrams: DiagramRenderMeta = { mermaid: 0, d2: 0, graphviz: 0 };
+  const diagrams: DiagramRenderMeta = emptyDiagramMeta();
   const tree = processMarkdownToMdast(rewriteLinks(markdown), {
     diagrams: diagramConfig,
     glossaryIndex: opts?.glossaryIndex,

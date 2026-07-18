@@ -70,6 +70,26 @@ build: {
 sorane -> build: render
 ```
 
+## PlantUML（Kroki）
+
+`build.diagrams.plantuml.enabled: true` で [Kroki](https://kroki.io/) HTTP API 経由のビルド時 SVG になります（**ネットワーク依存**）。自己ホストする場合は `kroki_url` を指定してください。
+
+```yaml
+build:
+  diagrams:
+    plantuml:
+      enabled: true
+      kroki_url: https://kroki.io
+```
+
+```plantuml alt="シーケンス"
+@startuml
+Alice -> Bob: hello
+@enduml
+```
+
+` ```puml ` も同じ扱いです。Kroki 到達不可や HTTP エラー時は警告のうえ `<pre><code>` フォールバック（ビルドは継続）。
+
 ## 設定
 
 `build.diagrams` で有効化・モードを切り替えます。詳細は [設定](configuration.html) を参照してください。

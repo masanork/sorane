@@ -94,11 +94,20 @@ function provenanceCandidates(hints: ProvenanceLookupHints): string[] {
   push(hints.markdownPath);
   push(hints.publicPath);
   push(hints.contentRel);
+  // External hotlink keys may be stored with or without trailing slash / http vs https
+  if (hints.markdownPath?.startsWith("http")) {
+    push(hints.markdownPath.replace(/\/$/, ""));
+    if (hints.markdownPath.startsWith("https://")) {
+      push(`http://${hints.markdownPath.slice("https://".length)}`);
+    } else if (hints.markdownPath.startsWith("http://")) {
+      push(`https://${hints.markdownPath.slice("http://".length)}`);
+    }
+  }
   if (hints.staticRel) push(join("static", hints.staticRel).replace(/\\/g, "/"));
   if (hints.publicPath?.startsWith("static/")) {
     push(hints.publicPath.slice("static/".length));
   }
-  if (hints.sourceMdRel && hints.markdownPath) {
+  if (hints.sourceMdRel && hints.markdownPath && !hints.markdownPath.startsWith("http")) {
     const sourceDir = hints.sourceMdRel.includes("/")
       ? hints.sourceMdRel.replace(/\/[^/]+$/, "")
       : "";

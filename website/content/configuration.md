@@ -413,6 +413,9 @@ build:
     graphviz:
       enabled: false
       binary: dot
+    plantuml:
+      enabled: false
+      kroki_url: https://kroki.io   # 自己ホスト Kroki のベース URL も可
 ```
 
 - ` ```mermaid ` … `mode: client`（既定）ではクライアント描画（`sorane-mermaid-loader.mjs` を条件付き読み込み）
@@ -420,7 +423,8 @@ build:
 - `alt="..."` を info string に付けるか、`%% alt: 説明` コメントで代替テキストを指定
 - `d2.enabled: true` … `d2` CLI でビルド時 SVG（`assets/diagrams/d2/{hash}.svg`）
 - ` ```graphviz ` / ` ```dot ` … `graphviz.enabled: true` かつ `dot` が PATH にあるときビルド時 SVG
-- いずれのバックエンドも CLI 欠落時は警告のうえ `<pre><code>` フォールバック（ビルドは継続）
+- ` ```plantuml ` / ` ```puml ` … `plantuml.enabled: true` で Kroki HTTP 経由のビルド時 SVG（ネットワーク依存・SSRF ガード付き）
+- いずれのバックエンドも CLI 欠落 / Kroki 失敗時は警告のうえ `<pre><code>` フォールバック（ビルドは継続）
 
 詳細と例は [図表](diagrams.html) を参照してください。`sorane validate` は alt 欠落の図表フェンスを warning で報告します。
 

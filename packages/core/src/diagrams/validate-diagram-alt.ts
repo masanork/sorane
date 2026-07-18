@@ -1,5 +1,6 @@
 import type { DiagramsConfig } from "../config.ts";
 import { isGraphvizLang } from "./compile-graphviz.ts";
+import { isPlantumlLang } from "./compile-plantuml.ts";
 import { extractAltText } from "./parse-diagram-fence.ts";
 
 const FENCE_OPEN_RE = /^(`{3,}|~{3,})(\S*)\s*(.*)$/;
@@ -9,6 +10,7 @@ function isDiagramLangActive(lang: string, config: DiagramsConfig): boolean {
   if (lang === "mermaid") return config.mermaid?.mode !== "off";
   if (lang === "d2") return config.d2?.enabled === true;
   if (isGraphvizLang(lang)) return config.graphviz?.enabled === true;
+  if (isPlantumlLang(lang)) return config.plantuml?.enabled === true;
   return false;
 }
 

@@ -81,6 +81,12 @@ export interface DiagramsConfig {
     readonly enabled?: boolean;
     readonly binary?: string;
   };
+  /** PlantUML via Kroki HTTP (network dependency; default off). */
+  readonly plantuml?: {
+    readonly enabled?: boolean;
+    /** Kroki base URL (no trailing slash). Default `https://kroki.io`. */
+    readonly kroki_url?: string;
+  };
 }
 
 export const DEFAULT_DIAGRAMS_CONFIG: Required<DiagramsConfig> = {
@@ -88,6 +94,7 @@ export const DEFAULT_DIAGRAMS_CONFIG: Required<DiagramsConfig> = {
   mermaid: { mode: "client", version: "~11.15.0", mmdc: "mmdc" },
   d2: { enabled: false, binary: "d2" },
   graphviz: { enabled: false, binary: "dot" },
+  plantuml: { enabled: false, kroki_url: "https://kroki.io" },
 };
 
 import type { BuildOutputsConfig, PresetLayer } from "./presets.ts";
@@ -420,6 +427,10 @@ export function mergeConfig(partial: MergeConfigInput = {}): SoraneConfig {
             graphviz: {
               ...DEFAULT_DIAGRAMS_CONFIG.graphviz,
               ...buildPartial.diagrams.graphviz,
+            },
+            plantuml: {
+              ...DEFAULT_DIAGRAMS_CONFIG.plantuml,
+              ...buildPartial.diagrams.plantuml,
             },
           }
         : DEFAULT_DIAGRAMS_CONFIG,

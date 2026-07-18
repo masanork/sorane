@@ -142,6 +142,7 @@ import {
 import { isD2CompileEnabled } from "./diagrams/compile-d2.ts";
 import { isGraphvizCompileEnabled } from "./diagrams/compile-graphviz.ts";
 import { isMermaidBuildEnabled } from "./diagrams/compile-mermaid.ts";
+import { isPlantumlCompileEnabled } from "./diagrams/compile-plantuml.ts";
 import { resolveThemeAssetDir } from "./theme-assets.ts";
 import {
   docsNavFor,
@@ -159,6 +160,7 @@ import {
 import type { DiagramRenderMeta } from "./diagrams/diagram-meta.ts";
 import { buildAssociatedMediaForArticle } from "./associated-media.ts";
 import { loadAssetProvenance } from "./asset-provenance.ts";
+import { extractExternalMarkdownImages } from "./markdown-external-images.ts";
 import {
   collectMarkdownImageRefs,
   dedupeMarkdownImageRefs,
@@ -463,9 +465,11 @@ export async function runBuild(opts: BuildOptions): Promise<BuildResult> {
   const d2OutDir = join(outDir, "assets", "diagrams", "d2");
   const mermaidOutDir = join(outDir, "assets", "diagrams", "mermaid");
   const graphvizOutDir = join(outDir, "assets", "diagrams", "graphviz");
+  const plantumlOutDir = join(outDir, "assets", "diagrams", "plantuml");
   if (isD2CompileEnabled(diagramConfig)) mkdirSync(d2OutDir, { recursive: true });
   if (isMermaidBuildEnabled(diagramConfig)) mkdirSync(mermaidOutDir, { recursive: true });
   if (isGraphvizCompileEnabled(diagramConfig)) mkdirSync(graphvizOutDir, { recursive: true });
+  if (isPlantumlCompileEnabled(diagramConfig)) mkdirSync(plantumlOutDir, { recursive: true });
   const glossaryLinkIndex = buildGlossaryLinkIndex(parsed, config, i18n);
   const security = resolveSecurityConfig(config);
   const sanitizeOpts = { strictHtml: security.strict_html || !security.allow_embeds };
@@ -477,6 +481,7 @@ export async function runBuild(opts: BuildOptions): Promise<BuildResult> {
     d2OutDir,
     mermaidOutDir,
     graphvizOutDir,
+    plantumlOutDir,
     onDiagramWarning: (message) => process.stderr.write(`[sorane] ${message}\n`),
   });
 
@@ -921,10 +926,12 @@ export async function runBuild(opts: BuildOptions): Promise<BuildResult> {
       cwd,
       staticDirName,
     });
+    const externalImageRefs = extractExternalMarkdownImages(p.concept.body);
     const associatedMedia =
       pageAiFlags.jsonLd && !isSearch
         ? buildAssociatedMediaForArticle({
             refs: pageImageRefs,
+            externalRefs: externalImageRefs,
             provenance: assetProvenance,
             baseUrl,
           })

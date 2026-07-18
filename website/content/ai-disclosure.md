@@ -115,6 +115,19 @@ build:
 
 記事本文のインライン画像のうち、`asset-provenance.yaml` に `digitalSourceType` があるものは `BlogPosting` JSON-LD の `associatedMedia`（`ImageObject`）として出力されます（`build.ai_disclosure.json_ld: true` 時）。`site.base_url` があると `contentUrl` は絶対 URL になります。
 
+**外部 hotlink**（`![](https://cdn.example/ai.png)`）も、manifest のキーを **フル URL** にすれば同じ経路で `associatedMedia` に載ります（画像自体の XMP/C2PA 埋め込みはローカル `static/` のみ）。
+
+```yaml
+# content/asset-provenance.yaml
+assets:
+  "https://cdn.example/ai.png":
+    digitalSourceType: trainedAlgorithmicMedia
+```
+
+## 検索の生成元ファセット
+
+検索ページには種別ファセットに加え、**生成元**ファセット（AI生成・合成 / 人間作成 / 開示あり）があります。`search-index.json` の chunk に載る `digital_source_type` で絞り込みます（ページ frontmatter の開示が export 時に伝播）。
+
 ## 静的画像 C2PA
 
 XMP 埋め込みのあと、**c2patool** で manifest を署名できます（オプトイン）。同じ `asset-provenance.yaml` の `digitalSourceType` が C2PA `create` intent にも使われます。

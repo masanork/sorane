@@ -51,7 +51,8 @@ Phase 1 ships author-controlled frontmatter → HTML badges + JSON-LD + catalog/
 
 ### Remaining gaps
 
-- External hotlink images (no local file) are not tagged.
+- ~~External hotlink images (no local file) are not tagged.~~ **Shipped:** `extractExternalMarkdownImages` + `asset-provenance.yaml` keys by full URL → `associatedMedia`.
+- Search UI source facet for AI disclosure — **shipped** (`search-facet--source`: ai-generated / human / disclosed).
 - Video/audio C2PA out of scope.
 
 ### Motivation
@@ -634,7 +635,7 @@ readonly machineReadable?: boolean;  // default true when any labeled content ex
 
 Hybrid + flag-off test cases required in `tests/web-export.test.ts`.
 
-Search UI (`packages/search` client) unchanged in phase 1; field is for agents and future facet `type:ai-generated`.
+Search UI includes a **source facet** (`search-facet--source`) filtering on chunk `digital_source_type` (`ai-generated` / `human` / `disclosed`).
 
 ---
 
