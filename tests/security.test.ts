@@ -53,6 +53,12 @@ describe("fetch-url-guard", () => {
     expect(isBlockedIpAddress("169.254.169.254")).toBe(true);
     expect(isBlockedHostname("localhost")).toBe(true);
   });
+
+  test("hostnames are not treated as blocked IP literals", () => {
+    expect(isBlockedIpAddress("example.com")).toBe(false);
+    expect(isBlockedIpAddress("kroki.io")).toBe(false);
+    expect(isBlockedIpAddress("8.8.8.8")).toBe(false);
+  });
 });
 
 describe("sanitize schema", () => {

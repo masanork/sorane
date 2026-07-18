@@ -5,6 +5,7 @@ import {
   type AssetProvenanceMap,
 } from "./asset-provenance.ts";
 import { hasImageMetadataFields } from "./iptc-xmp-pass.ts";
+import type { ExternalMarkdownImageRef } from "./markdown-external-images.ts";
 import type { MarkdownImageRef } from "./markdown-image-refs.ts";
 
 export interface AssociatedMediaItem {
@@ -22,6 +23,15 @@ function encodingFormatFromPath(filePath: string): string | undefined {
   return undefined;
 }
 
+function encodingFormatFromUrl(url: string): string | undefined {
+  try {
+    const path = new URL(url).pathname;
+    return encodingFormatFromPath(path);
+  } catch {
+    return undefined;
+  }
+}
+
 function provenanceForRef(
   map: AssetProvenanceMap,
   ref: MarkdownImageRef,
@@ -33,6 +43,16 @@ function provenanceForRef(
     contentRel: ref.publicPath,
     sourceMdRel: ref.sourceMdRel,
   });
+}
+
+function provenanceForExternal(
+  map: AssetProvenanceMap,
+  ref: ExternalMarkdownImageRef,
+): AssetProvenanceEntry | undefined {
+  return (
+    lookupAssetProvenance(map, { markdownPath: ref.url, publicPath: ref.url }) ??
+    map[ref.url]
+  );
 }
 
 function toAssociatedMediaItem(
@@ -57,9 +77,27 @@ function toAssociatedMediaItem(
   };
 }
 
+function toExternalAssociatedMediaItem(
+  ref: ExternalMarkdownImageRef,
+  entry: AssetProvenanceEntry,
+): AssociatedMediaItem | null {
+  const dst = entry.digitalSourceType;
+  if (!dst) return null;
+  const resolved = resolveDigitalSourceType(dst);
+  if (!resolved) return null;
+  return {
+    contentUrl: ref.url,
+    digitalSourceType: resolved.uri,
+    ...(ref.alt.length > 0 ? { name: ref.alt } : {}),
+    encodingFormat: encodingFormatFromUrl(ref.url),
+  };
+}
+
 /** 記事本文のインライン画像から `associatedMedia` 用 ImageObject 配列を組み立てる。 */
 export function buildAssociatedMediaForArticle(opts: {
   readonly refs: readonly MarkdownImageRef[];
+  /** External hotlinks (`![](https://…)`) keyed in asset-provenance.yaml by full URL. */
+  readonly externalRefs?: readonly ExternalMarkdownImageRef[];
   readonly provenance: AssetProvenanceMap;
   readonly baseUrl: string;
 }): AssociatedMediaItem[] {
@@ -70,6 +108,15 @@ export function buildAssociatedMediaForArticle(opts: {
     const entry = provenanceForRef(opts.provenance, ref);
     if (!hasImageMetadataFields(entry)) continue;
     const item = toAssociatedMediaItem(ref, entry!, opts.baseUrl);
+    if (!item || seen.has(item.contentUrl)) continue;
+    seen.add(item.contentUrl);
+    out.push(item);
+  }
+
+  for (const ref of opts.externalRefs ?? []) {
+    const entry = provenanceForExternal(opts.provenance, ref);
+    if (!hasImageMetadataFields(entry)) continue;
+    const item = toExternalAssociatedMediaItem(ref, entry!);
     if (!item || seen.has(item.contentUrl)) continue;
     seen.add(item.contentUrl);
     out.push(item);

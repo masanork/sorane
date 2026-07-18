@@ -1,7 +1,7 @@
 import type { OkfConcept } from "@sorane/okf";
 import { dirname, relative } from "node:path";
 import type { DiagramsConfig, DocsNavSpec } from "./config.ts";
-import type { DiagramRenderMeta } from "./diagrams/diagram-meta.ts";
+import { emptyDiagramMeta, type DiagramRenderMeta } from "./diagrams/diagram-meta.ts";
 import {
   escapeHtml,
   stripDuplicateTitleHeading,
@@ -388,7 +388,7 @@ export function renderDocsArticleFromConceptWithMeta(
   const rendered = renderMarkdownDocument(body, opts);
   return {
     bodyHtml: renderDocsArticleBody(concept, rendered, nav, lang, opts),
-    diagrams: rendered.diagrams ?? { mermaid: 0, d2: 0, graphviz: 0 },
+    diagrams: rendered.diagrams ?? emptyDiagramMeta(),
   };
 }
 
@@ -404,7 +404,7 @@ export async function renderDocsArticleFromConceptWithMetaForConfig(
     : renderMarkdownDocument(body, opts);
   return {
     bodyHtml: renderDocsArticleBody(concept, rendered, nav, lang, opts),
-    diagrams: rendered.diagrams ?? { mermaid: 0, d2: 0, graphviz: 0 },
+    diagrams: rendered.diagrams ?? emptyDiagramMeta(),
   };
 }
 

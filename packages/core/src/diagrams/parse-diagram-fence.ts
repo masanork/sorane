@@ -3,6 +3,7 @@ import type { Plugin } from "unified";
 import { visit } from "unist-util-visit";
 import type { DiagramsConfig } from "../config.ts";
 import { isGraphvizLang } from "./compile-graphviz.ts";
+import { isPlantumlLang } from "./compile-plantuml.ts";
 
 export type MermaidKind =
   | "flowchart"
@@ -61,14 +62,14 @@ export function extractAltText(
 }
 
 export interface SoraneDiagramMeta {
-  readonly lang: "mermaid" | "d2" | "graphviz";
+  readonly lang: "mermaid" | "d2" | "graphviz" | "plantuml";
   readonly altText?: string;
-  readonly kind?: MermaidKindOrUnsupported | "d2" | "graphviz";
+  readonly kind?: MermaidKindOrUnsupported | "d2" | "graphviz" | "plantuml";
 }
 
 function annotateDiagramCode(
   node: Code,
-  lang: "mermaid" | "d2" | "graphviz",
+  lang: "mermaid" | "d2" | "graphviz" | "plantuml",
 ): void {
   const altText = extractAltText(node.meta, node.value);
   const kind =
@@ -76,7 +77,9 @@ function annotateDiagramCode(
       ? detectDiagramKind(node.value)
       : lang === "d2"
         ? "d2"
-        : "graphviz";
+        : lang === "plantuml"
+          ? "plantuml"
+          : "graphviz";
   const data = (node.data ?? {}) as Record<string, unknown>;
   node.data = {
     ...data,
@@ -103,6 +106,11 @@ export function remarkDiagramFences(config: DiagramsConfig): Plugin<[], Root> {
       if (isGraphvizLang(node.lang)) {
         if (config.graphviz?.enabled !== true) return;
         annotateDiagramCode(node, "graphviz");
+        return;
+      }
+      if (isPlantumlLang(node.lang)) {
+        if (config.plantuml?.enabled !== true) return;
+        annotateDiagramCode(node, "plantuml");
       }
     });
   };

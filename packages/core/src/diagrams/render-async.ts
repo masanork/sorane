@@ -3,6 +3,7 @@ import type { DiagramsConfig } from "../config.ts";
 import { DEFAULT_DIAGRAMS_CONFIG } from "../config.ts";
 import {
   countDiagramsForConfig,
+  emptyDiagramMeta,
   type DiagramRenderMeta,
 } from "./diagram-meta.ts";
 import {
@@ -21,6 +22,12 @@ import {
   isMermaidBuildEnabled,
   resolveMmdcBinary,
 } from "./compile-mermaid.ts";
+import {
+  compilePlantumlToSvg,
+  isPlantumlCompileEnabled,
+  isPlantumlLang,
+  resolvePlantumlKrokiUrl,
+} from "./compile-plantuml.ts";
 import { extractAltText } from "./parse-diagram-fence.ts";
 import {
   remarkInjectBuiltFigures,
@@ -97,6 +104,7 @@ export interface AsyncRenderOptions extends RenderOptions {
   readonly d2OutDir?: string;
   readonly mermaidOutDir?: string;
   readonly graphvizOutDir?: string;
+  readonly plantumlOutDir?: string;
   readonly onDiagramWarning?: (message: string) => void;
 }
 
@@ -190,6 +198,33 @@ async function compileBuiltFigures(
     }
   }
 
+  if (isPlantumlCompileEnabled(diagramConfig) && opts.plantumlOutDir) {
+    const krokiUrl = resolvePlantumlKrokiUrl(diagramConfig);
+    const pumlNodes: Code[] = [];
+    visit(tree, "code", (node) => {
+      if (isPlantumlLang(node.lang)) pumlNodes.push(node);
+    });
+    for (const node of pumlNodes) {
+      const alt = extractAltText(node.meta, node.value) ?? "Diagram";
+      const result = await compilePlantumlToSvg({
+        source: node.value,
+        krokiUrl,
+        outDir: opts.plantumlOutDir,
+      });
+      if (!result.ok) {
+        warn?.(
+          `diagrams: plantuml compile failed (${result.hash.slice(0, 8)}…): ${result.warning ?? "unknown error"}`,
+        );
+        continue;
+      }
+      figures.set(node, {
+        src: `${rootPrefix}assets/diagrams/plantuml/${result.svgFileName}`,
+        alt,
+        variant: "plantuml",
+      });
+    }
+  }
+
   return figures;
 }
 
@@ -200,7 +235,7 @@ export async function renderMarkdownDocumentAsync(
 ): Promise<RenderedMarkdown> {
   const diagramConfig = opts?.diagrams ?? DEFAULT_DIAGRAMS_CONFIG;
   const outline: TocEntry[] = [];
-  const diagrams: DiagramRenderMeta = { mermaid: 0, d2: 0, graphviz: 0 };
+  const diagrams: DiagramRenderMeta = emptyDiagramMeta();
 
   const tree = unified()
     .use(remarkParse)

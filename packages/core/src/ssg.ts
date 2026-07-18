@@ -18,7 +18,10 @@ import {
   type BodySectionOptions,
 } from "./diagrams/render-body-section.ts";
 import type { DiagramRenderMeta } from "./diagrams/diagram-meta.ts";
-import { searchFacetOptionsHtml } from "./search-facets.ts";
+import {
+  searchFacetOptionsHtml,
+  searchSourceFacetOptionsHtml,
+} from "./search-facets.ts";
 import { escapeHtml, stripDuplicateTitleHeading } from "./render.ts";
 import { ogLocaleFromLang } from "./og-meta.ts";
 import { siteLabels, type SiteLabels } from "./site-labels.ts";
@@ -674,6 +677,7 @@ export function buildSearchMount(
   const mode = opts.mode ?? "fts";
   const variant = opts.variant ?? "page";
   const facetOpts = searchFacetOptionsHtml(opts.lang ?? "ja");
+  const sourceFacetOpts = searchSourceFacetOptionsHtml(opts.lang ?? "ja");
   const indexUrl = `${rootPrefix}assets/search-index.json`;
   const hybridAttrs =
     mode === "hybrid"
@@ -698,6 +702,7 @@ export function buildSearchMount(
       : `<form class="search-form">` +
         `<input type="search" name="q" class="search-input" placeholder="キーワードで検索" autocomplete="off" aria-label="検索キーワード">` +
         `<select name="type" class="search-facet" aria-label="種別で絞り込み">${facetOpts}</select>` +
+        `<select name="source" class="search-facet search-facet--source" aria-label="生成元で絞り込み">${sourceFacetOpts}</select>` +
         `<button type="submit" class="search-submit">検索</button>` +
         `</form>`;
   const status =

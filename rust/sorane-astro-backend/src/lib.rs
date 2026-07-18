@@ -952,7 +952,7 @@ fn build_llms(site: &BackendSite, concepts: &[Concept], dcat_catalog: bool) -> S
                 .to_string(),
         );
         lines.push(
-            "Search index (`assets/search-index.json`) exposes `digital_source_type` per chunk when set."
+            "Search index (`assets/search-index.json`) exposes `digital_source_type` per chunk when set; browser search has a source facet (ai-generated / human / disclosed)."
                 .to_string(),
         );
         lines.push(

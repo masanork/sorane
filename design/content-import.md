@@ -3,7 +3,7 @@
 | Field | Value |
 |-------|-------|
 | **Date** | 2026-06-21 |
-| **Status** | Draft (I5 complete) |
+| **Status** | Implemented (I1–I5 complete) |
 | **Related** | `migrate` (in-repo OKF frontmatter only), srn `src/ssg/migrate.ts`, gjs `src/shared/txtbin/encoding-detect.ts` |
 
 ---
@@ -49,7 +49,7 @@ Detection order when `--encoding auto` (default):
 
 Import logs record `import_encoding` in `.sorane/import-manifest.json` per entry.
 
-**Not in scope for I1:** gjs MJ/JIS *character substitution* tables (戸籍文字正規化) — separate future pass (I5+).
+**Glyph maps (I5):** gjs MJ/JIS *character substitution* is available via `--glyph-map` (opt-in; default off).
 
 ---
 

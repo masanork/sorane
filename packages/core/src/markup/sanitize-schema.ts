@@ -39,6 +39,7 @@ const BASE_ATTRIBUTES = {
       "diagram--d2",
       "diagram--mermaid",
       "diagram--graphviz",
+      "diagram--plantuml",
     ],
     "role",
   ],

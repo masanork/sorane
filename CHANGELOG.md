@@ -4,6 +4,21 @@ All notable changes to sorane are documented here. Versioning follows [SemVer](h
 
 ## [Unreleased]
 
+### Added
+
+- **PlantUML via Kroki** — `build.diagrams.plantuml.enabled` + `kroki_url` (default `https://kroki.io`); ` ```plantuml ` / ` ```puml ` fences compile to `assets/diagrams/plantuml/{hash}.svg` with SSRF-guarded HTTP.
+- **Search source facet** — browser search page filters by IPTC `digital_source_type` (`AI生成・合成` / `人間作成` / `開示あり`).
+- **Hotlink `associatedMedia`** — external Markdown images (`![](https://…)`) with matching `asset-provenance.yaml` URL keys emit JSON-LD `associatedMedia`.
+
+### Changed
+
+- README Distribution: GitHub Release tags documented as available (`v0.5.0`).
+- Design docs status refresh (content-import, diagram-formats, AI disclosure remaining gaps).
+
+### Fixed
+
+- **`isBlockedIpAddress`** — non-IP hostnames were incorrectly treated as blocked (broke `guardedFetch` for any domain, including import image fetch and Kroki).
+
 ## [0.5.0] - 2026-07-09
 
 ### Added

@@ -43,9 +43,13 @@ export function isBlockedHostname(hostname: string): boolean {
 }
 
 export function isBlockedIpAddress(address: string): boolean {
+  // IPv6 literals (may include zone id); non-IP hostnames are not blocked here
+  // (see isBlockedHostname + DNS resolution in assertFetchUrlAllowed).
   if (address.includes(":")) return isPrivateIpv6(address);
-  const parts = address.split(".").map((p) => Number.parseInt(p, 10));
-  if (parts.length !== 4 || parts.some((p) => !Number.isFinite(p))) return true;
+  const m = /^(\d{1,3})\.(\d{1,3})\.(\d{1,3})\.(\d{1,3})$/.exec(address);
+  if (!m) return false;
+  const parts = [m[1], m[2], m[3], m[4]].map((p) => Number.parseInt(p!, 10));
+  if (parts.some((p) => !Number.isFinite(p) || p! < 0 || p! > 255)) return true;
   return isPrivateIpv4(parts[0]!, parts[1]!, parts[2]!);
 }
 

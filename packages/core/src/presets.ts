@@ -54,6 +54,10 @@ export interface PresetLayer {
       readonly mermaid?: { readonly mode?: "client" | "build" | "off" };
       readonly d2?: { readonly enabled?: boolean };
       readonly graphviz?: { readonly enabled?: boolean };
+      readonly plantuml?: {
+        readonly enabled?: boolean;
+        readonly kroki_url?: string;
+      };
     };
     readonly quality?: Record<string, unknown>;
     readonly security?: Record<string, unknown>;
