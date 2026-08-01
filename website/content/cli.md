@@ -123,6 +123,8 @@ npx @sorane/cli search <query> [--cwd <dir>] \
 
 OKFC 経路は `better-sqlite3`（`@sorane/okf` の optional）で FTS 可能。**`vec_chunks` がありモデルも揃っているとき**は hybrid（FTS + ベクトル RRF）。index.db 経路は `@sorane/search` が必要です。`--fts-only` で常に FTS のみ。
 
+サイトの検索ページでは、一度索引を読み込めば **Service Worker によりオフライン FTS** が使えます。`outputs.okfc` が有効なときは **site.okfc のダウンロード**リンクも出ます（CLI と同じ知識パック）。
+
 ## ネイティブ Rust バックエンド（CLI）
 
 `rust/sorane-astro-backend` をビルドすると、`sorane index` / `sorane search` が TypeScript より先にネイティブ経路を試します。

@@ -104,3 +104,13 @@ No mode where hybrid search has vectors and site.okfc does not for the same corp
 | no site.okfc | index.db |
 
 `sorane okfc query` remains the low-level FTS tool. **Hybrid** (`queryOkfcHybrid` / `sorane search` on OKFC with vectors + model) fuses concept FTS and `vec_chunks` KNN via RRF (OKFC §6.2).
+
+### Offline browser search + OKFC download
+
+| Surface | Behavior |
+|---------|----------|
+| `sw.js` | Precaches `assets/search.mjs`, `assets/search-index.json`, search HTML |
+| Search page | Offline hint; warms index on load |
+| `okf/site.okfc` link | Download same pack as CLI when `outputs.okfc` |
+
+Web never loads SQLite in-browser; parity is IR → JSON projection for FTS and IR → OKFC for agents/CLI.

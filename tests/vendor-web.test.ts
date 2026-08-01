@@ -39,3 +39,29 @@ describe("vendor-web", () => {
     }
   });
 });
+describe("offline search SW", () => {
+  test("writeSearchServiceWorker が precache を埋め込む", async () => {
+    const { writeSearchServiceWorker, buildSearchServiceWorkerSource } = await import(
+      "../packages/search/src/offline-sw.ts"
+    );
+    const tmp = mkdtempSync(join(tmpdir(), "sorane-sw-"));
+    try {
+      writeSearchServiceWorker(tmp, {
+        precache: ["assets/search.mjs", "assets/search-index.json", "search.html"],
+        version: "test",
+      });
+      const body = readFileSync(join(tmp, "sw.js"), "utf8");
+      expect(body.includes("assets/search.mjs")).toBe(true);
+      expect(body.includes("search-index.json")).toBe(true);
+      expect(body.includes("search.html")).toBe(true);
+      expect(body.includes("sorane-offline-search-test")).toBe(true);
+      const src = buildSearchServiceWorkerSource({
+        precache: ["assets/search.mjs"],
+        version: "v",
+      });
+      expect(src.includes("install")).toBe(true);
+    } finally {
+      rmSync(tmp, { recursive: true, force: true });
+    }
+  });
+});

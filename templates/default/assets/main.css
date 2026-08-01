@@ -396,6 +396,32 @@ article td {
   font-size: 0.9rem;
 }
 
+.search-tools {
+  margin: 0.75rem 0 0;
+  padding: 0.65rem 0.75rem;
+  border: 1px solid var(--border, #ddd);
+  border-radius: 0.35rem;
+  font-size: 0.875rem;
+  line-height: 1.45;
+  color: var(--muted, #555);
+}
+
+.search-tools p {
+  margin: 0.35rem 0 0;
+}
+
+.search-tools p:first-child {
+  margin-top: 0;
+}
+
+.search-okfc-link {
+  font-weight: 600;
+}
+
+.search-okfc-cli code {
+  font-size: 0.85em;
+}
+
 /* --- Docs site layout --- */
 body.docs-site {
   max-width: none;

@@ -24,10 +24,12 @@ const LABELS = {
     loadingIndex: "検索インデックスを読み込み中…",
     loadingModel: "埋め込みモデルを読み込み中…（初回のみ）",
     searching: "検索中…",
-    noResults: "該当するページは見つかりませんでした。キーワードを変えてお試しください。",
+    noResults: "一致するページは見つかりませんでした。キーワードを変えてお試しください。",
     emptyQuery: "検索キーワードを入力してください。",
     resultCount: (n) => `${n} 件`,
     error: (msg) => `エラー: ${msg}`,
+    offline: "オフライン — キャッシュした索引で検索します",
+    indexReady: "索引を読み込みました（オフライン利用可）",
   },
   en: {
     loadingIndex: "Loading search index…",
@@ -37,6 +39,8 @@ const LABELS = {
     emptyQuery: "Enter a search keyword.",
     resultCount: (n) => `${n} result${n === 1 ? "" : "s"}`,
     error: (msg) => `Error: ${msg}`,
+    offline: "Offline — searching cached index",
+    indexReady: "Index loaded (available offline)",
   },
 };
 
@@ -195,8 +199,20 @@ function setup(root) {
   async function loadIndex() {
     if (index) return index;
     setStatus(labels.loadingIndex);
-    const res = await fetch(indexUrl);
-    if (!res.ok) throw new Error(`failed to fetch search-index.json (${res.status})`);
+    // Service Worker serves cache-first for search-index.json after install.
+    let res;
+    try {
+      res = await fetch(indexUrl);
+    } catch {
+      throw new Error(
+        typeof navigator !== "undefined" && navigator.onLine === false
+          ? "offline and search index is not cached yet"
+          : "failed to fetch search-index.json (network)",
+      );
+    }
+    if (!res.ok) {
+      throw new Error(`failed to fetch search-index.json (${res.status})`);
+    }
     const json = await res.json();
     const resolvedMode = json.mode === "hybrid" && json.embeddings ? "hybrid" : "fts";
     if (resolvedMode === "hybrid") {
@@ -204,6 +220,10 @@ function setup(root) {
       index = { ...json, mode: "hybrid", vectors: decodeVectors(json.embeddings.vectors_b64, dim) };
     } else {
       index = { ...json, mode: "fts" };
+    }
+    const hint = root.querySelector("[data-search-offline-hint]");
+    if (hint && typeof navigator !== "undefined" && navigator.onLine === false) {
+      hint.textContent = labels.offline;
     }
     return index;
   }
@@ -363,7 +383,21 @@ function setup(root) {
   if (initialQuery) {
     input.value = initialQuery;
     run(initialQuery);
+  } else if (root.classList.contains("search--header") === false) {
+    // Warm the index (and SW cache) on the full search page without a query.
+    loadIndex()
+      .then(() => {
+        if (!input.value.trim()) setStatus(labels.indexReady);
+      })
+      .catch(() => {
+        /* ignore warm-up errors until the user searches */
+      });
   }
+
+  window.addEventListener("offline", () => {
+    const hint = root.querySelector("[data-search-offline-hint]");
+    if (hint) hint.textContent = labels.offline;
+  });
 }
 
 for (const root of document.querySelectorAll("[data-search]")) setup(root);

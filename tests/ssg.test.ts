@@ -230,6 +230,38 @@ describe("buildSearchMount", () => {
     expect(html).toContain("search-facet--source");
     expect(html).toContain('value="ai-generated"');
   });
+
+  test("page variant は OKFC ダウンロードとオフライン案内を出せる", async () => {
+    const { buildSearchMount } = await import("../packages/core/src/ssg.ts");
+    const html = buildSearchMount("./", {
+      lang: "ja",
+      okfcHref: "okf/site.okfc",
+    });
+    expect(html).toContain("search-tools");
+    expect(html).toContain('href="./okf/site.okfc"');
+    expect(html).toContain("download");
+    expect(html).toContain("site.okfc");
+    expect(html).toContain("オフライン");
+    expect(html).toContain("sorane search --okfc");
+  });
+
+  test("header variant には tools を出さない", async () => {
+    const { buildSearchMount } = await import("../packages/core/src/ssg.ts");
+    const html = buildSearchMount("./", {
+      variant: "header",
+      okfcHref: "okf/site.okfc",
+    });
+    expect(html).not.toContain("search-tools");
+  });
+});
+
+describe("buildSearchHead offline SW", () => {
+  test("Service Worker 登録スクリプトを含む", async () => {
+    const { buildSearchHead } = await import("../packages/core/src/ssg.ts");
+    const head = buildSearchHead("./", "fts");
+    expect(head.some((s) => s.includes("serviceWorker"))).toBe(true);
+    expect(head.some((s) => s.includes("sw.js"))).toBe(true);
+  });
 });
 
 describe("buildAtomFeed", () => {

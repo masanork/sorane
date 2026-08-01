@@ -737,12 +737,19 @@ export function buildSearchMount(
     readonly mode?: SearchMountMode;
     readonly variant?: SearchMountVariant;
     readonly lang?: string;
+    /**
+     * Site-relative OKFC path for download (e.g. `okf/site.okfc`).
+     * Shown on page variant only (B: agent / CLI offline pack).
+     */
+    readonly okfcHref?: string;
   } = {},
 ): string {
   const mode = opts.mode ?? "fts";
   const variant = opts.variant ?? "page";
-  const facetOpts = searchFacetOptionsHtml(opts.lang ?? "ja");
-  const sourceFacetOpts = searchSourceFacetOptionsHtml(opts.lang ?? "ja");
+  const lang = opts.lang ?? "ja";
+  const ja = !lang.startsWith("en");
+  const facetOpts = searchFacetOptionsHtml(lang);
+  const sourceFacetOpts = searchSourceFacetOptionsHtml(lang);
   const indexUrl = `${rootPrefix}assets/search-index.json`;
   const hybridAttrs =
     mode === "hybrid"
@@ -774,19 +781,68 @@ export function buildSearchMount(
     variant === "header"
       ? `<p class="search-status search-status--sr" data-search-status aria-live="polite" aria-atomic="true"></p>`
       : `<p class="search-status" data-search-status aria-live="polite" aria-atomic="true"></p>`;
-  const langAttr = ` data-lang="${escapeHtml(opts.lang ?? "ja")}"`;
+  const langAttr = ` data-lang="${escapeHtml(lang)}"`;
+
+  let tools = "";
+  if (variant === "page") {
+    const offlineHint = ja
+      ? "オフライン: 索引を一度読み込むと、この端末でオフライン全文検索ができます（Service Worker）。"
+      : "Offline: after the index loads once, full-text search works offline on this device (Service Worker).";
+    const parts: string[] = [
+      `<p class="search-offline-hint" data-search-offline-hint>${escapeHtml(offlineHint)}</p>`,
+    ];
+    if (opts.okfcHref) {
+      const href = opts.okfcHref.startsWith("http")
+        ? opts.okfcHref
+        : `${rootPrefix}${opts.okfcHref.replace(/^\//, "")}`;
+      const dl = ja ? "site.okfc をダウンロード" : "Download site.okfc";
+      const cli = ja
+        ? "同じ知識パックを CLI / エージェントで: "
+        : "Same knowledge pack for CLI / agents: ";
+      parts.push(
+        `<p class="search-okfc">` +
+          `<a class="search-okfc-link" href="${escapeHtml(href)}" download>` +
+          `${escapeHtml(dl)}</a>` +
+          `<span class="search-okfc-cli"> — ${escapeHtml(cli)}` +
+          `<code>sorane search --okfc site.okfc "…"</code></span>` +
+          `</p>`,
+      );
+    }
+    tools =
+      `<aside class="search-tools" data-search-tools>` + parts.join("") + `</aside>`;
+  }
+
   return (
     `<div class="${searchClass}" data-search data-index="${escapeHtml(indexUrl)}"${hybridAttrs}${langAttr} role="search">` +
     `${form}` +
     `${status}` +
     `<ol class="search-results" data-search-results role="list" aria-live="polite" aria-relevant="additions"></ol>` +
+    `${tools}` +
     `</div>\n`
   );
 }
 
-export function buildSearchHead(rootPrefix: string, mode: SearchMountMode = "fts"): string[] {
+export function buildSearchHead(
+  rootPrefix: string,
+  mode: SearchMountMode = "fts",
+  opts: { readonly offlineServiceWorker?: boolean } = {},
+): string[] {
+  const offline = opts.offlineServiceWorker !== false;
+  const swRegister = offline
+    ? `<script type="module">` +
+      `if("serviceWorker" in navigator){` +
+      `const u=new URL(${JSON.stringify(rootPrefix + "sw.js")},document.baseURI);` +
+      `const scope=new URL(${JSON.stringify(rootPrefix)},document.baseURI);` +
+      `navigator.serviceWorker.register(u.href,{scope:scope.href}).catch(()=>{});` +
+      `}` +
+      `</script>`
+    : "";
+
   if (mode === "fts") {
-    return [`<script type="module" src="${rootPrefix}assets/search.mjs"></script>`];
+    return [
+      `<script type="module" src="${rootPrefix}assets/search.mjs"></script>`,
+      ...(swRegister ? [swRegister] : []),
+    ];
   }
   const libBase = `${rootPrefix || "./"}assets/search/lib/`;
   return [
@@ -797,6 +853,7 @@ export function buildSearchHead(rootPrefix: string, mode: SearchMountMode = "fts
       },
     })}</script>`,
     `<script type="module" src="${rootPrefix}assets/search.mjs"></script>`,
+    ...(swRegister ? [swRegister] : []),
   ];
 }
 

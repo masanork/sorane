@@ -53,9 +53,11 @@ describe("buildSearchHead", () => {
   test("hybrid と fts モード", () => {
     const hybrid = buildSearchHead("./", "hybrid");
     expect(hybrid.some((h) => h.includes("importmap"))).toBe(true);
+    expect(hybrid.some((h) => h.includes("serviceWorker"))).toBe(true);
     const fts = buildSearchHead("../", "fts");
-    expect(fts.length === 1).toBe(true);
-    expect(fts[0]).toContain("search.mjs");
+    expect(fts.some((h) => h.includes("search.mjs"))).toBe(true);
+    expect(fts.some((h) => h.includes("serviceWorker"))).toBe(true);
+    expect(fts.some((h) => h.includes("sw.js"))).toBe(true);
   });
 });
 

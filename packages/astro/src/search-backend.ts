@@ -131,7 +131,12 @@ export async function writeSearchCompanionAssets(
   if (!existsSync(indexPath)) return [];
 
   try {
-    const { copySearchScript, vendorModel, vendorRuntime } = await import("@sorane/search");
+    const {
+      copySearchScript,
+      vendorModel,
+      vendorRuntime,
+      writeSearchServiceWorker,
+    } = await import("@sorane/search");
     const search = input.search;
     const mode = search?.mode ?? "fts";
     const modelRoot = resolve(input.root, search?.modelRoot ?? "vendor/models");
@@ -144,6 +149,12 @@ export async function writeSearchCompanionAssets(
       if (vendorModel(modelRoot, modelId, outDir)) files.push(`models/${modelId}`);
       if (vendorRuntime(outDir)) files.push("assets/search/lib");
     }
+
+    writeSearchServiceWorker(outDir, {
+      precache: ["assets/search.mjs", "assets/search-index.json"],
+      version: "astro",
+    });
+    files.push("sw.js");
 
     logger?.info?.(`[sorane/astro] search companion assets: ${files.join(", ") || "(none)"}`);
     return files;

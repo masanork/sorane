@@ -891,6 +891,7 @@ export async function runBuild(opts: BuildOptions): Promise<BuildResult> {
           assetBaseUrl: config.search.asset_base_url,
           mode: searchMode,
           lang: pageLang,
+          okfcHref: buildOutputs.okfc ? "okf/site.okfc" : undefined,
         }) +
         (searchIntro
           ? `<div class="search-intro">${searchIntro.html}</div>`
@@ -2197,6 +2198,8 @@ export async function runBuild(opts: BuildOptions): Promise<BuildResult> {
         contentDir,
         machineReadable: siteAiFlags.machineReadable,
         snippetOnly: security.search_snippet_only,
+        searchPageRel,
+        offlineServiceWorker: true,
         sourceToUrl: (source) => sourceToUrl.get(source) ?? source.replace(/\.md$/i, ".html"),
         onProgress: (message) => process.stdout.write(`[sorane] ${message}\n`),
       });

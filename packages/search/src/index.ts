@@ -80,3 +80,8 @@ export {
   type EmitSearchAssetsOptions,
   type EmitSearchAssetsResult,
 } from "./emit-search-assets.ts";
+export {
+  buildSearchServiceWorkerSource,
+  writeSearchServiceWorker,
+  type WriteSearchServiceWorkerOptions,
+} from "./offline-sw.ts";

@@ -1,6 +1,7 @@
 import { mkdirSync } from "node:fs";
 import { join, resolve } from "node:path";
 import { deriveWebIndex, type WebSearchMode } from "./derive-web-index.ts";
+import { writeSearchServiceWorker } from "./offline-sw.ts";
 import { copySearchScript, vendorModel, vendorRuntime } from "./vendor-web.ts";
 
 export interface EmitSearchAssetsOptions {
@@ -17,6 +18,10 @@ export interface EmitSearchAssetsOptions {
   readonly machineReadable?: boolean;
   readonly snippetOnly?: boolean;
   readonly repoRoot?: string;
+  /** Search HTML page path relative to outDir (for offline navigation fallback). */
+  readonly searchPageRel?: string;
+  /** Emit root `sw.js` for offline FTS (default true). */
+  readonly offlineServiceWorker?: boolean;
   readonly onProgress?: (message: string) => void;
 }
 
@@ -27,6 +32,7 @@ export interface EmitSearchAssetsResult {
   readonly mode?: WebSearchMode;
   readonly model: boolean;
   readonly runtime: boolean;
+  readonly serviceWorker: boolean;
 }
 
 export async function emitSearchAssets(
@@ -51,7 +57,14 @@ export async function emitSearchAssets(
 
   if (!webIdx.written) {
     log(`search-index.json: skipped (no index at ${opts.indexPath})`);
-    return { written: false, chunks: 0, bytes: 0, model: false, runtime: false };
+    return {
+      written: false,
+      chunks: 0,
+      bytes: 0,
+      model: false,
+      runtime: false,
+      serviceWorker: false,
+    };
   }
 
   const okScript = copySearchScript(opts.outDir, opts.repoRoot);
@@ -76,6 +89,20 @@ export async function emitSearchAssets(
     );
   }
 
+  let serviceWorker = false;
+  if (opts.offlineServiceWorker !== false && okScript) {
+    const precache = ["assets/search.mjs", "assets/search-index.json"];
+    if (opts.searchPageRel) {
+      precache.push(opts.searchPageRel.replace(/\\/g, "/").replace(/^\//, ""));
+    }
+    writeSearchServiceWorker(opts.outDir, {
+      precache,
+      version: String(webIdx.bytes) + "-" + webIdx.chunks,
+    });
+    serviceWorker = true;
+    log(`offline search: sw.js (precache ${precache.join(", ")})`);
+  }
+
   return {
     written: true,
     chunks: webIdx.chunks,
@@ -83,5 +110,6 @@ export async function emitSearchAssets(
     mode: webIdx.mode,
     model: okModel,
     runtime: okRuntime,
+    serviceWorker,
   };
 }
