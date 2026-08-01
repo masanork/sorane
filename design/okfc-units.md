@@ -5,7 +5,7 @@
 | **Status** | Implemented (Phase A′) |
 | **Date** | 2026-08-01 |
 | **Spec** | bunko `docs/okfc-spec.md` 0.1-draft |
-| **Search** | FTS5 complete; **vectors via U3** (`build.knowledge.embeddings` + IR) |
+| **Search** | FTS5 + **hybrid RRF** when `vec_chunks` present (`queryOkfcHybrid` / `sorane search`) |
 
 ---
 

@@ -121,7 +121,7 @@ npx @sorane/cli search <query> [--cwd <dir>] \
 | `--prefer-index` | 常に index.db（`--index` / `search.index`） |
 | `--index` / `--out` | index.db パス（`.okfc` で終わる場合は OKFC） |
 
-OKFC 経路は `better-sqlite3`（`@sorane/okf` の optional）のみ。index.db 経路は `@sorane/search` が必要です。ハイブリッド索引があるとき、クエリ埋め込みもネイティブ ONNX を優先します。
+OKFC 経路は `better-sqlite3`（`@sorane/okf` の optional）で FTS 可能。**`vec_chunks` がありモデルも揃っているとき**は hybrid（FTS + ベクトル RRF）。index.db 経路は `@sorane/search` が必要です。`--fts-only` で常に FTS のみ。
 
 ## ネイティブ Rust バックエンド（CLI）
 

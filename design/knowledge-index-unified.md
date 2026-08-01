@@ -103,4 +103,4 @@ No mode where hybrid search has vectors and site.okfc does not for the same corp
 | `--prefer-index` | `.sorane/index.db` (or `--index` / `--out`) |
 | no site.okfc | index.db |
 
-`sorane okfc query` remains the low-level OKFC tool. Hybrid vector query on OKFC is future work (`vec_chunks` already packed in U3).
+`sorane okfc query` remains the low-level FTS tool. **Hybrid** (`queryOkfcHybrid` / `sorane search` on OKFC with vectors + model) fuses concept FTS and `vec_chunks` KNN via RRF (OKFC §6.2).

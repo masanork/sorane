@@ -171,14 +171,106 @@ async function searchViaOkfc(
     readonly k: number;
     readonly docType: string;
     readonly tag: string;
+    readonly ftsOnly: boolean;
+    readonly cwd: string;
+    readonly modelRoot: string;
+    readonly modelId: string;
   },
 ): Promise<SearchCliHit[]> {
-  const { queryOkfcFts } = await import("@sorane/okf");
-  const hits = await queryOkfcFts(dbPath, query, {
+  const {
+    queryOkfcFts,
+    queryOkfcHybrid,
+    okfcHasVecChunks,
+    readOkfcMeta,
+  } = await import("@sorane/okf");
+
+  const filter = {
     limit: opts.k,
     type: opts.docType || undefined,
     tag: opts.tag || undefined,
-  });
+  };
+
+  let useHybrid = !opts.ftsOnly && (await okfcHasVecChunks(dbPath));
+  let queryVec: number[] | null = null;
+
+  if (useHybrid) {
+    const meta = await readOkfcMeta(dbPath);
+    const modelDir = resolve(opts.modelRoot, opts.modelId);
+    let embeddings = resolveSearchEmbeddings(
+      opts.cwd,
+      opts.modelRoot,
+      opts.modelId,
+    );
+    if (!embeddings) {
+      if (!existsSync(modelDir)) {
+        process.stderr.write(
+          `[sorane] OKFC has vectors but model missing at ${modelDir}; FTS-only\n`,
+        );
+        useHybrid = false;
+      } else {
+        const { RuriEmbeddings } = await loadSearchModule(
+          opts.cwd,
+          "search",
+          [],
+        );
+        embeddings = new RuriEmbeddings({
+          modelRoot: opts.modelRoot,
+          modelId: opts.modelId,
+        });
+      }
+    }
+    if (useHybrid && embeddings) {
+      const packDim = meta.model_dim ? Number(meta.model_dim) : undefined;
+      const packModel = meta.model_id;
+      if (packDim != null && packDim !== embeddings.dimensions) {
+        process.stderr.write(
+          `[sorane] warning: OKFC model_dim=${packDim} != runtime ${embeddings.dimensions}; FTS-only\n`,
+        );
+        useHybrid = false;
+      } else if (packModel && packModel !== embeddings.modelId) {
+        process.stderr.write(
+          `[sorane] warning: OKFC model_id=${packModel} != runtime ${embeddings.modelId}; continuing\n`,
+        );
+      }
+      if (useHybrid) {
+        try {
+          // Align with @sorane/search QUERY_PREFIX (ruri document/query prefixes).
+          const QUERY_PREFIX = "検索クエリ: ";
+          queryVec = await embeddings.embed(QUERY_PREFIX + query);
+          process.stderr.write(
+            `[sorane] OKFC hybrid (model ${embeddings.modelId ?? opts.modelId})\n`,
+          );
+        } catch (e) {
+          const msg = e instanceof Error ? e.message : String(e);
+          process.stderr.write(
+            `[sorane] warning: OKFC embed failed (${msg}); FTS-only\n`,
+          );
+          useHybrid = false;
+        }
+      }
+    }
+  }
+
+  if (useHybrid && queryVec) {
+    const hits = await queryOkfcHybrid(dbPath, query, queryVec, filter);
+    return hits.map((h) => ({
+      source: h.concept_id,
+      title: h.title || h.concept_id,
+      score: h.score,
+      snippet: (h.snippet ?? h.text).replace(/\s+/g, " ").trim(),
+      headingPath: h.heading_path || h.title || h.concept_id,
+      headingSlug: h.heading_slug,
+      chunkIndex: h.chunk_index,
+      docType: h.type,
+      tags: h.tags ?? "",
+      timestamp: "",
+      backend: "okfc" as const,
+      conceptId: h.concept_id,
+      status: h.status,
+    }));
+  }
+
+  const hits = await queryOkfcFts(dbPath, query, filter);
   return hits.map((h, rank) => ({
     source: h.id,
     title: h.title || h.id,
@@ -305,6 +397,10 @@ export async function runSearchCmd(argv: string[]): Promise<void> {
       k: args.k,
       docType: args.docType,
       tag: args.tag,
+      ftsOnly: args.ftsOnly,
+      cwd: args.cwd,
+      modelRoot: args.modelRoot,
+      modelId: args.modelId,
     });
   } else {
     process.stderr.write(`[sorane] search backend: index (${args.backend.path})\n`);

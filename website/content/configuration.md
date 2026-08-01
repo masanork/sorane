@@ -94,6 +94,8 @@ search:
 
 `build.okfc.embeddings` で同じ enum を上書きできます（レガシー `false` → `off`）。
 
+ビルド後、`sorane search` は `okf/site.okfc` の FTS を使い、pack 時にベクトルが入っていれば **hybrid（RRF）** になります（クエリ埋め込みに同じモデルが必要）。
+
 ### `build.okfc`（まとまり単位・registry）
 
 `outputs.okfc: true` のときの詳細。省略時は **サイト全体** `okf/site.okfc` + **サブディレクトリ自動ユニット** + `okf/registry.json` です。
