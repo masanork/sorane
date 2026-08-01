@@ -30,6 +30,9 @@ describe("examples/astro-minimal", () => {
     expect(existsSync(join(exampleDir, "dist", "catalog.jsonld"))).toBe(true);
     expect(existsSync(join(exampleDir, "dist", "llms.txt"))).toBe(true);
     expect(existsSync(join(exampleDir, "dist", "okf", "bundle.tar.gz"))).toBe(true);
+    expect(existsSync(join(exampleDir, "dist", "okf", "site.okfc"))).toBe(true);
+    expect(existsSync(join(exampleDir, "dist", "feed.xml"))).toBe(true);
+    expect(existsSync(join(exampleDir, "dist", "robots.txt"))).toBe(true);
 
     const catalog = readFileSync(join(exampleDir, "dist", "catalog.jsonld"), "utf8");
     expect(catalog).toContain("Hello Astro");

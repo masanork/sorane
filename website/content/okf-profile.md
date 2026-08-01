@@ -5,7 +5,16 @@ profile: sorane-okf/0.1
 excludeFromList: true
 ---
 
-空音は [Open Knowledge Format (OKF) v0.1](https://cloud.google.com/blog/products/data-analytics/how-the-open-knowledge-format-can-improve-data-sharing) を実装します。各ページの frontmatter に `profile: sorane-okf/<version>` を書き、JSON Schema で検証します。
+空音は [Open Knowledge Format (OKF) v0.2](https://github.com/GoogleCloudPlatform/knowledge-catalog/blob/main/okf/SPEC.md)（[発表](https://cloud.google.com/blog/products/data-analytics/okf-v0-2-adds-trust-signals)）をベースに実装します。各ページの frontmatter に `profile: sorane-okf/<version>` を書き、JSON Schema で検証します。
+
+### 名前の注意: `sorane-okf/0.2` ≠ OKF v0.2
+
+| 名前 | 意味 |
+|------|------|
+| **OKF v0.2** | 上流仕様（trust / provenance / lifecycle / attestation） |
+| **`sorane-okf/0.2`** | 空音のプロファイル版（記事型 + [AI 開示](ai-disclosure.html) の厳密検証） |
+
+OKF v0.2 の trust 系フィールド（`generated`, `verified`, `sources`, `status`, `stale_after`）は **すべての** `sorane-okf/0.x` で任意に使えます。`timestamp` が無い場合は `generated.at` を内容日時として使います（OKF §13.1）。
 
 ## サポートする concept 型
 
@@ -44,6 +53,21 @@ frontmatter の `profile` で、検証の厳しさと使える `type` を選び�
 npx @sorane/cli migrate --cwd . --bump-profile 0.3
 ```
 
+## OKF v0.2 trust フィールド（任意）
+
+| フィールド | 用途 |
+|------------|------|
+| `generated: { by, at }` | 誰が・いつ書いたか（`at` は内容の最終更新。`timestamp` の代替可） |
+| `verified: { by, at }` またはリスト | 確認イベント。`human:` 接頭辞 → trust tier **human-reviewed** |
+| `sources[]` | 由来（各要素に `resource` 必須。任意で `id`, `title`, `author`, `usage_count`, `last_modified`） |
+| `usage_window: { from, to }` | `usage_count` の集計期間 |
+| `status` | `draft` \| `stable` \| `deprecated`（省略 = stable） |
+| `stale_after` | 鮮度期限 `YYYY-MM-DD`（経過後は `validate` が warning） |
+
+Actor 表記: `producer/version`（エージェント）、`human:<id>`、`process:<id>`。
+
+HTML の記事メタ・`catalog.jsonld` の keywords（`trust:`, `status:`, …）・OKF bundle に伝播します。`type: Attested Computation` と runtime 実行は未実装です（0.3 では未知 type として warning + article 扱い）。
+
 ## 記事の例
 
 ```yaml
@@ -53,6 +77,26 @@ title: Hello OKF
 timestamp: 2025-01-01T00:00:00Z
 tags: [sorane]
 profile: sorane-okf/0.3
+---
+
+本文（Markdown）
+```
+
+### trust 付きの例
+
+```yaml
+---
+type: article
+title: Customer Orders
+profile: sorane-okf/0.3
+status: stable
+stale_after: 2026-12-31
+generated: { by: reference_agent/gemini-2.5-pro, at: 2026-06-20T22:53:05Z }
+verified: { by: human:alice, at: 2026-06-25T09:00:00Z }
+sources:
+  - id: warehouse-schema
+    resource: https://wiki.example/schemas/sales
+    title: Sales warehouse schema
 ---
 
 本文（Markdown）
@@ -143,6 +187,9 @@ profile: sorane-okf/0.3
 | （運用） | [Open Data Portal 連携](open-data-harvesting.html) — CKAN / data.europa.eu |
 | `llms.txt` | LLM 向けサイトガイド |
 | `okf/bundle.tar.gz` | `{type}/{slug}.md` のバンドル |
+| `okf/site.okfc` | OKFC サイト全体（SQLite + FTS5）。ベクトルは任意・未実装 |
+| `okf/units/*.okfc` | コンテンツまとまり単位の OKFC（`build.okfc.auto_directories` / `units`） |
+| `okf/registry.json` | 複数 OKFC の索引（OKFC §7 風）。`search: "fts"` |
 
 ## JSON Schema
 

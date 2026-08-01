@@ -33,6 +33,7 @@ preset: gov         # 行政向け + 厳格 validate
 | `catalog.jsonld` | サイト全体の構造化カタログ（schema.org） |
 | `llms.txt` | LLM / エージェント向けサイト要約とリンク |
 | `okf/bundle.tar.gz` | OKF プロファイル準拠のコンテンツバンドル |
+| `okf/site.okfc` | OKFC（SQLite + FTS）— エージェント向け単一ファイルコンテナ |
 | `sitemap.xml` / `robots.txt` / `feed.xml` | 検索エンジン・購読 |
 
 OKF プロファイルで `article` / `index` に加え `dataset`・`reference`・`glossary`・`glossary-term`・`faq` などを検証・出力できます（[OKF プロファイル](okf-profile.html)）。

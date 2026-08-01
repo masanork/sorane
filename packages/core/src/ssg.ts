@@ -1,5 +1,6 @@
 import { dirname, relative } from "node:path";
 import type { OkfConcept } from "@sorane/okf";
+import { deriveTrustTier, isStale } from "@sorane/okf";
 import type { AiDisclosure } from "./ai-disclosure.ts";
 import { aiDisclosureJsonLdFields, buildCompactAiBadgeHtml } from "./ai-disclosure.ts";
 import {
@@ -304,8 +305,14 @@ function articleMetaHtml(opts: {
   timestamp?: string;
   updated?: string;
   author?: string;
+  status?: string;
+  trustTier?: string;
+  staleAfter?: string;
+  generatedBy?: string;
+  lang?: string;
 }): string {
   const parts: string[] = [];
+  const ja = (opts.lang ?? "ja").toLowerCase().startsWith("ja");
   const date = formatDate(opts.timestamp);
   if (date) {
     parts.push(`<time datetime="${escapeHtml(date)}">${escapeHtml(date)}</time>`);
@@ -319,8 +326,56 @@ function articleMetaHtml(opts: {
   if (opts.author) {
     parts.push(`<span class="article-author">${escapeHtml(opts.author)}</span>`);
   }
+  if (opts.status && opts.status !== "stable") {
+    const label =
+      opts.status === "draft"
+        ? ja
+          ? "下書き"
+          : "draft"
+        : opts.status === "deprecated"
+          ? ja
+            ? "非推奨"
+            : "deprecated"
+          : opts.status;
+    parts.push(
+      `<span class="article-status article-status--${escapeHtml(opts.status)}">${escapeHtml(label)}</span>`,
+    );
+  }
+  if (opts.trustTier && opts.trustTier !== "unverified") {
+    const label =
+      opts.trustTier === "human-reviewed"
+        ? ja
+          ? "人間確認済"
+          : "human-reviewed"
+        : ja
+          ? "機械確認済"
+          : "machine-confirmed";
+    parts.push(
+      `<span class="article-trust article-trust--${escapeHtml(opts.trustTier)}" title="OKF trust tier">${escapeHtml(label)}</span>`,
+    );
+  }
+  if (opts.staleAfter && isStale(opts.staleAfter)) {
+    parts.push(
+      `<span class="article-stale" title="stale_after ${escapeHtml(opts.staleAfter)}">${ja ? "期限切れ" : "stale"}</span>`,
+    );
+  }
+  if (opts.generatedBy) {
+    parts.push(
+      `<span class="article-generated" title="generated.by">${escapeHtml(opts.generatedBy)}</span>`,
+    );
+  }
   if (parts.length === 0) return "";
   return `<p class="article-meta">${parts.join(" · ")}</p>`;
+}
+
+function trustMetaFromConcept(concept: OkfConcept, lang?: string) {
+  return {
+    status: concept.status,
+    trustTier: deriveTrustTier(concept.verified),
+    staleAfter: concept.stale_after,
+    generatedBy: concept.generated?.by,
+    lang,
+  };
 }
 
 export function slugifyTag(tag: string): string {
@@ -480,7 +535,12 @@ export function renderArticleBodyWithMeta(
   const header = [
     "<header>",
     `<h1>${escapeHtml(concept.title)}</h1>`,
-    articleMetaHtml({ timestamp: concept.timestamp, updated, author }),
+    articleMetaHtml({
+      timestamp: concept.timestamp,
+      updated,
+      author,
+      ...trustMetaFromConcept(concept, opts?.lang),
+    }),
     tagsHtml(concept.tags),
     badge,
     "</header>",
@@ -525,7 +585,12 @@ export async function renderArticleBodyWithMetaForConfig(
   const header = [
     "<header>",
     `<h1>${escapeHtml(concept.title)}</h1>`,
-    articleMetaHtml({ timestamp: concept.timestamp, updated, author }),
+    articleMetaHtml({
+      timestamp: concept.timestamp,
+      updated,
+      author,
+      ...trustMetaFromConcept(concept, opts?.lang),
+    }),
     tagsHtml(concept.tags),
     badge,
     "</header>",

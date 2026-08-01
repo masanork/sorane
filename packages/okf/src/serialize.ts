@@ -1,4 +1,5 @@
 import type { OkfConcept } from "./normalize.ts";
+import type { OkfActorEvent, OkfDateRange, OkfSourceEntry } from "./trust.ts";
 
 const KEY_ORDER = [
   "type",
@@ -8,6 +9,12 @@ const KEY_ORDER = [
   "resource",
   "tags",
   "profile",
+  "status",
+  "stale_after",
+  "generated",
+  "verified",
+  "sources",
+  "usage_window",
   "digitalSourceType",
   "euAiLabel",
   "aiDisclosureNote",
@@ -43,6 +50,39 @@ function appendAiSystemsEntry(
   }
 }
 
+function appendDateRangeInline(range: OkfDateRange): string {
+  const parts: string[] = [];
+  if (range.from) parts.push(`from: ${formatScalar(range.from)}`);
+  if (range.to) parts.push(`to: ${formatScalar(range.to)}`);
+  return `{ ${parts.join(", ")} }`;
+}
+
+function appendActorInline(ev: OkfActorEvent): string {
+  const parts = [`by: ${formatScalar(ev.by)}`];
+  if (ev.at) parts.push(`at: ${formatScalar(ev.at)}`);
+  return `{ ${parts.join(", ")} }`;
+}
+
+function appendSources(
+  lines: string[],
+  sources: readonly OkfSourceEntry[],
+): void {
+  lines.push("sources:");
+  for (const s of sources) {
+    lines.push(`  - resource: ${formatScalar(s.resource)}`);
+    if (s.id) lines.push(`    id: ${formatScalar(s.id)}`);
+    if (s.title) lines.push(`    title: ${formatScalar(s.title)}`);
+    if (s.author) lines.push(`    author: ${formatScalar(s.author)}`);
+    if (s.usage_count !== undefined) {
+      lines.push(`    usage_count: ${formatScalar(s.usage_count)}`);
+    }
+    if (s.last_modified) lines.push(`    last_modified: ${formatScalar(s.last_modified)}`);
+    if (s.usage_window) {
+      lines.push(`    usage_window: ${appendDateRangeInline(s.usage_window)}`);
+    }
+  }
+}
+
 function appendYamlEntry(lines: string[], key: string, value: unknown): void {
   if (value === undefined) return;
   if (Array.isArray(value)) {
@@ -50,9 +90,42 @@ function appendYamlEntry(lines: string[], key: string, value: unknown): void {
       lines.push(`${key}: []`);
       return;
     }
+    const allScalar = value.every(
+      (item) => item === null || typeof item !== "object",
+    );
+    if (allScalar) {
+      lines.push(`${key}:`);
+      for (const item of value) {
+        lines.push(`  - ${formatScalar(item)}`);
+      }
+      return;
+    }
     lines.push(`${key}:`);
     for (const item of value) {
-      lines.push(`  - ${formatScalar(item)}`);
+      if (item !== null && typeof item === "object" && !Array.isArray(item)) {
+        const entries = Object.entries(item as Record<string, unknown>).filter(
+          ([, v]) => v !== undefined,
+        );
+        if (entries.length === 0) {
+          lines.push("  - {}");
+          continue;
+        }
+        const [firstKey, firstVal] = entries[0]!;
+        lines.push(`  - ${firstKey}: ${formatScalar(firstVal)}`);
+        for (const [k, v] of entries.slice(1)) {
+          if (v !== null && typeof v === "object" && !Array.isArray(v)) {
+            const nested = Object.entries(v as Record<string, unknown>)
+              .filter(([, nv]) => nv !== undefined)
+              .map(([nk, nv]) => `${nk}: ${formatScalar(nv)}`)
+              .join(", ");
+            lines.push(`    ${k}: { ${nested} }`);
+          } else {
+            lines.push(`    ${k}: ${formatScalar(v)}`);
+          }
+        }
+      } else {
+        lines.push(`  - ${formatScalar(item)}`);
+      }
     }
     return;
   }
@@ -77,6 +150,29 @@ export function toOkfFrontmatterLines(concept: OkfConcept): string[] {
   if (concept.resource) lines.push(`resource: ${formatScalar(concept.resource)}`);
   if (concept.tags && concept.tags.length > 0) appendYamlEntry(lines, "tags", [...concept.tags]);
   if (concept.profile) lines.push(`profile: ${formatScalar(concept.profile)}`);
+
+  if (concept.status) lines.push(`status: ${formatScalar(concept.status)}`);
+  if (concept.stale_after) lines.push(`stale_after: ${formatScalar(concept.stale_after)}`);
+
+  if (concept.generated) {
+    lines.push(`generated: ${appendActorInline(concept.generated)}`);
+  }
+  if (concept.verified && concept.verified.length > 0) {
+    if (concept.verified.length === 1) {
+      lines.push(`verified: ${appendActorInline(concept.verified[0]!)}`);
+    } else {
+      lines.push("verified:");
+      for (const ev of concept.verified) {
+        lines.push(`  - ${appendActorInline(ev)}`);
+      }
+    }
+  }
+  if (concept.sources && concept.sources.length > 0) {
+    appendSources(lines, concept.sources);
+  }
+  if (concept.usage_window) {
+    lines.push(`usage_window: ${appendDateRangeInline(concept.usage_window)}`);
+  }
 
   const fm = concept.frontmatter;
   if (typeof fm.digitalSourceType === "string" && fm.digitalSourceType.length > 0) {

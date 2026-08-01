@@ -64,6 +64,7 @@ build:
   outputs:
     md_alternate: true    # 各 HTML と並ぶ .md 代替
     okf_bundle: true      # okf/bundle.tar.gz
+    okfc: true            # okf/site.okfc（OKFC: SQLite + FTS）
     catalog: true         # catalog.jsonld
     llms_txt: true
     feed: true
@@ -72,6 +73,65 @@ build:
 ```
 
 未指定のキーは lite 既定（`feed` / `sitemap` / `robots` のみ on）です。`preset: okf-site` は上表のフル出力をまとめて有効にします。
+
+`okfc: true` のとき、公開 concept を **OKF Container Format**（OKFC）の SQLite に pack します（概念 id は `{type}/{slug}`、本文 **FTS5**、見出しチャンク）。ベクトルは **Knowledge IR 経由で 0 または 1 回**埋め込みます（`build.knowledge.embeddings`）。`better-sqlite3` が無い場合は警告してスキップします。`vec_chunks` には `sqlite-vec` が必要です。
+
+### `build.knowledge`（統合インデックス）
+
+```yaml
+build:
+  knowledge:
+    embeddings: auto   # off | auto | on（既定 auto）
+search:
+  mode: hybrid         # auto のとき hybrid なら IR に埋め込み → OKFC vec_chunks
+```
+
+| 値 | 動作 |
+|----|------|
+| `off` | FTS のみ（`vec_chunks` なし） |
+| `auto` | `search.mode: hybrid` かつモデルがあるときだけ埋め込み |
+| `on` | モデル必須（無ければビルド失敗） |
+
+`build.okfc.embeddings` で同じ enum を上書きできます（レガシー `false` → `off`）。
+
+### `build.okfc`（まとまり単位・registry）
+
+`outputs.okfc: true` のときの詳細。省略時は **サイト全体** `okf/site.okfc` + **サブディレクトリ自動ユニット** + `okf/registry.json` です。
+
+```yaml
+build:
+  outputs:
+    okfc: true
+  okfc:
+    site: true                 # okf/site.okfc（既定 true）
+    auto_directories: true     # content 配下のサブdir（≥ min_entries）ごとに unit（既定 true）
+    min_entries: 2
+    units_dir: okf/units       # ユニット出力先（out_dir 相対）
+    registry: true             # okf/registry.json（既定 true）
+    # embeddings: false        # 予約（未実装）。将来 auto | true
+    units:                     # 明示ユニット（任意）
+      - id: open-data
+        title: オープンデータ
+        bundle_type: schema-bundle
+        match:
+          dirs: [datasets]     # content 相対ディレクトリ接頭辞
+          types: [dataset, reference]
+        # out: okf/units/open-data.okfc  # 省略時 units_dir/id.okfc
+```
+
+| 出力 | 内容 |
+|------|------|
+| `okf/site.okfc` | 全公開 concept（FTS） |
+| `okf/units/{id}.okfc` | まとまり単位 |
+| `okf/registry.json` | エージェント向けバンドル一覧（`search: "fts"`） |
+
+CLI:
+
+```bash
+npx @sorane/cli okfc pack --cwd .
+npx @sorane/cli okfc pack --cwd . --unit open-data
+npx @sorane/cli okfc query dist/okf/site.okfc "検索語" --k 10
+```
 
 ## オプショナル npm パッケージ
 

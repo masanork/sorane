@@ -50,7 +50,15 @@ export interface SoraneAstroOptions {
     readonly catalog?: boolean;
     readonly llmsTxt?: boolean;
     readonly okfBundle?: boolean;
+    /** OKFC SQLite container (`okf/site.okfc`). Default true. */
+    readonly okfc?: boolean;
     readonly sitemap?: boolean;
+    /** Atom `feed.xml` for articles. Default true. */
+    readonly feed?: boolean;
+    /** `robots.txt`. Default true. */
+    readonly robots?: boolean;
+    /** OKF `.md` alternates under `okf/md/` (mirrors HTML routes). Default true. */
+    readonly mdAlternate?: boolean;
     readonly dcatCatalog?: boolean;
     readonly search?: boolean;
   };

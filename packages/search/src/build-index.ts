@@ -1,11 +1,25 @@
+/**
+ * Build `.sorane/index.db` from content markdown.
+ * U2.1/U3: each document is chunked via Knowledge IR; when embeddings are
+ * provided, vectors are produced per unique text (DOC_PREFIX) aligned to chunks.
+ */
+
 import { readFileSync } from "node:fs";
 import { relative, resolve } from "node:path";
+import {
+  extract,
+  parseYaml,
+  normalizeConcept,
+  buildKnowledgeIr,
+  conceptIdFor,
+} from "@sorane/okf";
 import { chunkDocument } from "./chunker.ts";
 import type { EmbeddingProvider } from "./embeddings.ts";
-import { DOC_PREFIX } from "./embeddings.ts";
+import { embedKnowledgeIr, vectorsAlignedToChunks } from "./embed-ir.ts";
 import { hashContent, planIncremental } from "./incremental.ts";
 import { IndexStore } from "./store.ts";
 import { walkMarkdown } from "./walk.ts";
+import { searchChunksFromKnowledgeIr } from "./from-ir.ts";
 
 export interface BuildIndexOptions {
   readonly contentDir: string;
@@ -66,15 +80,42 @@ export async function buildSearchIndex(opts: BuildIndexOptions): Promise<BuildIn
     const text = content.get(rel)!;
     const sha = disk.get(rel)!;
     store.deleteBySource(rel);
-    const chunks = chunkDocument(text, rel);
+
+    // U3: build per-file IR → embed by text_hash → project chunks + aligned vectors
+    let chunks = chunkDocument(text, rel);
+    let vectors: number[][] | undefined;
+    if (hybrid && chunks.length > 0) {
+      const { frontmatter, body } = extract(text);
+      const fm =
+        frontmatter !== null && frontmatter.length > 0
+          ? ((parseYaml(frontmatter) as Record<string, unknown>) ?? {})
+          : {};
+      const slug = rel.replace(/\\/g, "/").split("/").pop()!.replace(/\.(md|mdx)$/i, "");
+      if (fm.isSystem !== true && slug !== "404") {
+        const concept = normalizeConcept(fm, body, slug);
+        if (concept.type) {
+          const id = conceptIdFor(concept.type, slug);
+          let ir = buildKnowledgeIr(
+            [{ concept, slug }],
+            { sourcePathByConceptId: new Map([[id, rel]]) },
+          );
+          ir = await embedKnowledgeIr(ir, opts.embeddings!, {
+            onProgress: (m) => log(m),
+          });
+          chunks = searchChunksFromKnowledgeIr(ir);
+          vectors = vectorsAlignedToChunks(
+            ir,
+            chunks.map((c) => c.text),
+          );
+        }
+      }
+    }
+
     if (chunks.length === 0) {
       store.setSourceHash(rel, sha);
       log(`[${i + 1}/${targets.length}] ${rel}: 0 chunks`);
       continue;
     }
-    const vectors = hybrid
-      ? await opts.embeddings!.embedBatch(chunks.map((c) => DOC_PREFIX + c.text))
-      : undefined;
     store.addChunks(chunks, vectors);
     store.setSourceHash(rel, sha);
     totalChunks += chunks.length;

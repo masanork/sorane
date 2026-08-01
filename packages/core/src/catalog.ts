@@ -1,5 +1,5 @@
 import type { OkfConcept } from "@sorane/okf";
-import { resolveEffectiveType } from "@sorane/okf";
+import { deriveTrustTier, resolveEffectiveType } from "@sorane/okf";
 import type { TranslationEntry } from "./i18n.ts";
 import { parseAiDisclosure } from "./ai-disclosure.ts";
 import {
@@ -58,6 +58,37 @@ function applyAiDisclosure(
       ...kw,
       ...disclosure.systems.map((s) => `ai-system:${s.name}`),
     ];
+  }
+}
+
+/** OKF v0.2 trust / lifecycle signals as catalog keywords (+ dateModified from generated). */
+function applyOkfTrustSignals(
+  target: Record<string, unknown>,
+  concept: OkfConcept,
+): void {
+  const kw = (target.keywords as string[] | undefined) ?? [];
+  const extra: string[] = [];
+  if (concept.status) extra.push(`status:${concept.status}`);
+  if (concept.stale_after) extra.push(`stale_after:${concept.stale_after}`);
+  const tier = deriveTrustTier(concept.verified);
+  if (tier !== "unverified") extra.push(`trust:${tier}`);
+  if (concept.generated?.by) extra.push(`generated_by:${concept.generated.by}`);
+  if (extra.length > 0) {
+    target.keywords = [...kw, ...extra];
+  }
+  if (!target.dateModified && concept.generated?.at) {
+    target.dateModified = concept.generated.at;
+  }
+  if (concept.sources && concept.sources.length > 0) {
+    target.citation = concept.sources.map((s) => {
+      const node: Record<string, unknown> = {
+        "@type": "CreativeWork",
+        url: s.resource,
+      };
+      if (s.title) node.name = s.title;
+      if (s.author) node.author = s.author;
+      return node;
+    });
   }
 }
 
@@ -123,6 +154,7 @@ function buildDatasetNode(
   dataset.distribution = downloads;
 
   applyAiDisclosure(dataset, concept, machineReadable);
+  applyOkfTrustSignals(dataset, concept);
   applyTranslationLinks(dataset, e, baseUrl, translationMap);
   return dataset;
 }
@@ -179,6 +211,7 @@ function buildCreativeWorkNode(
   if (e.concept.timestamp) node.dateModified = e.concept.timestamp;
   if (e.concept.resource) node.url = e.concept.resource;
   applyAiDisclosure(node, e.concept, machineReadable);
+  applyOkfTrustSignals(node, e.concept);
   applyTranslationLinks(node, e, baseUrl, translationMap);
   return node;
 }

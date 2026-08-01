@@ -64,11 +64,27 @@ export {
   mergeConfig,
   DEFAULT_CONFIG,
   resolvePermalink,
+  resolveOkfcBuildConfig,
+  resolveKnowledgeBuildConfig,
   type SoraneConfig,
   type OkfConfig,
   type UnknownTypePolicy,
   type DiagramsConfig,
+  type OkfcBuildConfig,
+  type OkfcUnitConfig,
+  type OkfcUnitMatch,
+  type ResolvedOkfcBuildConfig,
+  type KnowledgeBuildConfig,
+  type KnowledgeEmbeddingsMode,
+  type ResolvedKnowledgeBuildConfig,
 } from "./config.ts";
+export { resolveOkfcEmbeddingsMode } from "./okfc-config.ts";
+export {
+  resolveOkfcPackPlans,
+  toOkfcEligible,
+  type OkfcEligibleConcept,
+  type OkfcPackPlan,
+} from "./okfc-units.ts";
 export {
   presetPartial,
   resolveBuildOutputs,
@@ -143,7 +159,10 @@ export {
   buildRobotsTxt,
   buildSitemapXml,
   buildLlmsTxt,
+  buildAtomFeed,
   type SiteEntry,
+  type FeedEntry,
+  type LlmsTxtOptions,
 } from "./site-meta.ts";
 export {
   resolveCopyrightNotice,

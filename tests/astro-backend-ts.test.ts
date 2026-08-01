@@ -185,8 +185,23 @@ describe("resolveSoraneAstroBackend", () => {
 
   test("runSoraneAstroWasmBackend matches TypeScript output", async () => {
     const { root, contentDir, outDir, files } = contentFixture();
+    // Disable TS-only publishing extras so artifact sets match WASM core outputs.
     const input = buildSoraneAstroBackendInput(
-      { site: { title: "S", description: "D" }, validate: false },
+      {
+        site: { title: "S", description: "D" },
+        validate: false,
+        outputs: {
+          catalog: true,
+          llmsTxt: true,
+          okfBundle: true,
+          okfc: false,
+          feed: false,
+          robots: false,
+          mdAlternate: false,
+          sitemap: false,
+          search: false,
+        },
+      },
       { root, contentDir, outDir },
       files,
     );

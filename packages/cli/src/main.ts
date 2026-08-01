@@ -47,23 +47,32 @@ async function main(): Promise<void> {
     case "import":
       await runImportCmd(rest);
       break;
+    case "okfc": {
+      const { runOkfcCmd } = await import("./okfc-cmd.ts");
+      await runOkfcCmd(rest);
+      break;
+    }
     default:
       process.stderr.write(
-        "usage: sorane <build|validate|migrate|index|search|export|import|watch|preview> [options]\n" +
+        "usage: sorane <build|validate|migrate|index|search|export|import|okfc|watch|preview> [options]\n" +
           "  build     --cwd <dir> [--clean] [--watch] [--skip-c2pa] [--drafts] [--preview]\n" +
           "  watch     --cwd <dir> [--clean] [--drafts] [--preview]\n" +
           "  preview   --cwd <dir> [--port 4321] [--watch]\n" +
           "  validate  --cwd <dir> [--json]\n" +
           "  migrate   --cwd <dir> [--dry-run] [--bump-profile 0.2|0.3]\n" +
           "  index     --cwd <dir> [--force] [--hybrid] [--fts-only] [--out <path>] [--model <dir>] [--model-id <id>] [--yes]\n" +
-          "  search    <query> [--cwd <dir>] [--type article|dataset|reference|glossary|glossary-term|faq] [--tag <slug>] [--k 10] [--json] [--fts-only] [--yes]\n" +
+          "  search    <query> [--cwd <dir>] [--okfc <path>] [--prefer-index] [--type …] [--tag <slug>] [--k 10] [--json] [--fts-only]\n" +
+          "            (prefers dist/okf/site.okfc when present; else .sorane/index.db)\n" +
           "  export    --format docx|pdf --cwd <dir> --out <file|dir> [--file <rel.md>] [--html <rel.html>]\n" +
           "  import    --input <file> --cwd <dir> [--format auto|mt|hatena-diary|wordpress] [--out content/article] [--encoding auto] [--dry-run] [--fetch-images] [--glyph-map <tsv>] [--no-normalize-html]\n" +
+          "  okfc pack --cwd <dir> [--unit <id>] [--out <path>] [--drafts]\n" +
+          "  okfc query <file.okfc> <query…> [--k 10] [--type <type>] [--json]\n" +
           "\n" +
           "  Optional packages (install when a command needs them):\n" +
-          "    @sorane/search   index, search\n" +
+          "    @sorane/search   index, search (index.db path)\n" +
           "    @sorane/font     fonts.enabled in sorane.yaml\n" +
-          "    mermaid          build.diagrams.enabled (client mode)\n",
+          "    mermaid          build.diagrams.enabled (client mode)\n" +
+          "    better-sqlite3   okfc pack / query / search via site.okfc\n",
       );
       process.exit(command === undefined ? 0 : 1);
   }

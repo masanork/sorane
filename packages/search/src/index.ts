@@ -39,6 +39,15 @@ export {
 export { walkMarkdown } from "./walk.ts";
 export { buildSearchIndex, type BuildIndexOptions, type BuildIndexResult } from "./build-index.ts";
 export {
+  searchChunksFromKnowledgeIr,
+  searchTagsFromConcept,
+} from "./from-ir.ts";
+export {
+  embedKnowledgeIr,
+  vectorsAlignedToChunks,
+  type EmbedKnowledgeIrOptions,
+} from "./embed-ir.ts";
+export {
   buildWebIndex,
   buildFtsWebIndex,
   toSnippet,

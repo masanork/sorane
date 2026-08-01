@@ -50,6 +50,17 @@ export interface LlmsTxtOptions {
   readonly aiLabeledCount?: number;
   readonly diagramsEnabled?: boolean;
   readonly dcatCatalog?: boolean;
+  /** When true, link `okf/site.okfc` (OKF Container Format). */
+  readonly okfc?: boolean;
+  /**
+   * Additional / unit OKFC files (and optional site entry).
+   * When set, listed after the default site.okfc line (if `okfc` is true).
+   */
+  readonly okfcBundles?: readonly {
+    readonly path: string;
+    readonly id?: string;
+    readonly title?: string;
+  }[];
   readonly extraSections?: readonly string[];
 }
 
@@ -121,6 +132,23 @@ export function buildLlmsTxt(opts: LlmsTxtOptions): string {
     `- [OKF bundle](${abs("okf/bundle.tar.gz")}): all concepts as {type}/{slug}.md`,
     `- [Site catalog](${abs("catalog.jsonld")}): open datasets in \`dataset[]\`; other pages in \`hasPart[]\``,
   ];
+  if (opts.okfc) {
+    lines.push(
+      `- [OKFC container](${abs("okf/site.okfc")}): site-wide SQLite OKF Container (FTS5; vectors optional later)`,
+    );
+    lines.push(
+      `- [OKFC registry](${abs("okf/registry.json")}): multi-bundle index (site + content units)`,
+    );
+  }
+  if (opts.okfcBundles && opts.okfcBundles.length > 0) {
+    for (const b of opts.okfcBundles) {
+      if (b.path === "okf/site.okfc" && opts.okfc) continue;
+      const label = b.title ?? b.id ?? b.path;
+      lines.push(
+        `- [OKFC unit: ${label}](${abs(b.path)}): FTS5 unit pack`,
+      );
+    }
+  }
   if (opts.dcatCatalog) {
     lines.push(
       `- [DCAT catalog](${abs("catalog-dcat.jsonld")}): DCAT-AP JSON-LD for \`type: dataset\` pages only (portal harvest)`,

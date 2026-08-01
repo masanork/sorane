@@ -205,11 +205,25 @@ export function validateDateFindings(
   const findings: ContentQualityFinding[] = [];
   const ts = frontmatter.timestamp;
   const up = frontmatter.updated;
+  const generated = frontmatter.generated;
+  const generatedAt =
+    generated !== null &&
+    typeof generated === "object" &&
+    !Array.isArray(generated) &&
+    typeof (generated as { at?: unknown }).at === "string"
+      ? (generated as { at: string }).at
+      : undefined;
 
   if (ts !== undefined && typeof ts === "string" && !normalizeDate(ts)) {
     findings.push({
       category: "date",
       message: `timestamp "${ts}" is not a valid date (use YYYY-MM-DD or ISO 8601)`,
+    });
+  }
+  if (generatedAt !== undefined && !normalizeDate(generatedAt)) {
+    findings.push({
+      category: "date",
+      message: `generated.at "${generatedAt}" is not a valid date (use YYYY-MM-DD or ISO 8601)`,
     });
   }
   if (up !== undefined && typeof up === "string" && !normalizeDate(up)) {
@@ -219,7 +233,7 @@ export function validateDateFindings(
     });
   }
 
-  const tsNorm = normalizeDate(ts);
+  const tsNorm = normalizeDate(ts) ?? normalizeDate(generatedAt);
   const upNorm = normalizeDate(up);
   if (tsNorm && upNorm && upNorm < tsNorm) {
     findings.push({

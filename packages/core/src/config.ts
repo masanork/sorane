@@ -31,6 +31,16 @@ export interface BlogBuildConfig {
 
 export type SearchMode = "fts" | "hybrid";
 
+export type {
+  KnowledgeBuildConfig,
+  KnowledgeEmbeddingsMode,
+  ResolvedKnowledgeBuildConfig,
+} from "./knowledge-config.ts";
+export {
+  resolveKnowledgeBuildConfig,
+} from "./knowledge-config.ts";
+import type { KnowledgeBuildConfig } from "./knowledge-config.ts";
+
 export interface SearchConfig {
   /** fts（標準）| hybrid（experimental・要埋め込みモデル） */
   readonly mode?: SearchMode;
@@ -98,8 +108,16 @@ export const DEFAULT_DIAGRAMS_CONFIG: Required<DiagramsConfig> = {
 };
 
 import type { BuildOutputsConfig, PresetLayer } from "./presets.ts";
+import type { OkfcBuildConfig } from "./okfc-config.ts";
 
 export type { BuildOutputsConfig, SoranePreset } from "./presets.ts";
+export type {
+  OkfcBuildConfig,
+  OkfcUnitConfig,
+  OkfcUnitMatch,
+  ResolvedOkfcBuildConfig,
+} from "./okfc-config.ts";
+export { resolveOkfcBuildConfig } from "./okfc-config.ts";
 
 export interface ImageMetadataConfig {
   readonly enabled?: boolean;
@@ -304,6 +322,16 @@ export interface SoraneConfig {
     /** 機械可読・フィード等の出力（`preset` と併用可） */
     readonly outputs?: BuildOutputsConfig;
     /**
+     * OKFC packing policy (units / auto directories / registry).
+     * Effective when `outputs.okfc: true`. FTS is always packed; vectors via knowledge.embeddings.
+     */
+    readonly okfc?: OkfcBuildConfig;
+    /**
+     * Unified knowledge index (IR) policy — embeddings once → OKFC vec + search.
+     * See design/knowledge-index-unified.md.
+     */
+    readonly knowledge?: KnowledgeBuildConfig;
+    /**
      * サイト移行用リダイレクト。ビルド時に `dist/_redirects`（Cloudflare Pages / Netlify 形式）を出力する。
      * 記事 frontmatter の `redirect` と併用可（同一 `from` は後勝ち）。
      */
@@ -361,6 +389,7 @@ export const DEFAULT_CONFIG: SoraneConfig = {
     outputs: {
       md_alternate: false,
       okf_bundle: false,
+      okfc: false,
       catalog: false,
       llms_txt: false,
       feed: true,
@@ -450,6 +479,15 @@ export function mergeConfig(partial: MergeConfigInput = {}): SoraneConfig {
         mergeOutputsConfig(DEFAULT_CONFIG.build.outputs, presetLayer.build?.outputs),
         rest.build?.outputs,
       ),
+      okfc: rest.build?.okfc
+        ? {
+            ...rest.build.okfc,
+            units: rest.build.okfc.units ? [...rest.build.okfc.units] : undefined,
+          }
+        : undefined,
+      knowledge: rest.build?.knowledge
+        ? { ...rest.build.knowledge }
+        : undefined,
     },
     fonts: { ...DEFAULT_CONFIG.fonts, ...rest.fonts },
     search: { ...DEFAULT_CONFIG.search, ...rest.search },

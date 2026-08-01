@@ -32,3 +32,12 @@ export function absoluteUrl(baseUrl: string, rel: string): string {
   if (baseUrl.length === 0) return rel;
   return `${baseUrl.replace(/\/$/, "")}/${rel.replace(/^\//, "")}`;
 }
+
+/** Sibling OKF markdown path for a published HTML route. */
+export function mdRelForHtml(htmlRel: string): string {
+  const n = htmlRel.replace(/\\/g, "/");
+  if (n.endsWith("/index.html")) return `${n.slice(0, -"index.html".length)}index.md`;
+  if (n.endsWith("index.html") && !n.includes("/")) return "index.md";
+  if (n.endsWith(".html")) return `${n.slice(0, -".html".length)}.md`;
+  return `${n}.md`;
+}

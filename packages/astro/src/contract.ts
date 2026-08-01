@@ -57,7 +57,15 @@ export interface SoraneAstroBackendOutputsInput {
   readonly catalog?: boolean;
   readonly llmsTxt?: boolean;
   readonly okfBundle?: boolean;
+  /** OKFC SQLite container (`okf/site.okfc`). */
+  readonly okfc?: boolean;
   readonly sitemap?: boolean;
+  /** Atom feed (`feed.xml`) for `type: article` pages. */
+  readonly feed?: boolean;
+  /** `robots.txt` with optional sitemap link. */
+  readonly robots?: boolean;
+  /** Per-page OKF markdown alternate beside HTML routes. */
+  readonly mdAlternate?: boolean;
   readonly dcatCatalog?: boolean;
   readonly search?: boolean;
 }

@@ -4,18 +4,50 @@
  * 移行期の旧キー:
  *   layout/kind → type
  *   date/publishedAt → timestamp (ISO 8601)
+ *
+ * OKF v0.2: `generated.at` may supply the content-change time when `timestamp` is absent.
  */
+
+import {
+  parseTrustFields,
+  TRUST_FRONTMATTER_KEYS,
+  type OkfActorEvent,
+  type OkfConceptStatus,
+  type OkfDateRange,
+  type OkfSourceEntry,
+} from "./trust.ts";
+
+export type {
+  OkfActorEvent,
+  OkfConceptStatus,
+  OkfDateRange,
+  OkfSourceEntry,
+  OkfTrustTier,
+} from "./trust.ts";
 
 export interface OkfConcept {
   readonly type: string;
   readonly title: string;
   readonly body: string;
   readonly frontmatter: Record<string, unknown>;
+  /** Effective content date: legacy `timestamp` / `date` / `publishedAt`, else `generated.at`. */
   readonly timestamp?: string;
   readonly description?: string;
   readonly tags?: readonly string[];
   readonly resource?: string;
   readonly profile?: string;
+  /** OKF v0.2: how the current content was produced. */
+  readonly generated?: OkfActorEvent;
+  /** OKF v0.2: verification events (bare mapping normalized to a one-element list). */
+  readonly verified?: readonly OkfActorEvent[];
+  /** OKF v0.2: provenance sources. */
+  readonly sources?: readonly OkfSourceEntry[];
+  /** OKF v0.2: shared usage window for sources[].usage_count. */
+  readonly usage_window?: OkfDateRange;
+  /** OKF v0.2 lifecycle; absent ⇒ treat as stable. */
+  readonly status?: OkfConceptStatus;
+  /** OKF v0.2 absolute staleness date (YYYY-MM-DD). */
+  readonly stale_after?: string;
   readonly warnings: readonly string[];
 }
 
@@ -47,17 +79,19 @@ function toIsoTimestamp(value: unknown): string | undefined {
   return d.toISOString();
 }
 
-function resolveTimestamp(raw: Record<string, unknown>, warnings: string[]): string | undefined {
+function resolveLegacyTimestamp(
+  raw: Record<string, unknown>,
+  warnings: string[],
+): string | undefined {
   if (raw.timestamp !== undefined) {
-    const ts = toIsoTimestamp(raw.timestamp);
-    return ts;
+    return toIsoTimestamp(raw.timestamp);
   }
   if (raw.publishedAt !== undefined) {
-    warnings.push("deprecated: `publishedAt` → use `timestamp`");
+    warnings.push("deprecated: `publishedAt` → use `timestamp` or `generated.at`");
     return toIsoTimestamp(raw.publishedAt);
   }
   if (raw.date !== undefined) {
-    warnings.push("deprecated: `date` → use `timestamp`");
+    warnings.push("deprecated: `date` → use `timestamp` or `generated.at`");
     return toIsoTimestamp(raw.date);
   }
   return undefined;
@@ -70,6 +104,17 @@ function resolveTitle(raw: Record<string, unknown>, body: string, fallback: stri
   return fallback;
 }
 
+const SKIP_FRONTMATTER = new Set<string>([
+  "type",
+  "kind",
+  "layout",
+  "timestamp",
+  "publishedAt",
+  "date",
+  "title",
+  ...TRUST_FRONTMATTER_KEYS,
+]);
+
 /** frontmatter オブジェクト + 本文から OKF concept を組み立てる。 */
 export function normalizeConcept(
   raw: Record<string, unknown>,
@@ -79,13 +124,17 @@ export function normalizeConcept(
   const warnings: string[] = [];
   const type = resolveType(raw, warnings);
   const title = resolveTitle(raw, body, fallbackTitle);
-  const timestamp = resolveTimestamp(raw, warnings);
+  const trust = parseTrustFields(raw);
+  warnings.push(...trust.warnings);
+
+  const legacyTs = resolveLegacyTimestamp(raw, warnings);
+  const generatedAt = trust.generated?.at ? toIsoTimestamp(trust.generated.at) : undefined;
+  // OKF v0.2 §13.1: prefer generated.at when legacy timestamp is absent.
+  const timestamp = legacyTs ?? generatedAt;
 
   const frontmatter: Record<string, unknown> = {};
   for (const [key, value] of Object.entries(raw)) {
-    if (key === "type" || key === "kind" || key === "layout") continue;
-    if (key === "timestamp" || key === "publishedAt" || key === "date") continue;
-    if (key === "title") continue;
+    if (SKIP_FRONTMATTER.has(key)) continue;
     if (value !== undefined) frontmatter[key] = value;
   }
 
@@ -115,6 +164,12 @@ export function normalizeConcept(
     tags,
     resource,
     profile,
+    generated: trust.generated,
+    verified: trust.verified,
+    sources: trust.sources,
+    usage_window: trust.usage_window,
+    status: trust.status,
+    stale_after: trust.stale_after,
     warnings,
   };
 }

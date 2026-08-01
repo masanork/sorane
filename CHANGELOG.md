@@ -6,12 +6,17 @@ All notable changes to sorane are documented here. Versioning follows [SemVer](h
 
 ### Added
 
+- **Unified knowledge index (U0–U4)** — shared chunking + Knowledge IR; OKFC pack with optional `vec_chunks`; `embedKnowledgeIr` by `text_hash`; search index via IR; **`sorane search` prefers `dist/okf/site.okfc`** (`--okfc`, `--prefer-index` for legacy `.sorane/index.db`). Config: `build.knowledge.embeddings: off \| auto \| on`. Design: `design/knowledge-index-unified.md`.
+- **OKFC multi-unit + FTS complete** — `build.outputs.okfc` + `build.okfc` (`site`, `auto_directories`, explicit `units`, `registry`) emit `okf/site.okfc`, `okf/units/*.okfc`, `okf/registry.json` (FTS5 Definition Profile; no vectors yet). APIs: `packOkfc`, `queryOkfcFts`, `buildOkfcRegistry`. CLI: `sorane okfc pack|query`. Enabled by default on `preset: okf-site` / `gov`. Requires `better-sqlite3`.
+- **`@sorane/astro` publishing parity** — default agent outputs now include `okf/site.okfc`, `okf/registry.json`, `feed.xml`, `robots.txt`, and per-route OKF `.md` alternates (alongside catalog / llms / bundle). Native/WASM backends are gap-filled from TypeScript for the new paths. Toggles: `outputs.okfc` / `feed` / `robots` / `mdAlternate`.
+- **OKF v0.2 trust signals** — optional frontmatter `generated`, `verified`, `sources`, `usage_window`, `status`, `stale_after` on all `sorane-okf/0.x` profiles; shape validation; `generated.at` → effective timestamp when `timestamp` is absent; trust tier helper; HTML meta + `catalog.jsonld` keywords / `citation`; design note `design/okf-v0.2-trust.md`.
 - **PlantUML via Kroki** — `build.diagrams.plantuml.enabled` + `kroki_url` (default `https://kroki.io`); ` ```plantuml ` / ` ```puml ` fences compile to `assets/diagrams/plantuml/{hash}.svg` with SSRF-guarded HTTP.
 - **Search source facet** — browser search page filters by IPTC `digital_source_type` (`AI生成・合成` / `人間作成` / `開示あり`).
 - **Hotlink `associatedMedia`** — external Markdown images (`![](https://…)`) with matching `asset-provenance.yaml` URL keys emit JSON-LD `associatedMedia`.
 
 ### Changed
 
+- Profile schema descriptions: base is upstream **OKF v0.2** (not v0.1); docs clarify `sorane-okf/0.2` ≠ OKF v0.2.
 - README Distribution: GitHub Release tags documented as available (`v0.5.0`).
 - Design docs status refresh (content-import, diagram-formats, AI disclosure remaining gaps).
 

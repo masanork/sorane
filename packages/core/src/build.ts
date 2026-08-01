@@ -10,8 +10,21 @@ import {
   buildBundleEntries,
   isBuildableContentType,
   resolveEffectiveType,
+  packOkfcFromIr,
+  buildKnowledgeIr,
+  sliceKnowledgeIr,
+  conceptIdFor,
+  buildOkfcRegistry,
+  okfcRegistryToJson,
   type ParsedConcept,
+  type OkfcRegistryBundle,
 } from "@sorane/okf";
+import {
+  resolveOkfcBuildConfig,
+  resolveOkfcEmbeddingsMode,
+} from "./okfc-config.ts";
+import { resolveKnowledgeBuildConfig } from "./knowledge-config.ts";
+import { resolveOkfcPackPlans, toOkfcEligible } from "./okfc-units.ts";
 import {
   copyFileSync,
   cpSync,
@@ -425,7 +438,7 @@ export async function runBuild(opts: BuildOptions): Promise<BuildResult> {
   if (opts.clean && existsSync(outDir)) {
     rmSync(outDir, { recursive: true, force: true });
   }
-  if (buildOutputs.okf_bundle) {
+  if (buildOutputs.okf_bundle || buildOutputs.okfc) {
     mkdirSync(join(outDir, "okf"), { recursive: true });
   }
   mkdirSync(join(outDir, "assets"), { recursive: true });
@@ -1802,6 +1815,7 @@ export async function runBuild(opts: BuildOptions): Promise<BuildResult> {
         aiLabeledCount: siteAiFlags.machineReadable ? aiLabeledCount : undefined,
         diagramsEnabled: diagramConfig.enabled !== false,
         dcatCatalog: dcatCatalogEnabled,
+        okfc: buildOutputs.okfc,
         extraSections: llmsExtraSections,
       }),
       "utf8",
@@ -1885,6 +1899,152 @@ export async function runBuild(opts: BuildOptions): Promise<BuildResult> {
   ].sort((a, b) => a.path.localeCompare(b.path));
   if (buildOutputs.okf_bundle) {
     writeFileSync(join(outDir, "okf/bundle.tar.gz"), gzipSync(tarBytes(bundleEntries)));
+  }
+
+  const okfcPackPlans: {
+    path: string;
+    id: string;
+    title?: string;
+  }[] = [];
+  if (buildOutputs.okfc) {
+    const okfcCfg = resolveOkfcBuildConfig(config.build.okfc, true);
+    const eligible = toOkfcEligible(parsed, {
+      includeDrafts,
+      includePageInBuild,
+      isNotFoundSource,
+      slugFromRel,
+    });
+    // U1/U3: one Knowledge IR for the site (+ optional embed once), then slice per unit.
+    const pathById = new Map<string, string>();
+    for (const e of eligible) {
+      pathById.set(conceptIdFor(e.concept.type, e.slug), e.relPath);
+    }
+    let siteIr = buildKnowledgeIr(
+      eligible.map((e) => ({ concept: e.concept, slug: e.slug })),
+      { sourcePathByConceptId: pathById },
+    );
+    const knowledgeCfg = resolveKnowledgeBuildConfig(config.build.knowledge);
+    let embMode = resolveOkfcEmbeddingsMode(config.build.okfc, knowledgeCfg.embeddings);
+    // auto: only load the model when hybrid search is also enabled (keeps FTS builds cheap).
+    // Explicit on always embeds; off never does.
+    if (embMode === "auto" && (config.search.mode ?? "fts") !== "hybrid") {
+      embMode = "off";
+    }
+    if (embMode !== "off" && siteIr.chunks.length > 0) {
+      try {
+        const modelRoot = resolve(cwd, config.search.model ?? "vendor/models");
+        const modelId = config.search.model_id ?? "ruri-v3-30m";
+        const modelDir = join(modelRoot, modelId);
+        if (!existsSync(modelDir)) {
+          if (embMode === "on") {
+            throw new Error(
+              `build.knowledge.embeddings: on but model not found: ${modelDir}`,
+            );
+          }
+          process.stderr.write(
+            `[sorane] OKFC: embeddings auto skipped (model missing at ${modelDir})\n`,
+          );
+        } else {
+          const { embedKnowledgeIr, RuriEmbeddings } = await import(
+            "@sorane/search"
+          );
+          const provider = new RuriEmbeddings({ modelRoot, modelId });
+          siteIr = await embedKnowledgeIr(siteIr, provider, {
+            onProgress: (m) => process.stdout.write(`[sorane] ${m}\n`),
+          });
+          process.stdout.write(
+            `[sorane] knowledge IR: ${siteIr.embeddings?.length ?? 0} unique vector(s) (model ${modelId})\n`,
+          );
+        }
+      } catch (e) {
+        const msg = e instanceof Error ? e.message : String(e);
+        if (embMode === "on") {
+          throw new Error(`knowledge embeddings required: ${msg}`);
+        }
+        process.stderr.write(
+          `[sorane] warning: knowledge embeddings skipped: ${msg}\n`,
+        );
+      }
+    }
+    const plans = resolveOkfcPackPlans(eligible, okfcCfg, {
+      siteTitle: config.site.title,
+      siteDescription: config.site.description,
+      baseUrl,
+      packTool: "tool:sorane/okfc-pack@0.5",
+    });
+    const registryBundles: OkfcRegistryBundle[] = [];
+    for (const plan of plans) {
+      try {
+        const dbPath = join(outDir, plan.outRel);
+        mkdirSync(dirname(dbPath), { recursive: true });
+        const planIds = new Set(
+          plan.concepts.map((c) => conceptIdFor(c.concept.type, c.slug)),
+        );
+        const ir =
+          plan.id === "site" ? siteIr : sliceKnowledgeIr(siteIr, planIds);
+        const okfcResult = await packOkfcFromIr({
+          dbPath,
+          ir,
+          meta: plan.meta,
+          fresh: true,
+        });
+        const vecNote =
+          okfcResult.vectorCount > 0
+            ? `, ${okfcResult.vectorCount} vector(s)`
+            : "";
+        process.stdout.write(
+          `[sorane] OKFC: ${okfcResult.conceptCount} concept(s), ${okfcResult.chunkCount} chunk(s)${vecNote} → ${plan.outRel}\n`,
+        );
+        okfcPackPlans.push({
+          path: plan.outRel,
+          id: plan.id,
+          title: plan.meta.title,
+        });
+        registryBundles.push({
+          id: plan.id,
+          path: plan.outRel,
+          title: plan.meta.title,
+          description: plan.meta.description,
+          bundle_type: plan.meta.bundle_type,
+          bundle_uri: plan.meta.bundle_uri,
+          concept_count: okfcResult.conceptCount,
+          chunk_count: okfcResult.chunkCount,
+          packed_at: okfcResult.packedAt,
+          search: okfcResult.search,
+        });
+      } catch (e) {
+        const msg = e instanceof Error ? e.message : String(e);
+        process.stderr.write(
+          `[sorane] warning: OKFC pack failed for ${plan.outRel}: ${msg}\n`,
+        );
+      }
+    }
+    if (okfcCfg.registry && registryBundles.length > 0) {
+      const registry = buildOkfcRegistry(registryBundles);
+      writeFileSync(
+        join(outDir, "okf/registry.json"),
+        okfcRegistryToJson(registry),
+        "utf8",
+      );
+    }
+    // Refresh llms.txt with unit OKFC links (written earlier without unit list).
+    if (buildOutputs.llms_txt) {
+      writeFileSync(
+        join(outDir, "llms.txt"),
+        buildLlmsTxt({
+          siteTitle: config.site.title,
+          siteDescription: config.site.description,
+          baseUrl,
+          aiLabeledCount: siteAiFlags.machineReadable ? aiLabeledCount : undefined,
+          diagramsEnabled: diagramConfig.enabled !== false,
+          dcatCatalog: dcatCatalogEnabled,
+          okfc: true,
+          okfcBundles: okfcPackPlans,
+          extraSections: llmsExtraSections,
+        }),
+        "utf8",
+      );
+    }
   }
 
   const templateCss = resolveThemeCss(cwd);

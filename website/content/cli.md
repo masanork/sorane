@@ -105,13 +105,23 @@ npx @sorane/cli index [--cwd <dir>] [--force] [--hybrid] [--fts-only] [--yes]
 
 ## sorane search
 
-ローカルで検索を試します。
+ローカルで検索を試します。**ビルド成果物の `okf/site.okfc` があればそれを優先**し（U4）、無ければ `.sorane/index.db` にフォールバックします。
 
 ```bash
-npx @sorane/cli search <query> [--cwd <dir>] [--type article|dataset|reference|glossary|glossary-term|faq] [--tag <slug>] [--k 10] [--json] [--fts-only] [--yes]
+npx @sorane/cli search <query> [--cwd <dir>] \
+  [--okfc <path>] [--prefer-index] [--index <path>] \
+  [--type article|dataset|reference|glossary|glossary-term|faq] \
+  [--tag <slug>] [--k 10] [--json] [--fts-only]
 ```
 
-要 `@sorane/search`。ハイブリッド索引があるとき、クエリ埋め込みもネイティブ ONNX を優先します（ビルド済みかつモデルあり）。FTS のみの索引では `--fts-only` 不要（ベクトル列が無ければ自動で FTS のみ）。
+| フラグ | 意味 |
+|--------|------|
+| （既定） | `{out_dir}/okf/site.okfc` があれば OKFC FTS、なければ index.db |
+| `--okfc <path>` | 指定 OKFC を強制 |
+| `--prefer-index` | 常に index.db（`--index` / `search.index`） |
+| `--index` / `--out` | index.db パス（`.okfc` で終わる場合は OKFC） |
+
+OKFC 経路は `better-sqlite3`（`@sorane/okf` の optional）のみ。index.db 経路は `@sorane/search` が必要です。ハイブリッド索引があるとき、クエリ埋め込みもネイティブ ONNX を優先します。
 
 ## ネイティブ Rust バックエンド（CLI）
 

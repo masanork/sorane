@@ -14,6 +14,7 @@ import {
   TYPES_01_02,
   TYPES_03,
 } from "./profile.ts";
+import { isStale, parseTrustFields } from "./trust.ts";
 import { parseYaml } from "./yaml.ts";
 
 const __dirname = dirname(fileURLToPath(import.meta.url));
@@ -177,6 +178,20 @@ export function validateSource(
   const concept = normalizeConcept(raw, body, slugFromPath(file));
   warnings.push(...concept.warnings);
 
+  const trust = parseTrustFields(raw);
+  for (const t of trust.issues) {
+    issues.push({
+      where: "frontmatter",
+      instancePath: `/${t.path}`,
+      message: t.message,
+    });
+  }
+  if (concept.stale_after && isStale(concept.stale_after)) {
+    warnings.push(
+      `stale_after ${concept.stale_after}: concept is past its freshness date (OKF v0.2)`,
+    );
+  }
+
   const profile = resolveProfileForValidation(
     typeof concept.profile === "string" && SUPPORTED_PROFILE_RE.test(concept.profile)
       ? concept.profile
@@ -208,6 +223,15 @@ export function validateSource(
     if (concept.tags) fmForSchema.tags = [...concept.tags];
     if (concept.resource) fmForSchema.resource = concept.resource;
     if (concept.profile) fmForSchema.profile = concept.profile;
+    if (concept.generated) fmForSchema.generated = concept.generated;
+    if (concept.verified) {
+      fmForSchema.verified =
+        concept.verified.length === 1 ? concept.verified[0] : [...concept.verified];
+    }
+    if (concept.sources) fmForSchema.sources = concept.sources.map((s) => ({ ...s }));
+    if (concept.usage_window) fmForSchema.usage_window = { ...concept.usage_window };
+    if (concept.status) fmForSchema.status = concept.status;
+    if (concept.stale_after) fmForSchema.stale_after = concept.stale_after;
 
     if (!validate(fmForSchema)) {
       for (const err of validate.errors ?? []) {

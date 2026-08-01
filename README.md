@@ -66,7 +66,9 @@ See [configuration](https://ssg.sorane.dev/configuration.html#プリセット) o
 
 ## OKF profile
 
-空音 implements [Open Knowledge Format (OKF)](https://cloud.google.com/blog/products/data-analytics/how-the-open-knowledge-format-can-improve-data-sharing) with profiles `sorane-okf/0.1` through `0.3` (extended types and open-data metadata in `0.3`).
+空音 implements [Open Knowledge Format (OKF) v0.2](https://github.com/GoogleCloudPlatform/knowledge-catalog/blob/main/okf/SPEC.md) with profiles `sorane-okf/0.1` through `0.3` (extended types and open-data metadata in `0.3`).
+
+**Note:** profile string `sorane-okf/0.2` means “AI disclosure validation”, not “only OKF v0.2”. Upstream OKF v0.2 trust fields (`generated`, `verified`, `sources`, `status`, `stale_after`) are optional on every profile. When `timestamp` is absent, `generated.at` supplies the content date.
 
 Supported concept types:
 
@@ -75,15 +77,16 @@ Supported concept types:
 
 Required OKF field: `type`. Profile adds `title` for all supported types.
 
-Example article with AI disclosure (`0.2`):
+Example article with AI disclosure (`sorane-okf/0.2` profile) and OKF trust signals:
 
 ```yaml
 ---
 type: article
 title: Hello OKF
-timestamp: 2025-01-01T00:00:00Z
 tags: [sorane]
 profile: sorane-okf/0.2
+generated: { by: human:author, at: 2025-01-01T00:00:00Z }
+verified: { by: human:author, at: 2025-01-02T00:00:00Z }
 digitalSourceType: compositeWithTrainedAlgorithmicMedia
 aiDisclosureNote: Draft edited with an LLM; facts verified by the author.
 ---
@@ -91,7 +94,7 @@ aiDisclosureNote: Draft edited with an LLM; facts verified by the author.
 Body markdown here.
 ```
 
-See [AI content disclosure](https://ssg.sorane.dev/ai-disclosure.html) for image provenance (IPTC XMP, C2PA) and `content/asset-provenance.yaml`.
+See [OKF profile](https://ssg.sorane.dev/okf-profile.html) and [AI content disclosure](https://ssg.sorane.dev/ai-disclosure.html) for image provenance (IPTC XMP, C2PA) and `content/asset-provenance.yaml`.
 
 ## Build outputs
 
@@ -105,6 +108,9 @@ Lite defaults (no `preset:` or `preset: blog`) emit HTML, `feed.xml`, `sitemap.x
 | `catalog.jsonld` | schema.org site catalog | off |
 | `llms.txt` | LLM site guide | off |
 | `okf/bundle.tar.gz` | OKF bundle `{type}/{slug}.md` | off |
+| `okf/site.okfc` | OKFC site pack (SQLite + FTS5; vectors later) | off |
+| `okf/units/*.okfc` | OKFC content units (`build.okfc`) | off |
+| `okf/registry.json` | Multi-OKFC index for agents | off |
 
 ## Font subsetting
 
@@ -236,7 +242,7 @@ export default defineConfig({
 });
 ```
 
-The integration scans `src/content/**/*.md(x)` for OKF frontmatter, runs quality gates in TypeScript (`validateSiteContent`), and emits `catalog.jsonld`, `llms.txt`, `okf/bundle.tar.gz`, optional `catalog-dcat.jsonld`, `sitemap.xml`, and search assets into Astro's output directory. With `backend: "auto"` (default), a built `sorane-astro-backend` Rust CLI handles artifacts (including hybrid search when the model is present). Set `SORANE_ASTRO_BACKEND_NATIVE=0` to force the TypeScript fallback. See `examples/astro-minimal/` for a runnable fixture and [Astro 連携](https://ssg.sorane.dev/astro-integration.html) for setup details.
+The integration scans `src/content/**/*.md(x)` for OKF frontmatter, runs quality gates in TypeScript (`validateSiteContent`), and emits publishing artifacts into Astro's output directory: `catalog.jsonld`, `llms.txt`, `okf/bundle.tar.gz`, `okf/site.okfc`, `feed.xml`, `robots.txt`, per-route OKF `.md` alternates, plus optional `catalog-dcat.jsonld`, `sitemap.xml`, and search assets. With `backend: "auto"` (default), a built `sorane-astro-backend` Rust CLI handles artifacts (including hybrid search when the model is present). Set `SORANE_ASTRO_BACKEND_NATIVE=0` to force the TypeScript fallback. See `examples/astro-minimal/` for a runnable fixture and [Astro 連携](https://ssg.sorane.dev/astro-integration.html) for setup details.
 
 ## Roadmap
 

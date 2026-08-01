@@ -2,6 +2,8 @@
 export interface BuildOutputsConfig {
   readonly md_alternate?: boolean;
   readonly okf_bundle?: boolean;
+  /** OKFC container (`okf/site.okfc`) — SQLite + FTS for agent consumption. */
+  readonly okfc?: boolean;
   readonly catalog?: boolean;
   readonly llms_txt?: boolean;
   readonly feed?: boolean;
@@ -15,6 +17,7 @@ export type SoranePreset = "blog" | "okf-site" | "gov";
 export interface ResolvedBuildOutputs {
   readonly md_alternate: boolean;
   readonly okf_bundle: boolean;
+  readonly okfc: boolean;
   readonly catalog: boolean;
   readonly llms_txt: boolean;
   readonly feed: boolean;
@@ -25,6 +28,7 @@ export interface ResolvedBuildOutputs {
 export const LITE_OUTPUTS: ResolvedBuildOutputs = {
   md_alternate: false,
   okf_bundle: false,
+  okfc: false,
   catalog: false,
   llms_txt: false,
   feed: true,
@@ -35,6 +39,7 @@ export const LITE_OUTPUTS: ResolvedBuildOutputs = {
 export const OKF_SITE_OUTPUTS: ResolvedBuildOutputs = {
   md_alternate: true,
   okf_bundle: true,
+  okfc: true,
   catalog: true,
   llms_txt: true,
   feed: true,
@@ -120,6 +125,7 @@ export function resolveBuildOutputs(outputs?: BuildOutputsConfig): ResolvedBuild
   return {
     md_alternate: outputs.md_alternate ?? base.md_alternate,
     okf_bundle: outputs.okf_bundle ?? base.okf_bundle,
+    okfc: outputs.okfc ?? base.okfc,
     catalog: outputs.catalog ?? base.catalog,
     llms_txt: outputs.llms_txt ?? base.llms_txt,
     feed: outputs.feed ?? base.feed,

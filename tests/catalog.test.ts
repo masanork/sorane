@@ -67,6 +67,33 @@ describe("buildCatalogJsonLd", () => {
     expect(json).not.toContain('"hasPart": [\n    {\n      "@type": "Dataset"');
   });
 
+  test("OKF v0.2 trust を keywords / citation に載せる", () => {
+    const concept = normalizeConcept(
+      {
+        type: "article",
+        title: "Orders",
+        status: "deprecated",
+        stale_after: "2026-12-31",
+        generated: { by: "agent/1", at: "2026-06-20T22:53:05Z" },
+        verified: { by: "human:alice", at: "2026-06-25T09:00:00Z" },
+        sources: [{ resource: "https://wiki.example/schema", title: "Schema" }],
+      },
+      "body",
+      "orders",
+    );
+    const json = buildCatalogJsonLd(
+      [{ slug: "orders", url: "https://ex.dev/orders.html", concept }],
+      "Site",
+      "https://ex.dev",
+    );
+    expect(json).toContain("trust:human-reviewed");
+    expect(json).toContain("status:deprecated");
+    expect(json).toContain("stale_after:2026-12-31");
+    expect(json).toContain("generated_by:agent/1");
+    expect(json).toContain("https://wiki.example/schema");
+    expect(json).toContain('"@type": "CreativeWork"');
+  });
+
   test("docsMode では article を TechArticle にする", () => {
     const concept = normalizeConcept(
       { type: "article", title: "Guide", profile: "sorane-okf/0.3" },

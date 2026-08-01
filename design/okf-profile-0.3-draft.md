@@ -4,7 +4,7 @@
 |-------|-------|
 | **Status** | Draft (Phases A–D shipped) |
 | **Date** | 2026-06-21 |
-| **Base** | OKF v0.1 + sorane-okf/0.2 (AI disclosure) |
+| **Base** | OKF v0.2 (trust fields optional) + sorane-okf/0.2 (AI disclosure). See `design/okf-v0.2-trust.md` |
 | **Target profile** | `sorane-okf/0.3` (additive; `0.1` / `0.2` remain valid) |
 
 ---

@@ -9,6 +9,7 @@ import {
 import { resolveSoraneAstroBackend, runSoraneAstroBackend } from "./backend.ts";
 import { resolveAstroRoutePlan } from "./route-loader.ts";
 import { buildSearchArtifacts, writeSearchCompanionAssets } from "./search-backend.ts";
+import { mergePublishingArtifacts } from "./backend-artifacts.ts";
 import { writeSoraneAstroBackendArtifacts } from "./write-artifacts.ts";
 import { collectBackendValidation } from "./validation.ts";
 import type { SoraneAstroBackendArtifact } from "./contract.ts";
@@ -70,6 +71,16 @@ export async function emitSoraneAstroArtifacts(
   // Validation policy: integration-layer TS gate only; artifact backends always validate: false
   // (design/astro-rust-backend.md — "Validation policy (Astro integration)").
   let output = await runSoraneAstroBackend(resolved, { ...input, validate: false });
+
+  // Full publishing parity: fill OKFC / feed / robots / md alternates (and refresh llms)
+  // when native/WASM omit them. TS backend already emits the full set.
+  if (resolved !== "ts") {
+    const merged = await mergePublishingArtifacts(
+      { ...input, validate: false },
+      output.artifacts,
+    );
+    output = { ...output, artifacts: merged };
+  }
 
   if (options.outputs?.search && !backendIncludesSearchIndex(output.artifacts)) {
     const searchArtifacts = await buildSearchArtifacts(

@@ -60,7 +60,11 @@ export function buildSoraneAstroBackendInput(
       catalog: options.outputs?.catalog,
       llmsTxt: options.outputs?.llmsTxt,
       okfBundle: options.outputs?.okfBundle,
+      okfc: options.outputs?.okfc,
       sitemap: options.outputs?.sitemap,
+      feed: options.outputs?.feed,
+      robots: options.outputs?.robots,
+      mdAlternate: options.outputs?.mdAlternate,
       dcatCatalog:
         options.outputs?.dcatCatalog ?? options.openData?.dcatCatalog ?? false,
       search: options.outputs?.search,

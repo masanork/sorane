@@ -12,9 +12,9 @@ Astro でページを描画しつつ、空音が OKF とエージェント向け
 | レイヤ | 担当 |
 |--------|------|
 | Astro | HTML レンダリング、ルーティング、コンポーネント |
-| `@sorane/astro` | OKF 検証、`catalog.jsonld`、`llms.txt`、`okf/bundle.tar.gz` など |
+| `@sorane/astro` | OKF 検証とエージェント向け公開成果物（catalog / llms / bundle / OKFC / feed / robots / `.md` 代替 / 任意 search） |
 
-`astro build` 完了後の `astro:build:done` フックで、`src/content/**/*.md(x)` を走査してアーティファクトを `dist/` に書き出します。
+`astro build` 完了後の `astro:build:done` フックで、`src/content/**/*.md(x)` を走査してアーティファクトを `dist/` に書き出します。HTML 自体は Astro が描画し、空音は **機械可読出口** をフルセットで揃えます（`sorane build` の agent 出力相当）。
 
 ## インストール
 
@@ -63,6 +63,10 @@ soraneAstro({
     catalog: true,
     llmsTxt: true,
     okfBundle: true,
+    okfc: true,        // okf/site.okfc
+    feed: true,        // feed.xml
+    robots: true,      // robots.txt
+    mdAlternate: true, // okf/md/… の .md
     sitemap: false,
     search: true,
   },
@@ -79,7 +83,11 @@ soraneAstro({
 | `catalog` | on | JSON-LD カタログ |
 | `llmsTxt` | on | `llms.txt` |
 | `okfBundle` | on | `okf/bundle.tar.gz` |
-| `sitemap` | off | `sitemap.xml` |
+| `okfc` | on | `okf/site.okfc`（OKFC: SQLite + FTS） |
+| `feed` | on | Atom `feed.xml`（`type: article`） |
+| `robots` | on | `robots.txt` |
+| `mdAlternate` | on | `okf/md/…` に OKF `.md` 代替（Astro ルートと衝突しない） |
+| `sitemap` | off | `sitemap.xml`（Astro 側 sitemap と併用可） |
 | `search` | off | FTS 検索用 `assets/search-index.json` + `assets/search.mjs` |
 | `dcatCatalog` | off | `catalog-dcat.jsonld`（`type: dataset` のみ） |
 
@@ -142,8 +150,10 @@ Astro 統合（`emitSoraneAstroArtifacts`）では **TypeScript の `validateSit
 
 ## 制限（現時点）
 
+- **HTML / ブログ archive / フォントサブセット / 図のビルド時コンパイル / C2PA** は Astro または別ツール側。統合の「フル」は **公開・エージェント向け成果物** の意味です。
 - ルート検出は `getCollection()` の静的解析ベースで、動的ルートすべてをカバーしません。
 - **WASM hybrid 非対応**: `@sorane/astro-backend-wasm` は FTS 検索 JSON のみ。ブラウザ hybrid（`search.mjs`）は別途 `@sorane/search` + モデル vendoring が必要です。
+- OKFC / feed / robots / md alternate は TypeScript 側で生成（native CLI 未対応時は統合層が gap-fill）。
 - `outputs.search` の companion（`search.mjs`、hybrid 時の `models/`）は dist 書き出し後にコピーされます。
 
 設計の詳細はリポジトリ内 `design/astro-rust-backend.md` を参照してください。

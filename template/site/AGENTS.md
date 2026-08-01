@@ -106,7 +106,8 @@ Every page is Markdown with YAML frontmatter (`---` … `---`).
 
 | Field | Use |
 |-------|-----|
-| `timestamp` | ISO 8601 for articles |
+| `timestamp` | ISO 8601 for articles (or use OKF v0.2 `generated.at`) |
+| `generated` / `verified` / `sources` / `status` / `stale_after` | OKF v0.2 trust signals (optional; see sorane.dev/okf-profile.html) |
 | `tags` | `[tag1, tag2]` |
 | `description` | Short summary |
 | `excludeFromList` | `true` — hide from blog lists |
@@ -203,7 +204,7 @@ Search UI facets include `article`, `dataset`, `reference`, `glossary`, and `faq
 
 ## Machine-readable outputs (after build)
 
-With `preset: blog` (this template), dist is mostly HTML + `feed.xml` / `sitemap.xml` / `robots.txt`. Full agent outputs (`llms.txt`, `catalog.jsonld`, `okf/bundle.tar.gz`, per-page `.md`) require `preset: okf-site` or explicit `build.outputs` in `sorane.yaml`.
+With `preset: blog` (this template), dist is mostly HTML + `feed.xml` / `sitemap.xml` / `robots.txt`. Full agent outputs (`llms.txt`, `catalog.jsonld`, `okf/bundle.tar.gz`, `okf/site.okfc`, per-page `.md`) require `preset: okf-site` or explicit `build.outputs` in `sorane.yaml`.
 
 ## Docs
 

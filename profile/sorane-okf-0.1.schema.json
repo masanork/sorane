@@ -2,12 +2,43 @@
   "$schema": "http://json-schema.org/draft-07/schema#",
   "$id": "https://ssg.sorane.dev/profile/sorane-okf/0.1",
   "title": "sorane-okf/0.1",
-  "description": "OKF v0.1 profile for sorane SSG. Required OKF field: type. Profile adds title for article.",
+  "description": "sorane profile on Open Knowledge Format (OKF) v0.2 base. Required OKF field: type. Profile adds title for article. Optional OKF v0.2 trust/provenance/lifecycle fields accepted.",
   "oneOf": [
     { "$ref": "#/$defs/article" },
     { "$ref": "#/$defs/index" }
   ],
   "$defs": {
+    "actorEvent": {
+      "type": "object",
+      "required": ["by"],
+      "properties": {
+        "by": { "type": "string", "minLength": 1, "description": "Actor: producer/version | human:<id> | process:<id>" },
+        "at": { "type": "string", "description": "ISO 8601 datetime" }
+      },
+      "additionalProperties": true
+    },
+    "dateRange": {
+      "type": "object",
+      "properties": {
+        "from": { "type": "string" },
+        "to": { "type": "string" }
+      },
+      "additionalProperties": true
+    },
+    "sourceEntry": {
+      "type": "object",
+      "required": ["resource"],
+      "properties": {
+        "resource": { "type": "string", "minLength": 1 },
+        "id": { "type": "string" },
+        "title": { "type": "string" },
+        "author": { "type": "string" },
+        "usage_count": { "type": "number" },
+        "last_modified": { "type": "string" },
+        "usage_window": { "$ref": "#/$defs/dateRange" }
+      },
+      "additionalProperties": true
+    },
     "okfBase": {
       "type": "object",
       "required": ["type"],
@@ -20,8 +51,36 @@
           "type": "array",
           "items": { "type": "string" }
         },
-        "timestamp": { "type": "string", "format": "date-time" },
-        "profile": { "type": "string" }
+        "timestamp": {
+          "type": "string",
+          "format": "date-time",
+          "description": "Legacy content date; OKF v0.2 prefers generated.at"
+        },
+        "profile": { "type": "string" },
+        "generated": { "$ref": "#/$defs/actorEvent" },
+        "verified": {
+          "oneOf": [
+            { "$ref": "#/$defs/actorEvent" },
+            {
+              "type": "array",
+              "items": { "$ref": "#/$defs/actorEvent" }
+            }
+          ]
+        },
+        "sources": {
+          "type": "array",
+          "items": { "$ref": "#/$defs/sourceEntry" }
+        },
+        "usage_window": { "$ref": "#/$defs/dateRange" },
+        "status": {
+          "type": "string",
+          "enum": ["draft", "stable", "deprecated"]
+        },
+        "stale_after": {
+          "type": "string",
+          "pattern": "^\\d{4}-\\d{2}-\\d{2}$",
+          "description": "Absolute date YYYY-MM-DD; stale when today >= stale_after"
+        }
       },
       "additionalProperties": true
     },

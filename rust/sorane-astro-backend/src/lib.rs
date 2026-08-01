@@ -675,10 +675,18 @@ fn parse_concept(file: &BackendFile, input: &BackendInput) -> Result<Concept, St
         .get("description")
         .and_then(|v| v.as_str())
         .map(|s| s.to_string());
+    // OKF v0.2 §13.1: prefer legacy timestamp; fall back to generated.at
     let timestamp = fm
         .get("timestamp")
         .and_then(|v| v.as_str())
-        .map(|s| s.to_string());
+        .map(|s| s.to_string())
+        .or_else(|| {
+            fm.get("generated")
+                .and_then(|v| v.as_mapping())
+                .and_then(|m| m.get(serde_yaml::Value::String("at".into())))
+                .and_then(|v| v.as_str())
+                .map(|s| s.to_string())
+        });
     let profile = fm
         .get("profile")
         .and_then(|v| v.as_str())
@@ -705,6 +713,7 @@ fn parse_concept(file: &BackendFile, input: &BackendInput) -> Result<Concept, St
         ) {
             continue;
         }
+        // Keep OKF v0.2 trust families in extra so they round-trip in catalog keywords if needed
         extra.insert(key.clone(), value.clone());
     }
 

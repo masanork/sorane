@@ -128,6 +128,22 @@ describe("buildLlmsTxt", () => {
     expect(txt).toContain("DCAT-AP");
   });
 
+  test("okfc で site.okfc と registry リンクを出す", () => {
+    const txt = buildLlmsTxt({
+      siteTitle: "S",
+      siteDescription: "D",
+      baseUrl: "https://ex.dev",
+      okfc: true,
+      okfcBundles: [
+        { path: "okf/units/topics.okfc", id: "topics", title: "Topics" },
+      ],
+    });
+    expect(txt).toContain("okf/site.okfc");
+    expect(txt).toContain("okf/registry.json");
+    expect(txt).toContain("okf/units/topics.okfc");
+    expect(txt).toContain("OKFC");
+  });
+
   test("diagramsEnabled と aiLabeledCount を反映", () => {
     const txt = buildLlmsTxt({
       siteTitle: "S",
