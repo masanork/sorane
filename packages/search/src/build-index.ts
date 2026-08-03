@@ -25,6 +25,8 @@ export interface BuildIndexOptions {
   readonly contentDir: string;
   readonly indexPath: string;
   readonly force?: boolean;
+  /** Index `draft: true` pages (preview). Default false — drafts are unpublished. */
+  readonly includeDrafts?: boolean;
   readonly embeddings?: EmbeddingProvider | null;
   readonly onProgress?: (message: string) => void;
 }
@@ -40,10 +42,18 @@ export interface BuildIndexResult {
   readonly mode: "hybrid" | "fts-only";
 }
 
+function isDraftMarkdown(text: string): boolean {
+  const { frontmatter } = extract(text);
+  if (frontmatter === null || frontmatter.length === 0) return false;
+  const fm = (parseYaml(frontmatter) as Record<string, unknown>) ?? {};
+  return fm.draft === true;
+}
+
 export async function buildSearchIndex(opts: BuildIndexOptions): Promise<BuildIndexResult> {
   const contentDir = resolve(opts.contentDir);
   const log = opts.onProgress ?? (() => {});
   const hybrid = opts.embeddings != null;
+  const includeDrafts = opts.includeDrafts === true;
   const store = new IndexStore(opts.indexPath, {
     fresh: opts.force === true,
     dim: hybrid ? opts.embeddings!.dimensions : 256,
@@ -55,6 +65,8 @@ export async function buildSearchIndex(opts: BuildIndexOptions): Promise<BuildIn
   for (const abs of files) {
     const rel = relative(contentDir, abs).replace(/\\/g, "/");
     const text = readFileSync(abs, "utf8");
+    // Omit drafts from the disk map so previously indexed drafts are removed.
+    if (!includeDrafts && isDraftMarkdown(text)) continue;
     disk.set(rel, hashContent(text));
     content.set(rel, text);
   }
@@ -82,7 +94,8 @@ export async function buildSearchIndex(opts: BuildIndexOptions): Promise<BuildIn
     store.deleteBySource(rel);
 
     // U3: build per-file IR → embed by text_hash → project chunks + aligned vectors
-    let chunks = chunkDocument(text, rel);
+    const chunkOpts = { includeDrafts };
+    let chunks = chunkDocument(text, rel, chunkOpts);
     let vectors: number[][] | undefined;
     if (hybrid && chunks.length > 0) {
       const { frontmatter, body } = extract(text);
@@ -91,7 +104,11 @@ export async function buildSearchIndex(opts: BuildIndexOptions): Promise<BuildIn
           ? ((parseYaml(frontmatter) as Record<string, unknown>) ?? {})
           : {};
       const slug = rel.replace(/\\/g, "/").split("/").pop()!.replace(/\.(md|mdx)$/i, "");
-      if (fm.isSystem !== true && slug !== "404") {
+      if (
+        fm.isSystem !== true &&
+        slug !== "404" &&
+        (includeDrafts || fm.draft !== true)
+      ) {
         const concept = normalizeConcept(fm, body, slug);
         if (concept.type) {
           const id = conceptIdFor(concept.type, slug);

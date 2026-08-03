@@ -8,6 +8,7 @@ export async function runIndexCmd(argv: string[]): Promise<void> {
   const cwd = parseCwdFlag(argv);
   const config = loadSoraneConfig(cwd);
   const force = argv.includes("--force");
+  const includeDrafts = argv.includes("--drafts");
   const configMode = config.search.mode ?? "fts";
   const hybrid =
     argv.includes("--hybrid") || (argv.includes("--fts-only") ? false : configMode === "hybrid");
@@ -31,6 +32,7 @@ export async function runIndexCmd(argv: string[]): Promise<void> {
       indexPath,
       force,
       hybrid,
+      includeDrafts,
       modelRoot: get("--model", config.search.model),
       modelId,
     });
@@ -61,6 +63,7 @@ export async function runIndexCmd(argv: string[]): Promise<void> {
     contentDir,
     indexPath,
     force,
+    includeDrafts,
     embeddings,
     onProgress: (message) => process.stdout.write(`[sorane] ${message}\n`),
   });

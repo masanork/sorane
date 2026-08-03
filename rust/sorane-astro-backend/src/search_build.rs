@@ -1,4 +1,3 @@
-use crate::search_chunker::chunk_document;
 use crate::search_embed::{embed_batch, model_available, EmbedMeta, DOC_PREFIX};
 use crate::search_store::{hash_content, IndexMeta, IndexStore};
 use std::collections::HashMap;
@@ -47,8 +46,22 @@ pub struct SearchBuildConfig<'a> {
     pub index_path: &'a str,
     pub force: bool,
     pub hybrid: bool,
+    /// When false (default), pages with `draft: true` are omitted (unpublished).
+    pub include_drafts: bool,
     pub model_root: &'a str,
     pub model_id: &'a str,
+}
+
+fn is_draft_markdown(source: &str) -> bool {
+    let Some((fm, _)) = crate::validate::extract_frontmatter_for_validation(source) else {
+        return false;
+    };
+    let Ok(map) = serde_yaml::from_str::<serde_yaml::Mapping>(fm) else {
+        return false;
+    };
+    map.get(serde_yaml::Value::String("draft".into()))
+        .and_then(|v| v.as_bool())
+        .unwrap_or(false)
 }
 
 #[derive(Debug)]
@@ -72,6 +85,10 @@ pub fn build_search_index(
     let mut disk = HashMap::new();
     let mut contents = HashMap::new();
     for (rel, source) in md_files {
+        // Omit drafts from the disk map so previously indexed drafts are removed.
+        if !cfg.include_drafts && is_draft_markdown(source) {
+            continue;
+        }
         disk.insert(rel.to_string(), hash_content(source));
         contents.insert(rel.to_string(), source.to_string());
     }
@@ -101,7 +118,7 @@ pub fn build_search_index(
         let source = contents.get(&rel).ok_or_else(|| format!("missing content for {rel}"))?;
         let sha = disk.get(&rel).ok_or_else(|| format!("missing hash for {rel}"))?;
         store.delete_by_source(&rel)?;
-        let chunks = chunk_document(source, &rel);
+        let chunks = crate::search_chunker::chunk_document_opts(source, &rel, cfg.include_drafts);
         if chunks.is_empty() {
             store.set_source_hash(&rel, sha)?;
             continue;

@@ -35,6 +35,7 @@ struct DocMeta {
     timestamp: String,
     tags: String,
     skip: bool,
+    is_draft: bool,
 }
 
 #[derive(Debug, Clone)]
@@ -75,6 +76,7 @@ fn read_meta(frontmatter: Option<&str>) -> (DocMeta, BTreeMap<String, Value>) {
     let title = yaml_str(&fm, "title").unwrap_or_default();
     let timestamp = yaml_str(&fm, "timestamp").unwrap_or_default();
     let skip = fm.get("isSystem").and_then(|v| v.as_bool()).unwrap_or(false);
+    let is_draft = fm.get("draft").and_then(|v| v.as_bool()).unwrap_or(false);
 
     let mut tag_slugs = Vec::new();
     if let Some(Value::Sequence(seq)) = fm.get("tags") {
@@ -133,6 +135,7 @@ fn read_meta(frontmatter: Option<&str>) -> (DocMeta, BTreeMap<String, Value>) {
             timestamp,
             tags,
             skip,
+            is_draft,
         },
         fm,
     )
@@ -577,9 +580,17 @@ fn flat_body_text(body: &str) -> String {
 }
 
 pub fn chunk_document(source: &str, rel_path: &str) -> Vec<SearchChunk> {
+    chunk_document_opts(source, rel_path, false)
+}
+
+/// Same as [`chunk_document`]; when `include_drafts` is false, `draft: true` yields no chunks.
+pub fn chunk_document_opts(source: &str, rel_path: &str, include_drafts: bool) -> Vec<SearchChunk> {
     let (frontmatter, body) = split_source(source);
     let (meta, fm) = read_meta(frontmatter);
     if meta.skip || is_not_found_path(rel_path) {
+        return Vec::new();
+    }
+    if meta.is_draft && !include_drafts {
         return Vec::new();
     }
 

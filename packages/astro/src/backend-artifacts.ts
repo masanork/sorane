@@ -75,6 +75,8 @@ function isPublicBundleConcept(p: ParsedConcept): boolean {
   if (slugForParsed(p) === "index") return false;
   const base = p.relPath.replace(/\\/g, "/").split("/").pop() ?? "";
   if (/^404\.(md|mdx)$/i.test(base)) return false;
+  // draft: true = prepare content without publishing (same gate as core build / OKFC)
+  if (p.concept.frontmatter.draft === true) return false;
   return true;
 }
 

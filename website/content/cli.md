@@ -96,10 +96,12 @@ npx @sorane/cli migrate [--cwd <dir>] [--dry-run] [--bump-profile 0.2|0.3]
 検索インデックス（SQLite FTS5、任意でベクトル）を構築します。既定は FTS のみです。
 
 ```bash
-npx @sorane/cli index [--cwd <dir>] [--force] [--hybrid] [--fts-only] [--yes]
+npx @sorane/cli index [--cwd <dir>] [--force] [--drafts] [--hybrid] [--fts-only] [--yes]
 ```
 
 要 `@sorane/search`（未導入時は上記オプショナルパッケージの案内）。リポジトリ開発時や `cargo build` 済み環境では、ネイティブ Rust CLI（`sorane-astro-backend index`）を優先し、埋め込みは pure-Rust ONNX（ruri-v3-30m）を使います。バイナリが無い場合は `@sorane/search`（transformers.js）にフォールバックします。
+
+`draft: true` のページは既定で索引に入りません（本番で公開しないコンテンツ）。ローカル確認だけ含めたいときは `--drafts` を付けます（`build --drafts` と同じ意味）。
 
 ハイブリッド（experimental）を使う場合は `search.mode: hybrid` または `--hybrid` と、先に `npm run fetch-model` で ruri-v3-30m を取得してください（`vendor/models/ruri-v3-30m/onnx/model_quantized.onnx` と `tokenizer.json` が必要です）。
 

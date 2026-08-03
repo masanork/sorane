@@ -110,7 +110,8 @@ Every page is Markdown with YAML frontmatter (`---` … `---`).
 | `generated` / `verified` / `sources` / `status` / `stale_after` | OKF v0.2 trust signals (optional; see sorane.dev/okf-profile.html) |
 | `tags` | `[tag1, tag2]` |
 | `description` | Short summary |
-| `excludeFromList` | `true` — hide from blog lists |
+| `excludeFromList` | `true` — hide from blog lists (still published: sitemap / search / OKF) |
+| `draft` | `true` — **not published** (no HTML, catalog, sitemap, OKF bundle, search index). Use `build --drafts` / `index --drafts` for local preview only. Distinct from OKF trust `status: draft` |
 | `redirect` | Absolute URL or site path — emit `dist/_redirects` entry; no HTML page |
 | `redirect_status` | HTTP status for `redirect` (default `301`) |
 | `view` | `search` — search UI page |

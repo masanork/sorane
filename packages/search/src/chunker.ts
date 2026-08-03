@@ -42,11 +42,22 @@ function isNotFoundPath(relPath: string): boolean {
   return base.replace(/\.(md|mdx)$/i, "") === "404";
 }
 
+export interface ChunkDocumentOptions {
+  /** When true, index `draft: true` pages (preview / local only). Default false. */
+  readonly includeDrafts?: boolean;
+}
+
 /**
  * 1 文書を検索チャンク列へ。
  * U2.1: parse → normalizeConcept → buildKnowledgeIr → searchChunksFromKnowledgeIr.
+ *
+ * Skips `isSystem`, 404 paths, and `draft: true` unless `includeDrafts`.
  */
-export function chunkDocument(source: string, relPath: string): Chunk[] {
+export function chunkDocument(
+  source: string,
+  relPath: string,
+  opts?: ChunkDocumentOptions,
+): Chunk[] {
   if (isNotFoundPath(relPath)) return [];
 
   const { frontmatter, body } = extract(source);
@@ -56,6 +67,7 @@ export function chunkDocument(source: string, relPath: string): Chunk[] {
       : {};
 
   if (fm.isSystem === true) return [];
+  if (fm.draft === true && opts?.includeDrafts !== true) return [];
 
   const slug = slugFromPath(relPath);
   const concept = normalizeConcept(fm, body, slug);

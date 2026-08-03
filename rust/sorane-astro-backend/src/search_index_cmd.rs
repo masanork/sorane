@@ -17,6 +17,9 @@ pub struct SearchIndexInput {
     pub force: bool,
     #[serde(default)]
     pub hybrid: bool,
+    /// Index `draft: true` pages (preview). Default false.
+    #[serde(rename = "includeDrafts", default)]
+    pub include_drafts: bool,
     #[serde(rename = "modelRoot", default = "default_model_root")]
     pub model_root: String,
     #[serde(rename = "modelId", default = "default_model_id")]
@@ -75,6 +78,7 @@ pub fn run_search_index_json(input_json: &str) -> Result<String, String> {
         index_path: &index_path,
         force: input.force,
         hybrid: input.hybrid,
+        include_drafts: input.include_drafts,
         model_root: &input.model_root,
         model_id: &input.model_id,
     };
