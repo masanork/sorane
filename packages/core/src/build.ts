@@ -1878,10 +1878,12 @@ export async function runBuild(opts: BuildOptions): Promise<BuildResult> {
     );
   }
 
+  // Same publish gate as HTML / OKFC: draft: true is not a public corpus entry.
   const conceptBundleEntries = buildBundleEntries(
     parsed
       .filter(
         (p) =>
+          includePageInBuild(p.concept, includeDrafts) &&
           p.concept.type !== "index" &&
           slugFromRel(p.relPath) !== "index" &&
           !isNotFoundSource(p.relPath),

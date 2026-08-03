@@ -1017,9 +1017,18 @@ fn build_ustar_tar(entries: &[(String, String, u64)]) -> Result<Vec<u8>, String>
     Ok(blocks)
 }
 
+fn is_draft_concept(c: &Concept) -> bool {
+    c.frontmatter
+        .get("draft")
+        .and_then(|v| v.as_bool())
+        .unwrap_or(false)
+}
+
 fn build_bundle(concepts: &[Concept]) -> Result<String, String> {
+    // Same publish gate as core: draft: true is not a public corpus entry.
     let mut entries: Vec<(String, String, u64)> = concepts
         .iter()
+        .filter(|c| !is_draft_concept(c) && c.okf_type != "index")
         .map(|c| {
             let mtime = c
                 .timestamp

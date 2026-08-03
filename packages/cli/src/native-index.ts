@@ -10,6 +10,8 @@ export interface NativeSearchIndexInput {
   readonly indexPath: string;
   readonly force?: boolean;
   readonly hybrid?: boolean;
+  /** Index `draft: true` pages. Default false. */
+  readonly includeDrafts?: boolean;
   readonly modelRoot?: string;
   readonly modelId?: string;
 }
@@ -51,6 +53,7 @@ export function runNativeSearchIndex(
     indexPath: input.indexPath,
     force: input.force ?? false,
     hybrid: input.hybrid ?? false,
+    includeDrafts: input.includeDrafts ?? false,
     modelRoot: input.modelRoot ?? "vendor/models",
     modelId: input.modelId ?? "ruri-v3-30m",
   });

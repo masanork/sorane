@@ -430,6 +430,7 @@ pub fn build_search_index_json(
         index_path: &index_path,
         force,
         hybrid: hybrid_requested,
+        include_drafts: false,
         model_root,
         model_id,
     };
