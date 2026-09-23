@@ -72,7 +72,11 @@ function resolveTitle(raw: Record<string, unknown>, body: string, fallback: stri
 
 const SKIP_FRONTMATTER = new Set<string>([
   "type",
+  "kind",
+  "layout",
   "timestamp",
+  "publishedAt",
+  "date",
   "title",
   ...TRUST_FRONTMATTER_KEYS,
 ]);

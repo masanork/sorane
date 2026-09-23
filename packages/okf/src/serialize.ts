@@ -139,7 +139,7 @@ function appendYamlEntry(lines: string[], key: string, value: unknown): void {
   lines.push(`${key}: ${formatScalar(value)}`);
 }
 
-/** OKF native frontmatter 行を組み立てる（旧キーは出力しない）。 */
+/** OKF native frontmatter 行を組み立てる。 */
 export function toOkfFrontmatterLines(concept: OkfConcept): string[] {
   const lines: string[] = [];
   lines.push(`type: ${formatScalar(concept.type)}`);

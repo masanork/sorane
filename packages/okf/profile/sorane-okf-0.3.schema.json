@@ -90,7 +90,7 @@
         "timestamp": {
           "type": "string",
           "format": "date-time",
-          "description": "Legacy content date; OKF v0.2 prefers generated.at"
+          "description": "Content-change timestamp; takes precedence over generated.at when both are present"
         },
         "profile": { "type": "string" },
         "generated": { "$ref": "#/$defs/actorEvent" },

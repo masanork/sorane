@@ -19,6 +19,18 @@ describe("normalizeConcept", () => {
     expect(c.timestamp).toBe("2025-01-01T00:00:00Z");
     expect(c.warnings.length).toBe(0);
   });
+
+  test("legacy frontmatter aliases are ignored, not converted or emitted", () => {
+    const c = normalizeConcept(
+      { layout: "article", kind: "article", date: "2025-01-01", publishedAt: "2025-01-01", title: "T" },
+      "body",
+      "fb",
+    );
+    const md = conceptToOkfMarkdown(c);
+    expect(c.type).toBe("");
+    expect(c.timestamp).toBe(undefined);
+    expect(md).not.toMatch(/^(?:layout|kind|date|publishedAt):/m);
+  });
 });
 
 describe("validateSource", () => {
