@@ -55,12 +55,12 @@ This document fixes those as design truth, measures **current** code behavior (2
 | Diagrams | Source stays in Markdown fences; client Mermaid is optional and sanitized; `gov` prefers build-time SVG | `build.diagrams`, security report S-05 |
 | Headers | Build emits `dist/_headers` CSP (`default-src 'self'`, no arbitrary third-party scripts in `strict`) | `security-headers.ts` |
 | AI disclosure | Frontmatter `generated` / `verified` / `digitalSourceType` — **attribution**, not execution | `sorane-okf/0.2+`, design/ai-content-disclosure |
-| Operator opt-in | `allow_embeds`, non-strict HTML, client Mermaid, hybrid WASM CSP | `build.security`, `build.diagrams.mermaid.mode` |
+| Operator opt-in | `allow_embeds`, non-strict HTML, client Mermaid | `build.security`, `build.diagrams.mermaid.mode` |
 
 ### Non-goals (this doc)
 
-- Full MDX runtime (out of scope; Astro may host MDX separately)
-- Hash-only CSP (`script-src` pin by SHA) — possible later experiment; conflicts with hybrid search / analytics
+- Full MDX runtime (out of scope)
+- Hash-only CSP (`script-src` pin by SHA) — possible later experiment; conflicts with analytics
 - Replacing Mermaid with an in-tree subset renderer
 
 ### Invariant (normative)
@@ -178,7 +178,7 @@ Assumptions: production `sorane build` (**without** `--drafts`); outputs enabled
 
 | ID | Gap | Severity | Intended fix direction |
 |----|-----|----------|------------------------|
-| **G1** | ~~`draft: true` pages still enter **`okf/bundle.tar.gz`**~~ | ~~Medium~~ | **Fixed** — `includePageInBuild` on core bundle; Astro `isPublicBundleConcept`; Rust `build_bundle` |
+| **G1** | ~~`draft: true` pages still enter **`okf/bundle.tar.gz`**~~ | ~~Medium~~ | **Fixed** — core `includePageInBuild` applies the publish gate to bundle entries |
 | **G2** | ~~`draft: true` pages still enter **search index**~~ | ~~Medium~~ | **Fixed** — TS `chunkDocument` / `buildSearchIndex`; CLI `index --drafts`; Rust native index |
 | **G3** | `excludeFromList` is **list-only**; still in sitemap, catalog, search, OKF | Low (if intentional) | Document as intentional **or** add `unlisted` / `noindex` for recommendation surfaces |
 | **G4** | No single **existence inventory** with flags (Tsumugu `documents.json`) | Medium (agent UX) | Document catalog/OKFC as inventory **or** add `site-index.json` / `sorane list --json` (P1) |

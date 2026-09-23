@@ -6,6 +6,8 @@
 | **Status** | Implemented |
 | **Related** | 初回設計レビュー（ペンテスト視点） |
 
+> Historical report: hybrid search and its ONNX model path were removed in the later architecture simplification. S-15 and CSP references below describe the implementation at the time; current search is FTS-only and does not load ONNX models.
+
 ---
 
 ## 概要
@@ -32,7 +34,7 @@
 | S-12 | 低 | C2PA 検証スキップ | 修正 | `--no_signing_verify` 削除 + probe |
 | S-13 | 低 | YAML DoS | 修正 | `sorane.yaml` 512KB 上限 |
 | S-14 | 情報 | 自動 npm install | 修正 | `@sorane/*` 以外は拒否 |
-| S-15 | 情報 | モデル改ざん | 修正 | `search.mjs` で ONNX SHA-256 検証 |
+| S-15 | 情報 | モデル改ざん | 当時修正・現在対象外 | `search.mjs` で ONNX SHA-256 検証 |
 
 ---
 

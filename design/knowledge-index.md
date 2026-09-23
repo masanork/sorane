@@ -3,10 +3,12 @@
 Sorane uses Markdown with OKF frontmatter as its authoring format. The build
 normalizes pages into concepts and text chunks, then writes two query surfaces:
 
-- `okf/site.okfc`: a SQLite package for local and agent queries.
+- `okf/site.okfc`: a SQLite FTS pack for sharing, distribution, and agent queries.
 - `assets/search-index.json`: a compact projection used by browser search.
+- `.sorane/index.db`: an incremental local work index maintained by `sorane index`.
 
-Both surfaces use SQLite FTS5 or the browser's FTS-compatible index. Search
+The SQLite stores use FTS5; browser search uses the browser's FTS-compatible
+index. Search
 does not download or run an embedding model. The OKFC format can still contain
 vector tables from older Sorane versions; current builds and queries use FTS.
 
@@ -21,9 +23,9 @@ content/**/*.md
 ```
 
 Concept identity is `{type}/{slug}`. The source file path remains the key for
-incremental indexing. The website can also produce a local `.sorane/index.db`
-with `sorane index`; `sorane search` uses the generated OKFC package by default
-when it is available and can be directed to the local index explicitly.
+incremental indexing. `sorane index` maintains `.sorane/index.db` for local
+work. `sorane build` or `sorane okfc pack` creates OKFC for sharing.
+`sorane search` uses OKFC when present; `--prefer-index` selects the local index.
 
 ## Code map
 
@@ -36,4 +38,4 @@ when it is available and can be directed to the local index explicitly.
 | CLI backend selection | `packages/cli/src/search-cmd.ts` |
 
 Browser search reads JSON and does not open SQLite. Local and agent tools query
-OKFC or `.sorane/index.db` through SQLite FTS.
+OKFC packs or the local index through SQLite FTS.

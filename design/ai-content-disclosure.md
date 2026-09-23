@@ -7,6 +7,8 @@
 | **Status** | **Implemented** (Phase 1–3.1 complete) |
 | **Profile target** | `sorane-okf/0.2` (additive; `0.1` remains valid) |
 
+> Search notes in the original implementation plan predate removal of hybrid search. Current browser and CLI search use FTS only; there is no hybrid web-index schema or ONNX model path.
+
 ### Implementation status (2026-06-21)
 
 | Phase | Scope | Status |
@@ -611,12 +613,11 @@ await emitSearchAssets({
 });
 ```
 
-#### Web export schema bump (FTS **and** hybrid)
+#### Web export schema bump (FTS)
 
 | Constant | Old | New |
 |----------|-----|-----|
 | `FTS_WEB_INDEX_SCHEMA_VERSION` | 3 | **4** |
-| `WEB_INDEX_SCHEMA_VERSION` | 2 | **3** |
 
 Add to `WebChunk` / `FtsWebChunk`:
 
@@ -624,7 +625,7 @@ Add to `WebChunk` / `FtsWebChunk`:
 readonly digital_source_type?: string; // IPTC URI; omitted when unset
 ```
 
-**Both** `buildFtsWebIndex()` and `buildWebIndex()` must attach `digital_source_type` from the disclosure map keyed by `row.source` **only when** `machine_readable` is resolved `true` for the build. When `machine_readable: false`, omit the field entirely (not `null`) so export shape matches pre-change schema.
+`buildFtsWebIndex()` attaches `digital_source_type` from the disclosure map keyed by `row.source` **only when** `machine_readable` is resolved `true` for the build. When `machine_readable: false`, omit the field entirely (not `null`) so export shape matches pre-change schema.
 
 **Flag plumbing:** thread resolved `machineReadable: boolean` from `resolveAiDisclosureFlags()` through `build.ts` → `emitSearchAssets` → `deriveWebIndex` → `buildFtsWebIndex` / `buildWebIndex`. When gated off, pass an empty disclosure map or skip attachment per chunk.
 
@@ -633,7 +634,7 @@ readonly digital_source_type?: string; // IPTC URI; omitted when unset
 readonly machineReadable?: boolean;  // default true when any labeled content exists
 ```
 
-Hybrid + flag-off test cases required in `tests/web-export.test.ts`.
+Flag-off test cases are covered in `tests/web-export.test.ts`.
 
 Search UI includes a **source facet** (`search-facet--source`) filtering on chunk `digital_source_type` (`ai-generated` / `human` / `disclosed`).
 
@@ -1097,7 +1098,7 @@ No PII in logs.
 3. **Profile version:** additive `sorane-okf/0.2`; disclosure cross-field checks run on `0.1` when keys present (warn on bad codes).
 4. **Frontmatter shape:** top-level `digitalSourceType` plus optional `euAiLabel`, `aiDisclosureNote`, `aiSystems`; stays in `frontmatter` with explicit serialize emission.
 5. **Propagation surfaces:** HTML badge (article + docs), `BlogPosting` JSON-LD (+ `contributor`, `disambiguatingDescription`), `catalog.jsonld`, `.md` alternates, OKF bundle, `search-index.json`, `feed.xml`, `llms.txt`.
-6. **Search index:** `digital_source_type` at web-export (schema v4 FTS / v3 hybrid); `contentDir` threaded through `emitSearchAssets` → `deriveWebIndex`.
+6. **Search index:** `digital_source_type` at FTS web-export (schema v4); `contentDir` threaded through `emitSearchAssets` → `deriveWebIndex`.
 7. **Config flags:** separate `badges`, `json_ld`, `machine_readable`, `atom`—`enabled: false` does not suppress JSON-LD.
 8. **C2PA:** phase 3 MVP shipped — opt-in `static/` JPEG/PNG embed; phase 3.1 `associatedMedia` JSON-LD shipped.
 9. **No auto-detection:** disclosure is author-declared only.
@@ -1117,7 +1118,7 @@ No PII in logs.
 | **PR4** | `feat(templates): EU badges, CSS, theme asset copy` | `templates/default/assets/ai-labels/*.svg`, … | PR3 | Badge HTML + theme asset copy. | ✅ |
 | **PR5** | `feat(core): wire badges, docs mode, config flags, Atom feed` | `packages/core/src/ssg.ts`, … | PR4 | Badges, flags, Atom category, list compact badges. | ✅ |
 | **PR6** | `feat(okf): serialize disclosure fields + catalog propagation` | `packages/okf/src/serialize.ts`, … | PR3 | Round-trip + catalog `digitalSourceType`. | ✅ |
-| **PR7** | `feat(search): digital_source_type in FTS + hybrid export` | `packages/search/src/web-export.ts`, … | PR1, PR5 | FTS v4 / hybrid v3 export field. | ✅ |
+| **PR7** | `feat(search): digital_source_type in FTS export` | `packages/search/src/web-export.ts`, … | PR1, PR5 | FTS v4 export field. | ✅ |
 | **PR8** | `docs: AI disclosure guide, migrate flag, template example` | `website/content/ai-disclosure.md`, … | PR5–7 | Author guide + `--bump-profile 0.2`. | ✅ |
 | **PR9** | `feat(core): static asset pipeline hook (stub)` | `packages/core/src/static-assets.ts`, `packages/core/src/build.ts`, `packages/core/src/config.ts` | PR5 | Refactor `cpSync` into `processStaticAssets`; no-op default. **Accept:** default build identical to today. | ✅ |
 | **PR10** | `feat(core): IPTC XMP for static/ images` | `packages/core/src/iptc-xmp-pass.ts`, `static-assets.ts`, `asset-provenance.yaml` | PR9 | Opt-in XMP via ExifTool; manifest schema; inline-image gap documented (2.5). **Accept:** YAML entry → XMP on `static/` image. | ✅ |
