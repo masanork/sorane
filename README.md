@@ -29,7 +29,7 @@ npx sorane build --cwd ./my-site --clean
 Optional feature packages (install when needed):
 
 ```bash
-npm install @sorane/search   # sorane index / search + search page assets
+npm install @sorane/search   # local sorane index / search + search page assets
 npm install @sorane/font       # fonts.enabled in sorane.yaml
 npm install mermaid            # build.diagrams.enabled (client mode)
 ```
@@ -132,10 +132,12 @@ Pages with `noFontEmbedding: true` in frontmatter use system fonts.
 Search uses SQLite FTS5 trigram indexes. It needs no embedding model or external runtime.
 
 ```bash
-npx @sorane/cli index --cwd examples/minimal --force
-npx @sorane/cli search "OKF" --cwd examples/minimal
+npx @sorane/cli index --cwd examples/minimal --force   # update local .sorane/index.db
+npx @sorane/cli search "OKF" --cwd examples/minimal   # search OKFC pack if present, else local index
 npx @sorane/cli build --cwd examples/minimal --clean
 ```
+
+`sorane index` maintains the local working index. OKFC is the pack created by `sorane build` or `sorane okfc pack` for sharing and distribution. `sorane search` uses the OKFC pack when present; pass `--prefer-index` to search the local working index.
 
 Search uses two UI layers:
 

@@ -93,7 +93,7 @@ npx @sorane/cli migrate [--cwd <dir>] [--dry-run] [--bump-profile 0.2|0.3]
 
 ## sorane index
 
-SQLite FTS5 の検索インデックスを構築します。
+`.sorane/index.db` にローカル作業用の SQLite FTS5 検索インデックスを構築・更新します。`sorane search` のローカル検索や、ビルド時の検索ページ用データに使います。この DB は OKFC 配布パックとは別管理です。
 
 ```bash
 npx @sorane/cli index [--cwd <dir>] [--force] [--drafts] [--yes]
@@ -105,7 +105,7 @@ npx @sorane/cli index [--cwd <dir>] [--force] [--drafts] [--yes]
 
 ## sorane search
 
-ローカルで検索を試します。**ビルド成果物の `okf/site.okfc` があればそれを優先**し（U4）、無ければ `.sorane/index.db` にフォールバックします。
+ローカルで検索します。既定では配布用の `{out_dir}/okf/site.okfc` があればそれを検索し、無ければ作業用の `.sorane/index.db` を使います。作業中の最新コンテンツを検索するときは `--prefer-index`、配布パックを確認するときは `--okfc <path>` を指定してください。
 
 ```bash
 npx @sorane/cli search <query> [--cwd <dir>] \
@@ -116,11 +116,12 @@ npx @sorane/cli search <query> [--cwd <dir>] \
 
 | フラグ | 意味 |
 |--------|------|
-| （既定） | `{out_dir}/okf/site.okfc` があれば OKFC FTS、なければ index.db |
-| `--okfc <path>` | 指定 OKFC を強制 |
-| `--prefer-index` | 常に index.db（`--index` / `search.index`） |
-| `--index` / `--out` | index.db パス（`.okfc` で終わる場合は OKFC） |
+| （既定） | `{out_dir}/okf/site.okfc` があれば OKFC FTS、なければ作業用 index.db |
+| `--okfc <path>` | 指定した配布用 OKFC パックを検索 |
+| `--prefer-index` | 作業用 index.db を優先 |
+| `--index <path>` | 作業用 index.db のパスを指定 |
+| `--out <path>` | `--index` の互換 alias。`.okfc` で終わる場合は OKFC パックを選択 |
 
-OKFC 経路は `better-sqlite3`（`@sorane/okf` の optional）で FTS 検索します。index.db 経路は `@sorane/search` が必要です。
+役割は、`sorane index` が作業中のローカル DB を更新し、`sorane okfc pack` または `sorane build` が共有・配布用パックを生成します。OKFC 経路は `better-sqlite3`（`@sorane/okf` の optional）で FTS 検索し、index.db 経路は `@sorane/search` を使います。
 
 サイトの検索ページでは、一度索引を読み込めば **Service Worker によりオフライン FTS** が使えます。`outputs.okfc` が有効なときは **site.okfc のダウンロード**リンクも出ます（CLI と同じ知識パック）。

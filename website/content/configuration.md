@@ -74,7 +74,7 @@ build:
 
 未指定のキーは lite 既定（`feed` / `sitemap` / `robots` のみ on）です。`preset: okf-site` は上表のフル出力をまとめて有効にします。
 
-`okfc: true` のとき、公開 concept を **OKF Container Format**（OKFC）の SQLite に pack します（概念 id は `{type}/{slug}`、本文 **FTS5**、見出しチャンク）。`better-sqlite3` が無い場合は警告してスキップします。
+`okfc: true` のとき、公開 concept を共有・配布用の **OKF Container Format**（OKFC）SQLite パックにします（概念 id は `{type}/{slug}`、本文 **FTS5**、見出しチャンク）。これは `sorane index` が管理するローカル作業 DB `.sorane/index.db` とは別の出力です。`better-sqlite3` が無い場合は警告してスキップします。
 
 ### `build.okfc`（まとまり単位・registry）
 
