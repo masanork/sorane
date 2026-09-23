@@ -86,7 +86,7 @@ npx @sorane/cli validate [--cwd <dir>] [--json]
 `.sorane/index.db` にローカル作業用の SQLite FTS5 検索インデックスを構築・更新します。`sorane search` のローカル検索に使い、ビルド時にはヘッダー検索を有効にする目印にもなります。公開用ブラウザー検索データはこの DB からではなく、ビルド時の現在のコンテンツから生成します。
 
 ```bash
-npx @sorane/cli index [--cwd <dir>] [--force] [--drafts] [--yes]
+npx @sorane/cli index [--cwd <dir>] [--index <path>] [--force] [--drafts] [--yes]
 ```
 
 要 `@sorane/search`（未導入時は上記オプショナルパッケージの案内）。

@@ -46,7 +46,7 @@ Copy [`template/site/`](template/site/) into your own GitHub repo. It includes *
 npx @sorane/cli build [--cwd <dir>] [--clean] [--watch] [--skip-c2pa]
 npx @sorane/cli watch [--cwd <dir>] [--clean]
 npx @sorane/cli validate [--cwd <dir>]
-npx @sorane/cli index [--cwd <dir>] [--force] [--yes]
+npx @sorane/cli index [--cwd <dir>] [--index <path>] [--force] [--yes]
 npx @sorane/cli search <query> [--cwd <dir>] [--type article] [--tag <slug>] [--json] [--yes]
 ```
 
