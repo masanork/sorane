@@ -1,7 +1,7 @@
 # Tag-triggered SLSA v1.0 Build-L3 release (npm pack tarballs + source + SBOM + CBOM).
 #
 # Job DAG:
-#   supply-chain-gate ─┬─> pack (npm pack ×7)
+#   supply-chain-gate ─┬─> pack (npm pack ×5)
 #                      ├─> publish npm (--provenance)
 #                      ├─> source + cbom
 #                      └─> sbom
@@ -131,7 +131,7 @@ jobs:
         with:
           node-version: "23"
 
-      # Pack needs package metadata only; skip native postinstall (onnxruntime) flakiness.
+      # Pack needs package metadata only; skip package postinstall scripts.
       - name: Install dependencies
         run: npm ci --ignore-scripts
 
