@@ -137,7 +137,7 @@ npx @sorane/cli search "OKF" --cwd examples/minimal   # search OKFC pack if pres
 npx @sorane/cli build --cwd examples/minimal --clean
 ```
 
-`sorane index` maintains the local working index. OKFC is the pack created by `sorane build` or `sorane okfc pack` for sharing and distribution. `sorane search` uses the OKFC pack when present; pass `--prefer-index` to search the local working index.
+`sorane index` maintains the local working index. `sorane build` regenerates browser search data from the current content, while OKFC is the pack created for sharing and distribution. `sorane search` uses the OKFC pack when present; pass `--prefer-index` to search the local working index.
 
 Search uses two UI layers:
 

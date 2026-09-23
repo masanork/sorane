@@ -26,6 +26,19 @@ export interface FtsWebIndex {
   readonly chunks: FtsWebChunk[];
 }
 
+export type WebExportChunk = Pick<
+  ChunkRow,
+  | "source"
+  | "chunkIndex"
+  | "text"
+  | "headingPath"
+  | "headingSlug"
+  | "docType"
+  | "title"
+  | "timestamp"
+  | "tags"
+>;
+
 export function toSnippet(text: string, max: number = SNIPPET_LEN): string {
   const flat = text.replace(/\s+/g, " ").trim();
   return flat.length <= max ? flat : flat.slice(0, max) + "…";
@@ -45,7 +58,7 @@ function disclosureForSource(
 }
 
 export function buildFtsWebIndex(
-  rows: ChunkRow[],
+  rows: readonly WebExportChunk[],
   sourceToUrl: (source: string) => string = defaultSourceUrl,
   opts?: {
     readonly disclosureMap?: ReadonlyMap<string, string>;

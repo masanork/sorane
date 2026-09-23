@@ -39,8 +39,13 @@ export {
   type WebChunk,
   type FtsWebIndex,
   type FtsWebChunk,
+  type WebExportChunk,
 } from "./web-export.ts";
-export { deriveWebIndex, type DeriveResult } from "./derive-web-index.ts";
+export {
+  deriveWebIndex,
+  deriveWebIndexFromChunks,
+  type DeriveResult,
+} from "./derive-web-index.ts";
 export {
   copySearchScript,
   readSearchScript,

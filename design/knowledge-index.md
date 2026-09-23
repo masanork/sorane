@@ -25,7 +25,9 @@ content/**/*.md
 Concept identity is `{type}/{slug}`. The source file path remains the key for
 incremental indexing. `sorane index` maintains `.sorane/index.db` for local
 work. `sorane build` or `sorane okfc pack` creates OKFC for sharing.
-`sorane search` uses OKFC when present; `--prefer-index` selects the local index.
+The browser search index is regenerated from the current build corpus, not the
+local work index. `sorane search` uses OKFC when present; `--prefer-index`
+selects the local index.
 
 ## Code map
 

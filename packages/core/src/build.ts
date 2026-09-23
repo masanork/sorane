@@ -2114,9 +2114,30 @@ export async function runBuild(opts: BuildOptions): Promise<BuildResult> {
   if (searchPageRel) {
     try {
       const { emitSearchAssets } = await import("@sorane/search");
+      const searchEligible = parsed.filter(
+        (p) =>
+          includePageInBuild(p.concept, includeDrafts) &&
+          !isSystemPage(p.concept) &&
+          !isNotFoundSource(p.relPath),
+      );
+      const searchPathById = new Map<string, string>();
+      for (const p of searchEligible) {
+        searchPathById.set(
+          conceptIdFor(p.concept.type, slugFromRel(p.relPath)),
+          p.relPath.replace(/\\/g, "/"),
+        );
+      }
+      const searchIr = buildKnowledgeIr(
+        searchEligible.map((p) => ({
+          concept: p.concept,
+          slug: slugFromRel(p.relPath),
+        })),
+        { sourcePathByConceptId: searchPathById },
+      );
+      const { searchChunksFromKnowledgeIr } = await import("@sorane/search");
       await emitSearchAssets({
         outDir,
-        indexPath: indexDbPath,
+        chunks: searchChunksFromKnowledgeIr(searchIr),
         contentDir,
         machineReadable: siteAiFlags.machineReadable,
         snippetOnly: security.search_snippet_only,

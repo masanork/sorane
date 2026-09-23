@@ -19,7 +19,7 @@ npx sorane validate --cwd .
 npx sorane build --cwd . --clean
 ```
 
-検索を使う場合は `npm install @sorane/search` を追加し、`content/search.md`（`view: search`）があるとき `sorane index --force` を実行します。サイト規模の既定値は `sorane.yaml` の `preset:`（`blog` / `okf-site` / `gov`）で選べます — [設定](configuration.html#プリセット)。
+検索を使う場合は `npm install @sorane/search` を追加します。ヘッダー検索用のローカル DB は `sorane index --force` で作成します。`content/search.md`（`view: search`）を置くと、`sorane build` が現在のコンテンツから検索ページ用データも生成します。サイト規模の既定値は `sorane.yaml` の `preset:`（`blog` / `okf-site` / `gov`）で選べます — [設定](configuration.html#プリセット)。
 
 ## サイトを作る
 
