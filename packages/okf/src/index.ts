@@ -68,7 +68,6 @@ export {
   OKFC_PACK_TOOL,
   OKFC_SCHEMA_SQL,
   hashOkfcSource,
-  hashChunkText,
   conceptFrontmatterJson,
   chunkMarkdownBody,
   buildOkfcConceptRow,
@@ -81,7 +80,7 @@ export {
   PROSE_MIN_BODY,
   PROSE_MAX_BODY,
   chunkProseMarkdown,
-  hashChunkText as hashProseChunkText,
+  hashChunkText,
   type ProseChunk,
   type ChunkProseOptions,
 } from "./chunk-prose.ts";

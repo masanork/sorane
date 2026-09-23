@@ -8,7 +8,7 @@
 import { createHash } from "node:crypto";
 import type { OkfConcept } from "./normalize.ts";
 import { conceptToOkfMarkdown } from "./serialize.ts";
-import { chunkProseMarkdown, hashChunkText as hashProseChunkText } from "./chunk-prose.ts";
+import { chunkProseMarkdown } from "./chunk-prose.ts";
 import { chunkConceptBody } from "./chunk-concept.ts";
 
 export const OKFC_SCHEMA_VERSION = 1;
@@ -160,11 +160,6 @@ export interface OkfcConceptRow {
 /** SHA-256 hex of frontmatter YAML + newline + body (canonical OKF markdown). */
 export function hashOkfcSource(markdown: string): string {
   return createHash("sha256").update(markdown, "utf8").digest("hex");
-}
-
-/** @deprecated Prefer hashChunkText from chunk-prose; re-export for compatibility. */
-export function hashChunkText(text: string): string {
-  return hashProseChunkText(text);
 }
 
 /** Full frontmatter object for the `frontmatter` JSON column (round-trip). */
