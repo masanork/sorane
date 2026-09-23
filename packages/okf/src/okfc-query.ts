@@ -22,7 +22,6 @@ type BetterSqliteDatabase = {
     all(...params: unknown[]): unknown[];
     get(...params: unknown[]): unknown;
   };
-  loadExtension?(path: string): void;
   close(): void;
 };
 type BetterSqliteCtor = new (path: string, options?: { readonly readonly?: boolean }) => BetterSqliteDatabase;
@@ -73,17 +72,6 @@ export async function queryOkfcFts(
   const Database = await loadBetterSqlite3();
   const db = new Database(dbPath, { readonly: true });
   try {
-    // Legacy OKFC files may contain vec_chunks; register its module so SQLite
-    // can read the rest of the schema even though Sorane queries FTS only.
-    try {
-      const mod = (await import("sqlite-vec")) as {
-        load?: (db: BetterSqliteDatabase) => void;
-        default?: { load?: (db: BetterSqliteDatabase) => void };
-      };
-      (mod.load ?? mod.default?.load)?.(db);
-    } catch {
-      // New FTS-only OKFC files do not need this optional compatibility module.
-    }
     return queryOkfcFtsOnDb(db, match, opts);
   } finally {
     db.close();

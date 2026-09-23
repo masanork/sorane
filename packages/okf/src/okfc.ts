@@ -15,7 +15,7 @@ export const OKFC_SCHEMA_VERSION = 1;
 export const OKFC_OKF_VERSION = "0.2";
 export const OKFC_PACK_TOOL = "tool:sorane/okfc-pack@0.5";
 
-/** SQLite DDL for a Definition Profile OKFC file (no vec_chunks). */
+/** SQLite DDL for the FTS-only Definition Profile OKFC file. */
 export const OKFC_SCHEMA_SQL = `
 CREATE TABLE okfc_meta (
   key   TEXT PRIMARY KEY,

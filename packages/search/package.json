@@ -27,8 +27,7 @@
   },
   "dependencies": {
     "@sorane/okf": "0.5.0",
-    "better-sqlite3": "^13.0.3",
-    "sqlite-vec": "^0.1.9"
+    "better-sqlite3": "^13.0.3"
   },
   "devDependencies": {
     "@types/better-sqlite3": "^9.6.0",

@@ -1,5 +1,4 @@
 import Database from "better-sqlite3";
-import * as sqliteVec from "sqlite-vec";
 import { mkdirSync, rmSync, existsSync } from "node:fs";
 import { dirname } from "node:path";
 import type { Chunk } from "./chunker.ts";
@@ -98,7 +97,6 @@ export class IndexStore {
     mkdirSync(dirname(dbPath), { recursive: true });
     if (opts.fresh && existsSync(dbPath)) rmSync(dbPath);
     this.db = new Database(dbPath);
-    sqliteVec.load(this.db);
     this.db.pragma("journal_mode = WAL");
     if (!this.tableExists("chunks")) {
       this.db.exec(SCHEMA);
@@ -118,25 +116,12 @@ export class IndexStore {
 
   clear(): void {
     this.db.exec("DELETE FROM chunks; DELETE FROM source_meta;");
-    if (this.tableExists("vec_chunks")) this.db.exec("DELETE FROM vec_chunks;");
-    if (this.tableExists("chunk_vectors")) this.db.exec("DELETE FROM chunk_vectors;");
   }
 
   deleteBySource(source: string): void {
-    const ids = this.db.prepare("SELECT id FROM chunks WHERE source = ?").all(source) as {
-      id: number;
-    }[];
     const delChunk = this.db.prepare("DELETE FROM chunks WHERE source = ?");
     const delMeta = this.db.prepare("DELETE FROM source_meta WHERE source = ?");
     const tx = this.db.transaction(() => {
-      if (this.tableExists("vec_chunks")) {
-        const del = this.db.prepare("DELETE FROM vec_chunks WHERE rowid = ?");
-        for (const { id } of ids) del.run(BigInt(id));
-      }
-      if (this.tableExists("chunk_vectors")) {
-        const del = this.db.prepare("DELETE FROM chunk_vectors WHERE chunk_id = ?");
-        for (const { id } of ids) del.run(id);
-      }
       delChunk.run(source);
       delMeta.run(source);
     });

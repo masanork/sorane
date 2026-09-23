@@ -8,9 +8,8 @@ normalizes pages into concepts and text chunks, then writes two query surfaces:
 - `.sorane/index.db`: an incremental local work index maintained by `sorane index`.
 
 The SQLite stores use FTS5; browser search uses the browser's FTS-compatible
-index. Search
-does not download or run an embedding model. The OKFC format can still contain
-vector tables from older Sorane versions; current builds and queries use FTS.
+index. Search does not download or run an embedding model. OKFC packs contain
+FTS indexes only.
 
 ## Build path
 
