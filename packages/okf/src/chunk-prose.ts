@@ -2,7 +2,7 @@
  * Canonical prose chunker for OKFC §5.3 markdown and site search.
  *
  * Split on ## / ### (mdast: fence-safe). Shared by OKFC pack and @sorane/search
- * so chunk text + heading paths stay identical (knowledge-index-unified U0).
+ * so chunk text + heading paths stay identical across search surfaces.
  */
 
 import { createHash } from "node:crypto";

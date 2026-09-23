@@ -15,7 +15,7 @@ import {
 } from "@sorane/okf";
 import { searchChunksFromKnowledgeIr } from "./from-ir.ts";
 
-/** Shared with OKFC via @sorane/okf (knowledge-index-unified). */
+/** Shared with OKFC via @sorane/okf. */
 export const MIN_BODY = PROSE_MIN_BODY;
 export const MIN_BODY_STRUCTURED = CONCEPT_MIN_STRUCTURED;
 export const MAX_BODY = PROSE_MAX_BODY;
