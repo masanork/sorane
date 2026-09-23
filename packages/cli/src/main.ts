@@ -12,11 +12,7 @@ const [, , command, ...rest] = process.argv;
 async function main(): Promise<void> {
   switch (command) {
     case "build":
-      if (rest.includes("--watch")) {
-        await runWatchCmd(rest.filter((a) => a !== "--watch"));
-      } else {
-        await runBuildCmd(rest);
-      }
+      await runBuildCmd(rest);
       break;
     case "watch":
       await runWatchCmd(rest);
@@ -51,7 +47,7 @@ async function main(): Promise<void> {
     default:
       process.stderr.write(
         "usage: sorane <build|validate|index|search|export|import|okfc|watch|preview> [options]\n" +
-          "  build     --cwd <dir> [--clean] [--watch] [--skip-c2pa] [--drafts] [--preview]\n" +
+          "  build     --cwd <dir> [--clean] [--skip-c2pa] [--drafts] [--preview]\n" +
           "  watch     --cwd <dir> [--clean] [--drafts] [--preview]\n" +
           "  preview   --cwd <dir> [--port 4321] [--watch]\n" +
           "  validate  --cwd <dir> [--json]\n" +

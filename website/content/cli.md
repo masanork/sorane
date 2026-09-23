@@ -26,12 +26,12 @@ npm install @sorane/cli @sorane/search   # 検索まで使うサイト
 静的サイトを生成します。
 
 ```bash
-npx @sorane/cli build [--cwd <dir>] [--clean] [--watch] [--drafts] [--preview]
+npx @sorane/cli build [--cwd <dir>] [--clean] [--drafts] [--preview]
 npx @sorane/cli watch [--cwd <dir>] [--clean] [--drafts] [--preview]
 npx @sorane/cli preview [--cwd <dir>] [--port 4321] [--watch]
 ```
 
-`--clean` は出力ディレクトリを削除してから再生成します。`--watch`（または `sorane watch`）は `content/` と `sorane.yaml` の変更を監視して再ビルドします（2回目以降は自動で `--clean`）。
+`--clean` は出力ディレクトリを削除してから再生成します。変更を監視して再ビルドするときは `sorane watch` を使います（2回目以降は自動で `--clean`）。
 
 ### ローカルプレビュー
 

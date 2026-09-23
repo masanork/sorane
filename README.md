@@ -43,7 +43,7 @@ Copy [`template/site/`](template/site/) into your own GitHub repo. It includes *
 ## CLI
 
 ```bash
-npx @sorane/cli build [--cwd <dir>] [--clean] [--watch] [--skip-c2pa]
+npx @sorane/cli build [--cwd <dir>] [--clean] [--skip-c2pa]
 npx @sorane/cli watch [--cwd <dir>] [--clean]
 npx @sorane/cli validate [--cwd <dir>]
 npx @sorane/cli index [--cwd <dir>] [--index <path>] [--force] [--yes]
