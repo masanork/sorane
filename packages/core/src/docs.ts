@@ -62,9 +62,6 @@ export interface DocsNavSection {
 
 export type DocsNavEntry = DocsNavLink | DocsNavSection;
 
-/** @deprecated Use DocsNavLink */
-export type DocsNavItem = DocsNavLink;
-
 export function isDocsNavLink(entry: DocsNavEntry): entry is DocsNavLink {
   return "href" in entry;
 }

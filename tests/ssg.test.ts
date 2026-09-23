@@ -18,7 +18,7 @@ import {
   slugifyTag,
   isSearchView,
   buildWebSiteJsonLd,
-  buildBlogPostingJsonLd,
+  buildCreativeWorkJsonLd,
 } from "../packages/core/src/ssg.ts";
 import { parseAiDisclosure } from "../packages/core/src/ai-disclosure.ts";
 import { normalizeConcept } from "../packages/okf/src/index.ts";
@@ -62,7 +62,8 @@ describe("JSON-LD", () => {
   test("WebSite と BlogPosting", () => {
     const site = buildWebSiteJsonLd({ title: "S", lang: "ja", url: "https://ex.dev" });
     expect(site).toContain("WebSite");
-    const post = buildBlogPostingJsonLd({
+    const post = buildCreativeWorkJsonLd({
+      workType: "BlogPosting",
       title: "T",
       url: "https://ex.dev/t.html",
       siteTitle: "S",
@@ -73,7 +74,8 @@ describe("JSON-LD", () => {
   });
 
   test("BlogPosting に associatedMedia を含める", () => {
-    const post = buildBlogPostingJsonLd({
+    const post = buildCreativeWorkJsonLd({
+      workType: "BlogPosting",
       title: "T",
       url: "https://ex.dev/t.html",
       siteTitle: "S",
@@ -94,7 +96,8 @@ describe("JSON-LD", () => {
 
   test("BlogPosting に digitalSourceType を含める", () => {
     const d = parseAiDisclosure({ digitalSourceType: "trainedAlgorithmicMedia" })!;
-    const post = buildBlogPostingJsonLd({
+    const post = buildCreativeWorkJsonLd({
+      workType: "BlogPosting",
       title: "T",
       url: "https://ex.dev/t.html",
       siteTitle: "S",

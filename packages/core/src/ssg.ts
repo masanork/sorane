@@ -476,22 +476,6 @@ export function buildCreativeWorkJsonLd(opts: {
   return `<script type="application/ld+json">${JSON.stringify(data)}</script>`;
 }
 
-/** @deprecated Use buildCreativeWorkJsonLd({ workType: "BlogPosting", ... }) */
-export function buildBlogPostingJsonLd(opts: {
-  title: string;
-  description?: string;
-  url: string;
-  datePublished?: string;
-  dateModified?: string;
-  author?: string;
-  siteTitle: string;
-  lang: string;
-  aiDisclosure?: AiDisclosure;
-  associatedMedia?: readonly AssociatedMediaItem[];
-}): string {
-  return buildCreativeWorkJsonLd({ ...opts, workType: "BlogPosting" });
-}
-
 const SERIF_FONT_STYLES = new Set(["GJM", "serif", "mincho"]);
 
 /** frontmatter の font スタイルが明朝指定なら class を返す。 */
