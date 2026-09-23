@@ -152,7 +152,7 @@ describe("buildLlmsTxt", () => {
       diagramsEnabled: true,
       aiLabeledCount: 3,
     });
-    expect(txt).toContain("Diagram fences");
+    expect(txt).toContain("Mermaid fences in page bodies are preserved verbatim");
     expect(txt).toContain("## AI content disclosure");
     expect(txt).toContain("Labeled articles: 3");
   });

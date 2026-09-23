@@ -181,7 +181,6 @@ Published article body long enough for search chunking with unique token ZXQRFT.
         contentDir,
         indexPath,
         force: true,
-        embeddings: null,
       });
       expect(built.chunks > 0).toBe(true);
       const store = new IndexStore(indexPath);
@@ -197,7 +196,6 @@ Published article body long enough for search chunking with unique token ZXQRFT.
         indexPath,
         force: true,
         includeDrafts: true,
-        embeddings: null,
       });
       expect(withDrafts.chunks >= built.chunks).toBe(true);
       const store2 = new IndexStore(indexPath);

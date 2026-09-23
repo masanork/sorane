@@ -1,6 +1,6 @@
 import { existsSync, readFileSync, statSync } from "node:fs";
 import { resolve } from "node:path";
-import yaml from "js-yaml";
+import * as yaml from "js-yaml";
 import { mergeConfig, normalizeOkfConfig, type SoraneConfig } from "@sorane/core";
 
 export const MAX_SORANE_YAML_BYTES = 512 * 1024;

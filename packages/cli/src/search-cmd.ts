@@ -6,7 +6,6 @@ import { existsSync } from "node:fs";
 import { resolve } from "node:path";
 import { loadSoraneConfig, parseCwdFlag } from "./config-load.ts";
 import { loadSearchModule } from "./load-search.ts";
-import { resolveSearchEmbeddings } from "./native-embed.ts";
 import { mergeConfig } from "@sorane/core";
 
 const SEARCH_FLAGS_WITH_VALUE = new Set([
@@ -14,8 +13,6 @@ const SEARCH_FLAGS_WITH_VALUE = new Set([
   "--out",
   "--index",
   "--okfc",
-  "--model",
-  "--model-id",
   "--k",
   "--type",
   "--tag",
@@ -99,13 +96,10 @@ export function parseSearchArgs(argv: string[]): {
   cwd: string;
   query: string;
   indexPath: string;
-  modelRoot: string;
-  modelId: string;
   k: number;
   docType: string;
   tag: string;
   json: boolean;
-  ftsOnly: boolean;
   preferIndex: boolean;
   backend: ResolvedSearchBackend;
 } {
@@ -135,13 +129,10 @@ export function parseSearchArgs(argv: string[]): {
     cwd,
     query,
     indexPath: explicitIndex,
-    modelRoot: resolve(cwd, get("--model", config.search.model)),
-    modelId: get("--model-id", config.search.model_id),
     k: Number(get("--k", "10")) || 10,
     docType: get("--type", ""),
     tag: get("--tag", ""),
     json: argv.includes("--json"),
-    ftsOnly: argv.includes("--fts-only"),
     preferIndex: argv.includes("--prefer-index"),
     backend,
   };
@@ -171,104 +162,16 @@ async function searchViaOkfc(
     readonly k: number;
     readonly docType: string;
     readonly tag: string;
-    readonly ftsOnly: boolean;
     readonly cwd: string;
-    readonly modelRoot: string;
-    readonly modelId: string;
   },
 ): Promise<SearchCliHit[]> {
-  const {
-    queryOkfcFts,
-    queryOkfcHybrid,
-    okfcHasVecChunks,
-    readOkfcMeta,
-  } = await import("@sorane/okf");
+  const { queryOkfcFts } = await import("@sorane/okf");
 
   const filter = {
     limit: opts.k,
     type: opts.docType || undefined,
     tag: opts.tag || undefined,
   };
-
-  let useHybrid = !opts.ftsOnly && (await okfcHasVecChunks(dbPath));
-  let queryVec: number[] | null = null;
-
-  if (useHybrid) {
-    const meta = await readOkfcMeta(dbPath);
-    const modelDir = resolve(opts.modelRoot, opts.modelId);
-    let embeddings = resolveSearchEmbeddings(
-      opts.cwd,
-      opts.modelRoot,
-      opts.modelId,
-    );
-    if (!embeddings) {
-      if (!existsSync(modelDir)) {
-        process.stderr.write(
-          `[sorane] OKFC has vectors but model missing at ${modelDir}; FTS-only\n`,
-        );
-        useHybrid = false;
-      } else {
-        const { RuriEmbeddings } = await loadSearchModule(
-          opts.cwd,
-          "search",
-          [],
-        );
-        embeddings = new RuriEmbeddings({
-          modelRoot: opts.modelRoot,
-          modelId: opts.modelId,
-        });
-      }
-    }
-    if (useHybrid && embeddings) {
-      const packDim = meta.model_dim ? Number(meta.model_dim) : undefined;
-      const packModel = meta.model_id;
-      if (packDim != null && packDim !== embeddings.dimensions) {
-        process.stderr.write(
-          `[sorane] warning: OKFC model_dim=${packDim} != runtime ${embeddings.dimensions}; FTS-only\n`,
-        );
-        useHybrid = false;
-      } else if (packModel && packModel !== embeddings.modelId) {
-        process.stderr.write(
-          `[sorane] warning: OKFC model_id=${packModel} != runtime ${embeddings.modelId}; continuing\n`,
-        );
-      }
-      if (useHybrid) {
-        try {
-          // Align with @sorane/search QUERY_PREFIX (ruri document/query prefixes).
-          const QUERY_PREFIX = "検索クエリ: ";
-          queryVec = await embeddings.embed(QUERY_PREFIX + query);
-          process.stderr.write(
-            `[sorane] OKFC hybrid (model ${embeddings.modelId ?? opts.modelId})\n`,
-          );
-        } catch (e) {
-          const msg = e instanceof Error ? e.message : String(e);
-          process.stderr.write(
-            `[sorane] warning: OKFC embed failed (${msg}); FTS-only\n`,
-          );
-          useHybrid = false;
-        }
-      }
-    }
-  }
-
-  if (useHybrid && queryVec) {
-    const hits = await queryOkfcHybrid(dbPath, query, queryVec, filter);
-    return hits.map((h) => ({
-      source: h.concept_id,
-      title: h.title || h.concept_id,
-      score: h.score,
-      snippet: (h.snippet ?? h.text).replace(/\s+/g, " ").trim(),
-      headingPath: h.heading_path || h.title || h.concept_id,
-      headingSlug: h.heading_slug,
-      chunkIndex: h.chunk_index,
-      docType: h.type,
-      tags: h.tags ?? "",
-      timestamp: "",
-      backend: "okfc" as const,
-      conceptId: h.concept_id,
-      status: h.status,
-    }));
-  }
 
   const hits = await queryOkfcFts(dbPath, query, filter);
   return hits.map((h, rank) => ({
@@ -292,7 +195,7 @@ async function searchViaIndex(
   args: ReturnType<typeof parseSearchArgs>,
   argv: string[],
 ): Promise<SearchCliHit[]> {
-  const { IndexStore, RuriEmbeddings, search, checkModelMismatch } =
+  const { IndexStore, search } =
     await loadSearchModule(args.cwd, "search", argv);
 
   if (!existsSync(args.backend.path)) {
@@ -305,53 +208,12 @@ async function searchViaIndex(
 
   const store = new IndexStore(args.backend.path);
   try {
-    let embeddings = resolveSearchEmbeddings(
-      args.cwd,
-      args.modelRoot,
-      args.modelId,
-    );
-    if (!args.ftsOnly && store.hasVectors() && !embeddings) {
-      const modelDir = resolve(args.modelRoot, args.modelId);
-      if (!existsSync(modelDir)) {
-        process.stderr.write(
-          `[sorane] model not found at ${modelDir}; searching FTS-only\n`,
-        );
-      } else {
-        embeddings = new RuriEmbeddings({
-          modelRoot: args.modelRoot,
-          modelId: args.modelId,
-        });
-        const mismatch = checkModelMismatch(
-          store.readMeta(),
-          args.modelId,
-          embeddings.dimensions,
-        );
-        if (mismatch) {
-          process.stderr.write(
-            `[sorane] warning: ${mismatch}; consider re-indexing with --force\n`,
-          );
-        }
-      }
-    } else if (embeddings) {
-      const mismatch = checkModelMismatch(
-        store.readMeta(),
-        args.modelId,
-        embeddings.dimensions,
-      );
-      if (mismatch) {
-        process.stderr.write(
-          `[sorane] warning: ${mismatch}; consider re-indexing with --force\n`,
-        );
-      }
-    }
-
-    const results = await search(store, embeddings, args.query, {
+    const results = search(store, args.query, {
       k: args.k,
       filter: {
         docType: args.docType || undefined,
         tag: args.tag || undefined,
       },
-      ftsOnly: args.ftsOnly,
     });
 
     return results.map((row) => ({
@@ -397,10 +259,7 @@ export async function runSearchCmd(argv: string[]): Promise<void> {
       k: args.k,
       docType: args.docType,
       tag: args.tag,
-      ftsOnly: args.ftsOnly,
       cwd: args.cwd,
-      modelRoot: args.modelRoot,
-      modelId: args.modelId,
     });
   } else {
     process.stderr.write(`[sorane] search backend: index (${args.backend.path})\n`);

@@ -1,1 +1,0 @@
-pub use crate::search_ruri::{embed_batch, model_available, EmbedMeta, DOC_PREFIX};

@@ -727,14 +727,11 @@ export function isSearchView(frontmatter: Record<string, unknown>): boolean {
   return frontmatter.view === "search";
 }
 
-export type SearchMountMode = "fts" | "hybrid";
 export type SearchMountVariant = "page" | "header";
 
 export function buildSearchMount(
   rootPrefix: string,
   opts: {
-    readonly assetBaseUrl?: string;
-    readonly mode?: SearchMountMode;
     readonly variant?: SearchMountVariant;
     readonly lang?: string;
     /**
@@ -744,26 +741,13 @@ export function buildSearchMount(
     readonly okfcHref?: string;
   } = {},
 ): string {
-  const mode = opts.mode ?? "fts";
   const variant = opts.variant ?? "page";
   const lang = opts.lang ?? "ja";
   const ja = !lang.startsWith("en");
   const facetOpts = searchFacetOptionsHtml(lang);
   const sourceFacetOpts = searchSourceFacetOptionsHtml(lang);
   const indexUrl = `${rootPrefix}assets/search-index.json`;
-  const hybridAttrs =
-    mode === "hybrid"
-      ? (() => {
-          const assetBaseUrl = opts.assetBaseUrl ?? "";
-          const modelBase =
-            assetBaseUrl.length > 0 ? `${assetBaseUrl}models/` : `${rootPrefix}models/`;
-          return (
-            ` data-mode="hybrid"` +
-            ` data-model-base="${escapeHtml(modelBase)}"` +
-            ` data-lib-base="${escapeHtml(rootPrefix)}assets/search/lib/"`
-          );
-        })()
-      : ` data-mode="fts"`;
+  const searchAttrs = ` data-mode="fts"`;
   const searchClass = variant === "header" ? "search search--header" : "search";
   const form =
     variant === "header"
@@ -813,7 +797,7 @@ export function buildSearchMount(
   }
 
   return (
-    `<div class="${searchClass}" data-search data-index="${escapeHtml(indexUrl)}"${hybridAttrs}${langAttr} role="search">` +
+`<div class="${searchClass}" data-search data-index="${escapeHtml(indexUrl)}"${searchAttrs}${langAttr} role="search">` +
     `${form}` +
     `${status}` +
     `<ol class="search-results" data-search-results role="list" aria-live="polite" aria-relevant="additions"></ol>` +
@@ -824,7 +808,6 @@ export function buildSearchMount(
 
 export function buildSearchHead(
   rootPrefix: string,
-  mode: SearchMountMode = "fts",
   opts: { readonly offlineServiceWorker?: boolean } = {},
 ): string[] {
   const offline = opts.offlineServiceWorker !== false;
@@ -838,20 +821,7 @@ export function buildSearchHead(
       `</script>`
     : "";
 
-  if (mode === "fts") {
-    return [
-      `<script type="module" src="${rootPrefix}assets/search.mjs"></script>`,
-      ...(swRegister ? [swRegister] : []),
-    ];
-  }
-  const libBase = `${rootPrefix || "./"}assets/search/lib/`;
   return [
-    `<script type="importmap">${JSON.stringify({
-      imports: {
-        "onnxruntime-web/webgpu": `${libBase}ort.webgpu.bundle.min.mjs`,
-        "onnxruntime-common": `${libBase}ort.webgpu.bundle.min.mjs`,
-      },
-    })}</script>`,
     `<script type="module" src="${rootPrefix}assets/search.mjs"></script>`,
     ...(swRegister ? [swRegister] : []),
   ];

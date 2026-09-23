@@ -93,17 +93,15 @@ npx @sorane/cli migrate [--cwd <dir>] [--dry-run] [--bump-profile 0.2|0.3]
 
 ## sorane index
 
-検索インデックス（SQLite FTS5、任意でベクトル）を構築します。既定は FTS のみです。
+SQLite FTS5 の検索インデックスを構築します。
 
 ```bash
-npx @sorane/cli index [--cwd <dir>] [--force] [--drafts] [--hybrid] [--fts-only] [--yes]
+npx @sorane/cli index [--cwd <dir>] [--force] [--drafts] [--yes]
 ```
 
-要 `@sorane/search`（未導入時は上記オプショナルパッケージの案内）。リポジトリ開発時や `cargo build` 済み環境では、ネイティブ Rust CLI（`sorane-astro-backend index`）を優先し、埋め込みは pure-Rust ONNX（ruri-v3-30m）を使います。バイナリが無い場合は `@sorane/search`（transformers.js）にフォールバックします。
+要 `@sorane/search`（未導入時は上記オプショナルパッケージの案内）。
 
 `draft: true` のページは既定で索引に入りません（本番で公開しないコンテンツ）。ローカル確認だけ含めたいときは `--drafts` を付けます（`build --drafts` と同じ意味）。
-
-ハイブリッド（experimental）を使う場合は `search.mode: hybrid` または `--hybrid` と、先に `npm run fetch-model` で ruri-v3-30m を取得してください（`vendor/models/ruri-v3-30m/onnx/model_quantized.onnx` と `tokenizer.json` が必要です）。
 
 ## sorane search
 
@@ -123,24 +121,6 @@ npx @sorane/cli search <query> [--cwd <dir>] \
 | `--prefer-index` | 常に index.db（`--index` / `search.index`） |
 | `--index` / `--out` | index.db パス（`.okfc` で終わる場合は OKFC） |
 
-OKFC 経路は `better-sqlite3`（`@sorane/okf` の optional）で FTS 可能。**`vec_chunks` がありモデルも揃っているとき**は hybrid（FTS + ベクトル RRF）。index.db 経路は `@sorane/search` が必要です。`--fts-only` で常に FTS のみ。
+OKFC 経路は `better-sqlite3`（`@sorane/okf` の optional）で FTS 検索します。index.db 経路は `@sorane/search` が必要です。
 
 サイトの検索ページでは、一度索引を読み込めば **Service Worker によりオフライン FTS** が使えます。`outputs.okfc` が有効なときは **site.okfc のダウンロード**リンクも出ます（CLI と同じ知識パック）。
-
-## ネイティブ Rust バックエンド（CLI）
-
-`rust/sorane-astro-backend` をビルドすると、`sorane index` / `sorane search` が TypeScript より先にネイティブ経路を試します。
-
-```bash
-cargo build --manifest-path rust/sorane-astro-backend/Cargo.toml
-```
-
-| 環境変数 | 効果 |
-|----------|------|
-| `SORANE_INDEX_NATIVE=0` | `sorane index` を `@sorane/search` のみに固定 |
-| `SORANE_EMBED_NATIVE=0` | `sorane search` のクエリ埋め込みを transformers.js のみに固定 |
-| `SORANE_ASTRO_BACKEND_CLI` | ネイティブバイナリのパスを上書き（index / embed / Astro backend 共通） |
-| `SORANE_INDEX_NATIVE_CLI` | `sorane index` 用バイナリパス（`SORANE_ASTRO_BACKEND_CLI` より優先されない） |
-| `SORANE_EMBED_NATIVE_CLI` | `sorane search` 用バイナリパス |
-
-モデルが無い・不完全な場合は FTS-only にフォールバックし、ビルドは続行します。

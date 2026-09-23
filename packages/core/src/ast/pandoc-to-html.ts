@@ -209,7 +209,7 @@ function renderListItemBody(blocks: readonly Block[]): string {
   return firstPlainEmitted ? html : `\n${html}`;
 }
 
-const DIAGRAM_LANGS = new Set(['mermaid', 'd2', 'graphviz', 'dot']);
+const DIAGRAM_LANGS = new Set(['mermaid']);
 
 function renderCodeBlock(attr: Attr, value: string): string {
   const [, classes, kvs] = attr;

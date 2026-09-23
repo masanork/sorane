@@ -32,7 +32,6 @@ Optional feature packages (install when needed):
 npm install @sorane/search   # sorane index / search + search page assets
 npm install @sorane/font       # fonts.enabled in sorane.yaml
 npm install mermaid            # build.diagrams.enabled (client mode)
-npm install @sorane/astro      # Astro integration for OKF / llms.txt / catalog outputs
 ```
 
 If a command needs a missing package, sorane prints `npm install <pkg>` and may prompt to install (TTY). Use `--yes` on `index` / `search` to install non-interactively.
@@ -108,7 +107,7 @@ Lite defaults (no `preset:` or `preset: blog`) emit HTML, `feed.xml`, `sitemap.x
 | `catalog.jsonld` | schema.org site catalog | off |
 | `llms.txt` | LLM site guide | off |
 | `okf/bundle.tar.gz` | OKF bundle `{type}/{slug}.md` | off |
-| `okf/site.okfc` | OKFC site pack (SQLite + FTS5; vectors later) | off |
+| `okf/site.okfc` | OKFC site pack (SQLite + FTS5) | off |
 | `okf/units/*.okfc` | OKFC content units (`build.okfc`) | off |
 | `okf/registry.json` | Multi-OKFC index for agents | off |
 
@@ -128,28 +127,13 @@ Pages with `noFontEmbedding: true` in frontmatter use system fonts.
 
 ## Search
 
-SQLite FTS5 trigram search is the default (lightweight, no model). Optional **hybrid** mode (experimental) adds ruri-v3-30m vectors for natural-language queries.
+Search uses SQLite FTS5 trigram indexes. It needs no embedding model or external runtime.
 
 ```bash
 npx @sorane/cli index --cwd examples/minimal --force
 npx @sorane/cli search "OKF" --cwd examples/minimal
 npx @sorane/cli build --cwd examples/minimal --clean
 ```
-
-Hybrid (experimental):
-
-```bash
-npm run fetch-model   # onnx/model_quantized.onnx + tokenizer.json
-npx @sorane/cli index --cwd examples/minimal --force --hybrid
-```
-
-When `sorane-astro-backend` is built (`cargo build --manifest-path rust/sorane-astro-backend/Cargo.toml`), `sorane index` and `sorane search` prefer **native Rust ONNX** for indexing and query embeddings. Set `SORANE_INDEX_NATIVE=0` or `SORANE_EMBED_NATIVE=0` to force the `@sorane/search` (transformers.js) path. Missing or incomplete model dirs fall back to FTS-only indexing.
-
-| Layer | Hybrid indexing | Query embed (CLI) |
-|-------|-----------------|-------------------|
-| Native CLI (when built) | Rust ONNX | Rust ONNX |
-| `@sorane/search` fallback | transformers.js | transformers.js |
-| `@sorane/astro` WASM backend | FTS only | — |
 
 Search uses two UI layers:
 
@@ -170,8 +154,7 @@ See [examples/open-data/README.md](examples/open-data/README.md).
 
 ```yaml
 search:
-  index: .sorane/index.db          # FTS (default)
-  # mode: hybrid                   # experimental; needs model + R2 for Pages
+  index: .sorane/index.db
 ```
 
 ## Image metadata and C2PA
@@ -216,35 +199,8 @@ Publish workspace packages (maintainers):
 npm run publish:workspaces
 ```
 
-Packages: `@sorane/cli`, `@sorane/core`, `@sorane/okf`, `@sorane/search`, `@sorane/font`, `@sorane/astro`, `@sorane/astro-backend-wasm`.
-
-## Astro integration
-
-`@sorane/astro` lets Astro own rendering while sorane emits OKF and agent-readable publishing artifacts after `astro build`:
-
-```ts
-// astro.config.mjs
-import { defineConfig } from "astro/config";
-import soraneAstro from "@sorane/astro";
-
-export default defineConfig({
-  integrations: [
-    soraneAstro({
-      site: {
-        title: "My Astro Site",
-        description: "Astro-rendered, sorane-readable",
-        baseUrl: "https://example.dev",
-      },
-      collections: { posts: "blog" },
-      validate: "error",
-    }),
-  ],
-});
-```
-
-The integration scans `src/content/**/*.md(x)` for OKF frontmatter, runs quality gates in TypeScript (`validateSiteContent`), and emits publishing artifacts into Astro's output directory: `catalog.jsonld`, `llms.txt`, `okf/bundle.tar.gz`, `okf/site.okfc`, `feed.xml`, `robots.txt`, per-route OKF `.md` alternates, plus optional `catalog-dcat.jsonld`, `sitemap.xml`, and search assets. With `backend: "auto"` (default), a built `sorane-astro-backend` Rust CLI handles artifacts (including hybrid search when the model is present). Set `SORANE_ASTRO_BACKEND_NATIVE=0` to force the TypeScript fallback. See `examples/astro-minimal/` for a runnable fixture and [Astro 連携](https://ssg.sorane.dev/astro-integration.html) for setup details.
+Packages: `@sorane/cli`, `@sorane/core`, `@sorane/okf`, `@sorane/search`, `@sorane/font`.
 
 ## Roadmap
 
 - SemVer tags and GitHub Releases (fonts tarball)
-- Astro: WASM hybrid search (blocked on wasm32 ort/SQLite)

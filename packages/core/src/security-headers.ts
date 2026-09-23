@@ -6,14 +6,11 @@ export function resolveCspProfile(security?: SecurityConfig): CspProfile {
   return security?.csp_profile === "strict" ? "strict" : "standard";
 }
 
-export function buildContentSecurityPolicy(profile: CspProfile, hybridSearch: boolean): string {
+export function buildContentSecurityPolicy(profile: CspProfile): string {
   const scriptSrc =
     profile === "strict"
       ? ["'self'"]
       : ["'self'", "https://static.cloudflareinsights.com"];
-  if (hybridSearch) {
-    scriptSrc.push("'wasm-unsafe-eval'");
-  }
   const directives = [
     "default-src 'self'",
     `script-src ${scriptSrc.join(" ")}`,
@@ -32,10 +29,10 @@ export function buildContentSecurityPolicy(profile: CspProfile, hybridSearch: bo
 
 export function buildSecurityHeadersFile(
   security: SecurityConfig | undefined,
-  opts: { readonly hybridSearch?: boolean } = {},
+  _opts: Record<string, never> = {},
 ): string {
   const profile = resolveCspProfile(security);
-  const csp = buildContentSecurityPolicy(profile, opts.hybridSearch === true);
+  const csp = buildContentSecurityPolicy(profile);
   return (
     "/*\n" +
     "  X-Content-Type-Options: nosniff\n" +

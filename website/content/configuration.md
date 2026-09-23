@@ -74,27 +74,7 @@ build:
 
 未指定のキーは lite 既定（`feed` / `sitemap` / `robots` のみ on）です。`preset: okf-site` は上表のフル出力をまとめて有効にします。
 
-`okfc: true` のとき、公開 concept を **OKF Container Format**（OKFC）の SQLite に pack します（概念 id は `{type}/{slug}`、本文 **FTS5**、見出しチャンク）。ベクトルは **Knowledge IR 経由で 0 または 1 回**埋め込みます（`build.knowledge.embeddings`）。`better-sqlite3` が無い場合は警告してスキップします。`vec_chunks` には `sqlite-vec` が必要です。
-
-### `build.knowledge`（統合インデックス）
-
-```yaml
-build:
-  knowledge:
-    embeddings: auto   # off | auto | on（既定 auto）
-search:
-  mode: hybrid         # auto のとき hybrid なら IR に埋め込み → OKFC vec_chunks
-```
-
-| 値 | 動作 |
-|----|------|
-| `off` | FTS のみ（`vec_chunks` なし） |
-| `auto` | `search.mode: hybrid` かつモデルがあるときだけ埋め込み |
-| `on` | モデル必須（無ければビルド失敗） |
-
-`build.okfc.embeddings` で同じ enum を上書きできます（レガシー `false` → `off`）。
-
-ビルド後、`sorane search` は `okf/site.okfc` の FTS を使い、pack 時にベクトルが入っていれば **hybrid（RRF）** になります（クエリ埋め込みに同じモデルが必要）。
+`okfc: true` のとき、公開 concept を **OKF Container Format**（OKFC）の SQLite に pack します（概念 id は `{type}/{slug}`、本文 **FTS5**、見出しチャンク）。`better-sqlite3` が無い場合は警告してスキップします。
 
 ### `build.okfc`（まとまり単位・registry）
 
@@ -110,7 +90,6 @@ build:
     min_entries: 2
     units_dir: okf/units       # ユニット出力先（out_dir 相対）
     registry: true             # okf/registry.json（既定 true）
-    # embeddings: false        # 予約（未実装）。将来 auto | true
     units:                     # 明示ユニット（任意）
       - id: open-data
         title: オープンデータ
@@ -429,22 +408,7 @@ search:
   index: .sorane/index.db
 ```
 
-ハイブリッド（自然文 RAG）は experimental です。埋め込みモデルとランタイム（約 24MB）が必要です。
-
-```yaml
-search:
-  mode: hybrid                 # experimental
-  index: .sorane/index.db
-  model: vendor/models
-  model_id: ruri-v3-30m
-  bundle_model: false          # Cloudflare Pages 25MiB 制限対策
-  asset_base_url: ""           # R2 等に ONNX を置く場合
-```
-
-- `sorane index` … FTS（既定）。要 `npm install @sorane/search`
-- `sorane index --hybrid` … ベクトル付きインデックス（要 `npm run fetch-model`）
-
-リポジトリ開発時や `cargo build` 済み環境では、`sorane index` / `sorane search` がネイティブ Rust ONNX を優先します（`@sorane/search` / transformers.js はフォールバック）。`SORANE_INDEX_NATIVE=0` / `SORANE_EMBED_NATIVE=0` で無効化できます。詳細は [CLI リファレンス](cli.html#ネイティブ-rust-バックエンドcli) と [Astro 連携](astro-integration.html#バックエンド) を参照してください。
+検索は SQLite FTS5 を使います。モデル不要で軽量です。
 
 ### 検索 UI（ヘッダー vs 専用ページ）
 
@@ -469,24 +433,12 @@ build:
     mermaid:
       mode: client    # client | build | off
       mmdc: mmdc      # mermaid.mode: build 時の CLI（既定は @mermaid-js/mermaid-cli）
-    d2:
-      enabled: false
-      binary: d2
-    graphviz:
-      enabled: false
-      binary: dot
-    plantuml:
-      enabled: false
-      kroki_url: https://kroki.io   # 自己ホスト Kroki のベース URL も可
 ```
 
 - ` ```mermaid ` … `mode: client`（既定）ではクライアント描画（`sorane-mermaid-loader.mjs` を条件付き読み込み）
 - `mermaid.mode: build` … `@mermaid-js/mermaid-cli`（mmdc + Chromium）でビルド時 SVG（`assets/diagrams/mermaid/{hash}.svg`）。クライアント loader は不要
 - `alt="..."` を info string に付けるか、`%% alt: 説明` コメントで代替テキストを指定
-- `d2.enabled: true` … `d2` CLI でビルド時 SVG（`assets/diagrams/d2/{hash}.svg`）
-- ` ```graphviz ` / ` ```dot ` … `graphviz.enabled: true` かつ `dot` が PATH にあるときビルド時 SVG
-- ` ```plantuml ` / ` ```puml ` … `plantuml.enabled: true` で Kroki HTTP 経由のビルド時 SVG（ネットワーク依存・SSRF ガード付き）
-- いずれのバックエンドも CLI 欠落 / Kroki 失敗時は警告のうえ `<pre><code>` フォールバック（ビルドは継続）
+- client モードではブラウザー描画、build モードでは mmdc による静的 SVG
 
 詳細と例は [図表](diagrams.html) を参照してください。`sorane validate` は alt 欠落の図表フェンスを warning で報告します。
 

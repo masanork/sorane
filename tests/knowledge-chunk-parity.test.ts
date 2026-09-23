@@ -116,77 +116,6 @@ describe("knowledge chunk parity (U0)", () => {
   });
 });
 
-describe("knowledge U3 embeddings on IR", () => {
-  const embBody = [
-    "Lead paragraph with enough characters to become its own section chunk for indexing.",
-    "",
-    "## First",
-    "",
-    "Alpha body text with sufficient length so the prose chunker keeps this section.",
-  ].join("\n");
-
-  test("attachKnowledgeEmbeddings + unique texts", async () => {
-    const {
-      attachKnowledgeEmbeddings,
-      uniqueChunkTextsForEmbed,
-      hashProseChunkText,
-    } = await import("../packages/okf/src/index.ts");
-    const concept = normalizeConcept(
-      { type: "article", title: "E" },
-      embBody,
-      "e",
-    );
-    const ir = buildKnowledgeIr([{ concept, slug: "e" }]);
-    const unique = uniqueChunkTextsForEmbed(ir);
-    expect(unique.length).toBe(ir.chunks.length);
-    const dim = 4;
-    const embeddings = unique.map((u, i) => ({
-      text_hash: u.text_hash,
-      vector: Array.from({ length: dim }, (_, j) => i + j * 0.01),
-    }));
-    const withEmb = attachKnowledgeEmbeddings(ir, embeddings, {
-      model_id: "mock",
-      dim,
-    });
-    expect(withEmb.embeddings?.length).toBe(unique.length);
-    expect(withEmb.model?.model_id).toBe("mock");
-    expect(hashProseChunkText(unique[0]!.text)).toBe(unique[0]!.text_hash);
-  });
-
-  test("embedKnowledgeIr mock provider dedupes by hash", async () => {
-    const { embedKnowledgeIr } = await import("../packages/search/src/embed-ir.ts");
-    const concept = normalizeConcept(
-      { type: "article", title: "E2" },
-      embBody,
-      "e2",
-    );
-    const ir = buildKnowledgeIr([{ concept, slug: "e2" }]);
-    let calls = 0;
-    const provider = {
-      dimensions: 4,
-      modelId: "mock-ruri",
-      quant: "q8",
-      modelSha256: "abc",
-      async embed(text: string) {
-        calls += 1;
-        return [text.length, 0, 0, 1];
-      },
-      async embedBatch(texts: string[]) {
-        const out: number[][] = [];
-        for (const t of texts) out.push(await this.embed(t));
-        return out;
-      },
-    };
-    const embedded = await embedKnowledgeIr(ir, provider);
-    expect(embedded.embeddings?.length).toBe(ir.chunks.length);
-    expect(calls).toBe(ir.chunks.length);
-    // second pass should reuse
-    const again = await embedKnowledgeIr(embedded, provider);
-    expect(again.embeddings?.length).toBe(ir.chunks.length);
-    expect(calls).toBe(ir.chunks.length);
-  });
-});
-
 describe("knowledge U2.1 type-aware IR", () => {
   test("faq IR chunks match search chunkDocument", () => {
     const source = `---
@@ -219,4 +148,3 @@ See the dataset page.
     expect(projected.map((x) => x.text)).toEqual(search.map((x) => x.text));
   });
 });
-

@@ -1,8 +1,5 @@
 import type { ChunkRow } from "./store.ts";
-import { encodeInt8VectorsB64, INT8_SCALE } from "./int8-encode.ts";
 
-export { INT8_SCALE } from "./int8-encode.ts";
-export const WEB_INDEX_SCHEMA_VERSION = 3;
 export const FTS_WEB_INDEX_SCHEMA_VERSION = 4;
 export const SNIPPET_LEN = 220;
 
@@ -16,20 +13,6 @@ export interface WebChunk {
   readonly tags: string;
   readonly snippet: string;
   readonly digital_source_type?: string;
-}
-
-export interface WebIndex {
-  readonly schema_version: number;
-  readonly mode: "hybrid";
-  readonly built_at: string;
-  readonly model: { id: string; dim: number; quant: string; sha256: string };
-  readonly chunks: WebChunk[];
-  readonly embeddings: {
-    readonly dim: number;
-    readonly encoding: "int8";
-    readonly scale: number;
-    readonly vectors_b64: string;
-  };
 }
 
 export interface FtsWebChunk extends WebChunk {
@@ -59,65 +42,6 @@ function disclosureForSource(
 ): string | undefined {
   if (!machineReadable || !disclosureMap) return undefined;
   return disclosureMap.get(source);
-}
-
-export function buildWebIndex(
-  rows: ChunkRow[],
-  vectors: number[][],
-  meta: Record<string, string>,
-  sourceToUrl: (source: string) => string = defaultSourceUrl,
-  opts?: {
-    readonly disclosureMap?: ReadonlyMap<string, string>;
-    readonly machineReadable?: boolean;
-  },
-): WebIndex {
-  const machineReadable = opts?.machineReadable !== false;
-  const dim = Number(meta.dim) || (vectors[0]?.length ?? 0);
-  if (rows.length !== vectors.length) {
-    throw new Error(`row/vector count mismatch: ${rows.length} != ${vectors.length}`);
-  }
-
-  const kept: { row: ChunkRow; vec: number[] }[] = [];
-  for (let i = 0; i < rows.length; i++) {
-    const vec = vectors[i]!;
-    if (vec.length === 0) continue;
-    kept.push({ row: rows[i]!, vec });
-  }
-
-  const vectors_b64 = encodeInt8VectorsB64(
-    kept.map((k) => k.vec),
-    dim,
-  );
-
-  const chunks: WebChunk[] = kept.map(({ row: r }) => {
-    const chunk: WebChunk = {
-      source: r.source,
-      url: sourceToUrl(r.source),
-      heading_slug: r.headingSlug,
-      heading_path: r.headingPath,
-      doc_type: r.docType,
-      title: r.title,
-      tags: r.tags,
-      snippet: toSnippet(r.text),
-    };
-    const dst = disclosureForSource(r.source, opts?.disclosureMap, machineReadable);
-    if (dst) return { ...chunk, digital_source_type: dst };
-    return chunk;
-  });
-
-  return {
-    schema_version: WEB_INDEX_SCHEMA_VERSION,
-    mode: "hybrid",
-    built_at: new Date().toISOString(),
-    model: {
-      id: meta.model_id ?? "",
-      dim,
-      quant: meta.quant ?? "",
-      sha256: meta.model_sha256 ?? "",
-    },
-    chunks,
-    embeddings: { dim, encoding: "int8", scale: INT8_SCALE, vectors_b64 },
-  };
 }
 
 export function buildFtsWebIndex(

@@ -185,7 +185,7 @@ flowchart LR
         clean: true,
       });
       const llms = readFileSync(join(outDir, "llms.txt"), "utf8");
-      expect(llms).toContain("```mermaid");
+      expect(llms).toContain("Mermaid fences in page bodies are preserved verbatim");
       expect(llms).toContain("sorane-mermaid-loader.mjs");
     } finally {
       rmSync(root, { recursive: true, force: true });

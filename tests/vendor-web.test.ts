@@ -5,7 +5,6 @@ import { describe, expect, test } from "./_expect.ts";
 import {
   copySearchScript,
   readSearchScript,
-  vendorRuntime,
 } from "../packages/search/src/vendor-web.ts";
 
 const repoRoot = join(import.meta.dirname, "..");
@@ -29,15 +28,6 @@ describe("vendor-web", () => {
     }
   });
 
-  test("vendorRuntime は依存があれば lib をコピーする", () => {
-    const tmp = mkdtempSync(join(tmpdir(), "sorane-vendor-"));
-    try {
-      const ok = vendorRuntime(tmp, repoRoot);
-      expect(ok).toBe(existsSync(join(repoRoot, "node_modules/@huggingface/transformers/dist/transformers.web.js")));
-    } finally {
-      rmSync(tmp, { recursive: true, force: true });
-    }
-  });
 });
 describe("offline search SW", () => {
   test("writeSearchServiceWorker が precache を埋め込む", async () => {

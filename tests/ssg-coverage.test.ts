@@ -50,14 +50,12 @@ describe("buildCreativeWorkJsonLd", () => {
 });
 
 describe("buildSearchHead", () => {
-  test("hybrid と fts モード", () => {
-    const hybrid = buildSearchHead("./", "hybrid");
-    expect(hybrid.some((h) => h.includes("importmap"))).toBe(true);
-    expect(hybrid.some((h) => h.includes("serviceWorker"))).toBe(true);
-    const fts = buildSearchHead("../", "fts");
-    expect(fts.some((h) => h.includes("search.mjs"))).toBe(true);
-    expect(fts.some((h) => h.includes("serviceWorker"))).toBe(true);
-    expect(fts.some((h) => h.includes("sw.js"))).toBe(true);
+  test("FTS assets と Service Worker 登録を含む", () => {
+    const head = buildSearchHead("../");
+    expect(head.some((h) => h.includes("importmap"))).toBe(false);
+    expect(head.some((h) => h.includes("search.mjs"))).toBe(true);
+    expect(head.some((h) => h.includes("serviceWorker"))).toBe(true);
+    expect(head.some((h) => h.includes("sw.js"))).toBe(true);
   });
 });
 

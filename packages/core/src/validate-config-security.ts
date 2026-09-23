@@ -4,8 +4,6 @@ import type { ValidateFinding } from "./validate-site.ts";
 import { validateEmergencyBannerUrls } from "./validate-unsafe-links.ts";
 
 const KNOWN_BINARIES: Record<string, readonly string[]> = {
-  d2: ["d2"],
-  dot: ["dot"],
   mmdc: ["mmdc"],
   exiftool: ["exiftool"],
   c2patool: ["c2patool"],
@@ -45,8 +43,6 @@ export function validateConfigSecurity(config: SoraneConfig): readonly ValidateF
 
   if (!security.allow_custom_binaries) {
     const checks: Array<[string, string | undefined, readonly string[]]> = [
-      ["build.diagrams.d2.binary", config.build.diagrams?.d2?.binary, KNOWN_BINARIES.d2!],
-      ["build.diagrams.graphviz.binary", config.build.diagrams?.graphviz?.binary, KNOWN_BINARIES.dot!],
       ["build.diagrams.mermaid.mmdc", config.build.diagrams?.mermaid?.mmdc, KNOWN_BINARIES.mmdc!],
       ["build.image_metadata.exiftool", config.build.image_metadata?.exiftool, KNOWN_BINARIES.exiftool!],
       ["build.c2pa.binary", config.build.c2pa?.binary, KNOWN_BINARIES.c2patool!],

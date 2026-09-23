@@ -1,76 +1,28 @@
-import { existsSync } from "node:fs";
 import { resolve } from "node:path";
 import { loadSoraneConfig, parseCwdFlag } from "./config-load.ts";
 import { loadSearchModule } from "./load-search.ts";
-import { runNativeSearchIndex, soraneNativeIndexAvailable } from "./native-index.ts";
 
 export async function runIndexCmd(argv: string[]): Promise<void> {
   const cwd = parseCwdFlag(argv);
   const config = loadSoraneConfig(cwd);
-  const force = argv.includes("--force");
-  const includeDrafts = argv.includes("--drafts");
-  const configMode = config.search.mode ?? "fts";
-  const hybrid =
-    argv.includes("--hybrid") || (argv.includes("--fts-only") ? false : configMode === "hybrid");
   const get = (flag: string, def: string) => {
     const i = argv.indexOf(flag);
     return i >= 0 && argv[i + 1] ? argv[i + 1]! : def;
   };
   const outFlag = argv.indexOf("--out");
-  const indexPath =
-    outFlag >= 0 && argv[outFlag + 1]
-      ? resolve(cwd, argv[outFlag + 1]!)
-      : resolve(cwd, config.search.index);
-  const contentDir = resolve(cwd, config.build.content_dir);
-  const modelRoot = resolve(cwd, get("--model", config.search.model));
-  const modelId = get("--model-id", config.search.model_id);
-
-  if (soraneNativeIndexAvailable(cwd)) {
-    const result = runNativeSearchIndex({
-      root: cwd,
-      contentDir,
-      indexPath,
-      force,
-      hybrid,
-      includeDrafts,
-      modelRoot: get("--model", config.search.model),
-      modelId,
-    });
-    process.stdout.write(
-      `[sorane] indexed ${result.chunks} chunk(s) [${result.mode}] → ${indexPath} (native)\n` +
-        `  added=${result.added} changed=${result.changed} removed=${result.removed} unchanged=${result.unchanged}\n` +
-        (result.mode === "hybrid" ? `  vec=${result.vec}\n` : ""),
-    );
-    return;
-  }
-
-  const { buildSearchIndex, RuriEmbeddings } = await loadSearchModule(cwd, "index", argv);
-
-  let embeddings = null;
-  if (hybrid) {
-    const modelDir = resolve(modelRoot, modelId);
-    if (!existsSync(modelDir)) {
-      process.stderr.write(
-        `[sorane] model not found at ${modelDir}; indexing FTS-only\n` +
-          `  run: npm run fetch-model (or sorane index without --hybrid)\n`,
-      );
-    } else {
-      embeddings = new RuriEmbeddings({ modelRoot, modelId });
-    }
-  }
-
+  const indexPath = outFlag >= 0 && argv[outFlag + 1]
+    ? resolve(cwd, argv[outFlag + 1]!)
+    : resolve(cwd, config.search.index);
+  const { buildSearchIndex } = await loadSearchModule(cwd, "index", argv);
   const result = await buildSearchIndex({
-    contentDir,
+    contentDir: resolve(cwd, config.build.content_dir),
     indexPath,
-    force,
-    includeDrafts,
-    embeddings,
+    force: argv.includes("--force"),
+    includeDrafts: argv.includes("--drafts"),
     onProgress: (message) => process.stdout.write(`[sorane] ${message}\n`),
   });
-
   process.stdout.write(
-    `[sorane] indexed ${result.chunks} chunk(s) [${result.mode}] → ${indexPath}\n` +
-      `  added=${result.added} changed=${result.changed} removed=${result.removed} unchanged=${result.unchanged}\n` +
-      (result.mode === "hybrid" ? `  vec=${result.vec}\n` : ""),
+    `[sorane] indexed ${result.chunks} chunk(s) [fts] → ${indexPath}\n` +
+      `  added=${result.added} changed=${result.changed} removed=${result.removed} unchanged=${result.unchanged}\n`,
   );
 }

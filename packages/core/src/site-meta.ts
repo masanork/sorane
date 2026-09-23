@@ -134,7 +134,7 @@ export function buildLlmsTxt(opts: LlmsTxtOptions): string {
   ];
   if (opts.okfc) {
     lines.push(
-      `- [OKFC container](${abs("okf/site.okfc")}): site-wide SQLite OKF Container (FTS5; vectors optional later)`,
+      `- [OKFC container](${abs("okf/site.okfc")}): site-wide SQLite OKF Container (FTS5)`,
     );
     lines.push(
       `- [OKFC registry](${abs("okf/registry.json")}): multi-bundle index (site + content units)`,
@@ -158,7 +158,7 @@ export function buildLlmsTxt(opts: LlmsTxtOptions): string {
   if (opts.diagramsEnabled) {
     lines.push(
       "",
-      "Diagram fences (` ```mermaid `, ` ```d2 `) in page bodies are preserved verbatim in sibling `.md` alternates and the OKF bundle.",
+      "Mermaid fences in page bodies are preserved verbatim in sibling `.md` alternates and the OKF bundle.",
       "HTML pages may load client-side Mermaid (`assets/diagrams/sorane-mermaid-loader.mjs`) when fences are present.",
     );
   }

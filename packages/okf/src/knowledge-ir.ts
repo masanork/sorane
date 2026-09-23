@@ -1,6 +1,5 @@
 /**
- * Knowledge IR — single intermediate representation for OKFC pack and search export.
- * Embeddings attach once by `text_hash` (U3); pack and search both read them.
+ * Knowledge IR — shared concepts and chunks for OKFC packing and search export.
  */
 
 import type { OkfConcept } from "./normalize.ts";
@@ -19,7 +18,7 @@ export interface KnowledgeChunk {
   readonly heading_path: string;
   readonly heading_slug: string;
   readonly chunk_format: "text" | "field" | "operation" | "message" | "entry";
-  /** SHA-256 of `text` — embed/cache key. */
+  /** SHA-256 of `text` — stable chunk identifier. */
   readonly text_hash: string;
 }
 
@@ -59,22 +58,9 @@ export interface KnowledgeConceptEntry {
   };
 }
 
-export interface KnowledgeEmbedding {
-  readonly text_hash: string;
-  readonly vector: Float32Array | number[];
-}
-
 export interface KnowledgeIr {
   readonly concepts: readonly KnowledgeConceptEntry[];
   readonly chunks: readonly KnowledgeChunk[];
-  /** Present only after embed pass (U3). */
-  readonly embeddings?: readonly KnowledgeEmbedding[];
-  readonly model?: {
-    readonly model_id: string;
-    readonly dim: number;
-    readonly quant?: string;
-    readonly model_sha256?: string;
-  };
 }
 
 export interface BuildKnowledgeIrOptions {
@@ -154,56 +140,5 @@ export function sliceKnowledgeIr(
   const concepts = ir.concepts.filter((c) => conceptIds.has(c.id));
   const idSet = new Set(concepts.map((c) => c.id));
   const chunks = ir.chunks.filter((c) => idSet.has(c.concept_id));
-  let embeddings = ir.embeddings;
-  if (embeddings && embeddings.length > 0) {
-    const hashes = new Set(chunks.map((c) => c.text_hash));
-    embeddings = embeddings.filter((e) => hashes.has(e.text_hash));
-  }
-  return {
-    concepts,
-    chunks,
-    embeddings,
-    model: embeddings && embeddings.length > 0 ? ir.model : undefined,
-  };
-}
-
-/**
- * Attach embedding vectors keyed by `text_hash` (U3).
- * Does not re-chunk; pure join for pack / search projection.
- */
-export function attachKnowledgeEmbeddings(
-  ir: KnowledgeIr,
-  embeddings: readonly KnowledgeEmbedding[],
-  model: NonNullable<KnowledgeIr["model"]>,
-): KnowledgeIr {
-  const byHash = new Map<string, KnowledgeEmbedding>();
-  for (const e of embeddings) {
-    byHash.set(e.text_hash, e);
-  }
-  // Keep only hashes present in this IR (dedupe).
-  const needed = new Set(ir.chunks.map((c) => c.text_hash));
-  const filtered = [...needed]
-    .map((h) => byHash.get(h))
-    .filter((e): e is KnowledgeEmbedding => e != null);
-  return {
-    concepts: ir.concepts,
-    chunks: ir.chunks,
-    embeddings: filtered,
-    model,
-  };
-}
-
-/** Unique chunk texts in IR order (stable embed input order). */
-export function uniqueChunkTextsForEmbed(ir: KnowledgeIr): {
-  readonly text_hash: string;
-  readonly text: string;
-}[] {
-  const seen = new Set<string>();
-  const out: { text_hash: string; text: string }[] = [];
-  for (const c of ir.chunks) {
-    if (seen.has(c.text_hash)) continue;
-    seen.add(c.text_hash);
-    out.push({ text_hash: c.text_hash, text: c.text });
-  }
-  return out;
+  return { concepts, chunks };
 }

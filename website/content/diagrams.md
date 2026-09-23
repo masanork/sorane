@@ -1,15 +1,13 @@
 ---
 type: article
-title: 図表（Mermaid 他）
+title: 図表（Mermaid）
 profile: sorane-okf/0.1
 excludeFromList: true
 ---
 
-空音は Markdown のコードフェンスで書いた図を HTML で表示します。ソースは `.md` 代替ファイルと OKF バンドルにそのまま残ります（bunsen Strategy A）。
+空音では Mermaid のコードフェンスで図を記述します。ソースは Markdown と OKF バンドルに残り、HTML 表示では Mermaid が図として描画します。
 
-## Mermaid（クライアント）
-
-` ```mermaid ` フェンスを使います。`alt` は info string または `%% alt:` コメントで指定できます。
+図には `alt` を指定してください。フェンスの info string に書く方法と、本文に `%% alt:` コメントを加える方法があります。
 
 ```mermaid alt="AI 開示のデータフロー"
 flowchart LR
@@ -20,76 +18,36 @@ flowchart LR
   HTML --> HUMAN[読者]
 ```
 
-## シーケンス図
-
-```mermaid alt="ビルドパイプライン"
+```mermaid
+%% alt: ビルドパイプライン
 sequenceDiagram
   participant MD as content/*.md
   participant BUILD as runBuild
   participant DIST as dist/
   MD->>BUILD: parse + render
-  BUILD->>DIST: HTML + assets/diagrams/
+  BUILD->>DIST: HTML + diagram assets
 ```
 
-## Mermaid（ビルド時）
+## 表示モード
 
-`mermaid.mode: build` にすると `@mermaid-js/mermaid-cli`（mmdc）で SVG を生成します。クライアント loader は不要です。
-
-[ssg.sorane.dev](https://ssg.sorane.dev/) は Pages ビルドを軽く保つため **client モード**を使っています（このページの Mermaid はクライアント描画）。CI で Chromium を入れられるサイトは build モードも選べます。詳細は [デプロイ](deployment.html#図表d2--mermaid) を参照してください。
+既定の `client` モードはブラウザーで描画します。Mermaid のアセットはページ内に図がある場合だけ出力されます。
 
 ```yaml
 build:
   diagrams:
+    enabled: true
+    mermaid:
+      mode: client
+```
+
+`mode: build` を選ぶと `@mermaid-js/mermaid-cli`（`mmdc`）でビルド時に SVG を生成します。CI では Chromium が必要です。
+
+```yaml
+build:
+  diagrams:
+    enabled: true
     mermaid:
       mode: build
-      mmdc: mmdc
 ```
 
-## Graphviz（ビルド時）
-
-`build.diagrams.graphviz.enabled: true` と Graphviz `dot` CLI が必要です。
-
-```dot alt="依存関係"
-digraph G {
-  render -> build
-  build -> dist
-}
-```
-
-## D2（ビルド時）
-
-` ```d2 ` フェンスはビルド時に SVG へコンパイルします（`build.diagrams.d2.enabled: true` と `d2` CLI が必要）。
-
-```d2 alt="シンプルなトポロジ"
-sorane: {
-  shape: rectangle
-}
-build: {
-  shape: rectangle
-}
-sorane -> build: render
-```
-
-## PlantUML（Kroki）
-
-`build.diagrams.plantuml.enabled: true` で [Kroki](https://kroki.io/) HTTP API 経由のビルド時 SVG になります（**ネットワーク依存**）。自己ホストする場合は `kroki_url` を指定してください。
-
-```yaml
-build:
-  diagrams:
-    plantuml:
-      enabled: true
-      kroki_url: https://kroki.io
-```
-
-```plantuml alt="シーケンス"
-@startuml
-Alice -> Bob: hello
-@enduml
-```
-
-` ```puml ` も同じ扱いです。Kroki 到達不可や HTTP エラー時は警告のうえ `<pre><code>` フォールバック（ビルドは継続）。
-
-## 設定
-
-`build.diagrams` で有効化・モードを切り替えます。詳細は [設定](configuration.html) を参照してください。
+詳しくは[設定](configuration.html)と[デプロイ](deployment.html)を参照してください。

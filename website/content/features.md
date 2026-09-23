@@ -62,7 +62,6 @@ AI アシスタント向けの手順は [AI 向け解説](ai-onboarding.html)。
 ## 検索
 
 - **FTS（標準）** — SQLite ベースのキーワード検索。モデル不要
-- **ハイブリッド（experimental）** — 埋め込み + FTS。大規模サイトは ONNX を CDN 配信可能
 
 - **ヘッダー検索** — `sorane index` 後、全ページにコンパクトな検索ボックス
 - **専用ページ** — `content/search.md`（`view: search`）で種別 facet・説明文・`SearchAction` 用 URL
@@ -78,8 +77,6 @@ AI アシスタント向けの手順は [AI 向け解説](ai-onboarding.html)。
 ソースは常に Markdown のコードフェンスに残り、HTML はプレゼンテーション層です。
 
 - **Mermaid** — クライアント描画（既定）またはビルド時 SVG（`mmdc`）
-- **D2** — ビルド時 SVG（`d2` CLI）
-- **Graphviz** — ビルド時 SVG（`dot`）
 
 [図表](diagrams.html) を参照。
 

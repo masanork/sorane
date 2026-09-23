@@ -793,10 +793,7 @@ figure[role="img"] svg {
   height: auto;
 }
 
-pre code.language-mermaid,
-pre code.language-d2,
-pre code.language-graphviz,
-pre code.language-dot {
+pre code.language-mermaid {
   font-size: 0.85em;
 }
 

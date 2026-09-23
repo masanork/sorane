@@ -73,18 +73,12 @@ describe("mergeConfig", () => {
         permalink: "{{slug}}.html",
         diagrams: {
           mermaid: { mode: "off" },
-          d2: { enabled: true },
-          graphviz: { enabled: true },
         },
       },
     });
     expect(cfg.build.diagrams?.enabled).toBe(false);
     expect(cfg.build.diagrams?.mermaid?.mode).toBe("off");
-    expect(cfg.build.diagrams?.mermaid?.version).toBe("~11.15.0");
-    expect(cfg.build.diagrams?.d2?.enabled).toBe(true);
-    expect(cfg.build.diagrams?.d2?.binary).toBe("d2");
-    expect(cfg.build.diagrams?.graphviz?.enabled).toBe(true);
-    expect(cfg.build.diagrams?.graphviz?.binary).toBe("dot");
+    expect(cfg.build.diagrams?.mermaid?.version).toBe("~12.0.0");
   });
 });
 

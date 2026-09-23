@@ -88,15 +88,13 @@ profile: sorane-okf/0.2
 
 `static/_redirects` に置いても **効きません**（`dist/static/` 配下になるため）。必ず空音の `build.redirects` か記事 `redirect` を使ってください。
 
-### 図表（D2 / Mermaid）
-
-`build.diagrams.d2.enabled: true` のサイトは CI で [d2](https://d2lang.com/) CLI をインストールしてください。ssg.sorane.dev は `v0.7.1` を使っています。
+### 図表（Mermaid）
 
 Mermaid は次の 2 モードがあります。
 
 | モード | CI の追加要件 | ssg.sorane.dev |
 |--------|---------------|------------|
-| `mermaid.mode: client`（既定） | なし（`mermaid` npm パッケージのみ） | **採用** — Pages ビルドに Chromium 不要 |
+| `mermaid.mode: client`（既定） | なし（`mermaid` npm パッケージ） | **採用** — Pages ビルドに Chromium 不要 |
 | `mermaid.mode: build` | `@mermaid-js/mermaid-cli`（mmdc）+ Chromium | 未使用 — 静的 SVG が必要なサイト向け |
 
 `mermaid.mode: build` を使うサイトは CI で Chromium を用意し、`PUPPETEER_EXECUTABLE_PATH` を設定してください。空音リポジトリの `test.yml` `e2e` ジョブは Playwright の Chromium を mmdc に流用してビルドテストしています。
@@ -114,10 +112,9 @@ Mermaid は次の 2 モードがあります。
 
 空音ソースを checkout する構成も可能です。`AGENTS.md` の `SORANE_ROOT` を参照してください。
 
-### 検索・大容量資産
+### 検索
 
-- **標準（FTS）**: モデル不要。`search-index.json` のみ dist に含まれる
-- **experimental（hybrid）**: `search.mode: hybrid` + `bundle_model: false` で ONNX を R2 等から配信
+FTS 検索はモデルを必要とせず、`search-index.json` を dist に含めます。
 
 ## ドメイン構成
 

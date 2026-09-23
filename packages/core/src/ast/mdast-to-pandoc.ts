@@ -31,7 +31,7 @@ import * as P from './pandoc-types.ts';
 
 const NULL_ATTR: P.Attr = ['', [], []];
 
-const DIAGRAM_LANGS = new Set(['mermaid', 'd2', 'graphviz', 'dot']);
+const DIAGRAM_LANGS = new Set(['mermaid']);
 
 function hProperties(node: { data?: unknown }): Record<string, unknown> | undefined {
   const data = node.data as { hProperties?: Record<string, unknown> } | undefined;

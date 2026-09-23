@@ -2,8 +2,6 @@ import type { Code, Root } from "mdast";
 import type { Plugin } from "unified";
 import { visit } from "unist-util-visit";
 import type { DiagramsConfig } from "../config.ts";
-import { isGraphvizLang } from "./compile-graphviz.ts";
-import { isPlantumlLang } from "./compile-plantuml.ts";
 
 export type MermaidKind =
   | "flowchart"
@@ -62,55 +60,30 @@ export function extractAltText(
 }
 
 export interface SoraneDiagramMeta {
-  readonly lang: "mermaid" | "d2" | "graphviz" | "plantuml";
+  readonly lang: "mermaid";
   readonly altText?: string;
-  readonly kind?: MermaidKindOrUnsupported | "d2" | "graphviz" | "plantuml";
+  readonly kind?: MermaidKindOrUnsupported;
 }
 
-function annotateDiagramCode(
-  node: Code,
-  lang: "mermaid" | "d2" | "graphviz" | "plantuml",
-): void {
+function annotateDiagramCode(node: Code): void {
   const altText = extractAltText(node.meta, node.value);
-  const kind =
-    lang === "mermaid"
-      ? detectDiagramKind(node.value)
-      : lang === "d2"
-        ? "d2"
-        : lang === "plantuml"
-          ? "plantuml"
-          : "graphviz";
+  const kind = detectDiagramKind(node.value);
   const data = (node.data ?? {}) as Record<string, unknown>;
   node.data = {
     ...data,
     hProperties: { dataSoraneAlt: altText ?? "" },
-    soraneDiagram: { lang, altText, kind } satisfies SoraneDiagramMeta,
+    soraneDiagram: { lang: "mermaid", altText, kind } satisfies SoraneDiagramMeta,
   } as Code["data"];
 }
 
-/** remark プラグイン: mermaid / d2 フェンスに alt と kind メタデータを付与する。 */
+/** remark plugin: attach alt text and diagram kind to Mermaid fences. */
 export function remarkDiagramFences(config: DiagramsConfig): Plugin<[], Root> {
   return () => (tree: Root) => {
     if (config.enabled === false) return;
     visit(tree, "code", (node) => {
       if (node.lang === "mermaid") {
         if (config.mermaid?.mode === "off") return;
-        annotateDiagramCode(node, "mermaid");
-        return;
-      }
-      if (node.lang === "d2") {
-        if (config.d2?.enabled !== true) return;
-        annotateDiagramCode(node, "d2");
-        return;
-      }
-      if (isGraphvizLang(node.lang)) {
-        if (config.graphviz?.enabled !== true) return;
-        annotateDiagramCode(node, "graphviz");
-        return;
-      }
-      if (isPlantumlLang(node.lang)) {
-        if (config.plantuml?.enabled !== true) return;
-        annotateDiagramCode(node, "plantuml");
+        annotateDiagramCode(node);
       }
     });
   };

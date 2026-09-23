@@ -93,13 +93,10 @@ export {
 export {
   buildKnowledgeIr,
   sliceKnowledgeIr,
-  attachKnowledgeEmbeddings,
-  uniqueChunkTextsForEmbed,
   conceptIdFor,
   type KnowledgeIr,
   type KnowledgeChunk,
   type KnowledgeConceptEntry,
-  type KnowledgeEmbedding,
   type BuildKnowledgeIrOptions,
 } from "./knowledge-ir.ts";
 export {
@@ -110,22 +107,11 @@ export {
   type PackOkfcResult,
 } from "./okfc-pack.ts";
 export {
-  OKFC_RRF_K,
   prepareOkfcFtsQuery,
-  okfcRrfFuse,
   queryOkfcFts,
   queryOkfcFtsOnDb,
-  queryOkfcVecKnnOnDb,
-  queryOkfcHybridOnDb,
-  queryOkfcHybrid,
-  okfcHasVecChunks,
-  okfcHasVecChunksOnDb,
-  readOkfcMeta,
-  readOkfcMetaOnDb,
   type OkfcFtsHit,
-  type OkfcChunkHit,
   type QueryOkfcFtsOptions,
-  type QueryOkfcHybridOptions,
 } from "./okfc-query.ts";
 export {
   OKFC_REGISTRY_SCHEMA_VERSION,

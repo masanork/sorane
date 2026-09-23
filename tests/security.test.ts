@@ -130,7 +130,7 @@ describe("emergency banner", () => {
 
 describe("security headers", () => {
   test("emits CSP and X-Frame-Options", () => {
-    const file = buildSecurityHeadersFile({ csp_profile: "strict" }, { hybridSearch: false });
+    const file = buildSecurityHeadersFile({ csp_profile: "strict" });
     expect(file).toContain("Content-Security-Policy:");
     expect(file).toContain("frame-ancestors 'none'");
     expect(file).toContain("X-Frame-Options: DENY");

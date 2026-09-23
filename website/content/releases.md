@@ -5,7 +5,7 @@ profile: sorane-okf/0.1
 excludeFromList: true
 ---
 
-## 現状（v0.5.0）
+## 公開済み v0.5.0
 
 | 手段 | 状態 | 用途 |
 |------|------|------|
@@ -16,6 +16,10 @@ excludeFromList: true
 | Docker イメージ | 未対応 | — |
 
 npm パッケージ: `@sorane/cli`, `@sorane/core`, `@sorane/okf`, `@sorane/search`, `@sorane/font`, `@sorane/astro`, `@sorane/astro-backend-wasm`
+
+開発中の次版では Astro 統合と専用バックエンドを取り除き、CLI・core・OKF・検索・フォントの5パッケージに絞っています。以下の v0.5.0 の変更履歴は公開当時の内容です。
+
+Astro 連携を使っているサイトの移行方法は[Astro 連携 v0.5 からの移行](astro-v0.5-migration.html)を参照してください。
 
 ### 使い方
 

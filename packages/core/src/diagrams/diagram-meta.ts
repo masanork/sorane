@@ -2,53 +2,29 @@ import type { Root } from "mdast";
 import { visit } from "unist-util-visit";
 import type { DiagramsConfig } from "../config.ts";
 import { buildMermaidHead } from "./mermaid-head.ts";
-import { isGraphvizLang } from "./compile-graphviz.ts";
-import { isPlantumlLang } from "./compile-plantuml.ts";
 
 export interface DiagramRenderMeta {
   readonly mermaid: number;
-  readonly d2: number;
-  readonly graphviz: number;
-  readonly plantuml: number;
 }
 
 export function emptyDiagramMeta(): DiagramRenderMeta {
-  return { mermaid: 0, d2: 0, graphviz: 0, plantuml: 0 };
+  return { mermaid: 0 };
 }
 
 export function mergeDiagramMeta(
   a: DiagramRenderMeta,
   b: DiagramRenderMeta,
 ): DiagramRenderMeta {
-  return {
-    mermaid: a.mermaid + b.mermaid,
-    d2: a.d2 + b.d2,
-    graphviz: a.graphviz + b.graphviz,
-    plantuml: a.plantuml + b.plantuml,
-  };
+  return { mermaid: a.mermaid + b.mermaid };
 }
 
-export function countDiagramsForConfig(
-  tree: Root,
-  config: DiagramsConfig,
-): DiagramRenderMeta {
+export function countDiagramsForConfig(tree: Root, config: DiagramsConfig): DiagramRenderMeta {
   let mermaid = 0;
-  let d2 = 0;
-  let graphviz = 0;
-  let plantuml = 0;
-  if (config.enabled === false) return emptyDiagramMeta();
+  if (config.enabled === false || config.mermaid?.mode === "off") return { mermaid };
   visit(tree, "code", (node) => {
-    if (node.lang === "mermaid" && resolveMermaidMode(config) !== "off") {
-      mermaid += 1;
-    } else if (node.lang === "d2" && config.d2?.enabled === true) {
-      d2 += 1;
-    } else if (isGraphvizLang(node.lang) && config.graphviz?.enabled === true) {
-      graphviz += 1;
-    } else if (isPlantumlLang(node.lang) && config.plantuml?.enabled === true) {
-      plantuml += 1;
-    }
+    if (node.lang === "mermaid") mermaid += 1;
   });
-  return { mermaid, d2, graphviz, plantuml };
+  return { mermaid };
 }
 
 export type MermaidRenderMode = "client" | "build" | "off";
@@ -57,8 +33,7 @@ export function resolveMermaidMode(config: DiagramsConfig): MermaidRenderMode {
   if (config.enabled === false) return "off";
   const mode = config.mermaid?.mode ?? "client";
   if (mode === "off") return "off";
-  if (mode === "build") return "build";
-  return "client";
+  return mode === "build" ? "build" : "client";
 }
 
 export function diagramHeadForPage(
@@ -66,9 +41,7 @@ export function diagramHeadForPage(
   rootPrefix: string,
   config: DiagramsConfig,
 ): string | undefined {
-  if (config.enabled === false) return undefined;
-  if (meta.mermaid === 0) return undefined;
-  if (resolveMermaidMode(config) !== "client") return undefined;
+  if (meta.mermaid === 0 || resolveMermaidMode(config) !== "client") return undefined;
   return buildMermaidHead(rootPrefix);
 }
 

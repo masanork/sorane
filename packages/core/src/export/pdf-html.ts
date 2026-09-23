@@ -2,21 +2,10 @@ import { existsSync, readFileSync } from "node:fs";
 import { join } from "node:path";
 import type { DiagramsConfig } from "../config.ts";
 import { DEFAULT_DIAGRAMS_CONFIG } from "../config.ts";
-import { compileD2ToSvg, resolveD2Binary } from "../diagrams/compile-d2.ts";
-import {
-  compileGraphvizToSvg,
-  isGraphvizCompileEnabled,
-  resolveGraphvizBinary,
-} from "../diagrams/compile-graphviz.ts";
 import {
   compileMermaidToSvg,
   resolveMmdcBinary,
 } from "../diagrams/compile-mermaid.ts";
-import {
-  compilePlantumlToSvg,
-  isPlantumlCompileEnabled,
-  resolvePlantumlKrokiUrl,
-} from "../diagrams/compile-plantuml.ts";
 import { escapeHtml } from "../render.ts";
 
 const MAIN_CSS_LINK_RE =
@@ -29,7 +18,7 @@ const MERMAID_LOADER_RE =
   /<script type="module" src="[^"]*assets\/diagrams\/sorane-mermaid-loader\.mjs"><\/script>\s*/g;
 
 const DIAGRAM_PRE_RE =
-  /<pre\b(?=[^>]*\bdata-sorane-alt="([^"]*)")[^>]*>\s*<code\b(?=[^>]*\blanguage-(mermaid|d2|graphviz|dot|plantuml|puml)\b)[^>]*>([\s\S]*?)<\/code>\s*<\/pre>/gi;
+  /<pre\b(?=[^>]*\bdata-sorane-alt="([^"]*)")[^>]*>\s*<code\b(?=[^>]*\blanguage-mermaid\b)[^>]*>([\s\S]*?)<\/code>\s*<\/pre>/gi;
 
 export interface PrepareHtmlForPdfOptions {
   readonly distDir?: string;
@@ -94,13 +83,7 @@ async function prerenderDiagramBlocks(
 ): Promise<string> {
   const outDir = join(distDir, "assets", "diagrams", "pdf-export");
   const mmdc = resolveMmdcBinary(config);
-  const d2Bin = resolveD2Binary(config);
-  const dotBin = resolveGraphvizBinary(config);
-  const krokiUrl = resolvePlantumlKrokiUrl(config);
   const mmdcOk = cliExists(mmdc);
-  const d2Ok = cliExists(d2Bin);
-  const graphvizOk = isGraphvizCompileEnabled(config) && cliExists(dotBin);
-  const plantumlOk = isPlantumlCompileEnabled(config);
 
   const replacements: Array<{ from: string; to: string }> = [];
   let m: RegExpExecArray | null;
@@ -108,12 +91,9 @@ async function prerenderDiagramBlocks(
   while ((m = DIAGRAM_PRE_RE.exec(html)) !== null) {
     const full = m[0]!;
     const alt = m[1]!;
-    const lang = m[2]!;
-    const variant =
-      lang === "dot" ? "graphviz" : lang === "puml" ? "plantuml" : lang;
-    const source = decodeHtmlText(m[3]!.trim());
+    const source = decodeHtmlText(m[2]!.trim());
 
-    if (variant === "mermaid" && mmdcOk) {
+    if (mmdcOk) {
       const result = await compileMermaidToSvg({ source, binary: mmdc, outDir });
       if (result.ok) {
         const svgPath = join(outDir, result.svgFileName);
@@ -127,49 +107,7 @@ async function prerenderDiagramBlocks(
       }
     }
 
-    if (variant === "d2" && d2Ok && config.d2?.enabled === true) {
-      const result = await compileD2ToSvg({ source, binary: d2Bin, outDir });
-      if (result.ok) {
-        const svgPath = join(outDir, result.svgFileName);
-        if (existsSync(svgPath)) {
-          replacements.push({
-            from: full,
-            to: inlineSvgFigure("d2", alt, readFileSync(svgPath, "utf8")),
-          });
-          continue;
-        }
-      }
-    }
-
-    if (variant === "graphviz" && graphvizOk) {
-      const result = await compileGraphvizToSvg({ source, binary: dotBin, outDir });
-      if (result.ok) {
-        const svgPath = join(outDir, result.svgFileName);
-        if (existsSync(svgPath)) {
-          replacements.push({
-            from: full,
-            to: inlineSvgFigure("graphviz", alt, readFileSync(svgPath, "utf8")),
-          });
-          continue;
-        }
-      }
-    }
-
-    if (variant === "plantuml" && plantumlOk) {
-      const result = await compilePlantumlToSvg({ source, krokiUrl, outDir });
-      if (result.ok) {
-        const svgPath = join(outDir, result.svgFileName);
-        if (existsSync(svgPath)) {
-          replacements.push({
-            from: full,
-            to: inlineSvgFigure("plantuml", alt, readFileSync(svgPath, "utf8")),
-          });
-          continue;
-        }
-      }
-    }
-
-    replacements.push({ from: full, to: diagramFallbackFigure(variant, alt, source) });
+    replacements.push({ from: full, to: diagramFallbackFigure("mermaid", alt, source) });
   }
 
   let out = html;

@@ -71,7 +71,7 @@ sorane validate --cwd .
 
 ## 図表の alt
 
-図表フェンス（mermaid / d2 等）には代替テキストを付けてください。`validate` は alt 欠落を **warning** で知らせます（ビルドは継続）。
+Mermaid 図には代替テキストを付けてください。`validate` は alt 欠落を **warning** で知らせます（ビルドは継続）。
 
 ````markdown
 ```mermaid alt="認証フロー"
@@ -80,7 +80,7 @@ flowchart LR
 ```
 ````
 
-またはフェンス内の `%% alt: 認証フロー` コメントでも構いません。詳細は [図表（Mermaid 他）](diagrams.html) を参照してください。
+またはフェンス内の `%% alt: 認証フロー` コメントでも構いません。詳細は [図表（Mermaid）](diagrams.html) を参照してください。
 
 ## 静的画像 IPTC XMP
 

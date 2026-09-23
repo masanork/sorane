@@ -25,8 +25,6 @@ build:
   static_dir: static
   diagrams:
     enabled: true
-    d2:
-      enabled: true
   blog:
     archives: true
     tags: false
@@ -43,7 +41,7 @@ docs:
     - section: リファレンス
     - cli.html
     - configuration.html
-    - astro-integration.html
+    - astro-v0.5-migration.html
     - diagrams.html
     - section: OKF・オープンデータ
     - okf-profile.html

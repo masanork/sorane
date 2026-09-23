@@ -16,8 +16,7 @@ export interface OkfcRegistryBundle {
   readonly concept_count: number;
   readonly chunk_count?: number;
   readonly packed_at?: string;
-  /** Search mode: fts (no vectors) or hybrid (vec_chunks present). */
-  readonly search: "fts" | "hybrid";
+  readonly search: "fts";
 }
 
 export interface OkfcRegistry {

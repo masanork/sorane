@@ -258,7 +258,7 @@ describe("buildSearchMount", () => {
 describe("buildSearchHead offline SW", () => {
   test("Service Worker 登録スクリプトを含む", async () => {
     const { buildSearchHead } = await import("../packages/core/src/ssg.ts");
-    const head = buildSearchHead("./", "fts");
+    const head = buildSearchHead("./");
     expect(head.some((s) => s.includes("serviceWorker"))).toBe(true);
     expect(head.some((s) => s.includes("sw.js"))).toBe(true);
   });
@@ -311,7 +311,7 @@ describe("buildLlmsTxt", () => {
       baseUrl: "https://ex.dev",
       diagramsEnabled: true,
     });
-    expect(txt).toContain("```mermaid");
+    expect(txt).toContain("Mermaid fences in page bodies are preserved verbatim");
     expect(txt).toContain("sorane-mermaid-loader.mjs");
   });
 });

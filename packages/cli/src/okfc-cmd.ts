@@ -166,10 +166,8 @@ async function runOkfcPack(argv: string[]): Promise<void> {
       meta: plan.meta,
       fresh: true,
     });
-    const vecNote =
-      result.vectorCount > 0 ? `, ${result.vectorCount} vector(s)` : "";
     process.stdout.write(
-      `[sorane] OKFC pack: ${result.conceptCount} concept(s), ${result.chunkCount} chunk(s)${vecNote} → ${plan.outRel}\n`,
+      `[sorane] OKFC pack: ${result.conceptCount} concept(s), ${result.chunkCount} chunk(s) → ${plan.outRel}\n`,
     );
     registryBundles.push({
       id: plan.id,

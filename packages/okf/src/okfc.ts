@@ -1,7 +1,7 @@
 /**
  * OKF Container Format (OKFC) — pack helpers (schema_version 1).
  *
- * Spec: bunko docs/okfc-spec.md (0.1-draft). FTS-only pack; vectors optional later.
+ * Spec: bunko docs/okfc-spec.md (0.1-draft). FTS-only pack.
  * Concept id is the OKF bundle path without suffix: `{type}/{slug}`.
  */
 

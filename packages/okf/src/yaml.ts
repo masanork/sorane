@@ -1,4 +1,4 @@
-import yaml from "js-yaml";
+import * as yaml from "js-yaml";
 
 /** CORE_SCHEMA で YAML を読む（日付の自動 Date 化を防ぐ）。 */
 export function parseYaml(source: string): unknown {
@@ -9,7 +9,6 @@ export function dumpYaml(value: unknown): string {
   return yaml.dump(value, {
     schema: yaml.CORE_SCHEMA,
     lineWidth: -1,
-    quotingType: '"',
     forceQuotes: false,
     noRefs: true,
   });

@@ -31,13 +31,4 @@ describe("validateDiagramAltWarnings", () => {
     expect(warnings).toEqual([]);
   });
 
-  test("d2 は enabled 時のみ検査", () => {
-    const body = "```d2\nx -> y\n```\n";
-    expect(validateDiagramAltWarnings(body, DIAGRAMS_ON)).toEqual([]);
-    const enabled = {
-      ...DIAGRAMS_ON,
-      d2: { ...DEFAULT_DIAGRAMS_CONFIG.d2, enabled: true },
-    };
-    expect(validateDiagramAltWarnings(body, enabled).length).toBe(1);
-  });
 });

@@ -48,13 +48,13 @@ describe("emitDiagramAssets", () => {
         contentHasMermaid: true,
       });
       expect(result.copied).toBe(true);
-      expect(result.version).toBe("11.15.0");
+      expect(result.version).toBe("12.0.0");
       const loader = join(outDir, "assets", "diagrams", "sorane-mermaid-loader.mjs");
       expect(existsSync(loader)).toBe(true);
       const body = readFileSync(loader, "utf8");
       expect(body).toContain("import.meta.url");
-      expect(body).toContain("mermaid-11.15.0");
-      expect(existsSync(join(outDir, "assets", "diagrams", "mermaid-11.15.0"))).toBe(true);
+      expect(body).toContain("mermaid-12.0.0");
+      expect(existsSync(join(outDir, "assets", "diagrams", "mermaid-12.0.0"))).toBe(true);
     } finally {
       rmSync(tmp, { recursive: true, force: true });
     }

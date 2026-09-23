@@ -6,13 +6,6 @@ import type { Chunk } from "./chunker.ts";
 
 export const SCHEMA_VERSION = 2;
 
-export interface IndexMeta {
-  readonly modelId: string;
-  readonly dim: number;
-  readonly quant: string;
-  readonly modelSha256: string;
-}
-
 const SCHEMA = `
 CREATE TABLE chunks (
   id           INTEGER PRIMARY KEY,
@@ -71,10 +64,6 @@ export interface MetaFilter {
   readonly tag?: string;
 }
 
-export interface VecHit extends ChunkRow {
-  readonly distance: number;
-}
-
 export interface FtsHit extends ChunkRow {
   readonly bm25: number;
 }
@@ -82,7 +71,6 @@ export interface FtsHit extends ChunkRow {
 export interface Counts {
   readonly chunks: number;
   readonly fts: number;
-  readonly vec: number;
 }
 
 const CHUNK_COLS = `c.id, c.source, c.chunk_index AS chunkIndex, c.text,
@@ -106,7 +94,7 @@ function buildWhere(filter: MetaFilter): { clause: string; binds: string[] } {
 export class IndexStore {
   private readonly db: Database.Database;
 
-  constructor(dbPath: string, opts: { fresh?: boolean; dim?: number } = {}) {
+  constructor(dbPath: string, opts: { fresh?: boolean } = {}) {
     mkdirSync(dirname(dbPath), { recursive: true });
     if (opts.fresh && existsSync(dbPath)) rmSync(dbPath);
     this.db = new Database(dbPath);
@@ -114,20 +102,10 @@ export class IndexStore {
     this.db.pragma("journal_mode = WAL");
     if (!this.tableExists("chunks")) {
       this.db.exec(SCHEMA);
-      const dim = opts.dim ?? 256;
-      this.db.exec(`CREATE VIRTUAL TABLE vec_chunks USING vec0(embedding FLOAT[${dim}])`);
-    } else {
-      this.ensureVecTable(opts.dim ?? 256);
     }
     this.db.exec(
       "CREATE TABLE IF NOT EXISTS source_meta (source TEXT PRIMARY KEY, sha256 TEXT NOT NULL)",
     );
-  }
-
-  private ensureVecTable(dim: number): void {
-    if (!this.tableExists("vec_chunks")) {
-      this.db.exec(`CREATE VIRTUAL TABLE vec_chunks USING vec0(embedding FLOAT[${dim}])`);
-    }
   }
 
   private tableExists(name: string): boolean {
@@ -138,56 +116,26 @@ export class IndexStore {
     );
   }
 
-  /** Rust native index (`chunk_vectors` BLOB) vs TS/sqlite-vec (`vec_chunks`). */
-  private hasVecChunks(): boolean {
-    if (!this.tableExists("vec_chunks")) return false;
-    const n = (this.db.prepare("SELECT COUNT(*) c FROM vec_chunks").get() as { c: number }).c;
-    return n > 0;
-  }
-
-  private hasChunkVectors(): boolean {
-    if (!this.tableExists("chunk_vectors")) return false;
-    const n = (this.db.prepare("SELECT COUNT(*) c FROM chunk_vectors").get() as { c: number }).c;
-    return n > 0;
-  }
-
-  hasVectors(): boolean {
-    return this.hasVecChunks() || this.hasChunkVectors();
-  }
-
-  private readChunkVectorBlob(chunkId: number): number[] {
-    const row = this.db
-      .prepare("SELECT embedding FROM chunk_vectors WHERE chunk_id = ?")
-      .get(chunkId) as { embedding: Buffer | Uint8Array } | undefined;
-    if (!row) return [];
-    const buf = row.embedding;
-    const f32 = new Float32Array(
-      buf.buffer,
-      buf.byteOffset,
-      buf.byteLength / Float32Array.BYTES_PER_ELEMENT,
-    );
-    return Array.from(f32);
-  }
-
   clear(): void {
     this.db.exec("DELETE FROM chunks; DELETE FROM source_meta;");
-    if (this.tableExists("vec_chunks")) {
-      this.db.exec("DELETE FROM vec_chunks;");
-    }
+    if (this.tableExists("vec_chunks")) this.db.exec("DELETE FROM vec_chunks;");
+    if (this.tableExists("chunk_vectors")) this.db.exec("DELETE FROM chunk_vectors;");
   }
 
   deleteBySource(source: string): void {
     const ids = this.db.prepare("SELECT id FROM chunks WHERE source = ?").all(source) as {
       id: number;
     }[];
-    const delVec = this.tableExists("vec_chunks")
-      ? this.db.prepare("DELETE FROM vec_chunks WHERE rowid = ?")
-      : null;
     const delChunk = this.db.prepare("DELETE FROM chunks WHERE source = ?");
     const delMeta = this.db.prepare("DELETE FROM source_meta WHERE source = ?");
     const tx = this.db.transaction(() => {
-      for (const { id } of ids) {
-        if (delVec) delVec.run(BigInt(id));
+      if (this.tableExists("vec_chunks")) {
+        const del = this.db.prepare("DELETE FROM vec_chunks WHERE rowid = ?");
+        for (const { id } of ids) del.run(BigInt(id));
+      }
+      if (this.tableExists("chunk_vectors")) {
+        const del = this.db.prepare("DELETE FROM chunk_vectors WHERE chunk_id = ?");
+        for (const { id } of ids) del.run(id);
       }
       delChunk.run(source);
       delMeta.run(source);
@@ -209,45 +157,28 @@ export class IndexStore {
       .run(source, sha256);
   }
 
-  addChunks(chunks: Chunk[], vectors?: number[][]): void {
+  addChunks(chunks: Chunk[]): void {
     const insChunk = this.db.prepare(
       `INSERT INTO chunks
         (source, chunk_index, text, heading_path, heading_slug, doc_type, title, timestamp, tags)
        VALUES (@source, @chunkIndex, @text, @headingPath, @headingSlug, @docType, @title, @timestamp, @tags)`,
     );
-    const insVec = this.tableExists("vec_chunks")
-      ? this.db.prepare("INSERT INTO vec_chunks(rowid, embedding) VALUES (?, ?)")
-      : null;
     const tx = this.db.transaction(() => {
       for (let i = 0; i < chunks.length; i++) {
-        const info = insChunk.run(chunks[i]! as unknown as Record<string, unknown>);
-        const vec = vectors?.[i];
-        if (insVec && vec) {
-          const rowid = BigInt(info.lastInsertRowid as number | bigint);
-          const buf = Buffer.from(new Float32Array(vec).buffer);
-          insVec.run(rowid, buf);
-        }
+        insChunk.run(chunks[i]! as unknown as Record<string, unknown>);
       }
     });
     tx();
   }
 
-  setMeta(meta?: IndexMeta): void {
+  setMeta(): void {
     const ins = this.db.prepare(
       "INSERT OR REPLACE INTO index_meta(key, value) VALUES (?, ?)",
     );
     const tx = this.db.transaction(() => {
       ins.run("schema_version", String(SCHEMA_VERSION));
       ins.run("built_at", new Date().toISOString());
-      if (meta) {
-        ins.run("mode", "hybrid");
-        ins.run("model_id", meta.modelId);
-        ins.run("dim", String(meta.dim));
-        ins.run("quant", meta.quant);
-        ins.run("model_sha256", meta.modelSha256);
-      } else {
-        ins.run("mode", "fts-only");
-      }
+      ins.run("mode", "fts-only");
     });
     tx();
   }
@@ -262,94 +193,16 @@ export class IndexStore {
 
   counts(): Counts {
     const n = (sql: string) => (this.db.prepare(sql).get() as { c: number }).c;
-    const vec = this.hasVecChunks()
-      ? n("SELECT COUNT(*) c FROM vec_chunks")
-      : this.hasChunkVectors()
-        ? n("SELECT COUNT(*) c FROM chunk_vectors")
-        : 0;
     return {
       chunks: n("SELECT COUNT(*) c FROM chunks"),
       fts: n("SELECT COUNT(*) c FROM chunks_fts"),
-      vec,
     };
   }
-
-  private vecKnnNativeBlob(queryVec: number[], k: number, filter: MetaFilter): VecHit[] {
-    const { clause, binds } = buildWhere(filter);
-    const sql = `
-      SELECT ${CHUNK_COLS}, cv.embedding AS embedding
-      FROM chunks c
-      JOIN chunk_vectors cv ON cv.chunk_id = c.id
-      ${clause ? `WHERE ${clause}` : ""}`;
-    const rows = this.db.prepare(sql).all(...binds) as (ChunkRow & {
-      embedding: Buffer | Uint8Array;
-    })[];
-    const scored = rows.map((row) => {
-      const buf = row.embedding;
-      const emb = new Float32Array(
-        buf.buffer,
-        buf.byteOffset,
-        buf.byteLength / Float32Array.BYTES_PER_ELEMENT,
-      );
-      let dist = 0;
-      for (let i = 0; i < queryVec.length; i++) {
-        const d = queryVec[i]! - emb[i]!;
-        dist += d * d;
-      }
-      const { embedding: _omit, ...chunk } = row;
-      return { ...chunk, distance: dist } as VecHit;
-    });
-    scored.sort((a, b) => a.distance - b.distance);
-    return scored.slice(0, k);
-  }
-
-  vecKnn(queryVec: number[], k: number, filter: MetaFilter = {}): VecHit[] {
-    if (this.hasChunkVectors() && !this.hasVecChunks()) {
-      return this.vecKnnNativeBlob(queryVec, k, filter);
-    }
-    if (!this.tableExists("vec_chunks")) return [];
-    const { clause, binds } = buildWhere(filter);
-    const knnLimit = clause ? Math.max(k * 8, 64) : k;
-    const buf = Buffer.from(new Float32Array(queryVec).buffer);
-    const sql = `
-      SELECT ${CHUNK_COLS}, k.distance
-      FROM (
-        SELECT rowid, distance FROM vec_chunks
-        WHERE embedding MATCH ? ORDER BY distance LIMIT ?
-      ) k
-      JOIN chunks c ON c.id = k.rowid
-      ${clause ? `WHERE ${clause}` : ""}
-      ORDER BY k.distance
-      LIMIT ?`;
-    return this.db.prepare(sql).all(buf, knnLimit, ...binds, k) as VecHit[];
-  }
-
-  exportAll(): { rows: ChunkRow[]; vectors: number[][] } {
+  exportAll(): ChunkRow[] {
     const rows = this.db
       .prepare(`SELECT ${CHUNK_COLS} FROM chunks c ORDER BY c.id`)
       .all() as ChunkRow[];
-    if (rows.length === 0) {
-      return { rows, vectors: [] };
-    }
-    if (this.hasChunkVectors() && !this.hasVecChunks()) {
-      return { rows, vectors: rows.map((r) => this.readChunkVectorBlob(r.id)) };
-    }
-    if (!this.tableExists("vec_chunks")) {
-      return { rows, vectors: rows.map(() => []) };
-    }
-    const getVec = this.db.prepare("SELECT embedding FROM vec_chunks WHERE rowid = ?");
-    const vectors: number[][] = rows.map((r) => {
-      const v = getVec.get(BigInt(r.id)) as { embedding: Buffer | Uint8Array } | undefined;
-      if (!v) return [];
-      const buf = v.embedding;
-      const f32 = new Float32Array(
-        buf.buffer,
-        buf.byteOffset,
-        buf.byteLength / Float32Array.BYTES_PER_ELEMENT,
-      );
-      return Array.from(f32);
-    });
-    return { rows, vectors };
+    return rows;
   }
 
   ftsSearch(query: string, k: number, filter: MetaFilter = {}): FtsHit[] {

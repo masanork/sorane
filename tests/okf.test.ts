@@ -79,7 +79,7 @@ describe("validateSource", () => {
   });
 
   test("不正 YAML はエラー", () => {
-    const r = validateSource("a.md", "---\n: bad\n  yaml\n---\n\nbody\n");
+    const r = validateSource("a.md", "---\na: [bad\n---\n\nbody\n");
     expect(r.ok).toBe(false);
     expect(r.issues[0]?.where).toBe("frontmatter");
   });

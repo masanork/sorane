@@ -7,27 +7,10 @@ import {
   type DiagramRenderMeta,
 } from "./diagram-meta.ts";
 import {
-  compileD2ToSvg,
-  isD2CompileEnabled,
-  resolveD2Binary,
-} from "./compile-d2.ts";
-import {
-  compileGraphvizToSvg,
-  isGraphvizCompileEnabled,
-  isGraphvizLang,
-  resolveGraphvizBinary,
-} from "./compile-graphviz.ts";
-import {
   compileMermaidToSvg,
   isMermaidBuildEnabled,
   resolveMmdcBinary,
 } from "./compile-mermaid.ts";
-import {
-  compilePlantumlToSvg,
-  isPlantumlCompileEnabled,
-  isPlantumlLang,
-  resolvePlantumlKrokiUrl,
-} from "./compile-plantuml.ts";
 import { extractAltText } from "./parse-diagram-fence.ts";
 import {
   remarkInjectBuiltFigures,
@@ -101,10 +84,7 @@ function rehypeCollectOutline(outline: TocEntry[]) {
 
 export interface AsyncRenderOptions extends RenderOptions {
   readonly rootPrefix?: string;
-  readonly d2OutDir?: string;
   readonly mermaidOutDir?: string;
-  readonly graphvizOutDir?: string;
-  readonly plantumlOutDir?: string;
   readonly onDiagramWarning?: (message: string) => void;
 }
 
@@ -116,33 +96,6 @@ async function compileBuiltFigures(
   const figures = new Map<Code, InjectedBuiltFigure>();
   const rootPrefix = opts.rootPrefix ?? "./";
   const warn = opts.onDiagramWarning;
-
-  if (isD2CompileEnabled(diagramConfig) && opts.d2OutDir) {
-    const binary = resolveD2Binary(diagramConfig);
-    const d2Nodes: Code[] = [];
-    visit(tree, "code", (node) => {
-      if (node.lang === "d2") d2Nodes.push(node);
-    });
-    for (const node of d2Nodes) {
-      const alt = extractAltText(node.meta, node.value) ?? "Diagram";
-      const result = await compileD2ToSvg({
-        source: node.value,
-        binary,
-        outDir: opts.d2OutDir,
-      });
-      if (!result.ok) {
-        warn?.(
-          `diagrams: d2 compile failed (${result.hash.slice(0, 8)}…): ${result.warning ?? "unknown error"}`,
-        );
-        continue;
-      }
-      figures.set(node, {
-        src: `${rootPrefix}assets/diagrams/d2/${result.svgFileName}`,
-        alt,
-        variant: "d2",
-      });
-    }
-  }
 
   if (isMermaidBuildEnabled(diagramConfig) && opts.mermaidOutDir) {
     const binary = resolveMmdcBinary(diagramConfig);
@@ -167,60 +120,6 @@ async function compileBuiltFigures(
         src: `${rootPrefix}assets/diagrams/mermaid/${result.svgFileName}`,
         alt,
         variant: "mermaid",
-      });
-    }
-  }
-
-  if (isGraphvizCompileEnabled(diagramConfig) && opts.graphvizOutDir) {
-    const binary = resolveGraphvizBinary(diagramConfig);
-    const gvNodes: Code[] = [];
-    visit(tree, "code", (node) => {
-      if (isGraphvizLang(node.lang)) gvNodes.push(node);
-    });
-    for (const node of gvNodes) {
-      const alt = extractAltText(node.meta, node.value) ?? "Diagram";
-      const result = await compileGraphvizToSvg({
-        source: node.value,
-        binary,
-        outDir: opts.graphvizOutDir,
-      });
-      if (!result.ok) {
-        warn?.(
-          `diagrams: graphviz compile failed (${result.hash.slice(0, 8)}…): ${result.warning ?? "unknown error"}`,
-        );
-        continue;
-      }
-      figures.set(node, {
-        src: `${rootPrefix}assets/diagrams/graphviz/${result.svgFileName}`,
-        alt,
-        variant: "graphviz",
-      });
-    }
-  }
-
-  if (isPlantumlCompileEnabled(diagramConfig) && opts.plantumlOutDir) {
-    const krokiUrl = resolvePlantumlKrokiUrl(diagramConfig);
-    const pumlNodes: Code[] = [];
-    visit(tree, "code", (node) => {
-      if (isPlantumlLang(node.lang)) pumlNodes.push(node);
-    });
-    for (const node of pumlNodes) {
-      const alt = extractAltText(node.meta, node.value) ?? "Diagram";
-      const result = await compilePlantumlToSvg({
-        source: node.value,
-        krokiUrl,
-        outDir: opts.plantumlOutDir,
-      });
-      if (!result.ok) {
-        warn?.(
-          `diagrams: plantuml compile failed (${result.hash.slice(0, 8)}…): ${result.warning ?? "unknown error"}`,
-        );
-        continue;
-      }
-      figures.set(node, {
-        src: `${rootPrefix}assets/diagrams/plantuml/${result.svgFileName}`,
-        alt,
-        variant: "plantuml",
       });
     }
   }

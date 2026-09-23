@@ -53,7 +53,7 @@ tags:
 製品サイトの読みやすさのため、図表まわりにも手を入れた。
 
 - Mermaid は sorane.dev では **client モード**（CI に Chromium 不要）
-- D2 / Graphviz のビルド時 SVG、PDF 向けの図の事前レンダリング
+- Mermaid のクライアント描画と PDF 向けの図の事前レンダリング
 - Pandoc 経由の docx / PDF エクスポート、WordPress やはてなダイアリーなどからの **import** アダプタの追加
 
 いずれも「同じ Markdown から、人間向け・印刷向け・移行向けに出し分ける」ための足場だ。

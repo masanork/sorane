@@ -29,31 +29,9 @@ export interface BlogBuildConfig {
   readonly tags?: boolean;
 }
 
-export type SearchMode = "fts" | "hybrid";
-
-export type {
-  KnowledgeBuildConfig,
-  KnowledgeEmbeddingsMode,
-  ResolvedKnowledgeBuildConfig,
-} from "./knowledge-config.ts";
-export {
-  resolveKnowledgeBuildConfig,
-} from "./knowledge-config.ts";
-import type { KnowledgeBuildConfig } from "./knowledge-config.ts";
-
 export interface SearchConfig {
-  /** fts（標準）| hybrid（experimental・要埋め込みモデル） */
-  readonly mode?: SearchMode;
   /** FTS インデックスの出力先（既定: .sorane/index.db） */
   readonly index?: string;
-  /** 埋め込みモデル root（既定: vendor/models） */
-  readonly model?: string;
-  /** モデル ID（既定: ruri-v3-30m） */
-  readonly model_id?: string;
-  /** 大容量検索資産の配信元（R2 等）。末尾 "/" 推奨。空なら同一オリジン。 */
-  readonly asset_base_url?: string;
-  /** dist に ONNX モデルを同梱する（Pages 25MiB 制限のため本番では false 推奨） */
-  readonly bundle_model?: boolean;
 }
 
 export type DocsNavSpec =
@@ -83,28 +61,11 @@ export interface DiagramsConfig {
     readonly version?: string;
     readonly mmdc?: string;
   };
-  readonly d2?: {
-    readonly enabled?: boolean;
-    readonly binary?: string;
-  };
-  readonly graphviz?: {
-    readonly enabled?: boolean;
-    readonly binary?: string;
-  };
-  /** PlantUML via Kroki HTTP (network dependency; default off). */
-  readonly plantuml?: {
-    readonly enabled?: boolean;
-    /** Kroki base URL (no trailing slash). Default `https://kroki.io`. */
-    readonly kroki_url?: string;
-  };
 }
 
 export const DEFAULT_DIAGRAMS_CONFIG: Required<DiagramsConfig> = {
   enabled: false,
-  mermaid: { mode: "client", version: "~11.15.0", mmdc: "mmdc" },
-  d2: { enabled: false, binary: "d2" },
-  graphviz: { enabled: false, binary: "dot" },
-  plantuml: { enabled: false, kroki_url: "https://kroki.io" },
+  mermaid: { mode: "client", version: "~12.0.0", mmdc: "mmdc" },
 };
 
 import type { BuildOutputsConfig, PresetLayer } from "./presets.ts";
@@ -321,16 +282,8 @@ export interface SoraneConfig {
     readonly quality?: QualityGateConfig;
     /** 機械可読・フィード等の出力（`preset` と併用可） */
     readonly outputs?: BuildOutputsConfig;
-    /**
-     * OKFC packing policy (units / auto directories / registry).
-     * Effective when `outputs.okfc: true`. FTS is always packed; vectors via knowledge.embeddings.
-     */
+    /** OKFC packing policy (units / auto directories / registry). */
     readonly okfc?: OkfcBuildConfig;
-    /**
-     * Unified knowledge index (IR) policy — embeddings once → OKFC vec + search.
-     * See design/knowledge-index-unified.md.
-     */
-    readonly knowledge?: KnowledgeBuildConfig;
     /**
      * サイト移行用リダイレクト。ビルド時に `dist/_redirects`（Cloudflare Pages / Netlify 形式）を出力する。
      * 記事 frontmatter の `redirect` と併用可（同一 `from` は後勝ち）。
@@ -349,11 +302,7 @@ export interface SoraneConfig {
     readonly sources?: Readonly<Record<string, FontSourceSpec>>;
   };
   readonly search: SearchConfig & {
-    readonly mode: SearchMode;
     readonly index: string;
-    readonly model: string;
-    readonly model_id: string;
-    readonly asset_base_url: string;
   };
   readonly docs?: DocsConfig;
   /** OKF プロファイル既定・未知 type ポリシー */
@@ -406,12 +355,7 @@ export const DEFAULT_CONFIG: SoraneConfig = {
     skip_key: "noFontEmbedding",
   },
   search: {
-    mode: "fts",
     index: ".sorane/index.db",
-    model: "vendor/models",
-    model_id: "ruri-v3-30m",
-    asset_base_url: "",
-    bundle_model: true,
   },
 };
 
@@ -449,18 +393,6 @@ export function mergeConfig(partial: MergeConfigInput = {}): SoraneConfig {
               ...DEFAULT_DIAGRAMS_CONFIG.mermaid,
               ...buildPartial.diagrams.mermaid,
             },
-            d2: {
-              ...DEFAULT_DIAGRAMS_CONFIG.d2,
-              ...buildPartial.diagrams.d2,
-            },
-            graphviz: {
-              ...DEFAULT_DIAGRAMS_CONFIG.graphviz,
-              ...buildPartial.diagrams.graphviz,
-            },
-            plantuml: {
-              ...DEFAULT_DIAGRAMS_CONFIG.plantuml,
-              ...buildPartial.diagrams.plantuml,
-            },
           }
         : DEFAULT_DIAGRAMS_CONFIG,
       image_metadata: buildPartial.image_metadata
@@ -484,9 +416,6 @@ export function mergeConfig(partial: MergeConfigInput = {}): SoraneConfig {
             ...rest.build.okfc,
             units: rest.build.okfc.units ? [...rest.build.okfc.units] : undefined,
           }
-        : undefined,
-      knowledge: rest.build?.knowledge
-        ? { ...rest.build.knowledge }
         : undefined,
     },
     fonts: { ...DEFAULT_CONFIG.fonts, ...rest.fonts },

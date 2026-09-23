@@ -19,11 +19,7 @@ import {
   type ParsedConcept,
   type OkfcRegistryBundle,
 } from "@sorane/okf";
-import {
-  resolveOkfcBuildConfig,
-  resolveOkfcEmbeddingsMode,
-} from "./okfc-config.ts";
-import { resolveKnowledgeBuildConfig } from "./knowledge-config.ts";
+import { resolveOkfcBuildConfig } from "./okfc-config.ts";
 import { resolveOkfcPackPlans, toOkfcEligible } from "./okfc-units.ts";
 import {
   copyFileSync,
@@ -152,10 +148,7 @@ import {
   renderBodySectionForConfig,
   type BodySectionOptions,
 } from "./diagrams/render-body-section.ts";
-import { isD2CompileEnabled } from "./diagrams/compile-d2.ts";
-import { isGraphvizCompileEnabled } from "./diagrams/compile-graphviz.ts";
 import { isMermaidBuildEnabled } from "./diagrams/compile-mermaid.ts";
-import { isPlantumlCompileEnabled } from "./diagrams/compile-plantuml.ts";
 import { resolveThemeAssetDir } from "./theme-assets.ts";
 import {
   docsNavFor,
@@ -475,14 +468,8 @@ export async function runBuild(opts: BuildOptions): Promise<BuildResult> {
   const siteLicenseUrl = siteLicense?.url;
   const siteFindability = findabilityFlags(config.site);
   const diagramConfig = config.build.diagrams ?? DEFAULT_DIAGRAMS_CONFIG;
-  const d2OutDir = join(outDir, "assets", "diagrams", "d2");
   const mermaidOutDir = join(outDir, "assets", "diagrams", "mermaid");
-  const graphvizOutDir = join(outDir, "assets", "diagrams", "graphviz");
-  const plantumlOutDir = join(outDir, "assets", "diagrams", "plantuml");
-  if (isD2CompileEnabled(diagramConfig)) mkdirSync(d2OutDir, { recursive: true });
   if (isMermaidBuildEnabled(diagramConfig)) mkdirSync(mermaidOutDir, { recursive: true });
-  if (isGraphvizCompileEnabled(diagramConfig)) mkdirSync(graphvizOutDir, { recursive: true });
-  if (isPlantumlCompileEnabled(diagramConfig)) mkdirSync(plantumlOutDir, { recursive: true });
   const glossaryLinkIndex = buildGlossaryLinkIndex(parsed, config, i18n);
   const security = resolveSecurityConfig(config);
   const sanitizeOpts = { strictHtml: security.strict_html || !security.allow_embeds };
@@ -491,10 +478,7 @@ export async function runBuild(opts: BuildOptions): Promise<BuildResult> {
     glossaryIndex: glossaryLinkIndex,
     sanitize: sanitizeOpts,
     rootPrefix,
-    d2OutDir,
     mermaidOutDir,
-    graphvizOutDir,
-    plantumlOutDir,
     onDiagramWarning: (message) => process.stderr.write(`[sorane] ${message}\n`),
   });
 
@@ -625,18 +609,13 @@ export async function runBuild(opts: BuildOptions): Promise<BuildResult> {
 
   const indexDbPath = resolve(cwd, config.search.index);
   let searchIndexReady = false;
-  const searchMode = config.search.mode ?? "fts";
   if (searchPageRel && existsSync(indexDbPath)) {
     try {
       const { IndexStore } = await import("@sorane/search");
       const probe = new IndexStore(indexDbPath);
       const { chunks } = probe.counts();
       if (chunks > 0) {
-        if (searchMode === "hybrid") {
-          searchIndexReady = probe.hasVectors();
-        } else {
-          searchIndexReady = true;
-        }
+        if (chunks > 0) searchIndexReady = true;
       }
       probe.close();
     } catch (err) {
@@ -662,12 +641,10 @@ export async function runBuild(opts: BuildOptions): Promise<BuildResult> {
     if (!headerSearchEnabled || page.isSearch) return {};
     return {
       headerSearchHtml: buildSearchMount(rootPrefix, {
-        assetBaseUrl: config.search.asset_base_url,
-        mode: searchMode,
         variant: "header",
         lang: config.site.lang,
       }),
-      extraHead: buildSearchHead(rootPrefix, searchMode),
+      extraHead: buildSearchHead(rootPrefix),
     };
   }
 
@@ -888,8 +865,6 @@ export async function runBuild(opts: BuildOptions): Promise<BuildResult> {
       pageDiagrams = searchIntro?.diagrams ?? emptyDiagramMeta();
       bodyHtml =
         buildSearchMount(rootPrefix, {
-          assetBaseUrl: config.search.asset_base_url,
-          mode: searchMode,
           lang: pageLang,
           okfcHref: buildOutputs.okfc ? "okf/site.okfc" : undefined,
         }) +
@@ -1078,7 +1053,7 @@ export async function runBuild(opts: BuildOptions): Promise<BuildResult> {
     });
     const extraHead = isSearch
       ? [
-          ...buildSearchHead(rootPrefix, searchMode),
+          ...buildSearchHead(rootPrefix),
           ...(diagramHead ? [diagramHead] : []),
         ]
       : [
@@ -1926,49 +1901,6 @@ export async function runBuild(opts: BuildOptions): Promise<BuildResult> {
       eligible.map((e) => ({ concept: e.concept, slug: e.slug })),
       { sourcePathByConceptId: pathById },
     );
-    const knowledgeCfg = resolveKnowledgeBuildConfig(config.build.knowledge);
-    let embMode = resolveOkfcEmbeddingsMode(config.build.okfc, knowledgeCfg.embeddings);
-    // auto: only load the model when hybrid search is also enabled (keeps FTS builds cheap).
-    // Explicit on always embeds; off never does.
-    if (embMode === "auto" && (config.search.mode ?? "fts") !== "hybrid") {
-      embMode = "off";
-    }
-    if (embMode !== "off" && siteIr.chunks.length > 0) {
-      try {
-        const modelRoot = resolve(cwd, config.search.model ?? "vendor/models");
-        const modelId = config.search.model_id ?? "ruri-v3-30m";
-        const modelDir = join(modelRoot, modelId);
-        if (!existsSync(modelDir)) {
-          if (embMode === "on") {
-            throw new Error(
-              `build.knowledge.embeddings: on but model not found: ${modelDir}`,
-            );
-          }
-          process.stderr.write(
-            `[sorane] OKFC: embeddings auto skipped (model missing at ${modelDir})\n`,
-          );
-        } else {
-          const { embedKnowledgeIr, RuriEmbeddings } = await import(
-            "@sorane/search"
-          );
-          const provider = new RuriEmbeddings({ modelRoot, modelId });
-          siteIr = await embedKnowledgeIr(siteIr, provider, {
-            onProgress: (m) => process.stdout.write(`[sorane] ${m}\n`),
-          });
-          process.stdout.write(
-            `[sorane] knowledge IR: ${siteIr.embeddings?.length ?? 0} unique vector(s) (model ${modelId})\n`,
-          );
-        }
-      } catch (e) {
-        const msg = e instanceof Error ? e.message : String(e);
-        if (embMode === "on") {
-          throw new Error(`knowledge embeddings required: ${msg}`);
-        }
-        process.stderr.write(
-          `[sorane] warning: knowledge embeddings skipped: ${msg}\n`,
-        );
-      }
-    }
     const plans = resolveOkfcPackPlans(eligible, okfcCfg, {
       siteTitle: config.site.title,
       siteDescription: config.site.description,
@@ -1991,12 +1923,8 @@ export async function runBuild(opts: BuildOptions): Promise<BuildResult> {
           meta: plan.meta,
           fresh: true,
         });
-        const vecNote =
-          okfcResult.vectorCount > 0
-            ? `, ${okfcResult.vectorCount} vector(s)`
-            : "";
         process.stdout.write(
-          `[sorane] OKFC: ${okfcResult.conceptCount} concept(s), ${okfcResult.chunkCount} chunk(s)${vecNote} → ${plan.outRel}\n`,
+          `[sorane] OKFC: ${okfcResult.conceptCount} concept(s), ${okfcResult.chunkCount} chunk(s) → ${plan.outRel}\n`,
         );
         okfcPackPlans.push({
           path: plan.outRel,
@@ -2178,9 +2106,7 @@ export async function runBuild(opts: BuildOptions): Promise<BuildResult> {
 
   if (security.emit_security_headers) {
     const headersPath = join(outDir, "_headers");
-    const headers = buildSecurityHeadersFile(security, {
-      hybridSearch: searchMode === "hybrid",
-    });
+    const headers = buildSecurityHeadersFile(security);
     writeFileSync(headersPath, headers, "utf8");
     process.stdout.write("[sorane] security headers → _headers\n");
   }
@@ -2189,14 +2115,8 @@ export async function runBuild(opts: BuildOptions): Promise<BuildResult> {
     try {
       const { emitSearchAssets } = await import("@sorane/search");
       await emitSearchAssets({
-        cwd,
         outDir,
         indexPath: indexDbPath,
-        mode: searchMode,
-        modelRoot: config.search.model,
-        modelId: config.search.model_id,
-        bundleModel: config.search.bundle_model,
-        assetBaseUrl: config.search.asset_base_url || undefined,
         contentDir,
         machineReadable: siteAiFlags.machineReadable,
         snippetOnly: security.search_snippet_only,

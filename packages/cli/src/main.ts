@@ -60,7 +60,7 @@ async function main(): Promise<void> {
           "  preview   --cwd <dir> [--port 4321] [--watch]\n" +
           "  validate  --cwd <dir> [--json]\n" +
           "  migrate   --cwd <dir> [--dry-run] [--bump-profile 0.2|0.3]\n" +
-          "  index     --cwd <dir> [--force] [--drafts] [--hybrid] [--fts-only] [--out <path>] [--model <dir>] [--model-id <id>] [--yes]\n" +
+          "  index     --cwd <dir> [--force] [--drafts] [--out <path>] [--yes]\n" +
           "  search    <query> [--cwd <dir>] [--okfc <path>] [--prefer-index] [--type …] [--tag <slug>] [--k 10] [--json] [--fts-only]\n" +
           "            (prefers dist/okf/site.okfc when present; else .sorane/index.db)\n" +
           "  export    --format docx|pdf --cwd <dir> --out <file|dir> [--file <rel.md>] [--html <rel.html>]\n" +

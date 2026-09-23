@@ -1,9 +1,6 @@
 // Browser-side search (sorane SSG).
 //
-// FTS mount:  <div data-search data-mode="fts" data-index=".../assets/search-index.json">
-// Hybrid:     + data-model-base, data-lib-base
-
-const MODEL_ID = "ruri-v3-30m";
+// FTS mount: <div data-search data-index=".../assets/search-index.json">
 
 function sanitizeSvgMarkup(svg) {
   return svg
@@ -12,17 +9,11 @@ function sanitizeSvgMarkup(svg) {
     .replace(/\s+on[a-z]+\s*=\s*("[^"]*"|'[^']*'|[^\s>]+)/gi, "");
 }
 
-async function sha256Hex(buffer) {
-  const digest = await crypto.subtle.digest("SHA-256", buffer);
-  return [...new Uint8Array(digest)].map((b) => b.toString(16).padStart(2, "0")).join("");
-}
-const QUERY_PREFIX = "検索クエリ: ";
 const TOP_K = 10;
 
 const LABELS = {
   ja: {
     loadingIndex: "検索インデックスを読み込み中…",
-    loadingModel: "埋め込みモデルを読み込み中…（初回のみ）",
     searching: "検索中…",
     noResults: "一致するページは見つかりませんでした。キーワードを変えてお試しください。",
     emptyQuery: "検索キーワードを入力してください。",
@@ -33,7 +24,6 @@ const LABELS = {
   },
   en: {
     loadingIndex: "Loading search index…",
-    loadingModel: "Loading embedding model… (first time only)",
     searching: "Searching…",
     noResults: "No matching pages. Try different keywords.",
     emptyQuery: "Enter a search keyword.",
@@ -58,34 +48,6 @@ function tokenizeQuery(query) {
     return flat.length >= 1 ? [flat] : [];
   }
   return segs;
-}
-
-function decodeVectors(b64, dim) {
-  const binary = atob(b64);
-  const buf = new Uint8Array(binary.length);
-  for (let i = 0; i < binary.length; i++) buf[i] = binary.charCodeAt(i);
-  const i8 = new Int8Array(buf.buffer);
-  if (i8.length % dim !== 0) throw new Error(`vector length ${i8.length} is not a multiple of dim ${dim}`);
-  return i8;
-}
-
-function topK(query, vectors, dim, k, allow) {
-  const n = vectors.length / dim;
-  const heap = [];
-  for (let i = 0; i < n; i++) {
-    if (allow && !allow(i)) continue;
-    let s = 0;
-    const off = i * dim;
-    for (let j = 0; j < dim; j++) s += query[j] * vectors[off + j];
-    if (heap.length < k) {
-      heap.push({ index: i, score: s });
-      heap.sort((a, b) => a.score - b.score);
-    } else if (s > heap[0].score) {
-      heap[0] = { index: i, score: s };
-      heap.sort((a, b) => a.score - b.score);
-    }
-  }
-  return heap.sort((a, b) => b.score - a.score);
 }
 
 const AI_SOURCE_CODES = [
@@ -181,14 +143,10 @@ function setup(root) {
   const status = root.querySelector("[data-search-status]");
   const resultsEl = root.querySelector("[data-search-results]");
   const indexUrl = root.getAttribute("data-index");
-  const mode = root.getAttribute("data-mode") || "fts";
-  const modelBase = root.getAttribute("data-model-base");
-  const libBase = root.getAttribute("data-lib-base");
   const labels = labelsFor(root.getAttribute("data-lang"));
   if (!form || !input || !indexUrl || !resultsEl) return;
 
   let index = null;
-  let embed = null;
   let busy = false;
 
   const setStatus = (msg) => {
@@ -214,61 +172,12 @@ function setup(root) {
       throw new Error(`failed to fetch search-index.json (${res.status})`);
     }
     const json = await res.json();
-    const resolvedMode = json.mode === "hybrid" && json.embeddings ? "hybrid" : "fts";
-    if (resolvedMode === "hybrid") {
-      const dim = json.embeddings.dim;
-      index = { ...json, mode: "hybrid", vectors: decodeVectors(json.embeddings.vectors_b64, dim) };
-    } else {
-      index = { ...json, mode: "fts" };
-    }
+    index = json;
     const hint = root.querySelector("[data-search-offline-hint]");
     if (hint && typeof navigator !== "undefined" && navigator.onLine === false) {
       hint.textContent = labels.offline;
     }
     return index;
-  }
-
-  async function verifyModelSha(modelSha) {
-    if (!modelSha || !modelBase) return;
-    const onnxUrl = new URL(`${MODEL_ID}/onnx/model_quantized.onnx`, modelBase).href;
-    const res = await fetch(onnxUrl);
-    if (!res.ok) throw new Error(`model fetch failed (${res.status})`);
-    const buf = await res.arrayBuffer();
-    const actual = await sha256Hex(buf);
-    if (actual !== modelSha) {
-      throw new Error(`model SHA-256 mismatch (expected ${modelSha.slice(0, 12)}…)`);
-    }
-  }
-
-  async function loadEmbedder() {
-    if (embed) return embed;
-    setStatus(labels.loadingModel);
-    if (index?.model?.sha256) {
-      await verifyModelSha(index.model.sha256);
-    }
-    const libUrl = new URL(libBase, document.baseURI).href;
-    const tjs = await import(`${libUrl}transformers.web.js`);
-    const { env, pipeline } = tjs;
-    env.useBrowserCache = false;
-    const isRemoteBase = /^https?:\/\//i.test(modelBase || "");
-    if (isRemoteBase) {
-      env.allowLocalModels = false;
-      env.allowRemoteModels = true;
-      env.remoteHost = modelBase;
-      env.remotePathTemplate = "{model}/";
-    } else {
-      env.allowRemoteModels = false;
-      env.allowLocalModels = true;
-      env.localModelPath = modelBase;
-    }
-    const onnxWasm = env.backends?.onnx?.wasm;
-    if (onnxWasm) onnxWasm.wasmPaths = libUrl;
-    const extractor = await pipeline("feature-extraction", MODEL_ID, { dtype: "q8" });
-    embed = async (query) => {
-      const out = await extractor(QUERY_PREFIX + query, { pooling: "mean", normalize: true });
-      return new Float32Array(out.data);
-    };
-    return embed;
   }
 
   function render(hits, query) {
@@ -320,27 +229,6 @@ function setup(root) {
     );
   }
 
-  async function runHybrid(query) {
-    const idx = await loadIndex();
-    const e = await loadEmbedder();
-    setStatus(labels.searching);
-    const qv = await e(query);
-    const type = facet ? facet.value : "";
-    const source = sourceFacet ? sourceFacet.value : "";
-    const allow = (i) => {
-      const chunk = idx.chunks[i];
-      if (type && chunk.doc_type !== type) return false;
-      if (!matchesSourceFacet(chunk.digital_source_type, source)) return false;
-      return true;
-    };
-    const ranked = topK(qv, idx.vectors, idx.embeddings.dim, TOP_K, allow);
-    const scale = idx.embeddings.scale || 1;
-    render(
-      ranked.map((r) => ({ chunk: idx.chunks[r.index], score: r.score / scale })),
-      query,
-    );
-  }
-
   async function run(query) {
     const trimmed = query.trim();
     if (!trimmed) {
@@ -352,10 +240,7 @@ function setup(root) {
     busy = true;
     root.setAttribute("aria-busy", "true");
     try {
-      const idx = await loadIndex();
-      const useHybrid = (idx.mode || mode) === "hybrid";
-      if (useHybrid) await runHybrid(trimmed);
-      else await runFts(trimmed);
+      await runFts(trimmed);
     } catch (err) {
       const message = err && err.message ? err.message : String(err);
       showEmptyState(resultsEl, root, labels.error(message), labels);

@@ -1,5 +1,5 @@
 /**
- * build.okfc — multi-unit OKFC packing (FTS complete; embeddings via build.knowledge).
+ * build.okfc — multi-unit FTS OKFC packing.
  */
 
 export interface OkfcUnitMatch {
@@ -23,7 +23,6 @@ export interface OkfcUnitConfig {
 
 /**
  * Optional OKFC packing policy. Effective when `build.outputs.okfc: true`.
- * Vectors (`embeddings`) reserved for a later phase — FTS is always produced.
  */
 export interface OkfcBuildConfig {
   /** Emit site-wide `okf/site.okfc`. Default true. */
@@ -41,12 +40,6 @@ export interface OkfcBuildConfig {
   readonly units?: readonly OkfcUnitConfig[];
   /** Write `okf/registry.json`. Default true. */
   readonly registry?: boolean;
-  /**
-   * @deprecated Prefer `build.knowledge.embeddings`.
-   * When set, overrides knowledge embeddings for OKFC pack only (`off` | `auto` | `on`).
-   * Legacy `false` maps to `off`.
-   */
-  readonly embeddings?: false | "off" | "auto" | "on";
 }
 
 export interface ResolvedOkfcBuildConfig {
@@ -80,15 +73,4 @@ export function resolveOkfcBuildConfig(
     units: raw?.units ?? [],
     registry: raw?.registry !== false,
   };
-}
-
-/** Resolve OKFC embed mode: okfc.embeddings override, else knowledge.embeddings. */
-export function resolveOkfcEmbeddingsMode(
-  okfcRaw: OkfcBuildConfig | undefined,
-  knowledgeEmbeddings: "off" | "auto" | "on",
-): "off" | "auto" | "on" {
-  const e = okfcRaw?.embeddings;
-  if (e === false || e === "off") return "off";
-  if (e === "auto" || e === "on") return e;
-  return knowledgeEmbeddings;
 }

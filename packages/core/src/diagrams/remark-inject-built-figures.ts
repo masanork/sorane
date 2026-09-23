@@ -3,7 +3,7 @@ import type { Plugin } from "unified";
 import { visit } from "unist-util-visit";
 import { escapeHtml } from "../render.ts";
 
-export type BuiltFigureVariant = "d2" | "mermaid" | "graphviz" | "plantuml";
+export type BuiltFigureVariant = "mermaid";
 
 export interface InjectedBuiltFigure {
   readonly src: string;

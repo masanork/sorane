@@ -1,7 +1,7 @@
 {
   "name": "@sorane/search",
   "version": "0.5.0",
-  "description": "FTS and hybrid search indexing for sorane sites",
+  "description": "FTS search indexing for sorane sites",
   "type": "module",
   "license": "MIT",
   "repository": {
@@ -26,16 +26,15 @@
     "access": "public"
   },
   "dependencies": {
-    "@huggingface/transformers": "^4.2.0",
     "@sorane/okf": "0.5.0",
-    "better-sqlite3": "^12.11.1",
+    "better-sqlite3": "^13.0.3",
     "remark-gfm": "^4.0.1",
     "remark-parse": "^11.0.0",
     "sqlite-vec": "^0.1.9",
-    "unified": "^11.0.0"
+    "unified": "^11.0.5"
   },
   "devDependencies": {
-    "@types/better-sqlite3": "^7.6.13",
+    "@types/better-sqlite3": "^9.6.0",
     "@types/mdast": "^4.0.4"
   }
 }

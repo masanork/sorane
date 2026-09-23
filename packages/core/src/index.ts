@@ -65,7 +65,6 @@ export {
   DEFAULT_CONFIG,
   resolvePermalink,
   resolveOkfcBuildConfig,
-  resolveKnowledgeBuildConfig,
   type SoraneConfig,
   type OkfConfig,
   type UnknownTypePolicy,
@@ -74,11 +73,7 @@ export {
   type OkfcUnitConfig,
   type OkfcUnitMatch,
   type ResolvedOkfcBuildConfig,
-  type KnowledgeBuildConfig,
-  type KnowledgeEmbeddingsMode,
-  type ResolvedKnowledgeBuildConfig,
 } from "./config.ts";
-export { resolveOkfcEmbeddingsMode } from "./okfc-config.ts";
 export {
   resolveOkfcPackPlans,
   toOkfcEligible,
