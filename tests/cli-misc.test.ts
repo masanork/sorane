@@ -38,7 +38,7 @@ describe("search no results", () => {
     const minimal = join(import.meta.dirname, "../examples/minimal");
     const r = spawnSync(
       process.execPath,
-      [CLI, "search", "zzz-nonexistent-query-xyz", "--cwd", minimal, "--fts-only"],
+      [CLI, "search", "zzz-nonexistent-query-xyz", "--cwd", minimal],
       { encoding: "utf8" },
     );
     expect(r.status).toBe(0);

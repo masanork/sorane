@@ -61,7 +61,7 @@ async function main(): Promise<void> {
           "  validate  --cwd <dir> [--json]\n" +
           "  migrate   --cwd <dir> [--dry-run] [--bump-profile 0.2|0.3]\n" +
           "  index     --cwd <dir> [--force] [--drafts] [--out <path>] [--yes]\n" +
-          "  search    <query> [--cwd <dir>] [--okfc <path>] [--prefer-index] [--type …] [--tag <slug>] [--k 10] [--json] [--fts-only]\n" +
+          "  search    <query> [--cwd <dir>] [--okfc <path>] [--prefer-index] [--type …] [--tag <slug>] [--k 10] [--json]\n" +
           "            (prefers dist/okf/site.okfc when present; else .sorane/index.db)\n" +
           "  export    --format docx|pdf --cwd <dir> --out <file|dir> [--file <rel.md>] [--html <rel.html>]\n" +
           "  import    --input <file> --cwd <dir> [--format auto|mt|hatena-diary|wordpress] [--out content/article] [--encoding auto] [--dry-run] [--fetch-images] [--glyph-map <tsv>] [--no-normalize-html]\n" +

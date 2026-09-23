@@ -72,7 +72,7 @@ describe("parseSearchArgs", () => {
     expect(args.tag).toBe("okf");
     expect(args.k).toBe(5);
     expect(args.json).toBe(true);
-    expect(args.indexPath.endsWith(".sorane/index.db")).toBe(true);
+    expect(args.backend.path.endsWith(".sorane/index.db")).toBe(true);
   });
 });
 
@@ -80,7 +80,7 @@ describe("runSearchCmd", () => {
   test("JSON モードで結果を返す", async () => {
     if (!existsSync(join(MINIMAL, ".sorane/index.db"))) return;
     const out = await captureStdout(() =>
-      runSearchCmd(["OKF", "--cwd", MINIMAL, "--fts-only", "--json"]),
+      runSearchCmd(["OKF", "--cwd", MINIMAL, "--json"]),
     );
     const results = JSON.parse(out) as unknown[];
     expect(Array.isArray(results)).toBe(true);
@@ -89,7 +89,7 @@ describe("runSearchCmd", () => {
   test("テキストモードでスニペットを出す", async () => {
     if (!existsSync(join(MINIMAL, ".sorane/index.db"))) return;
     const out = await captureStdout(() =>
-      runSearchCmd(["OKF", "--cwd", MINIMAL, "--fts-only", "--k", "3"]),
+      runSearchCmd(["OKF", "--cwd", MINIMAL, "--k", "3"]),
     );
     if (out.includes("(no results)")) return;
     expect(out).toContain("1.");
@@ -110,7 +110,7 @@ describe("runSearchCmd", () => {
     try {
       let threw = false;
       try {
-        await runSearchCmd(["--cwd", MINIMAL, "--fts-only"]);
+        await runSearchCmd(["--cwd", MINIMAL]);
       } catch (e) {
         threw = e instanceof Error && e.message === "exit:2";
       }

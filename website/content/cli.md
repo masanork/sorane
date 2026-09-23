@@ -111,7 +111,7 @@ npx @sorane/cli index [--cwd <dir>] [--force] [--drafts] [--yes]
 npx @sorane/cli search <query> [--cwd <dir>] \
   [--okfc <path>] [--prefer-index] [--index <path>] \
   [--type article|dataset|reference|glossary|glossary-term|faq] \
-  [--tag <slug>] [--k 10] [--json] [--fts-only]
+  [--tag <slug>] [--k 10] [--json]
 ```
 
 | フラグ | 意味 |

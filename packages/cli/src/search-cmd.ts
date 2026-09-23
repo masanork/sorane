@@ -95,12 +95,10 @@ export function resolveSearchBackend(
 export function parseSearchArgs(argv: string[]): {
   cwd: string;
   query: string;
-  indexPath: string;
   k: number;
   docType: string;
   tag: string;
   json: boolean;
-  preferIndex: boolean;
   backend: ResolvedSearchBackend;
 } {
   const cwd = parseCwdFlag(argv);
@@ -111,15 +109,6 @@ export function parseSearchArgs(argv: string[]): {
     return i >= 0 && argv[i + 1] ? argv[i + 1]! : def;
   };
   const query = parseSearchQuery(argv);
-  const outFlag = argv.indexOf("--out");
-  const indexFlag = argv.indexOf("--index");
-  const explicitIndex =
-    indexFlag >= 0 && argv[indexFlag + 1]
-      ? resolve(cwd, argv[indexFlag + 1]!)
-      : outFlag >= 0 && argv[outFlag + 1]
-        ? resolve(cwd, argv[outFlag + 1]!)
-        : resolve(cwd, config.search.index);
-
   const backend = resolveSearchBackend(cwd, argv, {
     outDir: config.build.out_dir,
     defaultIndex: config.search.index,
@@ -128,12 +117,10 @@ export function parseSearchArgs(argv: string[]): {
   return {
     cwd,
     query,
-    indexPath: explicitIndex,
     k: Number(get("--k", "10")) || 10,
     docType: get("--type", ""),
     tag: get("--tag", ""),
     json: argv.includes("--json"),
-    preferIndex: argv.includes("--prefer-index"),
     backend,
   };
 }
@@ -239,7 +226,7 @@ export async function runSearchCmd(argv: string[]): Promise<void> {
   if (!args.query) {
     process.stderr.write(
       "usage: sorane search <query> [--cwd <dir>] [--okfc <path>] [--prefer-index]\n" +
-        "         [--type article|dataset|…] [--tag <slug>] [--k 10] [--json] [--fts-only]\n" +
+        "         [--type article|dataset|…] [--tag <slug>] [--k 10] [--json]\n" +
         "  Prefer dist/okf/site.okfc when present (U4); else .sorane/index.db\n",
     );
     process.exit(2);

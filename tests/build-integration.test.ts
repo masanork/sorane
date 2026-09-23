@@ -311,7 +311,7 @@ Custom body only.
     );
     try {
       const { runIndexCmd } = await import("../packages/cli/src/index-cmd.ts");
-      await runIndexCmd(["--cwd", root, "--force", "--fts-only"]);
+      await runIndexCmd(["--cwd", root, "--force"]);
       await runBuild({
         cwd: root,
         config: loadSoraneConfig(root),

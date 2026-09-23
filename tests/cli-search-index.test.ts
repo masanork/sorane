@@ -21,7 +21,7 @@ describe("sorane index + search", () => {
     const indexPath = join(MINIMAL, ".sorane/index.db");
     if (!existsSync(indexPath)) return;
 
-    const index = runCli(["index", "--cwd", MINIMAL, "--fts-only", "--force"]);
+    const index = runCli(["index", "--cwd", MINIMAL, "--force"]);
     expect(index.status).toBe(0);
     expect(index.stdout).toContain("indexed");
 
@@ -31,7 +31,6 @@ describe("sorane index + search", () => {
       "--cwd",
       MINIMAL,
       "--prefer-index",
-      "--fts-only",
       "--json",
     ]);
     expect(search.status).toBe(0);
@@ -51,7 +50,6 @@ describe("sorane index + search", () => {
       "--cwd",
       MINIMAL,
       "--prefer-index",
-      "--fts-only",
       "--json",
     ]);
     expect(search.status).toBe(0);

@@ -18,7 +18,7 @@ describe("parseSearchQuery", () => {
   });
 
   test("フラグのみは空", () => {
-    expect(parseSearchQuery(["--json", "--fts-only"])).toBe("");
+    expect(parseSearchQuery(["--json"])).toBe("");
   });
 
   test("--okfc の値を query と誤認しない", () => {
@@ -35,13 +35,14 @@ describe("parseSearchArgs", () => {
       "--out",
       "custom/index.db",
     ]);
-    expect(args.indexPath.endsWith("custom/index.db")).toBe(true);
+    expect(args.backend.kind).toBe("index");
+    expect(args.backend.path.endsWith("custom/index.db")).toBe(true);
     expect(args.query).toBe("q");
   });
 
   test("--index は --out と同義", () => {
     const args = parseSearchArgs(["q", "--cwd", "/tmp/site", "--index", "x.db"]);
-    expect(args.indexPath.endsWith("x.db")).toBe(true);
+    expect(args.backend.path.endsWith("x.db")).toBe(true);
   });
 });
 
