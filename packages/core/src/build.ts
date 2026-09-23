@@ -608,26 +608,24 @@ export async function runBuild(opts: BuildOptions): Promise<BuildResult> {
   }
 
   const indexDbPath = resolve(cwd, config.search.index);
-  let localSearchIndexReady = false;
-  if (existsSync(indexDbPath)) {
+  const headerSearchOptedIn = existsSync(indexDbPath);
+  let searchPackageAvailable = false;
+  if (headerSearchOptedIn) {
     try {
-      const { IndexStore } = await import("@sorane/search");
-      const probe = new IndexStore(indexDbPath);
-      const { chunks } = probe.counts();
-      localSearchIndexReady = chunks > 0;
-      probe.close();
+      await import("@sorane/search");
+      searchPackageAvailable = true;
     } catch (err) {
       const { isOptionalModuleMissing, warnOptionalPackageMissing } = await import(
         "./optional-dep.ts"
       );
       if (!isOptionalModuleMissing(err)) throw err;
       warnOptionalPackageMissing(
-        { packageName: "@sorane/search", feature: "search index probing" },
+        { packageName: "@sorane/search", feature: "header search" },
         cwd,
       );
     }
   }
-  const headerSearchEnabled = localSearchIndexReady;
+  const headerSearchEnabled = headerSearchOptedIn && searchPackageAvailable;
   const searchNavPath = headerSearchEnabled ? undefined : searchPageRel;
   const showArchiveInHeader =
     Boolean(indexParsed) && blogOpts.archives && !headerSearchEnabled;
