@@ -608,15 +608,13 @@ export async function runBuild(opts: BuildOptions): Promise<BuildResult> {
   }
 
   const indexDbPath = resolve(cwd, config.search.index);
-  let searchIndexReady = false;
-  if (searchPageRel && existsSync(indexDbPath)) {
+  let localSearchIndexReady = false;
+  if (existsSync(indexDbPath)) {
     try {
       const { IndexStore } = await import("@sorane/search");
       const probe = new IndexStore(indexDbPath);
       const { chunks } = probe.counts();
-      if (chunks > 0) {
-        if (chunks > 0) searchIndexReady = true;
-      }
+      localSearchIndexReady = chunks > 0;
       probe.close();
     } catch (err) {
       const { isOptionalModuleMissing, warnOptionalPackageMissing } = await import(
@@ -629,8 +627,8 @@ export async function runBuild(opts: BuildOptions): Promise<BuildResult> {
       );
     }
   }
-  const headerSearchEnabled = searchIndexReady;
-  const searchNavPath = headerSearchEnabled || !searchIndexReady ? undefined : searchPageRel;
+  const headerSearchEnabled = localSearchIndexReady;
+  const searchNavPath = headerSearchEnabled ? undefined : searchPageRel;
   const showArchiveInHeader =
     Boolean(indexParsed) && blogOpts.archives && !headerSearchEnabled;
 
@@ -2111,7 +2109,7 @@ export async function runBuild(opts: BuildOptions): Promise<BuildResult> {
     process.stdout.write("[sorane] security headers → _headers\n");
   }
 
-  if (searchPageRel) {
+  if (searchPageRel || headerSearchEnabled) {
     try {
       const { emitSearchAssets } = await import("@sorane/search");
       const searchEligible = parsed.filter(

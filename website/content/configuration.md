@@ -418,7 +418,7 @@ search:
 | UI | コンパクト（種別 facet なし） | フル UI（記事 / dataset / FAQ… の facet） |
 | 用途 | どのページからでもさっと検索 | 絞り込み・説明文・`SearchAction` の安定 URL |
 
-`view: search` の記事があるときだけ検索アセット（`search-index.json` 等）を dist に出力します。小さなブログは `search.md` を省略してヘッダー検索のみでも構いません。open-data / 行政向けでは専用ページを残すのが一般的です。
+`view: search` の記事があるか、ローカル検索インデックスが存在するとき、検索アセット（`search-index.json` 等）を dist に出力します。`sorane index` を実行したサイトはヘッダー検索を有効にし、ビルド時に現在のコンテンツから検索データを作ります。小さなブログは `search.md` を省略してヘッダー検索のみでも構いません。open-data / 行政向けでは専用ページを残すのが一般的です。
 
 ## 図表
 

@@ -22,7 +22,6 @@ export function deriveWebIndexFromChunks(
     readonly snippetOnly?: boolean;
   },
 ): DeriveResult {
-  if (rows.length === 0) return { written: false, chunks: 0, bytes: 0 };
   const disclosureMap =
     opts?.contentDir && opts.machineReadable !== false
       ? buildSourceDisclosureMap(opts.contentDir, rows.map((r) => r.source))
