@@ -5,7 +5,7 @@ profile: sorane-okf/0.1
 excludeFromList: true
 ---
 
-空音は [Open Knowledge Format (OKF) v0.2](https://github.com/GoogleCloudPlatform/knowledge-catalog/blob/main/okf/SPEC.md)（[発表](https://cloud.google.com/blog/products/data-analytics/okf-v0-2-adds-trust-signals)）をベースに実装します。各ページの frontmatter に `profile: sorane-okf/<version>` を書き、JSON Schema で検証します。
+空音は [Open Knowledge Format (OKF) v0.2](https://github.com/GoogleCloudPlatform/open-knowledge-format/blob/main/SPEC.md)（[発表](https://cloud.google.com/blog/products/data-analytics/okf-v0-2-adds-trust-signals)）をベースに実装します。各ページの frontmatter に `profile: sorane-okf/<version>` を書き、JSON Schema で検証します。
 
 ### 名前の注意: `sorane-okf/0.2` ≠ OKF v0.2
 
@@ -57,12 +57,12 @@ npx @sorane/cli migrate --cwd . --bump-profile 0.3
 
 | フィールド | 用途 |
 |------------|------|
-| `generated: { by, at }` | 誰が・いつ書いたか（`at` は内容の最終更新。`timestamp` の代替可） |
-| `verified: { by, at }` またはリスト | 確認イベント。`human:` 接頭辞 → trust tier **human-reviewed** |
-| `sources[]` | 由来（各要素に `resource` 必須。任意で `id`, `title`, `author`, `usage_count`, `last_modified`） |
-| `usage_window: { from, to }` | `usage_count` の集計期間 |
+| `generated: { by, at }` | 誰が・いつ書いたか（`at` はタイムゾーン付き ISO 8601 日時。`timestamp` の代替可） |
+| `verified: { by, at }` またはリスト | 確認イベント（各イベントに `at` 必須）。`human:` 接頭辞 → trust tier **human-reviewed** |
+| `sources[]` | 由来（各要素に `resource` 必須。任意で `id`, `title`, `author`, `usage_count`, `last_modified`。日時値はタイムゾーン付き ISO 8601） |
+| `usage_window: { from, to }` | `usage_count` の集計期間（日時はタイムゾーン付き ISO 8601） |
 | `status` | `draft` \| `stable` \| `deprecated`（省略 = stable） |
-| `stale_after` | 鮮度期限 `YYYY-MM-DD`（経過後は `validate` が warning） |
+| `stale_after` | 鮮度期限（タイムゾーン付き ISO 8601 日時。経過後は `validate` が warning） |
 
 Actor 表記: `producer/version`（エージェント）、`human:<id>`、`process:<id>`。
 
@@ -90,7 +90,7 @@ type: article
 title: Customer Orders
 profile: sorane-okf/0.3
 status: stable
-stale_after: 2026-12-31
+stale_after: 2026-12-31T00:00:00Z
 generated: { by: reference_agent/gemini-2.5-pro, at: 2026-06-20T22:53:05Z }
 verified: { by: human:alice, at: 2026-06-25T09:00:00Z }
 sources:

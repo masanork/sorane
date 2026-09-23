@@ -65,7 +65,7 @@ See [configuration](https://ssg.sorane.dev/configuration.html#プリセット) o
 
 ## OKF profile
 
-空音 implements [Open Knowledge Format (OKF) v0.2](https://github.com/GoogleCloudPlatform/knowledge-catalog/blob/main/okf/SPEC.md) with profiles `sorane-okf/0.1` through `0.3` (extended types and open-data metadata in `0.3`).
+空音 implements [Open Knowledge Format (OKF) v0.2](https://github.com/GoogleCloudPlatform/open-knowledge-format/blob/main/SPEC.md) with profiles `sorane-okf/0.1` through `0.3` (extended types and open-data metadata in `0.3`).
 
 **Note:** profile string `sorane-okf/0.2` means “AI disclosure validation”, not “only OKF v0.2”. Upstream OKF v0.2 trust fields (`generated`, `verified`, `sources`, `status`, `stale_after`) are optional on every profile. When `timestamp` is absent, `generated.at` supplies the content date.
 

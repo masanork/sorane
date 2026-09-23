@@ -26,7 +26,7 @@ Goals for 0.3:
 
 ### 2.1 OKF v0.1 (upstream)
 
-Source: [Google Cloud `okf/SPEC.md`](https://github.com/GoogleCloudPlatform/knowledge-catalog/blob/main/okf/SPEC.md)
+Source: [Google Cloud OKF specification](https://github.com/GoogleCloudPlatform/open-knowledge-format/blob/main/SPEC.md)
 
 | Topic | OKF position |
 |-------|----------------|
@@ -542,7 +542,7 @@ distributions:
 
 ## 13. References
 
-- [OKF SPEC v0.1](https://github.com/GoogleCloudPlatform/knowledge-catalog/blob/main/okf/SPEC.md)
+- [OKF SPEC](https://github.com/GoogleCloudPlatform/open-knowledge-format/blob/main/SPEC.md)
 - [DCAT-AP 3.0.1](https://semiceu.github.io/DCAT-AP/releases/3.0.1/)
 - [CKAN User Guide](https://docs.ckan.org/en/latest/user-guide.html)
 - [sorane `catalog.ts`](../packages/core/src/catalog.ts)

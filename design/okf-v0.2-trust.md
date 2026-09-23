@@ -4,7 +4,7 @@
 |-------|-------|
 | **Status** | Implemented (P0–P2 light) |
 | **Date** | 2026-08-01 |
-| **Upstream** | [OKF SPEC.md v0.2](https://github.com/GoogleCloudPlatform/knowledge-catalog/blob/main/okf/SPEC.md) (2026-07-25) |
+| **Upstream** | [OKF SPEC.md v0.2](https://github.com/GoogleCloudPlatform/open-knowledge-format/blob/main/SPEC.md) |
 | **sorane profiles** | `sorane-okf/0.1`–`0.3` (all accept optional trust families) |
 
 ---
@@ -31,7 +31,7 @@ Both sit on the OKF field model. Profile `0.2` is **not** “the profile that im
 | `sources[]` | Each entry requires `resource` |
 | `usage_window` | Shared `{ from, to }` sibling of `sources` |
 | `status` | `draft` \| `stable` \| `deprecated` |
-| `stale_after` | `YYYY-MM-DD`; past date → validate **warning** |
+| `stale_after` | ISO 8601 datetime with explicit UTC offset; past instant → validate **warning** |
 | **Date fallback** | Effective `timestamp` = legacy `timestamp` / `date` / `publishedAt`, else `generated.at` (OKF §13.1) |
 
 Helpers: `deriveTrustTier`, `isStale`, `parseTrustFields`.
@@ -47,7 +47,7 @@ Optional shapes in `sorane-okf-0.{1,2,3}.schema.json` (copied to `profile/`, `ru
 | OKF bundle / `.md` alternate | Serialize trust families |
 | HTML article meta | status (non-stable), trust tier, stale, `generated.by` |
 | `catalog.jsonld` | keywords `status:`, `trust:`, `stale_after:`, `generated_by:`; `citation` from `sources` |
-| Rust astro backend | `generated.at` → timestamp fallback |
+| TypeScript normalization | `generated.at` → timestamp fallback |
 
 ### Deferred (P3)
 
@@ -66,7 +66,7 @@ type: article
 title: Customer Orders
 profile: sorane-okf/0.3
 status: stable
-stale_after: 2026-12-31
+stale_after: 2026-12-31T00:00:00Z
 generated: { by: reference_agent/gemini-2.5-pro, at: 2026-06-20T22:53:05Z }
 verified: { by: human:alice, at: 2026-06-25T09:00:00Z }
 sources:

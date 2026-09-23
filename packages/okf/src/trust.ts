@@ -1,6 +1,6 @@
 /**
  * OKF v0.2 trust / provenance / lifecycle helpers.
- * Spec: https://github.com/GoogleCloudPlatform/knowledge-catalog/blob/main/okf/SPEC.md
+ * Spec: https://github.com/GoogleCloudPlatform/open-knowledge-format/blob/main/SPEC.md
  */
 
 export type OkfConceptStatus = "draft" | "stable" | "deprecated";
@@ -10,7 +10,7 @@ export type OkfTrustTier = "unverified" | "machine-confirmed" | "human-reviewed"
 
 export interface OkfActorEvent {
   readonly by: string;
-  readonly at?: string;
+  readonly at: string;
 }
 
 export interface OkfDateRange {
@@ -45,6 +45,24 @@ function isPlainObject(value: unknown): value is Record<string, unknown> {
   return value !== null && typeof value === "object" && !Array.isArray(value);
 }
 
+function isIsoDateTime(value: string): boolean {
+  const match = /^(\d{4})-(\d{2})-(\d{2})T(\d{2}):(\d{2}):(\d{2})(?:\.\d+)?(Z|[+-](\d{2}):(\d{2}))$/.exec(value);
+  if (!match || !Number.isFinite(Date.parse(value))) return false;
+  const [, yearText, monthText, dayText, hourText, minuteText, secondText, , offsetHourText, offsetMinuteText] = match;
+  const year = Number(yearText);
+  const month = Number(monthText);
+  const day = Number(dayText);
+  const hour = Number(hourText);
+  const minute = Number(minuteText);
+  const second = Number(secondText);
+  const offsetHour = Number(offsetHourText ?? 0);
+  const offsetMinute = Number(offsetMinuteText ?? 0);
+  const leapYear = year % 4 === 0 && (year % 100 !== 0 || year % 400 === 0);
+  const daysInMonth = [31, leapYear ? 29 : 28, 31, 30, 31, 30, 31, 31, 30, 31, 30, 31];
+  return month >= 1 && month <= 12 && day >= 1 && day <= daysInMonth[month - 1]! &&
+    hour <= 23 && minute <= 59 && second <= 59 && offsetHour <= 23 && offsetMinute <= 59;
+}
+
 function parseDateRange(
   value: unknown,
   path: string,
@@ -55,8 +73,14 @@ function parseDateRange(
     issues.push({ path, message: `${path} must be a mapping with from/to` });
     return undefined;
   }
-  const from = typeof value.from === "string" ? value.from : undefined;
-  const to = typeof value.to === "string" ? value.to : undefined;
+  const from = typeof value.from === "string" && isIsoDateTime(value.from) ? value.from : undefined;
+  const to = typeof value.to === "string" && isIsoDateTime(value.to) ? value.to : undefined;
+  if (value.from !== undefined && from === undefined) {
+    issues.push({ path: `${path}/from`, message: `${path}.from must be an ISO 8601 datetime with an explicit UTC offset` });
+  }
+  if (value.to !== undefined && to === undefined) {
+    issues.push({ path: `${path}/to`, message: `${path}.to must be an ISO 8601 datetime with an explicit UTC offset` });
+  }
   if (from === undefined && to === undefined) {
     issues.push({ path, message: `${path} needs from and/or to` });
     return undefined;
@@ -77,7 +101,11 @@ function parseActorEvent(
     issues.push({ path: `${path}/by`, message: `${path}.by is required (actor string)` });
     return undefined;
   }
-  const at = typeof value.at === "string" && value.at.length > 0 ? value.at : undefined;
+  const at = typeof value.at === "string" && isIsoDateTime(value.at) ? value.at : undefined;
+  if (!at) {
+    issues.push({ path: `${path}/at`, message: `${path}.at is required and must be an ISO 8601 datetime with an explicit UTC offset` });
+    return undefined;
+  }
   return { by: value.by, at };
 }
 
@@ -138,9 +166,14 @@ function parseSources(
           ? item.usage_count
           : undefined,
       last_modified:
-        typeof item.last_modified === "string" ? item.last_modified : undefined,
+        typeof item.last_modified === "string" && isIsoDateTime(item.last_modified)
+          ? item.last_modified
+          : undefined,
       usage_window: parseDateRange(item.usage_window, `${path}/usage_window`, issues),
     };
+    if (item.last_modified !== undefined && entry.last_modified === undefined) {
+      issues.push({ path: `${path}/last_modified`, message: `${path}.last_modified must be an ISO 8601 datetime with an explicit UTC offset` });
+    }
     out.push(entry);
   });
   return out.length > 0 ? out : undefined;
@@ -173,12 +206,12 @@ export function parseTrustFields(raw: Record<string, unknown>): TrustParseResult
 
   let stale_after: string | undefined;
   if (raw.stale_after !== undefined) {
-    if (typeof raw.stale_after === "string" && /^\d{4}-\d{2}-\d{2}$/.test(raw.stale_after)) {
+    if (typeof raw.stale_after === "string" && isIsoDateTime(raw.stale_after)) {
       stale_after = raw.stale_after;
     } else {
       issues.push({
         path: "stale_after",
-        message: "stale_after must be an absolute date YYYY-MM-DD",
+        message: "stale_after must be an ISO 8601 datetime with an explicit UTC offset",
       });
     }
   }
@@ -204,11 +237,11 @@ export function deriveTrustTier(
   return "machine-confirmed";
 }
 
-/** True when today (UTC date) is on or after stale_after. */
+/** True when the current instant is on or after stale_after. */
 export function isStale(stale_after: string | undefined, now = new Date()): boolean {
   if (!stale_after) return false;
-  const today = now.toISOString().slice(0, 10);
-  return today >= stale_after;
+  const deadline = Date.parse(stale_after);
+  return Number.isFinite(deadline) && now.getTime() >= deadline;
 }
 
 /** Keys reserved for OKF v0.2 trust families (excluded from generic frontmatter bag). */

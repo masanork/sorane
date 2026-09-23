@@ -55,15 +55,18 @@ describe("OKF v0.2 trust fields", () => {
 
   test("trust tiers from verified actors", () => {
     expect(deriveTrustTier(undefined)).toBe("unverified");
-    expect(deriveTrustTier([{ by: "process:nightly" }])).toBe("machine-confirmed");
-    expect(deriveTrustTier([{ by: "agent/1" }, { by: "human:bob" }])).toBe(
+    expect(deriveTrustTier([{ by: "process:nightly", at: "2026-06-25T09:00:00Z" }])).toBe("machine-confirmed");
+    expect(deriveTrustTier([
+      { by: "agent/1", at: "2026-06-25T09:00:00Z" },
+      { by: "human:bob", at: "2026-06-25T09:00:00Z" },
+    ])).toBe(
       "human-reviewed",
     );
   });
 
-  test("isStale compares absolute dates", () => {
-    expect(isStale("2000-01-01", new Date("2026-08-01T00:00:00Z"))).toBe(true);
-    expect(isStale("2099-12-31", new Date("2026-08-01T00:00:00Z"))).toBe(false);
+  test("isStale compares absolute instants", () => {
+    expect(isStale("2000-01-01T00:00:00Z", new Date("2026-08-01T00:00:00Z"))).toBe(true);
+    expect(isStale("2099-12-31T00:00:00Z", new Date("2026-08-01T00:00:00Z"))).toBe(false);
     expect(isStale(undefined)).toBe(false);
   });
 
@@ -74,7 +77,7 @@ describe("OKF v0.2 trust fields", () => {
         title: "Orders",
         profile: "sorane-okf/0.3",
         status: "stable",
-        stale_after: "2026-12-31",
+        stale_after: "2026-12-31T00:00:00Z",
         generated: { by: "agent/1", at: "2026-06-20T22:53:05Z" },
         verified: [
           { by: "human:alice", at: "2026-06-25T09:00:00Z" },
@@ -87,10 +90,10 @@ describe("OKF v0.2 trust fields", () => {
             title: "Schema",
             author: "team:data",
             usage_count: 100,
-            last_modified: "2026-05-30",
+            last_modified: "2026-05-30T00:00:00Z",
           },
         ],
-        usage_window: { from: "2026-06-01", to: "2026-06-30" },
+        usage_window: { from: "2026-06-01T00:00:00Z", to: "2026-06-30T00:00:00Z" },
       },
       "Body.\n",
       "orders",
@@ -99,7 +102,7 @@ describe("OKF v0.2 trust fields", () => {
     expect(md).toContain("generated:");
     expect(md).toContain("verified:");
     expect(md).toContain("sources:");
-    expect(md).toContain("stale_after: 2026-12-31");
+    expect(md).toContain("stale_after: 2026-12-31T00:00:00Z");
     expect(md).toContain("usage_window:");
 
     const r = validateSource("orders.md", md);
@@ -135,7 +138,7 @@ describe("OKF v0.2 trust fields", () => {
   test("past stale_after yields warning", () => {
     const r = validateSource(
       "a.md",
-      "---\ntype: article\ntitle: T\nstale_after: 2000-01-01\n---\n\nbody\n",
+      "---\ntype: article\ntitle: T\nstale_after: 2000-01-01T00:00:00Z\n---\n\nbody\n",
     );
     expect(r.ok).toBe(true);
     expect(r.warnings.some((w) => w.includes("stale_after"))).toBe(true);

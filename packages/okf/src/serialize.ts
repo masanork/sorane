@@ -58,8 +58,7 @@ function appendDateRangeInline(range: OkfDateRange): string {
 }
 
 function appendActorInline(ev: OkfActorEvent): string {
-  const parts = [`by: ${formatScalar(ev.by)}`];
-  if (ev.at) parts.push(`at: ${formatScalar(ev.at)}`);
+  const parts = [`by: ${formatScalar(ev.by)}`, `at: ${formatScalar(ev.at)}`];
   return `{ ${parts.join(", ")} }`;
 }
 

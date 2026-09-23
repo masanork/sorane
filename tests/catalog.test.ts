@@ -73,7 +73,7 @@ describe("buildCatalogJsonLd", () => {
         type: "article",
         title: "Orders",
         status: "deprecated",
-        stale_after: "2026-12-31",
+        stale_after: "2026-12-31T00:00:00Z",
         generated: { by: "agent/1", at: "2026-06-20T22:53:05Z" },
         verified: { by: "human:alice", at: "2026-06-25T09:00:00Z" },
         sources: [{ resource: "https://wiki.example/schema", title: "Schema" }],
@@ -88,7 +88,7 @@ describe("buildCatalogJsonLd", () => {
     );
     expect(json).toContain("trust:human-reviewed");
     expect(json).toContain("status:deprecated");
-    expect(json).toContain("stale_after:2026-12-31");
+    expect(json).toContain("stale_after:2026-12-31T00:00:00Z");
     expect(json).toContain("generated_by:agent/1");
     expect(json).toContain("https://wiki.example/schema");
     expect(json).toContain('"@type": "CreativeWork"');
