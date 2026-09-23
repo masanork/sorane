@@ -83,7 +83,7 @@ npx @sorane/cli validate [--cwd <dir>] [--json]
 
 ## sorane migrate
 
-レガシー frontmatter を OKF 形式へ変換します。
+レガシー frontmatter を OKF 形式へ変換します。日付のみの `stale_after: YYYY-MM-DD` は、同日の `00:00:00Z` に変換します。最初は `--dry-run` で変更対象を確認できます。
 
 ```bash
 npx @sorane/cli migrate [--cwd <dir>] [--dry-run] [--bump-profile 0.2|0.3]

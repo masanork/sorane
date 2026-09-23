@@ -51,6 +51,8 @@ npx @sorane/cli index [--cwd <dir>] [--force] [--yes]
 npx @sorane/cli search <query> [--cwd <dir>] [--type article] [--tag <slug>] [--json] [--yes]
 ```
 
+`migrate --dry-run` previews legacy frontmatter conversions, including date-only `stale_after` values converted to midnight UTC.
+
 Site projects keep content in a separate directory and configure the build with `sorane.yaml`.
 
 ### Presets

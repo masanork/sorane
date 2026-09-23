@@ -12,6 +12,18 @@ function slugFromPath(filePath: string): string {
 
 const SUPPORTED_BUMP_PROFILES = new Set(["0.1", "0.2", "0.3"]);
 
+function migrateStaleAfter(raw: Record<string, unknown>): Record<string, unknown> {
+  const value = raw.stale_after;
+  if (typeof value !== "string" || !/^\d{4}-\d{2}-\d{2}$/.test(value)) return raw;
+
+  const instant = `${value}T00:00:00Z`;
+  const parsed = new Date(instant);
+  if (!Number.isFinite(parsed.getTime()) || parsed.toISOString().slice(0, 10) !== value) {
+    return raw;
+  }
+  return { ...raw, stale_after: instant };
+}
+
 export interface MigrateToOkfOptions {
   readonly bumpProfile?: string;
 }
@@ -27,7 +39,7 @@ export function migrateToOkf(
     frontmatter !== null
       ? ((parseYaml(frontmatter) as Record<string, unknown>) ?? {})
       : {};
-  const concept = normalizeConcept(raw, body, slugFromPath(filePath));
+  const concept = normalizeConcept(migrateStaleAfter(raw), body, slugFromPath(filePath));
 
   const bumpedProfile =
     opts?.bumpProfile !== undefined

@@ -5,6 +5,32 @@ import {
 } from "../packages/core/src/migrate.ts";
 
 describe("migrate --bump-profile", () => {
+  test("date-only stale_after を UTC midnight の instant に移す", () => {
+    const source = `---
+type: article
+title: T
+stale_after: 2026-12-31
+---
+
+Body
+`;
+    const out = migrateToOkf(source, "post.md");
+    expect(out).toContain("stale_after: 2026-12-31T00:00:00Z");
+  });
+
+  test("full-instant stale_after は保持する", () => {
+    const source = `---
+type: article
+title: T
+stale_after: 2026-12-31T09:30:00+09:00
+---
+
+Body
+`;
+    const out = migrateToOkf(source, "post.md");
+    expect(out).toContain("stale_after: 2026-12-31T09:30:00+09:00");
+  });
+
   test("0.2 に上げる", () => {
     const source = `---
 type: article
