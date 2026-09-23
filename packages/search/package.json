@@ -30,7 +30,6 @@
     "better-sqlite3": "^13.0.3"
   },
   "devDependencies": {
-    "@types/better-sqlite3": "^9.6.0",
-    "@types/mdast": "^4.0.4"
+    "@types/better-sqlite3": "^9.6.0"
   }
 }
