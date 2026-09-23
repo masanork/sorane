@@ -66,7 +66,6 @@ async function main(): Promise<void> {
           "  export    --format docx|pdf --cwd <dir> --out <file|dir> [--file <rel.md>] [--html <rel.html>]\n" +
           "  import    --input <file> --cwd <dir> [--format auto|mt|hatena-diary|wordpress] [--out content/article] [--encoding auto] [--dry-run] [--fetch-images] [--glyph-map <tsv>] [--no-normalize-html]\n" +
           "  okfc pack --cwd <dir> [--unit <id>] [--out <path>] [--drafts]\n" +
-          "  okfc query <file.okfc> <query…> [--k 10] [--type <type>] [--json]\n" +
           "\n" +
           "  Optional packages (install when a command needs them):\n" +
           "    @sorane/search   index, search (index.db path)\n" +

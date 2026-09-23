@@ -1,5 +1,5 @@
 /**
- * sorane okfc pack | query — OKF Container Format tooling (FTS).
+ * sorane okfc pack — build an OKF Container Format package.
  */
 
 import {
@@ -19,7 +19,6 @@ import {
   sliceKnowledgeIr,
   conceptIdFor,
   parseConcept,
-  queryOkfcFts,
   type OkfcRegistryBundle,
   type ParsedConcept,
 } from "@sorane/okf";
@@ -93,14 +92,10 @@ export async function runOkfcCmd(argv: string[]): Promise<void> {
     await runOkfcPack(rest);
     return;
   }
-  if (sub === "query") {
-    await runOkfcQuery(rest);
-    return;
-  }
   process.stderr.write(
-    "usage: sorane okfc <pack|query> [options]\n" +
-      "  pack   --cwd <dir> [--unit <id>] [--out <path>] [--drafts]\n" +
-      "  query  <file.okfc> <query…> [--k 10] [--type <type>] [--json]\n",
+    "usage: sorane okfc pack [options]\n" +
+    "  pack   --cwd <dir> [--unit <id>] [--out <path>] [--drafts]\n" +
+      "Use `sorane search <query> --okfc <file.okfc>` to query a pack.\n",
   );
   process.exit(sub === undefined ? 0 : 1);
 }
@@ -191,48 +186,5 @@ async function runOkfcPack(argv: string[]): Promise<void> {
       "utf8",
     );
     process.stdout.write(`[sorane] OKFC registry → okf/registry.json\n`);
-  }
-}
-
-async function runOkfcQuery(argv: string[]): Promise<void> {
-  const json = argv.includes("--json");
-  const kRaw = parseFlag(argv, "--k");
-  const type = parseFlag(argv, "--type");
-  const limit = kRaw ? Number(kRaw) : 10;
-  const positional = argv.filter(
-    (a, i) =>
-      !a.startsWith("--") &&
-      argv[i - 1] !== "--k" &&
-      argv[i - 1] !== "--type" &&
-      a !== "--json",
-  );
-  const file = positional[0];
-  const query = positional.slice(1).join(" ").trim();
-  if (!file || !query) {
-    throw new Error("usage: sorane okfc query <file.okfc> <query…> [--k 10] [--type t] [--json]");
-  }
-  const dbPath = resolve(file);
-  if (!existsSync(dbPath)) {
-    throw new Error(`OKFC file not found: ${dbPath}`);
-  }
-  const hits = await queryOkfcFts(dbPath, query, {
-    limit: Number.isFinite(limit) ? limit : 10,
-    type: type || undefined,
-  });
-  if (json) {
-    process.stdout.write(`${JSON.stringify({ hits }, null, 2)}\n`);
-    return;
-  }
-  if (hits.length === 0) {
-    process.stdout.write("(no hits)\n");
-    return;
-  }
-  for (const h of hits) {
-    const title = h.title ?? h.id;
-    process.stdout.write(
-      `${h.score.toFixed(3)}\t${h.type}\t${h.id}\t${title}` +
-        (h.snippet ? `\t${h.snippet.replace(/\s+/g, " ")}` : "") +
-        "\n",
-    );
   }
 }

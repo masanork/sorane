@@ -111,7 +111,7 @@ CLI:
 ```bash
 npx @sorane/cli okfc pack --cwd .
 npx @sorane/cli okfc pack --cwd . --unit open-data
-npx @sorane/cli okfc query dist/okf/site.okfc "検索語" --k 10
+npx @sorane/cli search "検索語" --cwd . --okfc dist/okf/site.okfc --k 10
 ```
 
 ## オプショナル npm パッケージ
