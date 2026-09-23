@@ -52,7 +52,7 @@ async function main(): Promise<void> {
           "  preview   --cwd <dir> [--port 4321] [--watch]\n" +
           "  validate  --cwd <dir> [--json]\n" +
           "  index     --cwd <dir> [--index <path>] [--force] [--drafts] [--yes]\n" +
-          "  search    <query> [--cwd <dir>] [--okfc <path>] [--prefer-index] [--type …] [--tag <slug>] [--k 10] [--json]\n" +
+          "  search    <query> [--cwd <dir>] [--okfc <path>] [--prefer-index] [--index <path>] [--type …] [--tag <slug>] [--k 10] [--json]\n" +
           "            (prefers dist/okf/site.okfc when present; else .sorane/index.db)\n" +
           "  export    --format docx|pdf --cwd <dir> --out <file|dir> [--file <rel.md>] [--html <rel.html>]\n" +
           "  import    --input <file> --cwd <dir> [--format auto|mt|hatena-diary|wordpress] [--out content/article] [--encoding auto] [--dry-run] [--fetch-images] [--glyph-map <tsv>] [--no-normalize-html]\n" +
