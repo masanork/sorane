@@ -246,7 +246,6 @@ Full-text search uses SQLite FTS5 trigram tokenization for Japanese partial matc
 
       const webIndexPath = join(dir, "search-index.json");
       const derived = deriveWebIndexFromChunks(rows, webIndexPath, () => "post.html");
-      expect(derived.written).toBe(true);
       expect(derived.chunks > 0).toBe(true);
       expect(existsSync(webIndexPath)).toBe(true);
     } finally {
@@ -281,7 +280,6 @@ Keyword matching works without embedding models in the browser search index expo
       const rows = store.exportAll();
       store.close();
       const derived = deriveWebIndexFromChunks(rows, webIndexPath, () => "doc.html");
-      expect(derived.written).toBe(true);
       expect(derived.chunks).toBe(built.chunks);
     } finally {
       rmSync(dir, { recursive: true, force: true });

@@ -22,15 +22,12 @@ export interface EmitSearchAssetsOptions {
 }
 
 export interface EmitSearchAssetsResult {
-  readonly written: boolean;
   readonly chunks: number;
   readonly bytes: number;
   readonly serviceWorker: boolean;
 }
 
-export async function emitSearchAssets(
-  opts: EmitSearchAssetsOptions,
-): Promise<EmitSearchAssetsResult> {
+export function emitSearchAssets(opts: EmitSearchAssetsOptions): EmitSearchAssetsResult {
   const log = opts.onProgress ?? (() => {});
   const assetsDir = join(opts.outDir, "assets");
   mkdirSync(assetsDir, { recursive: true });
@@ -45,16 +42,6 @@ export async function emitSearchAssets(
       snippetOnly: opts.snippetOnly,
     },
   );
-
-  if (!webIdx.written) {
-    log("search-index.json: skipped (no indexed content)");
-    return {
-      written: false,
-      chunks: 0,
-      bytes: 0,
-      serviceWorker: false,
-    };
-  }
 
   const okScript = copySearchScript(opts.outDir, opts.repoRoot);
   log(
@@ -77,7 +64,6 @@ export async function emitSearchAssets(
   }
 
   return {
-    written: true,
     chunks: webIdx.chunks,
     bytes: webIdx.bytes,
     serviceWorker,

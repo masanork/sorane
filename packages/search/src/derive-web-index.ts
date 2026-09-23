@@ -7,7 +7,6 @@ import {
 } from "./web-export.ts";
 
 export interface DeriveResult {
-  readonly written: boolean;
   readonly chunks: number;
   readonly bytes: number;
 }
@@ -33,5 +32,5 @@ export function deriveWebIndexFromChunks(
   });
   const json = JSON.stringify(index);
   writeFileSync(outPath, json, "utf8");
-  return { written: true, chunks: index.chunks.length, bytes: json.length };
+  return { chunks: index.chunks.length, bytes: json.length };
 }
