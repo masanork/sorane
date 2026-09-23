@@ -7,7 +7,6 @@ on:
       - "website/**"
       - "packages/**"
       - "templates/**"
-      - "profile/**"
       - "scripts/supply-chain-status.ts"
       - "cbom.json"
       - "package.json"

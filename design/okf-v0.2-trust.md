@@ -38,7 +38,7 @@ Helpers: `deriveTrustTier`, `isStale`, `parseTrustFields`.
 
 ### Schema
 
-Optional shapes in `sorane-okf-0.{1,2,3}.schema.json` (copied to `profile/`, `rust/.../profile/`, `website/static/profile/`).
+Optional shapes in `packages/okf/profile/sorane-okf-0.{1,2,3}.schema.json`, mirrored to `website/static/profile/` for the public schema URLs.
 
 ### Surfaces
 

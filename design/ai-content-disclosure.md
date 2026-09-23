@@ -40,7 +40,7 @@ Phase 1 ships author-controlled frontmatter → HTML badges + JSON-LD + catalog/
 
 | Area | Location | Behavior today |
 |------|----------|----------------|
-| OKF profile | `profile/sorane-okf-0.2.schema.json` | Disclosure fields + profile-aware AJV |
+| OKF profile | `packages/okf/profile/sorane-okf-0.2.schema.json` | Disclosure fields + profile-aware AJV |
 | Article HTML | `renderArticleBody()` / `renderDocsArticleBody()` | EU badges when `build.ai_disclosure` + frontmatter |
 | JSON-LD | `buildBlogPostingJsonLd()` + `aiDisclosureJsonLdFields()` | `digitalSourceType`, `contributor`, `disambiguatingDescription` |
 | Catalog / search / Atom | `catalog.ts`, `web-export.ts`, `blog-pages.ts` | `digital_source_type` propagation |
@@ -216,7 +216,7 @@ aiSystems:
 ---
 ```
 
-#### JSON Schema additions (`profile/sorane-okf-0.2.schema.json`)
+#### JSON Schema additions (`packages/okf/profile/sorane-okf-0.2.schema.json`)
 
 - Copy `0.1` defs; bump `$id` to `https://sorane.dev/profile/sorane-okf/0.2`.
 - Add to `okfBase.properties`:
@@ -1086,7 +1086,7 @@ No PII in logs.
 - [EU AI Act transparency icons](https://digital-strategy.ec.europa.eu/en/policies/eu-icons-labelling-ai-generated-content)
 - [IPTC Photo Metadata 2025.1 guidance](https://iptc.org/std/photometadata/documentation/)
 - [C2PA specification](https://c2pa.org/specifications/specifications/2.2/index.html)
-- sorane: `profile/sorane-okf-0.1.schema.json`, `packages/core/src/build.ts`, `packages/core/src/ssg.ts`, `packages/core/src/catalog.ts`
+- sorane: `packages/okf/profile/sorane-okf-0.1.schema.json`, `packages/core/src/build.ts`, `packages/core/src/ssg.ts`, `packages/core/src/catalog.ts`
 
 ---
 

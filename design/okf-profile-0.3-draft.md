@@ -460,7 +460,7 @@ okf:
 
 ### Phase A — Profile & validate only (smallest)
 
-- [x] `profile/sorane-okf-0.3.schema.json`
+- [x] `packages/okf/profile/sorane-okf-0.3.schema.json`
 - [x] `validate.ts` whitelist + `dataset` / `distributions` rules
 - [x] Tests + `validate --json` messages
 - [x] Unknown types warn + treat as `article` in build
@@ -546,4 +546,4 @@ distributions:
 - [DCAT-AP 3.0.1](https://semiceu.github.io/DCAT-AP/releases/3.0.1/)
 - [CKAN User Guide](https://docs.ckan.org/en/latest/user-guide.html)
 - [sorane `catalog.ts`](../packages/core/src/catalog.ts)
-- [sorane-okf/0.2 schema](../profile/sorane-okf-0.2.schema.json)
+- [sorane-okf/0.2 schema](../packages/okf/profile/sorane-okf-0.2.schema.json)
