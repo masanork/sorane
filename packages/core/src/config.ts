@@ -179,10 +179,7 @@ export interface AiDisclosureConfig {
 
 export interface FontConfigInput {
   readonly enabled?: boolean;
-  readonly family?: string;
-  readonly source?: string;
   readonly cache_dir?: string;
-  readonly weight?: string;
   readonly skip_key?: string;
   readonly roles?: FontRoles;
   readonly sources?: Readonly<Record<string, FontSourceSpec>>;
@@ -295,9 +292,6 @@ export interface SoraneConfig {
     readonly enabled: boolean;
     readonly cache_dir: string;
     readonly skip_key: string;
-    readonly family?: string;
-    readonly source?: string;
-    readonly weight?: string;
     readonly roles?: FontRoles;
     readonly sources?: Readonly<Record<string, FontSourceSpec>>;
   };
@@ -348,10 +342,7 @@ export const DEFAULT_CONFIG: SoraneConfig = {
   },
   fonts: {
     enabled: false,
-    family: "Sorane-Subset",
-    source: "assets/fonts/source.ttf",
     cache_dir: ".sorane/cache/fonts",
-    weight: "450",
     skip_key: "noFontEmbedding",
   },
   search: {

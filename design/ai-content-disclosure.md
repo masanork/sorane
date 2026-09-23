@@ -44,7 +44,7 @@ Phase 1 ships author-controlled frontmatter → HTML badges + JSON-LD + catalog/
 |------|----------|----------------|
 | OKF profile | `packages/okf/profile/sorane-okf-0.2.schema.json` | Disclosure fields + profile-aware AJV |
 | Article HTML | `renderArticleBody()` / `renderDocsArticleBody()` | EU badges when `build.ai_disclosure` + frontmatter |
-| JSON-LD | `buildBlogPostingJsonLd()` + `aiDisclosureJsonLdFields()` | `digitalSourceType`, `contributor`, `disambiguatingDescription` |
+| JSON-LD | `buildCreativeWorkJsonLd()` + `aiDisclosureJsonLdFields()` | `digitalSourceType`, `contributor`, `disambiguatingDescription` |
 | Catalog / search / Atom | `catalog.ts`, `web-export.ts`, `blog-pages.ts` | `digital_source_type` propagation |
 | Static assets | `processStaticAssets()` in `static-assets.ts` | Copy → optional IPTC XMP (`iptc-xmp-pass.ts`) → optional C2PA (`c2pa-pass.ts`) |
 | Asset manifest | `content/asset-provenance.yaml` | Per-file `digitalSourceType`, `aiSystems`, `aiDisclosureNote` |
@@ -456,7 +456,7 @@ sequenceDiagram
   OKF->>AD: concept.frontmatter
   AD-->>SSG: AiDisclosure | null
   SSG->>SSG: renderArticleBody (+ badge)
-  SSG->>SSG: buildBlogPostingJsonLd (+ digitalSourceType)
+  SSG->>SSG: buildCreativeWorkJsonLd (+ digitalSourceType)
   EM->>OUT: page.html, page.md
   Note over OUT: catalog, bundle, search read same concept
 ```
@@ -465,7 +465,7 @@ sequenceDiagram
 
 | Function | Change |
 |----------|--------|
-| `buildBlogPostingJsonLd()` | Accept optional `aiDisclosure?: AiDisclosure`; merge `aiDisclosureJsonLdFields()` |
+| `buildCreativeWorkJsonLd()` | Accept optional disclosure fields and merge `aiDisclosureJsonLdFields()` |
 | `renderArticleBody()` | Call `buildAiBadgeHtml()` when disclosure present and `ai_disclosure.badges` enabled |
 | `renderDocsArticleBody()` (`docs.ts`) | Same badge hook after `<h1>` (docs-mode pages use `renderDocsArticleFromConcept()`, not `renderArticleBody()`) |
 | `ArticleListEntry` | Add optional `aiDisclosure?: AiDisclosure` |
@@ -477,7 +477,8 @@ sequenceDiagram
 ```typescript
 // Per article (~L416-430)
 const aiDisclosure = parseAiDisclosure(p.concept.frontmatter);
-const jsonLd = buildBlogPostingJsonLd({
+const jsonLd = buildCreativeWorkJsonLd({
+  workType: "BlogPosting",
   // ...existing fields
   aiDisclosure: aiDisclosure ?? undefined,
 });
@@ -593,25 +594,7 @@ sequenceDiagram
 
 **API extensions:**
 
-```typescript
-// derive-web-index.ts
-export async function deriveWebIndex(
-  dbPath: string,
-  outPath: string,
-  sourceToUrl: (source: string) => string,
-  mode: WebSearchMode,
-  contentDir?: string,  // NEW
-): Promise<DeriveResult>;
-
-// emit-search-assets.ts — add to EmitSearchAssetsOptions
-readonly contentDir: string;
-
-// build.ts — emitSearchAssets call (~L763)
-await emitSearchAssets({
-  // ...existing
-  contentDir: join(cwd, config.build.content_dir),
-});
-```
+`deriveWebIndexFromChunks()` accepts the current build corpus and writes the public index. `emitSearchAssets()` also accepts `contentDir` to attach disclosure metadata.
 
 #### Web export schema bump (FTS)
 
@@ -887,49 +870,18 @@ flowchart TB
 
 ### Migration
 
-`packages/core/src/migrate.ts`:
-
-- When migrating, preserve all disclosure keys (`digitalSourceType`, `euAiLabel`, `aiDisclosureNote`, `aiSystems`) via existing `normalizeConcept` / `frontmatter` passthrough—no field stripping.
-- Optional CLI flag `sorane migrate --bump-profile 0.2` sets `profile: sorane-okf/0.2` without inventing disclosure fields.
-
-`packages/cli/src/migrate.ts`: parse `--bump-profile <version>`; when `0.2`, write bumped profile into migrated output.
-
-`packages/cli/src/validate.ts`: no change beyond okf validator picking schema by profile (invalid profile errors via `validateProfileFormat()` in PR2).
+Sorane does not provide an in-place frontmatter migration command. Content must use the current OKF fields directly.
 
 ---
 
 ## API / Interface Changes
 
-### `buildBlogPostingJsonLd` (before / after)
+### JSON-LD builder
 
 **Before** (`packages/core/src/ssg.ts`):
 
 ```typescript
-export function buildBlogPostingJsonLd(opts: {
-  title: string;
-  description?: string;
-  url: string;
-  datePublished?: string;
-  dateModified?: string;
-  author?: string;
-  siteTitle: string;
-  lang: string;
-}): string
-```
-
-**After:**
-
-```typescript
-export function buildBlogPostingJsonLd(opts: {
-  // ...existing
-  aiDisclosure?: AiDisclosure;
-}): string {
-  const data: Record<string, unknown> = { /* ... */ };
-  if (opts.aiDisclosure) {
-    Object.assign(data, aiDisclosureJsonLdFields(opts.aiDisclosure));
-  }
-  // ...
-}
+buildCreativeWorkJsonLd({ workType: "BlogPosting", ... })
 ```
 
 **JSON-LD output example:**
@@ -1015,7 +967,7 @@ export interface ArticleListEntry {
 |------|------|
 | Visible in markup | Duplicates JSON-LD; harder for existing `extraHead` pattern |
 
-**Rejected.** Extend existing `buildBlogPostingJsonLd()` injection via `emitPage` `extraHead`.
+**Rejected.** JSON-LD is emitted through the `buildCreativeWorkJsonLd()` path and `emitPage` `extraHead`.
 
 ### 4. Single boolean `aiGenerated: true`
 

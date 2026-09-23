@@ -116,7 +116,7 @@ npx @sorane/cli search "検索語" --cwd . --okfc dist/okf/site.okfc --k 10
 
 ## オプショナル npm パッケージ
 
-`@sorane/cli` 単体で `build` / `validate` / `watch` / `migrate` / `export` / `import` は動きます。次は **使う機能のときだけ** 追加インストールします。
+`@sorane/cli` 単体で `build` / `validate` / `watch` / `export` / `import` は動きます。次は **使う機能のときだけ** 追加インストールします。
 
 | パッケージ | 用途 |
 |------------|------|

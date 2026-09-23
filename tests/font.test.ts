@@ -3,22 +3,12 @@ import { tmpdir } from "node:os";
 import { join } from "node:path";
 import { describe, expect, test } from "./_expect.ts";
 import {
-  buildFontFaceCss,
   buildFontStackCss,
   createFontProcessor,
 } from "../packages/font/src/index.ts";
 
 const repoRoot = join(import.meta.dirname, "..");
 const fixtureMono = join(repoRoot, "tests/fixtures/fonts/NotoSansMono-Regular.ttf");
-
-describe("buildFontFaceCss", () => {
-  test("単一フォントの style を返す", () => {
-    const css = buildFontFaceCss("Test", "./font.woff2", "450");
-    expect(css).toContain("@font-face");
-    expect(css).toContain("font-weight: 450");
-    expect(css).toContain("Test");
-  });
-});
 
 describe("buildFontStackCss", () => {
   test("空は空文字", () => {
@@ -86,44 +76,13 @@ describe("createFontProcessor", () => {
     }
   });
 
-  test("ソース欠落は null", async () => {
+  test("font stack 未設定は null", async () => {
     const proc = await createFontProcessor(repoRoot, {
       enabled: true,
       cache_dir: ".cache",
       skip_key: "skip",
-      family: "X",
-      source: "missing/font.ttf",
     }, "dist");
     expect(proc).toBe(null);
-  });
-
-  test("単一フォント（後方互換）モード", async () => {
-    if (!existsSync(fixtureMono)) return;
-    const tmp = mkdtempSync(join(tmpdir(), "sorane-font-"));
-    try {
-      const proc = await createFontProcessor(
-        repoRoot,
-        {
-          enabled: true,
-          cache_dir: join(tmp, "cache"),
-          skip_key: "skip",
-          family: "Fixture Mono",
-          source: "tests/fixtures/fonts/NotoSansMono-Regular.ttf",
-          weight: "400",
-        },
-        join(tmp, "dist"),
-      );
-      const css = await proc!.fontCssForPage({
-        body: "abc",
-        title: "T",
-        frontmatter: {},
-        rootPrefix: "./",
-      });
-      expect(css).toContain("Fixture Mono");
-      expect(css).toContain("body {");
-    } finally {
-      rmSync(tmp, { recursive: true, force: true });
-    }
   });
 
   test("static フォントで CSS を生成する", async () => {
@@ -227,8 +186,10 @@ describe("createFontProcessor", () => {
           enabled: true,
           cache_dir: join(tmp, "cache"),
           skip_key: "noFontEmbedding",
-          family: "Fixture Mono",
-          source: "tests/fixtures/fonts/NotoSansMono-Regular.ttf",
+          roles: { body: ["Fixture Mono"] },
+          sources: {
+            "Fixture Mono": { source: "tests/fixtures/fonts/NotoSansMono-Regular.ttf" },
+          },
         },
         join(tmp, "dist"),
       );
@@ -251,8 +212,10 @@ describe("createFontProcessor", () => {
           enabled: true,
           cache_dir: join(tmp, "cache"),
           skip_key: "noFontEmbedding",
-          family: "Fixture Mono",
-          source: "tests/fixtures/fonts/NotoSansMono-Regular.ttf",
+          roles: { body: ["Fixture Mono"] },
+          sources: {
+            "Fixture Mono": { source: "tests/fixtures/fonts/NotoSansMono-Regular.ttf" },
+          },
         },
         join(tmp, "dist"),
       );

@@ -81,7 +81,7 @@ Aligned with markup-interchange and Tsumugu’s “export from Semantic AST, not
 | **M1** | Machine-readable site artifacts are built from **parsed concepts / IR / build graph**, not by scraping rendered HTML. |
 | **M2** | Changing theme CSS or layout templates **must not** change the semantic payload of `catalog.jsonld`, OKF `.md` alternates, OKF bundle, OKFC, or search chunks (presentation-only diffs allowed in HTML). |
 | **M3** | Diagram **source** remains in Markdown (fences); HTML is presentation. Search / OKF / agents can still read the fence text. |
-| **M4** | Sibling `.md` alternates and `okf/bundle.tar.gz` preserve **source notation** (ruby, term links) unless the author runs an explicit migrate. |
+| **M4** | Sibling `.md` alternates and `okf/bundle.tar.gz` preserve **source notation** (ruby, term links). |
 | **M5** | `llms.txt` is a **recommendation / orientation** guide (links to catalogs and policies), not a full page inventory. Full inventory lives in catalog / OKF / (future) list JSON. |
 
 ### Current pipeline (summary)

@@ -46,12 +46,9 @@ Copy [`template/site/`](template/site/) into your own GitHub repo. It includes *
 npx @sorane/cli build [--cwd <dir>] [--clean] [--watch] [--skip-c2pa]
 npx @sorane/cli watch [--cwd <dir>] [--clean]
 npx @sorane/cli validate [--cwd <dir>]
-npx @sorane/cli migrate [--cwd <dir>] [--dry-run] [--bump-profile 0.2|0.3]
 npx @sorane/cli index [--cwd <dir>] [--force] [--yes]
 npx @sorane/cli search <query> [--cwd <dir>] [--type article] [--tag <slug>] [--json] [--yes]
 ```
-
-`migrate --dry-run` previews legacy frontmatter conversions, including date-only `stale_after` values converted to midnight UTC.
 
 Site projects keep content in a separate directory and configure the build with `sorane.yaml`.
 
@@ -120,9 +117,14 @@ bunsen WASM (allsorts) per-page WOFF2 subsetting. Configure in `sorane.yaml`:
 ```yaml
 fonts:
   enabled: true
-  family: Sorane-NotoSansJP
-  source: assets/fonts/NotoSansJP-VF.ttf
+  cache_dir: .sorane/cache/fonts
   skip_key: noFontEmbedding
+  roles:
+    body: ["Noto Sans JP"]
+  sources:
+    "Noto Sans JP":
+      source: assets/fonts/NotoSansJP-VF.ttf
+      weight: "100 900"
 ```
 
 Pages with `noFontEmbedding: true` in frontmatter use system fonts.

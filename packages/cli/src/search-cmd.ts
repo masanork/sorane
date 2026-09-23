@@ -10,7 +10,6 @@ import { mergeConfig } from "@sorane/core";
 
 const SEARCH_FLAGS_WITH_VALUE = new Set([
   "--cwd",
-  "--out",
   "--index",
   "--okfc",
   "--k",
@@ -45,8 +44,8 @@ export interface ResolvedSearchBackend {
  *
  * Priority:
  * 1. `--okfc <path>` (force OKFC)
- * 2. `--prefer-index` → index path (`--index` / `--out` / config.search.index)
- * 3. `--out` / `--index` ending in `.okfc` → OKFC
+ * 2. `--prefer-index` → index path (`--index` / config.search.index)
+ * 3. `--index` ending in `.okfc` → OKFC
  * 4. `{out_dir}/okf/site.okfc` if present
  * 5. index path if present
  * 6. otherwise index path (caller may error if missing)
@@ -70,17 +69,17 @@ export function resolveSearchBackend(
   }
 
   const preferIndex = argv.includes("--prefer-index");
-  const outOrIndex = get("--index") ?? get("--out");
-  const indexPath = outOrIndex
-    ? resolve(cwd, outOrIndex)
+  const indexFlag = get("--index");
+  const indexPath = indexFlag
+    ? resolve(cwd, indexFlag)
     : resolve(cwd, opts.defaultIndex);
 
   if (preferIndex) {
     return { kind: "index", path: indexPath };
   }
 
-  if (outOrIndex && /\.okfc$/i.test(outOrIndex)) {
-    return { kind: "okfc", path: resolve(cwd, outOrIndex) };
+  if (indexFlag && /\.okfc$/i.test(indexFlag)) {
+    return { kind: "okfc", path: resolve(cwd, indexFlag) };
   }
 
   const siteOkfc = resolve(cwd, opts.outDir, "okf/site.okfc");

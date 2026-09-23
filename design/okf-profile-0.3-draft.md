@@ -399,7 +399,7 @@ Both occur depending on site shape—not a single global choice.
 
 Implementation notes:
 
-- Rename or generalize `buildBlogPostingJsonLd()` → `buildArticleJsonLd({ workType })`.
+- The JSON-LD builder is generalized as `buildCreativeWorkJsonLd({ workType })`.
 - `BlogPosting` keeps `isPartOf: { @type: Blog, … }`; `TechArticle` uses `isPartOf: { @type: WebSite, … }` or docs collection name.
 - `emit-page.ts` `pageKind` stays OG-oriented (`article` / `website`); JSON-LD type is a separate field.
 

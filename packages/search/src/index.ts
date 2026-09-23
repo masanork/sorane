@@ -42,7 +42,6 @@ export {
   type WebExportChunk,
 } from "./web-export.ts";
 export {
-  deriveWebIndex,
   deriveWebIndexFromChunks,
   type DeriveResult,
 } from "./derive-web-index.ts";

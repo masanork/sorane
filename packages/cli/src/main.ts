@@ -3,7 +3,6 @@ import { OptionalPackageMissingError } from "@sorane/core";
 import { runBuildCmd } from "./build.ts";
 import { runWatchCmd } from "./watch.ts";
 import { runPreviewCmd } from "./preview.ts";
-import { runMigrateCmd } from "./migrate.ts";
 import { runExportCmd } from "./export.ts";
 import { runImportCmd } from "./import-cmd.ts";
 import { runValidateCmd } from "./validate.ts";
@@ -28,9 +27,6 @@ async function main(): Promise<void> {
     case "validate":
       await runValidateCmd(rest);
       break;
-    case "migrate":
-      await runMigrateCmd(rest);
-      break;
     case "index": {
       const { runIndexCmd } = await import("./index-cmd.ts");
       await runIndexCmd(rest);
@@ -54,12 +50,11 @@ async function main(): Promise<void> {
     }
     default:
       process.stderr.write(
-        "usage: sorane <build|validate|migrate|index|search|export|import|okfc|watch|preview> [options]\n" +
+        "usage: sorane <build|validate|index|search|export|import|okfc|watch|preview> [options]\n" +
           "  build     --cwd <dir> [--clean] [--watch] [--skip-c2pa] [--drafts] [--preview]\n" +
           "  watch     --cwd <dir> [--clean] [--drafts] [--preview]\n" +
           "  preview   --cwd <dir> [--port 4321] [--watch]\n" +
           "  validate  --cwd <dir> [--json]\n" +
-          "  migrate   --cwd <dir> [--dry-run] [--bump-profile 0.2|0.3]\n" +
           "  index     --cwd <dir> [--force] [--drafts] [--out <path>] [--yes]\n" +
           "  search    <query> [--cwd <dir>] [--okfc <path>] [--prefer-index] [--type …] [--tag <slug>] [--k 10] [--json]\n" +
           "            (prefers dist/okf/site.okfc when present; else .sorane/index.db)\n" +

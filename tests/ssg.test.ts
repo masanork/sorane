@@ -23,7 +23,6 @@ import {
 import { parseAiDisclosure } from "../packages/core/src/ai-disclosure.ts";
 import { normalizeConcept } from "../packages/okf/src/index.ts";
 import { buildAtomFeed, buildLlmsTxt } from "../packages/core/src/site-meta.ts";
-import { migrateToOkf } from "../packages/core/src/migrate.ts";
 
 describe("extractDescription", () => {
   test("最初の散文段落を抽出", () => {
@@ -421,18 +420,6 @@ describe("buildPage", () => {
     expect(html).toContain('name="twitter:card" content="summary_large_image"');
     expect(html).toContain('property="og:locale" content="ja_JP"');
     expect(html).toContain('name="twitter:title" content="Post"');
-  });
-});
-
-describe("migrateToOkf", () => {
-  test("srn 形式を OKF に変換", () => {
-    const out = migrateToOkf(
-      '---\ntitle: Old\ndate: "2025-06-01"\nlayout: article\n---\n\nBody\n',
-      "2025-06-01-old.md",
-    );
-    expect(out).toContain("type: article");
-    expect(out).toContain("timestamp: 2025-06-01T00:00:00Z");
-    expect(out).toContain("profile: sorane-okf/0.1");
   });
 });
 

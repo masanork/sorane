@@ -9,15 +9,15 @@ import {
 } from "../packages/okf/src/index.ts";
 
 describe("normalizeConcept", () => {
-  test("layout/date を type/timestamp に昇格", () => {
+  test("canonical type/timestamp を読み込む", () => {
     const c = normalizeConcept(
-      { layout: "article", date: "2025-01-01", title: "T" },
+      { type: "article", timestamp: "2025-01-01", title: "T" },
       "body",
       "fb",
     );
     expect(c.type).toBe("article");
     expect(c.timestamp).toBe("2025-01-01T00:00:00Z");
-    expect(c.warnings.length > 0).toBe(true);
+    expect(c.warnings.length).toBe(0);
   });
 });
 
@@ -143,14 +143,12 @@ describe("resolveEffectiveType", () => {
 });
 
 describe("conceptToOkfMarkdown", () => {
-  test("旧キーを出力しない", () => {
+  test("canonical timestamp を出力する", () => {
     const c = normalizeConcept(
       {
         type: "article",
         title: "T",
         timestamp: "2025-01-01T00:00:00Z",
-        layout: "article",
-        date: "2025-01-01",
       },
       "Hello\n",
       "fb",
@@ -158,8 +156,6 @@ describe("conceptToOkfMarkdown", () => {
     const md = conceptToOkfMarkdown(c);
     expect(md).toContain("type: article");
     expect(md).toContain("timestamp: 2025-01-01T00:00:00Z");
-    expect(md).not.toMatch(/layout:/);
-    expect(md).not.toMatch(/date:/);
   });
 
   test("AI disclosure フィールドを出力する", () => {

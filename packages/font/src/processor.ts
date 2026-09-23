@@ -8,7 +8,7 @@ import {
 } from "node:fs";
 import { basename, join, resolve } from "node:path";
 import { extractCharset } from "./extract-charset.ts";
-import { buildFontFaceCss, buildFontStackCss } from "./font-face.ts";
+import { buildFontStackCss } from "./font-face.ts";
 import { subsetWoff2 } from "./wasm-subsetter.ts";
 
 export interface FontSourceSpec {
@@ -28,11 +28,6 @@ export interface FontConfig {
   readonly enabled: boolean;
   readonly cache_dir: string;
   readonly skip_key: string;
-  /** 単一フォント（後方互換） */
-  readonly family?: string;
-  readonly source?: string;
-  readonly weight?: string;
-  /** 複数フォントスタック */
   readonly roles?: FontRoles;
   readonly sources?: Readonly<Record<string, FontSourceSpec>>;
 }
@@ -103,19 +98,7 @@ function loadFonts(cwd: string, config: FontConfig): LoadedFont[] | null {
     return loaded.length > 0 ? loaded : null;
   }
 
-  if (!config.family || !config.source) return null;
-  const sourcePath = resolve(cwd, config.source);
-  if (!existsSync(sourcePath)) {
-    process.stderr.write(`[sorane] font source not found: ${sourcePath} (skipping subset)\n`);
-    return null;
-  }
-  return [{
-    family: config.family,
-    bytes: new Uint8Array(readFileSync(sourcePath)),
-    weight: config.weight ?? "450",
-    embed: "subset",
-    sourcePath,
-  }];
+  return null;
 }
 
 export async function createFontProcessor(
@@ -128,7 +111,6 @@ export async function createFontProcessor(
   const fonts = loadFonts(cwd, config);
   if (!fonts || fonts.length === 0) return null;
 
-  const stackMode = Boolean(config.sources && config.roles);
   const cacheDir = resolve(cwd, config.cache_dir);
   const distFontDir = join(outDir, "assets", "fonts");
   mkdirSync(cacheDir, { recursive: true });
@@ -215,12 +197,7 @@ export async function createFontProcessor(
         });
       }
 
-      if (stackMode) {
-        return buildFontStackCss(faces);
-      }
-
-      const primary = faces[0]!;
-      return buildFontFaceCss(primary.family, primary.url, primary.weight);
+      return buildFontStackCss(faces);
     },
   };
 }

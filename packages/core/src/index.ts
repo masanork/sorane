@@ -103,7 +103,6 @@ export {
   type RequireOptionalModuleOptions,
 } from "./optional-dep.ts";
 export { normalizeOkfConfig, okfValidateOptions } from "./okf-config.ts";
-export { migrateToOkf, parseBumpProfileArg, type MigrateToOkfOptions } from "./migrate.ts";
 export { validateHeadingWarnings } from "./validate-heading-structure.ts";
 export {
   validateSiteContent,

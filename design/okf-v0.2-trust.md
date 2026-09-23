@@ -32,7 +32,7 @@ Both sit on the OKF field model. Profile `0.2` is **not** “the profile that im
 | `usage_window` | Shared `{ from, to }` sibling of `sources` |
 | `status` | `draft` \| `stable` \| `deprecated` |
 | `stale_after` | ISO 8601 datetime with explicit UTC offset; past instant → validate **warning** |
-| **Date fallback** | Effective `timestamp` = legacy `timestamp` / `date` / `publishedAt`, else `generated.at` (OKF §13.1) |
+| **Date fallback** | Effective `timestamp` = `timestamp`, else `generated.at` (OKF §13.1) |
 
 Helpers: `deriveTrustTier`, `isStale`, `parseTrustFields`.
 
@@ -54,7 +54,6 @@ Optional shapes in `packages/okf/profile/sorane-okf-0.{1,2,3}.schema.json`, mirr
 - Full `Attested Computation` runtime / executor / attester
 - Search facets for trust tier / status
 - `okf_version` on bundle-root index
-- Automatic `timestamp` → `generated` migrate rewrite
 
 ---
 

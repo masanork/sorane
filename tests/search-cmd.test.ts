@@ -27,20 +27,7 @@ describe("parseSearchQuery", () => {
 });
 
 describe("parseSearchArgs", () => {
-  test("--out で index パスを上書き", () => {
-    const args = parseSearchArgs([
-      "q",
-      "--cwd",
-      "/tmp/site",
-      "--out",
-      "custom/index.db",
-    ]);
-    expect(args.backend.kind).toBe("index");
-    expect(args.backend.path.endsWith("custom/index.db")).toBe(true);
-    expect(args.query).toBe("q");
-  });
-
-  test("--index は --out と同義", () => {
+  test("--index で検索 index パスを上書き", () => {
     const args = parseSearchArgs(["q", "--cwd", "/tmp/site", "--index", "x.db"]);
     expect(args.backend.path.endsWith("x.db")).toBe(true);
   });

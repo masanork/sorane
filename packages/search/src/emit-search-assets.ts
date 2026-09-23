@@ -1,16 +1,14 @@
 import { mkdirSync } from "node:fs";
 import { join } from "node:path";
-import { deriveWebIndex, deriveWebIndexFromChunks } from "./derive-web-index.ts";
+import { deriveWebIndexFromChunks } from "./derive-web-index.ts";
 import type { WebExportChunk } from "./web-export.ts";
 import { writeSearchServiceWorker } from "./offline-sw.ts";
 import { copySearchScript } from "./vendor-web.ts";
 
 export interface EmitSearchAssetsOptions {
   readonly outDir: string;
-  /** Local incremental database used when `chunks` is omitted. */
-  readonly indexPath?: string;
-  /** Current build corpus; public assets should use this instead of local state. */
-  readonly chunks?: readonly WebExportChunk[];
+  /** Current build corpus used to generate public assets. */
+  readonly chunks: readonly WebExportChunk[];
   readonly sourceToUrl: (source: string) => string;
   readonly contentDir?: string;
   readonly machineReadable?: boolean;
@@ -37,36 +35,19 @@ export async function emitSearchAssets(
   const assetsDir = join(opts.outDir, "assets");
   mkdirSync(assetsDir, { recursive: true });
 
-  const webIdx = opts.chunks
-    ? deriveWebIndexFromChunks(
-        opts.chunks,
-        join(assetsDir, "search-index.json"),
-        opts.sourceToUrl,
-        {
-          contentDir: opts.contentDir,
-          machineReadable: opts.machineReadable,
-          snippetOnly: opts.snippetOnly,
-        },
-      )
-    : opts.indexPath
-      ? await deriveWebIndex(
-          opts.indexPath,
-          join(assetsDir, "search-index.json"),
-          opts.sourceToUrl,
-          {
-            contentDir: opts.contentDir,
-            machineReadable: opts.machineReadable,
-            snippetOnly: opts.snippetOnly,
-          },
-        )
-      : { written: false, chunks: 0, bytes: 0 };
+  const webIdx = deriveWebIndexFromChunks(
+    opts.chunks,
+    join(assetsDir, "search-index.json"),
+    opts.sourceToUrl,
+    {
+      contentDir: opts.contentDir,
+      machineReadable: opts.machineReadable,
+      snippetOnly: opts.snippetOnly,
+    },
+  );
 
   if (!webIdx.written) {
-    log(
-      opts.indexPath
-        ? `search-index.json: skipped (no index at ${opts.indexPath})`
-        : "search-index.json: skipped (no indexed content)",
-    );
+    log("search-index.json: skipped (no indexed content)");
     return {
       written: false,
       chunks: 0,

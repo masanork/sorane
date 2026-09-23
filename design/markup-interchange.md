@@ -23,7 +23,7 @@ Markdown (OKF body, non-destructive)
   → PDF (Vivliostyle on built HTML/CSS; Phase 4+, optional)
 ```
 
-**OKF principle preserved:** per-page `.md` alternates and `okf/bundle.tar.gz` keep **source notation** (`{漢字|かんじ}`, `[[term:id]]`). Build resolves term links to `href` in HTML only; it does not rewrite body source unless the author runs an explicit migrate command.
+**OKF principle preserved:** per-page `.md` alternates and `okf/bundle.tar.gz` keep **source notation** (`{漢字|かんじ}`, `[[term:id]]`). Build resolves term links to `href` in HTML only and does not rewrite body source.
 
 **Why Pandoc-shaped AST before Vivliostyle/docx:** one extension node maps once to `Span`/`Link` attributes; HTML, Word, and PDF pipelines consume the same hub. Vivliostyle remains a **sibling output** over `dist/` HTML — not the source of truth.
 

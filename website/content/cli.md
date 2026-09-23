@@ -81,16 +81,6 @@ npx @sorane/cli validate [--cwd <dir>] [--json]
 
 `template/site/AGENTS.md` と `.grok/skills/sorane-content/SKILL.md` がこの JSON 契約を前提にしています。
 
-## sorane migrate
-
-レガシー frontmatter を OKF 形式へ変換します。日付のみの `stale_after: YYYY-MM-DD` は、同日の `00:00:00Z` に変換します。最初は `--dry-run` で変更対象を確認できます。
-
-```bash
-npx @sorane/cli migrate [--cwd <dir>] [--dry-run] [--bump-profile 0.2|0.3]
-```
-
-`--bump-profile` は `profile: sorane-okf/<version>` へ上げるだけで、AI 開示や dataset 用フィールドは追加しません。
-
 ## sorane index
 
 `.sorane/index.db` にローカル作業用の SQLite FTS5 検索インデックスを構築・更新します。`sorane search` のローカル検索に使い、ビルド時にはヘッダー検索を有効にする目印にもなります。公開用ブラウザー検索データはこの DB からではなく、ビルド時の現在のコンテンツから生成します。
@@ -120,7 +110,6 @@ npx @sorane/cli search <query> [--cwd <dir>] \
 | `--okfc <path>` | 指定した配布用 OKFC パックを検索 |
 | `--prefer-index` | 作業用 index.db を優先 |
 | `--index <path>` | 作業用 index.db のパスを指定 |
-| `--out <path>` | `--index` の互換 alias。`.okfc` で終わる場合は OKFC パックを選択 |
 
 役割は、`sorane index` が作業中のローカル DB を更新し、`sorane okfc pack` または `sorane build` が共有・配布用パックを生成します。OKFC 経路は `better-sqlite3`（`@sorane/okf` の optional）で FTS 検索し、index.db 経路は `@sorane/search` を使います。
 

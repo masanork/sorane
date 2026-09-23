@@ -45,13 +45,9 @@ frontmatter の `profile` で、検証の厳しさと使える `type` を選び�
 | `sorane-okf/0.2` | `article`, `index` | **error** | 厳密検証（[AI 開示](ai-disclosure.html)） |
 | `sorane-okf/0.3` | 上表の 7 型 | **warning**（ビルドは `article` 扱い） | 厳密検証 |
 
-新規サイトは用途に応じて `sorane-okf/0.3`（拡張型・オープンデータ）または `sorane-okf/0.2`（記事のみ + AI 開示）を選ぶのが一般的です。既存サイトは `migrate --bump-profile` で上げられます。
+新規サイトは用途に応じて `sorane-okf/0.3`（拡張型・オープンデータ）または `sorane-okf/0.2`（記事のみ + AI 開示）を選び、各ページの `profile:` に明示します。
 
 `sorane.yaml` の `okf.default_profile` でサイト全体の既定プロファイルを指定できます（各ページの `profile:` は省略可能）。`okf.unknown_type` で 0.3 の未知 `type` を `warn`（既定）か `error` に切り替えられます。詳細は [設定](configuration.html#okf-サイト既定okf) を参照してください。
-
-```bash
-npx @sorane/cli migrate --cwd . --bump-profile 0.3
-```
 
 ## OKF v0.2 trust フィールド（任意）
 

@@ -18,16 +18,6 @@ function fontFaceRule(entry: FontFaceEntry): string {
   );
 }
 
-/** 単一フォント（後方互換）。 */
-export function buildFontFaceCss(family: string, woff2Url: string, weight = "450"): string {
-  return (
-    `<style>\n` +
-    `${fontFaceRule({ family, url: woff2Url, weight })}\n` +
-    `body { font-family: '${family}', system-ui, sans-serif; font-weight: ${weight}; }\n` +
-    `</style>`
-  );
-}
-
 /** 複数フォントスタック。本文の font-family は main.css 側で定義する。 */
 export function buildFontStackCss(faces: readonly FontFaceEntry[]): string {
   if (faces.length === 0) return "";

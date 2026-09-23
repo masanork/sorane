@@ -55,23 +55,6 @@ describe("sorane CLI", () => {
     }
   });
 
-  test("migrate --dry-run", () => {
-    const root = mkdtempSync(join(tmpdir(), "sorane-cli-migrate-"));
-    mkdirSync(join(root, "content"), { recursive: true });
-    writeFileSync(
-      join(root, "content", "old.md"),
-      '---\ntitle: Old\ndate: "2025-06-01"\nlayout: article\n---\n\nBody\n',
-      "utf8",
-    );
-    try {
-      const r = runCli(["migrate", "--cwd", root, "--dry-run"]);
-      expect(r.status).toBe(0);
-      expect(r.stdout + r.stderr).toMatch(/migrate|OKF|okf/i);
-    } finally {
-      rmSync(root, { recursive: true, force: true });
-    }
-  });
-
   test("search 引数無しは usage", () => {
     const r = runCli(["search", "--cwd", "examples/minimal"]);
     expect(r.status).toBe(2);

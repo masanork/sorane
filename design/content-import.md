@@ -4,13 +4,13 @@
 |-------|-------|
 | **Date** | 2026-06-21 |
 | **Status** | Implemented (I1–I5 complete) |
-| **Related** | `migrate` (in-repo OKF frontmatter only), srn `src/ssg/migrate.ts`, gjs `src/shared/txtbin/encoding-detect.ts` |
+| **Related** | srn `src/ssg/migrate.ts`, gjs `src/shared/txtbin/encoding-detect.ts` |
 
 ---
 
 ## Overview
 
-`sorane import` brings **legacy blog export files** into `content/` as OKF `article` pages. Unlike `sorane migrate`, it reads **external** formats (Movable Type, はてな Atom, WordPress WXR, …) and does not require pre-existing sorane markdown.
+`sorane import` brings external blog export files into `content/` as OKF `article` pages. It reads formats such as Movable Type, はてな Atom, and WordPress WXR, and does not require pre-existing Sorane Markdown.
 
 ```
 export file (bytes, any legacy encoding)
@@ -176,4 +176,3 @@ sorane import --input tests/fixtures/import/sample-wordpress.wxr.xml --cwd examp
 
 - gjs: `src/shared/txtbin/encoding-detect.ts`, `tests/unit/encoding-detect.test.ts`
 - srn: `src/ssg/migrate.ts` (`importMT`)
-- sorane: `packages/core/src/migrate.ts` (in-repo only)

@@ -1,10 +1,6 @@
 /**
  * 入力 frontmatter を OKF native 表現に正規化する（純粋・決定論的）。
  *
- * 移行期の旧キー:
- *   layout/kind → type
- *   date/publishedAt → timestamp (ISO 8601)
- *
  * OKF v0.2: `generated.at` may supply the content-change time when `timestamp` is absent.
  */
 
@@ -30,7 +26,7 @@ export interface OkfConcept {
   readonly title: string;
   readonly body: string;
   readonly frontmatter: Record<string, unknown>;
-  /** Effective content date: legacy `timestamp` / `date` / `publishedAt`, else `generated.at`. */
+  /** Effective content date: `timestamp`, else `generated.at`. */
   readonly timestamp?: string;
   readonly description?: string;
   readonly tags?: readonly string[];
@@ -51,20 +47,8 @@ export interface OkfConcept {
   readonly warnings: readonly string[];
 }
 
-function resolveType(raw: Record<string, unknown>, warnings: string[]): string {
+function resolveType(raw: Record<string, unknown>): string {
   if (typeof raw.type === "string" && raw.type.length > 0) return raw.type;
-  if (typeof raw.kind === "string" && raw.kind.length > 0) {
-    warnings.push("deprecated: `kind` → use `type`");
-    return raw.kind;
-  }
-  if (raw.layout === "blog") {
-    warnings.push("deprecated: `layout: blog` → use `type: index`");
-    return "index";
-  }
-  if (raw.layout === "article") {
-    warnings.push("deprecated: `layout: article` → use `type: article`");
-    return "article";
-  }
   return "";
 }
 
@@ -79,24 +63,6 @@ function toIsoTimestamp(value: unknown): string | undefined {
   return d.toISOString();
 }
 
-function resolveLegacyTimestamp(
-  raw: Record<string, unknown>,
-  warnings: string[],
-): string | undefined {
-  if (raw.timestamp !== undefined) {
-    return toIsoTimestamp(raw.timestamp);
-  }
-  if (raw.publishedAt !== undefined) {
-    warnings.push("deprecated: `publishedAt` → use `timestamp` or `generated.at`");
-    return toIsoTimestamp(raw.publishedAt);
-  }
-  if (raw.date !== undefined) {
-    warnings.push("deprecated: `date` → use `timestamp` or `generated.at`");
-    return toIsoTimestamp(raw.date);
-  }
-  return undefined;
-}
-
 function resolveTitle(raw: Record<string, unknown>, body: string, fallback: string): string {
   if (typeof raw.title === "string" && raw.title.length > 0) return raw.title;
   const m = body.match(/^#{1,6}\s+(.+?)\s*$/m);
@@ -106,11 +72,7 @@ function resolveTitle(raw: Record<string, unknown>, body: string, fallback: stri
 
 const SKIP_FRONTMATTER = new Set<string>([
   "type",
-  "kind",
-  "layout",
   "timestamp",
-  "publishedAt",
-  "date",
   "title",
   ...TRUST_FRONTMATTER_KEYS,
 ]);
@@ -122,15 +84,15 @@ export function normalizeConcept(
   fallbackTitle: string,
 ): OkfConcept {
   const warnings: string[] = [];
-  const type = resolveType(raw, warnings);
+  const type = resolveType(raw);
   const title = resolveTitle(raw, body, fallbackTitle);
   const trust = parseTrustFields(raw);
   warnings.push(...trust.warnings);
 
-  const legacyTs = resolveLegacyTimestamp(raw, warnings);
+  const timestamp = raw.timestamp === undefined ? undefined : toIsoTimestamp(raw.timestamp);
   const generatedAt = trust.generated?.at ? toIsoTimestamp(trust.generated.at) : undefined;
-  // OKF v0.2 §13.1: prefer generated.at when legacy timestamp is absent.
-  const timestamp = legacyTs ?? generatedAt;
+  // OKF v0.2 §13.1: prefer timestamp when present.
+  const effectiveTimestamp = timestamp ?? generatedAt;
 
   const frontmatter: Record<string, unknown> = {};
   for (const [key, value] of Object.entries(raw)) {
@@ -159,7 +121,7 @@ export function normalizeConcept(
     title,
     body,
     frontmatter,
-    timestamp,
+    timestamp: effectiveTimestamp,
     description,
     tags,
     resource,
