@@ -1,5 +1,7 @@
 # AI Content Disclosure for sorane
 
+> Archived implementation plan. This document records the 2026-06 implementation decisions and proposed changes; it is not a current API or architecture reference. Use `website/content/ai-disclosure.md` and the source tree for current behavior.
+
 | Field | Value |
 |-------|-------|
 | **Author** | _(TBD)_ |
