@@ -32,7 +32,7 @@ export async function runPreviewCmd(argv: string[]): Promise<void> {
   });
 
   if (withWatch) {
-    await runWatchCmd([...previewBuildArgv(cwd, false), "--watch-preview"]);
+    await runWatchCmd(previewBuildArgv(cwd, false));
   } else {
     await new Promise<void>(() => {});
   }

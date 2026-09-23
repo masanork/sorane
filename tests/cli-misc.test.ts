@@ -14,6 +14,12 @@ describe("parseWatchArgv", () => {
     expect(parsed.clean).toBe(true);
     expect(parsed.buildArgv).toContain("--clean");
   });
+
+  test("--preview を build に渡す", () => {
+    const parsed = parseWatchArgv(["--cwd", "/tmp/site", "--preview"]);
+    expect(parsed.buildArgv).toContain("--preview");
+    expect(parsed.buildArgv).toContain("--drafts");
+  });
 });
 
 describe("watchPaths", () => {

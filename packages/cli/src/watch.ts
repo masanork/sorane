@@ -10,17 +10,16 @@ export function parseWatchArgv(argv: string[]): {
   cwd: string;
   clean: boolean;
   buildArgv: string[];
-  preview: boolean;
 } {
   const cwd = parseCwdFlag(argv);
   const clean = argv.includes("--clean");
-  const preview = argv.includes("--watch-preview") || argv.includes("--preview");
+  const preview = argv.includes("--preview");
   const buildArgv = ["--cwd", cwd];
   if (clean) buildArgv.push("--clean");
   if (argv.includes("--drafts") || preview) {
     buildArgv.push("--drafts", "--preview");
   }
-  return { cwd, clean, buildArgv, preview };
+  return { cwd, clean, buildArgv };
 }
 
 /** @internal Exported for unit tests. */
