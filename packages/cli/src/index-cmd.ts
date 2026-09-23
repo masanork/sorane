@@ -5,13 +5,9 @@ import { loadSearchModule } from "./load-search.ts";
 export async function runIndexCmd(argv: string[]): Promise<void> {
   const cwd = parseCwdFlag(argv);
   const config = loadSoraneConfig(cwd);
-  const get = (flag: string, def: string) => {
-    const i = argv.indexOf(flag);
-    return i >= 0 && argv[i + 1] ? argv[i + 1]! : def;
-  };
-  const outFlag = argv.indexOf("--out");
-  const indexPath = outFlag >= 0 && argv[outFlag + 1]
-    ? resolve(cwd, argv[outFlag + 1]!)
+  const indexFlag = argv.indexOf("--index");
+  const indexPath = indexFlag >= 0 && argv[indexFlag + 1]
+    ? resolve(cwd, argv[indexFlag + 1]!)
     : resolve(cwd, config.search.index);
   const { buildSearchIndex } = await loadSearchModule(cwd, "index", argv);
   const result = await buildSearchIndex({

@@ -142,12 +142,12 @@ describe("runIndexCmd", () => {
     );
     writeFileSync(
       join(root, "sorane.yaml"),
-      "site:\n  title: T\n  description: d\n  lang: ja\nbuild:\n  content_dir: content\n  out_dir: dist\nsearch:\n  index: .sorane/test-index.db\n",
+      "site:\n  title: T\n  description: d\n  lang: ja\nbuild:\n  content_dir: content\n  out_dir: dist\n",
       "utf8",
     );
     try {
       const out = await captureStdout(() =>
-        runIndexCmd(["--cwd", root, "--force", "--out", ".sorane/test-index.db"]),
+        runIndexCmd(["--cwd", root, "--force", "--index", ".sorane/test-index.db"]),
       );
       expect(out).toContain("indexed");
       expect(existsSync(join(root, ".sorane/test-index.db"))).toBe(true);
