@@ -16,11 +16,9 @@ excludeFromList: true
 | Docker / GHCR | 次の version tag から | `ghcr.io/masanork/sorane`（amd64 / arm64） |
 | Bunsen フォント資産 | **利用可能** | [bunsen-fonts-v1](https://github.com/masanork/sorane/releases/tag/bunsen-fonts-v1) |
 
-npm パッケージ: `@sorane/cli`, `@sorane/core`, `@sorane/okf`, `@sorane/search`, `@sorane/font`, `@sorane/astro`, `@sorane/astro-backend-wasm`
+npm パッケージ（次版）: `@sorane/cli`, `@sorane/core`, `@sorane/okf`, `@sorane/search`, `@sorane/font`
 
-開発中の次版では Astro 統合と専用バックエンドを取り除き、CLI・core・OKF・検索・フォントの5パッケージに絞っています。以下の v0.5.0 の変更履歴は公開当時の内容です。
-
-Astro 連携を使っているサイトの移行方法は[Astro 連携 v0.5 からの移行](astro-v0.5-migration.html)を参照してください。
+v0.5.0 の変更履歴は公開当時の内容です。次版では Astro 統合と専用バックエンドを削除し、旧統合との互換性や移行手順は提供しません。
 
 ### 使い方
 

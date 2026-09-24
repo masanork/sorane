@@ -41,7 +41,6 @@ docs:
     - section: リファレンス
     - cli.html
     - configuration.html
-    - astro-v0.5-migration.html
     - diagrams.html
     - section: OKF・オープンデータ
     - okf-profile.html
