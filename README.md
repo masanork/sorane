@@ -198,6 +198,25 @@ Cloudflare Pages deploys `website/dist` to **ssg.sorane.dev** on push to `main` 
 | `git clone` + `npm ci` | Available |
 | `npx @sorane/cli` | Published (`@sorane/cli@0.5.0`) |
 | GitHub Release tags | Available (`v0.5.0` — npm packs, SBOM/CBOM, SLSA provenance) |
+| Homebrew | Formula available (`masanork/sorane`) |
+| Docker | GHCR image is published on the next version tag |
+
+Install with Homebrew:
+
+```bash
+brew tap masanork/sorane https://github.com/masanork/sorane
+brew install sorane
+```
+
+After the next version tag publishes the container image, build a mounted site directory with:
+
+```bash
+docker run --rm --user "$(id -u):$(id -g)" \
+  -v "$PWD:/workspace" ghcr.io/masanork/sorane:latest \
+  build --cwd /workspace --clean
+```
+
+The container includes the CLI, FTS search, and font package. Mermaid diagram integrations require installing the optional Mermaid packages.
 
 Publish workspace packages (maintainers):
 

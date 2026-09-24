@@ -12,8 +12,9 @@ excludeFromList: true
 | `npx @sorane/cli` | **利用可能** | サイトビルド・検証（検索は `@sorane/search` を追加） |
 | git clone + `npm ci` | **利用可能** | 空音本体の開発 |
 | GitHub Release タグ | **v0.5.x** | バージョン固定・SLSA 成果物 |
+| Homebrew | **利用可能** | `masanork/sorane` formula |
+| Docker / GHCR | 次の version tag から | `ghcr.io/masanork/sorane`（amd64 / arm64） |
 | Bunsen フォント資産 | **利用可能** | [bunsen-fonts-v1](https://github.com/masanork/sorane/releases/tag/bunsen-fonts-v1) |
-| Docker イメージ | 未対応 | — |
 
 npm パッケージ: `@sorane/cli`, `@sorane/core`, `@sorane/okf`, `@sorane/search`, `@sorane/font`, `@sorane/astro`, `@sorane/astro-backend-wasm`
 
@@ -118,4 +119,4 @@ masanork/sorane
 - [x] optional dependencies の整理（v0.4.0）
 - [x] Native hybrid / Astro backend 収束（v0.5.0）
 - [x] GitHub Releases に Bunsen フォント資産（[bunsen-fonts-v1](https://github.com/masanork/sorane/releases/tag/bunsen-fonts-v1)）
-- [ ] Homebrew formula / Docker image
+- [x] Homebrew formula + GHCR multi-architecture image workflow（次の version tag からイメージ公開）

@@ -31,6 +31,10 @@
   "engines": {
     "node": ">=23.6"
   },
+  "allowScripts": {
+    "better-sqlite3": true,
+    "esbuild": true
+  },
   "publishConfig": {
     "access": "public"
   },

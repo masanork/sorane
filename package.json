@@ -51,6 +51,7 @@
   "license": "MIT",
   "allowScripts": {
     "better-sqlite3": true,
+    "esbuild": true,
     "protobufjs": true,
     "sharp": true,
     "puppeteer": true,

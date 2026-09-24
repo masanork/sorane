@@ -1,0 +1,14 @@
+.git
+node_modules
+coverage
+dist
+website
+tests
+examples
+design
+docs
+stats
+.wrangler
+test-results
+playwright-report
+blob-report
