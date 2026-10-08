@@ -27,6 +27,22 @@ function captureStdout(fn: () => Promise<void> | void): Promise<string> {
   );
 }
 
+async function withSearchSite(fn: (root: string) => Promise<void>): Promise<void> {
+  const root = mkdtempSync(join(tmpdir(), "sorane-cli-direct-search-"));
+  try {
+    mkdirSync(join(root, "content"));
+    writeFileSync(join(root, "content", "guide.md"),
+      "---\ntype: article\ntitle: Hello search guide\ntags: [okf]\n---\n\n## Introduction\n\n" +
+      "OKF searchable guide content with a meaningful result snippet. ".repeat(4));
+    writeFileSync(join(root, "sorane.yaml"),
+      "site:\n  title: T\n  description: d\n  lang: ja\nbuild:\n  content_dir: content\n  out_dir: dist\n");
+    await captureStdout(() => runIndexCmd(["--cwd", root, "--force"]));
+    await fn(root);
+  } finally {
+    rmSync(root, { recursive: true, force: true });
+  }
+}
+
 describe("runBuildCmd", () => {
   test("一時サイトをビルドする", async () => {
     const root = mkdtempSync(join(tmpdir(), "sorane-cli-direct-build-"));
@@ -78,22 +94,29 @@ describe("parseSearchArgs", () => {
 
 describe("runSearchCmd", () => {
   test("JSON モードで結果を返す", async () => {
-    if (!existsSync(join(MINIMAL, ".sorane/index.db"))) return;
-    const out = await captureStdout(() =>
-      runSearchCmd(["OKF", "--cwd", MINIMAL, "--json"]),
-    );
-    const results = JSON.parse(out) as unknown[];
-    expect(Array.isArray(results)).toBe(true);
+    await withSearchSite(async (root) => {
+      const out = await captureStdout(() =>
+        runSearchCmd(["OKF", "--cwd", root, "--json"]),
+      );
+      const results = JSON.parse(out) as { source: string; title: string; backend: string; snippet: string }[];
+      expect(results.length > 0).toBe(true);
+      expect(results[0]!.source).toBe("guide.md");
+      expect(results[0]!.title).toBe("Hello search guide");
+      expect(results[0]!.backend).toBe("index");
+      expect(results[0]!.snippet).toContain("searchable guide");
+    });
   });
 
   test("テキストモードでスニペットを出す", async () => {
-    if (!existsSync(join(MINIMAL, ".sorane/index.db"))) return;
-    const out = await captureStdout(() =>
-      runSearchCmd(["OKF", "--cwd", MINIMAL, "--k", "3"]),
-    );
-    if (out.includes("(no results)")) return;
-    expect(out).toContain("1.");
-    expect(out).toContain("[");
+    await withSearchSite(async (root) => {
+      const out = await captureStdout(() =>
+        runSearchCmd(["OKF", "--cwd", root, "--k", "3"]),
+      );
+      expect(out).toContain("1.");
+      expect(out).toContain("[");
+      expect(out).toContain("Hello search guide");
+      expect(out).toContain("searchable guide");
+    });
   });
 
   test("query 無しは usage を stderr に出して exit 2", async () => {
@@ -123,11 +146,12 @@ describe("runSearchCmd", () => {
   });
 
   test("該当無しは (no results)", async () => {
-    if (!existsSync(join(MINIMAL, ".sorane/index.db"))) return;
-    const out = await captureStdout(() =>
-      runSearchCmd(["zzz-sorane-no-match-xyz", "--cwd", MINIMAL]),
-    );
-    expect(out).toContain("(no results)");
+    await withSearchSite(async (root) => {
+      const out = await captureStdout(() =>
+        runSearchCmd(["zzz-sorane-no-match-xyz", "--cwd", root]),
+      );
+      expect(out).toContain("(no results)");
+    });
   });
 });
 
