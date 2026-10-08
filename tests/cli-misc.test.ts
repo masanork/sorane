@@ -4,6 +4,7 @@ import { tmpdir } from "node:os";
 import { spawnSync } from "node:child_process";
 import { describe, expect, test } from "./_expect.ts";
 import { parseWatchArgv, watchPaths } from "../packages/cli/src/watch.ts";
+import { buildSearchIndex } from "../packages/search/src/build-index.ts";
 
 const CLI = new URL("../packages/cli/bin/sorane.mjs", import.meta.url).pathname;
 
@@ -40,15 +41,23 @@ describe("watchPaths", () => {
 });
 
 describe("search no results", () => {
-  test("該当無しは (no results)", () => {
-    const minimal = join(import.meta.dirname, "../examples/minimal");
-    const r = spawnSync(
-      process.execPath,
-      [CLI, "search", "zzz-nonexistent-query-xyz", "--cwd", minimal],
-      { encoding: "utf8" },
-    );
-    expect(r.status).toBe(0);
-    expect(r.stdout).toContain("(no results)");
+  test("該当無しは (no results)", async () => {
+    const root = mkdtempSync(join(tmpdir(), "sorane-search-empty-"));
+    const contentDir = join(root, "content");
+    mkdirSync(contentDir);
+    writeFileSync(join(contentDir, "article.md"), "---\ntype: article\ntitle: Example\n---\n\nPublished searchable content in an isolated test site.\n");
+    try {
+      await buildSearchIndex({ contentDir, indexPath: join(root, ".sorane", "index.db"), force: true });
+      const r = spawnSync(
+        process.execPath,
+        [CLI, "search", "zzz-nonexistent-query-xyz", "--cwd", root],
+        { encoding: "utf8" },
+      );
+      expect(r.status).toBe(0);
+      expect(r.stdout).toContain("(no results)");
+    } finally {
+      rmSync(root, { recursive: true, force: true });
+    }
   });
 });
 
