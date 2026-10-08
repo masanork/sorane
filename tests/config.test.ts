@@ -15,12 +15,21 @@ describe("mergeConfig", () => {
     const cfg = mergeConfig({});
     expect(cfg.site.title).toBe(DEFAULT_CONFIG.site.title);
     expect(cfg.fonts.enabled).toBe(false);
+    expect(cfg.search.webmcp).toBe(false);
   });
 
   test("部分上書き", () => {
     const cfg = mergeConfig({ site: { title: "X", description: "d", base_url: "https://x", lang: "en" } });
     expect(cfg.site.title).toBe("X");
     expect(cfg.site.lang).toBe("en");
+  });
+
+  test("WebMCP は検索設定で opt-in する", () => {
+    const cfg = mergeConfig({ search: { webmcp: true } });
+    expect(cfg.search.webmcp).toBe(true);
+    expect(cfg.search.index).toBe(DEFAULT_CONFIG.search.index);
+    expect(mergeConfig({ preset: "okf-site" }).search.webmcp).toBe(false);
+    expect(mergeConfig({ preset: "gov" }).search.webmcp).toBe(false);
   });
 
   test("ai_disclosure を deep merge する", () => {

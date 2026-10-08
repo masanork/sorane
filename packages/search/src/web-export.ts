@@ -13,6 +13,8 @@ export interface WebChunk {
   readonly tags: string;
   readonly snippet: string;
   readonly digital_source_type?: string;
+  readonly lang?: string;
+  readonly updated?: string;
 }
 
 export interface FtsWebChunk extends WebChunk {
@@ -64,6 +66,7 @@ export function buildFtsWebIndex(
     readonly disclosureMap?: ReadonlyMap<string, string>;
     readonly machineReadable?: boolean;
     readonly snippetOnly?: boolean;
+    readonly metadataBySource?: ReadonlyMap<string, { lang: string; updated?: string }>;
   },
 ): FtsWebIndex {
   const machineReadable = opts?.machineReadable !== false;
@@ -79,6 +82,7 @@ export function buildFtsWebIndex(
       tags: r.tags,
       snippet: toSnippet(r.text),
       ...(snippetOnly ? {} : { text: r.text }),
+      ...opts?.metadataBySource?.get(r.source),
     };
     const dst = disclosureForSource(r.source, opts?.disclosureMap, machineReadable);
     if (dst) return { ...chunk, digital_source_type: dst };

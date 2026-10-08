@@ -12,7 +12,8 @@ import {
   associatedMediaJsonLdFields,
   type AssociatedMediaItem,
 } from "./associated-media.ts";
-import type { DiagramsConfig } from "./config.ts";
+import type { DiagramsConfig, SearchConfig } from "./config.ts";
+import { resolveWebMcpConfig } from "./config.ts";
 import {
   renderBodySection,
   renderBodySectionForConfig,
@@ -718,6 +719,8 @@ export function buildSearchMount(
   opts: {
     readonly variant?: SearchMountVariant;
     readonly lang?: string;
+    /** Register the browser's native WebMCP search_site tool (opt-in). */
+    readonly webmcp?: SearchConfig["webmcp"];
     /**
      * Site-relative OKFC path for download (e.g. `okf/site.okfc`).
      * Shown on page variant only (B: agent / CLI offline pack).
@@ -731,7 +734,12 @@ export function buildSearchMount(
   const facetOpts = searchFacetOptionsHtml(lang);
   const sourceFacetOpts = searchSourceFacetOptionsHtml(lang);
   const indexUrl = `${rootPrefix}assets/search-index.json`;
-  const searchAttrs = ` data-mode="fts"`;
+  const webmcp = resolveWebMcpConfig(opts.webmcp);
+  const extended = webmcp.read_page || webmcp.datasets || webmcp.knowledge_packs;
+  const searchAttrs = ` data-mode="fts"` + (webmcp.enabled ? ` data-webmcp="true"` : "") +
+    (extended ? ` data-webmcp-content="${escapeHtml(`${rootPrefix}assets/webmcp-content.json`)}"` : "") +
+    (extended ? ` data-webmcp-tools="${[webmcp.read_page && "read_page", webmcp.datasets && "get_dataset", webmcp.knowledge_packs && "get_knowledge_pack"].filter(Boolean).join(" ")}"` : "") +
+    (webmcp.contact ? ` data-webmcp-contact-enabled="true"` : "");
   const searchClass = variant === "header" ? "search search--header" : "search";
   const form =
     variant === "header"
@@ -744,6 +752,11 @@ export function buildSearchMount(
         `<select name="type" class="search-facet" aria-label="種別で絞り込み">${facetOpts}</select>` +
         `<select name="source" class="search-facet search-facet--source" aria-label="生成元で絞り込み">${sourceFacetOpts}</select>` +
         `<button type="submit" class="search-submit">検索</button>` +
+        `<details class="search-extra-filters"><summary>${ja ? "詳しい絞り込み" : "More filters"}</summary>` +
+        `<label>${ja ? "タグ（カンマ区切り）" : "Tags (comma-separated)"}<input name="tags" type="text"></label>` +
+        `<label>${ja ? "言語（ja / en など）" : "Language (ja / en, etc.)"}<input name="lang" type="text" maxlength="35"></label>` +
+        `<label>${ja ? "更新日: 開始" : "Updated from"}<input name="updated_after" type="date"></label>` +
+        `<label>${ja ? "更新日: 終了" : "Updated through"}<input name="updated_before" type="date"></label></details>` +
         `</form>`;
   const status =
     variant === "header"

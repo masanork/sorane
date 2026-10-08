@@ -6,7 +6,7 @@
 import { copyFileSync, existsSync, mkdirSync, readFileSync, writeFileSync } from 'node:fs';
 import { dirname, join } from 'node:path';
 import { fileURLToPath } from 'node:url';
-import * as yaml from 'js-yaml';
+import { parseYaml } from '@sorane/okf';
 
 const websiteRoot = join(dirname(fileURLToPath(import.meta.url)), '..');
 const distDir = join(websiteRoot, 'dist');
@@ -24,7 +24,7 @@ function resolveClientDist() {
 }
 
 function loadKototoiConfig() {
-  const raw = yaml.load(readFileSync(join(websiteRoot, 'sorane.yaml'), 'utf8'));
+  const raw = parseYaml(readFileSync(join(websiteRoot, 'sorane.yaml'), 'utf8'));
   const kototoi = raw.kototoi;
   if (!kototoi?.endpoint || !kototoi?.site_id) {
     throw new Error('website/sorane.yaml: kototoi.endpoint and kototoi.site_id are required');

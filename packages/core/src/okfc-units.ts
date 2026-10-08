@@ -180,6 +180,8 @@ export function toOkfcEligible(
     includePageInBuild: (concept: OkfConcept, includeDrafts: boolean) => boolean;
     isNotFoundSource: (relPath: string) => boolean;
     slugFromRel: (relPath: string) => string;
+    /** Stable site-wide identity; basenames may repeat across directories/locales. */
+    conceptSlugFromRel?: (relPath: string) => string;
   },
 ): OkfcEligibleConcept[] {
   const out: OkfcEligibleConcept[] = [];
@@ -190,7 +192,7 @@ export function toOkfcEligible(
     if (opts.isNotFoundSource(p.relPath)) continue;
     out.push({
       concept: p.concept,
-      slug: opts.slugFromRel(p.relPath),
+      slug: (opts.conceptSlugFromRel ?? opts.slugFromRel)(p.relPath),
       relPath: normalizeRel(p.relPath),
     });
   }

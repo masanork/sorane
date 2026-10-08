@@ -3,6 +3,7 @@ import { parseAiDisclosure } from "../packages/core/src/ai-disclosure.ts";
 import {
   buildCreativeWorkJsonLd,
   buildSearchHead,
+  buildSearchMount,
   renderArticleBodyWithMeta,
   renderArticleBodyWithMetaForConfig,
   renderIndexBody,
@@ -56,6 +57,17 @@ describe("buildSearchHead", () => {
     expect(head.some((h) => h.includes("search.mjs"))).toBe(true);
     expect(head.some((h) => h.includes("serviceWorker"))).toBe(true);
     expect(head.some((h) => h.includes("sw.js"))).toBe(true);
+  });
+});
+
+describe("WebMCP search mount", () => {
+  test("ヘッダーと専用ページで明示 opt-in したときだけ有効", () => {
+    expect(buildSearchMount("./").includes("data-webmcp")).toBe(false);
+    for (const variant of ["header", "page"] as const) {
+      const html = buildSearchMount("../", { variant, webmcp: true });
+      expect(html).toContain('data-webmcp="true"');
+      expect(html).toContain('data-index="../assets/search-index.json"');
+    }
   });
 });
 

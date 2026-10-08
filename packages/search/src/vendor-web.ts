@@ -10,9 +10,12 @@ export function copySearchScript(outRoot: string, repoRoot?: string): boolean {
   const root = repoRoot ?? packageRoot();
   const src = join(root, "packages/search/assets/search.mjs");
   if (!existsSync(src)) return false;
+  const webmcp = join(root, "packages/search/assets/webmcp.mjs");
+  if (!existsSync(webmcp)) return false;
   const destDir = join(outRoot, "assets");
   mkdirSync(destDir, { recursive: true });
   copyFileSync(src, join(destDir, "search.mjs"));
+  copyFileSync(webmcp, join(destDir, "webmcp.mjs"));
   return true;
 }
 

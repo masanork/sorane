@@ -6,6 +6,7 @@ All notable changes to sorane are documented here. Versioning follows [SemVer](h
 
 ### Added
 
+- **Experimental native WebMCP** — `search.webmcp: true` exposes `search_site`; an object can independently opt in to `read_page`, dataset metadata, OKFC pack discovery and contact draft preparation. Search shares the human UI's ranking, tags/language/date filters and normalized width/kana matching. Content tools project the public Knowledge IR; full bodies require explicit opt-in. Contact preparation preserves existing text by default and requires manual submission. Native Chromium E2E covers workflows, cancellation, offline reload, subpath URLs, publication gates and fallback. Cache versions include all runtime and data contents.
 - **Homebrew + GHCR distribution** — Homebrew formula and an amd64/arm64 container release workflow with registry provenance.
 - **Unified knowledge index (U0–U4) + OKFC hybrid** — shared chunking + Knowledge IR; OKFC pack with optional `vec_chunks`; `embedKnowledgeIr` by `text_hash`; search index via IR; **`sorane search` prefers `dist/okf/site.okfc`** (`--okfc`, `--prefer-index`); hybrid RRF when OKFC has vectors + model (`queryOkfcHybrid`). Config: `build.knowledge.embeddings: off \| auto \| on`. Design: `design/knowledge-index-unified.md`.
 - **Offline browser FTS + OKFC download** — root `sw.js` precaches `search.mjs` / `search-index.json` (and the search page); search UI shows offline hint and **Download site.okfc** (same pack as CLI) when `outputs.okfc` is on.
@@ -17,6 +18,7 @@ All notable changes to sorane are documented here. Versioning follows [SemVer](h
 
 ### Changed
 
+- Nested OKFC concept IDs now include their content-relative path, preventing collisions between same-named pages in different directories or languages. Existing packs should be rebuilt with their search assets.
 - Profile schema descriptions: base is upstream **OKF v0.2** (not v0.1); docs clarify `sorane-okf/0.2` ≠ OKF v0.2.
 - README Distribution: GitHub Release tags documented as available (`v0.5.0`).
 - Design docs status refresh (content-import, diagram-formats, AI disclosure remaining gaps).

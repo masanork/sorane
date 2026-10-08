@@ -406,6 +406,7 @@ frontmatter で `noFontEmbedding: true` を指定したページはシステム�
 ```yaml
 search:
   index: .sorane/index.db
+  webmcp: false  # true で実験的な search_site ツールを公開
 ```
 
 検索は SQLite FTS5 を使います。モデル不要で軽量です。
@@ -419,6 +420,58 @@ search:
 | 用途 | どのページからでもさっと検索 | 絞り込み・説明文・`SearchAction` の安定 URL |
 
 `view: search` の記事があるか、ローカル検索インデックスが存在するとき、検索アセット（`search-index.json` 等）を dist に出力します。`sorane index` を実行したサイトはヘッダー検索を有効にし、ビルド時に現在のコンテンツから検索データを作ります。小さなブログは `search.md` を省略してヘッダー検索のみでも構いません。open-data / 行政向けでは専用ページを残すのが一般的です。
+
+### WebMCP（実験的）
+
+`search.webmcp: true` にすると、検索 UI があるページで、対応ブラウザのエージェントに `search_site` ツールを公開します。既定は `false` で、プリセットでは自動的に有効になりません。空音の製品サイトでは試験的に有効にしています。
+
+ツールは既存の公開検索インデックスを使い、人間の検索と同じ結果を画面に表示します。バックエンドや AI モデルの追加は不要です。WebMCP が使えないブラウザでも通常の検索を利用できます。
+
+| 入力 | 用途 |
+|------|------|
+| `query` | 必須。空白だけの文字列を除く、1〜512 文字の検索キーワード |
+| `type` | 任意。`article` / `dataset` / `reference` / `glossary` / `glossary-term` / `faq` |
+| `source` | 任意。`ai-generated` / `human` / `disclosed` |
+| `limit` | 任意。1〜20 の整数。既定 10。見出し単位の検索結果数 |
+| `tags` | 任意。タグの配列（最大 10 個、各 64 文字）。すべてのタグを持つページに絞る |
+| `lang` | 任意。`ja` / `en` などの言語コードと完全一致 |
+| `updated_after` / `updated_before` | 任意。`YYYY-MM-DD` の更新日範囲（両端を含む）。日付のないページは除外 |
+
+`type` / `source` は省略または空文字列で絞り込みを解除します。ツールを呼ぶたびに適用し、専用ページでは選択欄、ヘッダーでは検索結果の状態表示に反映します。
+
+応答は `query`、適用した `type` / `source`、返した件数 `count`、`results` のオブジェクトです。各結果にはタイトル `title`、絶対 URL `url`（見出しがあればアンカー付き）、見出し `heading`、抜粋 `snippet`、種別 `doc_type`、ソースパス `source`、スコア `score` が含まれます。開示情報がある場合は `digital_source_type` も返します。該当なしは空配列、索引の読み込み失敗や不正な入力は呼び出しエラーになります。
+
+本番ビルドで除外した下書きは検索対象に入りません。`build.security.search_snippet_only` を有効にしたサイトでは、ツールも同じ抜粋用インデックスを使います。
+
+タグ・言語・更新日は専用検索ページの「詳しい絞り込み」にも反映します。検索は Unicode NFKC、英字の大小、ひらがな／カタカナを正規化します。日本語の同義語や漢字の読みの変換は行いません。結果には利用可能な `tags`、`lang`、`updated` も含めます。更新日はコンテンツの `updated`、なければ `timestamp` を使い、ビルド時刻で補いません。
+
+### WebMCP の追加ツール
+
+`true` は検索だけを公開します。追加機能はオブジェクトで個別に有効化できます。各項目の既定は `false` です。
+
+```yaml
+search:
+  webmcp:
+    read_page: true
+    datasets: true
+    knowledge_packs: true
+    contact: true
+```
+
+| ツール | 入力と応答 |
+|--------|------------|
+| `read_page` | 必須 `url`、任意 `section`（見出しアンカー）。本文または指定節、`toc`、公開日 `timestamp`、更新日 `updated`、出典 `sources`、検証履歴 `verified`、生成情報 `generated`、利用可能な AI 開示を返す。URL のフラグメントでも節を指定可能 |
+| `get_dataset` | 必須 `url`。データセットの配布 URL、形式、MIME 型、サイズ、チェックサム、ライセンス、発行者を返す。ファイル自体は取得しない |
+| `get_knowledge_pack` | 任意 `url`。生成済み OKFC のダウンロード URL、収録ページ・種別・タグ・言語を返す。ページを指定すると、そのページを収録するパックだけを小さい順に提示 |
+| `prepare_contact` | 必須 `fields`（フィールド名と文字列のオブジェクト）、任意 `overwrite`。表示中の問い合わせフォームに下書きを入力する。既存の値の上書きは既定で拒否し、送信は利用者が行う |
+
+読み取り系の URL は検索結果から渡せます。サイト内の公開ページだけを対象とし、未公開ページや別オリジンは拒否します。取得結果はページ内にも表示します。`get_knowledge_pack` の利用には `build.outputs.okfc: true` が必要です。パックが未生成の場合は空配列を返します。
+
+追加データは公開対象の Knowledge IR から `assets/webmcp-content.json` に生成します。**本文の公開には `read_page: true` が必要です。** `search_snippet_only: true` でもこの明示設定を行うと、別 JSON に本文を含めます。抜粋だけを公開したいサイトでは `read_page` を有効にしないでください。`datasets` / `knowledge_packs` だけでは本文を含めません。AI 開示は `build.ai_disclosure.machine_readable` に従います。
+
+問い合わせ補助は、フォームまたはその親要素に `data-webmcp-contact` を付けて利用します。編集可能な表示中の text / email / tel / url 入力欄と textarea だけを扱い、隠し項目、ログイン、送信処理には触れません。動的にフォームが現れると登録し、消えると解除します。空音の製品サイトでは Kototoi の埋め込み先をマークし、ログイン後の新規問い合わせフォームで利用できます。
+
+WebMCP は変更のあるドラフト仕様です。現在は `document.modelContext.registerTool()` を使います。手元で試す場合は Chrome の `chrome://flags/#enable-webmcp-testing` を有効にし、対応エージェントまたはツール検査機能で `search_site` を呼び出してください。[Chrome 公式ガイド](https://developer.chrome.com/docs/ai/webmcp)
 
 ## 図表
 

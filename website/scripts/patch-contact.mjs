@@ -1,6 +1,7 @@
 import { existsSync, readFileSync, writeFileSync } from 'node:fs';
 import { dirname, join } from 'node:path';
 import { fileURLToPath } from 'node:url';
+import { parseYaml } from '@sorane/okf';
 
 const websiteRoot = join(dirname(fileURLToPath(import.meta.url)), '..');
 const contactHtml = join(websiteRoot, 'dist', 'contact.html');
@@ -11,8 +12,10 @@ if (!existsSync(contactHtml)) {
 }
 
 const MARKER = '<!-- kototoi-form -->';
+const config = parseYaml(readFileSync(join(websiteRoot, 'sorane.yaml'), 'utf8'));
+const contactTool = config.search?.webmcp?.contact === true ? ' data-webmcp-contact' : '';
 const embed = [
-  '<div id="kototoi-form" class="kototoi-form" data-kototoi-auto></div>',
+  `<div id="kototoi-form" class="kototoi-form" data-kototoi-auto${contactTool}></div>`,
 ].join('\n');
 
 const headInject = [

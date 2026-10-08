@@ -19,6 +19,7 @@ export function deriveWebIndexFromChunks(
     readonly contentDir?: string;
     readonly machineReadable?: boolean;
     readonly snippetOnly?: boolean;
+    readonly metadataBySource?: ReadonlyMap<string, { lang: string; updated?: string }>;
   },
 ): DeriveResult {
   const disclosureMap =
@@ -29,6 +30,7 @@ export function deriveWebIndexFromChunks(
     disclosureMap,
     machineReadable: opts?.machineReadable,
     snippetOnly: opts?.snippetOnly,
+    metadataBySource: opts?.metadataBySource,
   });
   const json = JSON.stringify(index);
   writeFileSync(outPath, json, "utf8");

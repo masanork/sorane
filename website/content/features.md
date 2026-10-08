@@ -65,6 +65,7 @@ AI アシスタント向けの手順は [AI 向け解説](ai-onboarding.html)。
 
 - **ヘッダー検索** — `sorane index` 後、全ページにコンパクトな検索ボックス
 - **専用ページ** — `content/search.md`（`view: search`）で種別 facet・説明文・`SearchAction` 用 URL
+- **WebMCP（実験的）** — `search_site` のタグ・言語・更新日フィルターとカナ表記ゆれ対応。本文・出典の取得、データセット情報、知識パック案内、問い合わせの下書き入力を個別に有効化可能（[設定](configuration.html#webmcp実験的)）
 
 小さなサイトは専用ページを省略可能。open-data / 行政向けでは残すのが一般的です（[設定](configuration.html#検索-uiヘッダー-vs-専用ページ)）。
 

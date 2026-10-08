@@ -148,6 +148,61 @@ Search uses two UI layers:
 
 See `examples/minimal/content/search.md`. Header-only sites can omit `search.md`; open-data / gov sites usually keep it.
 
+Opt in to experimental native WebMCP on pages with search UI:
+
+```yaml
+search:
+  webmcp: true
+```
+
+Supported browsers discover a single `search_site` tool with this setting. It accepts `query`,
+optional `type` / `source`, `tags` (all must match), `lang`, and inclusive
+`updated_after` / `updated_before` date filters, and `limit` (1–20; default 10), displays
+the same results as human search, and returns titles, absolute heading URLs,
+excerpts, and applied filters. It uses the existing public search index; no
+server, model, or polyfill is required. The default is off, and ordinary search
+works when WebMCP is unavailable. The product site opts in for experimentation.
+
+Enable additional tools independently as your site needs them:
+
+```yaml
+search:
+  webmcp:
+    read_page: true
+    datasets: true
+    knowledge_packs: true
+    contact: true
+```
+
+- `read_page({url, section?})`: full content or a heading section, TOC, updated
+  date, sources, verification history and available AI disclosure.
+- `get_dataset({url})`: distribution links, formats, sizes, checksums, license
+  and publisher, without downloading files.
+- `get_knowledge_pack({url?})`: emitted OKFC download links and scope; with a page
+  URL, lists only matching packs, smallest first. Requires `build.outputs.okfc`.
+- `prepare_contact({fields, overwrite?})`: prepares a visible form explicitly
+  marked `data-webmcp-contact` (on the form or its container). Registers only
+  while editable fields are available, preserves existing text by default and
+  leaves submission to the user. The product site's Kototoi integration marks
+  its form container; login stays in the normal UI.
+
+Additional content comes from the same Knowledge IR as search/OKFC, in
+`assets/webmcp-content.json`. Full bodies are included **only** with an explicit
+`read_page: true`, including when the search index is snippet-only. Other tools
+do not implicitly expose bodies. Search normalizes full/half width, case and
+hiragana/katakana variants. Calls update visible results or a review panel;
+unavailable WebMCP leaves the normal page and forms usable.
+
+The implementation follows `document.modelContext.registerTool()` in the
+[WebMCP draft](https://webmachinelearning.github.io/webmcp/). For local browser
+testing, enable `chrome://flags/#enable-webmcp-testing`. The Playwright suite
+launches Chromium with `--enable-features=WebMCP` and exercises native discovery,
+execution, cancellation, offline search, and fallback:
+
+```bash
+npm run test:e2e -- tests/e2e/webmcp-*.spec.ts
+```
+
 **OKF 0.3 open-data demo** (`dataset`, `reference`, `glossary`, `faq`, search facets):
 
 ```bash

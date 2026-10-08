@@ -56,6 +56,11 @@ docs:
 
 search:
   index: .sorane/index.db
+  webmcp:
+    read_page: true
+    datasets: true
+    knowledge_packs: true
+    contact: true
 
 fonts:
   enabled: false

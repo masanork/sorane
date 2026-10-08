@@ -29,9 +29,32 @@ export interface BlogBuildConfig {
   readonly tags?: boolean;
 }
 
+export interface WebMcpConfig {
+  /** 本文と目次を別の公開 JSON に含める（既定 false）。 */
+  readonly read_page?: boolean;
+  readonly datasets?: boolean;
+  readonly knowledge_packs?: boolean;
+  /** 明示的にマークしたフォームの入力補助。送信は行わない。 */
+  readonly contact?: boolean;
+}
+
 export interface SearchConfig {
   /** FTS インデックスの出力先（既定: .sorane/index.db） */
   readonly index?: string;
+  /** 対応ブラウザに search_site ツールを公開（既定: false）。検索 UI が必要。 */
+  readonly webmcp?: boolean | WebMcpConfig;
+}
+
+export function resolveWebMcpConfig(raw: SearchConfig["webmcp"]) {
+  const enabled = raw === true || (raw !== null && typeof raw === "object" && !Array.isArray(raw));
+  const features = enabled && typeof raw === "object" ? raw : {};
+  return {
+    enabled,
+    read_page: features.read_page === true,
+    datasets: features.datasets === true,
+    knowledge_packs: features.knowledge_packs === true,
+    contact: features.contact === true,
+  };
 }
 
 export type DocsNavSpec =
@@ -347,6 +370,7 @@ export const DEFAULT_CONFIG: SoraneConfig = {
   },
   search: {
     index: ".sorane/index.db",
+    webmcp: false,
   },
 };
 
@@ -356,7 +380,10 @@ import {
   type SoranePreset,
 } from "./presets.ts";
 
-export type MergeConfigInput = Partial<SoraneConfig> & { readonly preset?: SoranePreset };
+export type MergeConfigInput = Omit<Partial<SoraneConfig>, "search"> & {
+  readonly search?: SearchConfig;
+  readonly preset?: SoranePreset;
+};
 
 export function mergeConfig(partial: MergeConfigInput = {}): SoraneConfig {
   const { preset, ...rest } = partial;

@@ -18,6 +18,9 @@ const root = mkdtempSync(join(tmpdir(), "sorane-e2e-"));
 const outDir = join(root, "dist");
 
 await buildE2eFixture(root, outDir);
+await buildE2eFixture(join(root, "disabled-site"), join(outDir, "disabled"), { webmcp: false });
+await buildE2eFixture(join(root, "subsite"), join(outDir, "subsite"), { snippetOnly: true });
+await buildE2eFixture(join(root, "extended-site"), join(outDir, "extended"), { snippetOnly: true, extended: true });
 
 const server = createServer((req, res) => {
   const url = new URL(req.url ?? "/", "http://127.0.0.1");

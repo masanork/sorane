@@ -326,6 +326,7 @@ article td {
 .search--header .search-results {
   background: #fff;
   border: 1px solid var(--border);
+  box-sizing: border-box;
   box-shadow: 0 0.35rem 1rem rgb(0 0 0 / 8%);
   list-style: none;
   margin: 0.35rem 0 0;
@@ -1170,3 +1171,8 @@ span.glossary-term-unresolved {
 .reference-body td code {
   font-size: 0.9em;
 }
+.search-extra-filters { flex-basis: 100%; }
+.search-extra-filters label { display: inline-flex; flex-direction: column; gap: .25rem; margin: .5rem .75rem .5rem 0; }
+.search-extra-filters input { max-width: 100%; padding: .35rem; }
+.webmcp-preview { margin: 2rem 0; padding: 1rem; border: 1px solid var(--border, #ccc); border-radius: .5rem; }
+.webmcp-preview pre { white-space: pre-wrap; overflow-wrap: anywhere; max-height: 28rem; overflow: auto; font: inherit; }

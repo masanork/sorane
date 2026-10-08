@@ -80,8 +80,10 @@ import {
   mergeConfig,
   resolvePermalink,
   resolveSecurityConfig,
+  resolveWebMcpConfig,
   type SoraneConfig,
 } from "./config.ts";
+import { buildWebMcpContent, webMcpUpdated, type WebMcpPack } from "./webmcp-content.ts";
 import { buildSecurityHeadersFile } from "./security-headers.ts";
 import {
   breadcrumbItemsForPage,
@@ -639,6 +641,7 @@ export async function runBuild(opts: BuildOptions): Promise<BuildResult> {
       headerSearchHtml: buildSearchMount(rootPrefix, {
         variant: "header",
         lang: config.site.lang,
+        webmcp: config.search.webmcp,
       }),
       extraHead: buildSearchHead(rootPrefix),
     };
@@ -862,6 +865,7 @@ export async function runBuild(opts: BuildOptions): Promise<BuildResult> {
       bodyHtml =
         buildSearchMount(rootPrefix, {
           lang: pageLang,
+          webmcp: config.search.webmcp,
           okfcHref: buildOutputs.okfc ? "okf/site.okfc" : undefined,
         }) +
         (searchIntro
@@ -1880,6 +1884,7 @@ export async function runBuild(opts: BuildOptions): Promise<BuildResult> {
     id: string;
     title?: string;
   }[] = [];
+  const webmcpPacks: WebMcpPack[] = [];
   if (buildOutputs.okfc) {
     const okfcCfg = resolveOkfcBuildConfig(config.build.okfc, true);
     const eligible = toOkfcEligible(parsed, {
@@ -1887,6 +1892,7 @@ export async function runBuild(opts: BuildOptions): Promise<BuildResult> {
       includePageInBuild,
       isNotFoundSource,
       slugFromRel,
+      conceptSlugFromRel: (source) => source.replace(/\\/g, "/").replace(/\.md$/i, ""),
     });
     // U1/U3: one Knowledge IR for the site (+ optional embed once), then slice per unit.
     const pathById = new Map<string, string>();
@@ -1926,6 +1932,12 @@ export async function runBuild(opts: BuildOptions): Promise<BuildResult> {
           path: plan.outRel,
           id: plan.id,
           title: plan.meta.title,
+        });
+        webmcpPacks.push({
+          id: plan.id, path: plan.outRel, title: plan.meta.title,
+          description: plan.meta.description, concept_count: okfcResult.conceptCount,
+          pages: eligible.filter((entry) => plan.concepts.some((item) => item.concept === entry.concept))
+            .map((entry) => sourceToUrl.get(entry.relPath)).filter((url): url is string => url !== undefined),
         });
         registryBundles.push({
           id: plan.id,
@@ -2107,6 +2119,8 @@ export async function runBuild(opts: BuildOptions): Promise<BuildResult> {
     process.stdout.write("[sorane] security headers → _headers\n");
   }
 
+  // An incremental build may no longer emit a search UI at all.
+  rmSync(join(outDir, "assets/webmcp-content.json"), { force: true });
   if (searchPageRel || headerSearchEnabled) {
     try {
       const { emitSearchAssets } = await import("@sorane/search");
@@ -2117,26 +2131,41 @@ export async function runBuild(opts: BuildOptions): Promise<BuildResult> {
           !isNotFoundSource(p.relPath),
       );
       const searchPathById = new Map<string, string>();
+      const metadataBySource = new Map<string, { lang: string; updated?: string }>();
       for (const p of searchEligible) {
+        const source = p.relPath.replace(/\\/g, "/");
         searchPathById.set(
-          conceptIdFor(p.concept.type, slugFromRel(p.relPath)),
-          p.relPath.replace(/\\/g, "/"),
+          conceptIdFor(p.concept.type, source.replace(/\.md$/i, "")),
+          source,
         );
+        metadataBySource.set(source, { lang: resolvePageLocaleInfo(p, config, i18n).lang, updated: webMcpUpdated(p.concept) });
       }
       const searchIr = buildKnowledgeIr(
         searchEligible.map((p) => ({
           concept: p.concept,
-          slug: slugFromRel(p.relPath),
+          slug: p.relPath.replace(/\\/g, "/").replace(/\.md$/i, ""),
         })),
         { sourcePathByConceptId: searchPathById },
       );
       const { searchChunksFromKnowledgeIr } = await import("@sorane/search");
+      const features = resolveWebMcpConfig(config.search.webmcp);
+      const webmcpContent = features.read_page || features.datasets || features.knowledge_packs
+        ? buildWebMcpContent(searchIr, {
+          webmcp: config.search.webmcp, metadataBySource,
+          sourceToUrl: (source) => sourceToUrl.get(source) ?? source.replace(/\.md$/i, ".html"),
+          machineReadable: siteAiFlags.machineReadable,
+          defaultLicense: config.site.open_data?.default_license,
+          publisher: config.site.organization,
+          packs: webmcpPacks,
+        }) : undefined;
       await emitSearchAssets({
         outDir,
         chunks: searchChunksFromKnowledgeIr(searchIr),
         contentDir,
         machineReadable: siteAiFlags.machineReadable,
         snippetOnly: security.search_snippet_only,
+        metadataBySource,
+        webmcpContent,
         searchPageRel,
         offlineServiceWorker: true,
         sourceToUrl: (source) => sourceToUrl.get(source) ?? source.replace(/\.md$/i, ".html"),
