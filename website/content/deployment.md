@@ -21,14 +21,9 @@ excludeFromList: true
 
 初回のみ Cloudflare で Pages プロジェクトを作成してください。シークレットに `CLOUDFLARE_API_TOKEN` と `CLOUDFLARE_ACCOUNT_ID` を設定します。
 
-[空音公式サイト](https://ssg.sorane.dev/) は空音リポジトリ内の `website/` を dogfooding してビルドしています。
+[空音公式サイト](https://sorane.dev/) は空音リポジトリ内の `website/` を dogfooding してビルドしています。`ssg.sorane.dev` でも同じサイトを表示します。
 
-問い合わせ（kototoi）を有効にしているサイトは、`build` のあとに埋め込み資産の配置と `contact.html` のパッチが必要です。手順は [kototoi 問い合わせフォーム](kototoi.html) を参照してください。公式 CI（`.github/workflows/pages.yml`）では次を追加しています。
-
-```yaml
-- run: node website/scripts/emit-kototoi.mjs
-- run: node website/scripts/patch-contact.mjs
-```
+公式サイトの kototoi 埋め込みと掲示板は現在休止しています。CI は SSG のビルド成果物をそのまま公開し、問い合わせページでは GitHub Issues を案内しています。以前の埋め込み手順は [kototoi 問い合わせフォーム](kototoi.html) に保存しています。
 
 ### デプロイ前のプレビュー
 
@@ -120,11 +115,13 @@ FTS 検索はモデルを必要とせず、`search-index.json` を dist に含�
 
 | ホスト | 用途 |
 |--------|------|
-| `ssg.sorane.dev` | プロダクトサイト（SSG 公式ドキュメント） |
-| `sorane.dev` | 空音掲示板（kototoi）— Pages プロジェクト `sorane` からは切り離す |
+| `sorane.dev` | プロダクトサイト（正規 URL、SSG 公式ドキュメント） |
+| `ssg.sorane.dev` | 同じプロダクトサイトの追加ドメイン |
 | `sorane.pages.dev` | Pages 既定 URL |
 
-`sorane.yaml` の `base_url` を本番ホストに揃えてください。
+Pages プロジェクト `sorane` に両方のカスタムドメインを登録し、DNS の CNAME は `sorane.pages.dev` に向けます。`website/sorane.yaml` の `base_url` は `https://sorane.dev` とし、canonical・サイトマップ・機械可読出力の URL を統一します。
+
+`sorane.dev/*` の Worker ルートは kototoi の割り当てを解除し、Pages に配信を任せます。kototoi の Worker と D1 データは保持しています。kototoi を再デプロイする際は、以前の設定でこのルートを再び割り当てないようにしてください。
 
 ## アクセス解析・ログ（Cloudflare）
 

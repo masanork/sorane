@@ -4,7 +4,7 @@ OKF-native static site generator. Markdown concepts with YAML frontmatter become
 
 Japanese product name: **空音** (sorane). CLI and npm packages keep the `sorane` identifier.
 
-- **Product site:** https://ssg.sorane.dev/ (built from `website/` in this repo)
+- **Product site:** https://sorane.dev/ (built from `website/` in this repo; also available at https://ssg.sorane.dev/)
 
 ## Requirements
 
@@ -244,7 +244,7 @@ The product site lives in `website/` and is built with 空音 itself:
 npm run build -- --cwd website --clean
 ```
 
-Cloudflare Pages deploys `website/dist` to **ssg.sorane.dev** on push to `main` (see `.github/workflows/pages.yml`). **sorane.dev** is reserved for the 空音 board (kototoi), not the SSG product site.
+Cloudflare Pages serves `website/dist` at **sorane.dev** and **ssg.sorane.dev** (see `.github/workflows/pages.yml`). The canonical URL is **sorane.dev**. The kototoi board and contact embed are currently inactive on the product site; their code and stored data are retained for possible future use.
 
 ## Distribution
 

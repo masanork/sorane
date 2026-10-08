@@ -5,7 +5,9 @@ profile: sorane-okf/0.1
 excludeFromList: true
 ---
 
-[空音](https://ssg.sorane.dev) 静的サイトに [kototoi](https://github.com/masanork/kototoi)（Passkey 問い合わせ）を埋め込む手順と運用メモです。
+[空音](https://sorane.dev) 静的サイトに [kototoi](https://github.com/masanork/kototoi)（Passkey 問い合わせ）を埋め込む手順と運用メモです。
+
+公式サイトでは、2026 年 10 月 8 日から kototoi の掲示板と問い合わせ埋め込みを休止しています。以下は再利用のために保存している以前の構成と手順です。現在の問い合わせ先は [お問い合わせ](contact.html)を参照してください。
 
 ## 構成
 

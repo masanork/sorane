@@ -42,12 +42,6 @@ jobs:
       - name: Build docs site
         run: node packages/cli/src/main.ts build --cwd website --clean
 
-      - name: Emit kototoi embed assets
-        run: node website/scripts/emit-kototoi.mjs
-
-      - name: Patch contact page for kototoi
-        run: node website/scripts/patch-contact.mjs
-
       - name: Deploy to Cloudflare Pages
         uses: cloudflare/wrangler-action@v3
         with:
