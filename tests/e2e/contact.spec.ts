@@ -81,6 +81,22 @@ test("a viewer cannot open the inquiry inbox",async({page,context,request})=>{
   await expect(page.getByRole('heading',{name:'問い合わせ受信箱'})).toHaveCount(0);
 });
 
+test("a Pages form reaches the same-origin API and the private owner inbox",async({page,context,request})=>{
+  const subject="Pages inquiry "+Date.now();
+  await page.goto('/pages/contact.html');
+  await page.getByLabel('返信先メールアドレス').fill('pages-browser@example.test');
+  await page.getByLabel('件名',{exact:true}).fill(subject);
+  await page.getByLabel('お問い合わせ内容').fill('This form is served separately from the API Worker.');
+  await page.locator('[name=consent]').check();
+  const sent=page.waitForResponse(r=>new URL(r.url()).pathname==='/_contact' && r.request().method()==='POST');
+  await page.getByRole('button',{name:'問い合わせを送信'}).click();
+  expect((await sent).status()).toBe(201);
+  await expect(page.locator('[data-sorane-contact-status]')).toContainText('問い合わせを受け付けました');
+  await openInbox(page,context,request);
+  await page.getByRole('link',{name:subject}).click();
+  await expect(page.getByRole('heading',{name:subject})).toBeVisible();
+});
+
 test("previewing a generated form cannot submit a live inquiry",async({page,request})=>{
   const {url}=await (await request.get('/__contact-test/preview')).json();
   const preview=new URL(url);

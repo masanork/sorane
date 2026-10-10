@@ -41,7 +41,7 @@ export async function contactE2e(output, port) {
     const method=req.method??'GET', init={method,headers,redirect:'manual',
       ...(!['GET','HEAD'].includes(method)?{body:Buffer.concat(chunks)}:{})};
     const response=admin ? await f.request(url.pathname+url.search,init)
-      : await f.publicWorker.fetch(PUBLIC+url.pathname+url.search,init);
+      : await (url.pathname==='/_contact'?f.pagesWorker:f.publicWorker).fetch(PUBLIC+url.pathname+url.search,init);
     await respond(res,response);
   }
   const adminServer=createServer({key:readFileSync(join(tls,'key.pem')),cert:readFileSync(join(tls,'cert.pem'))},async(req,res)=>{
@@ -62,7 +62,7 @@ export async function contactE2e(output, port) {
       if (url.pathname==='/__contact-test/preview') {
         return await respond(res,await (await account('owner')).post(`/api/sites/native/proposals/${f.proposal}/preview`,{})),true;
       }
-      if (!url.pathname.startsWith('/native/') && !url.pathname.startsWith('/preview/')) return false;
+      if (url.pathname!=='/_contact' && !url.pathname.startsWith('/native/') && !url.pathname.startsWith('/preview/')) return false;
       await proxy(req,res,url,false);return true;
     },
     async close(){await new Promise(resolve=>adminServer.close(resolve));for(const hook of hooks.reverse()) await hook();},

@@ -25,7 +25,7 @@ build:
 
 ## 問い合わせフォーム
 
-`site.contact.form.enabled: true` を指定すると、`site.contact.page` の本文の後に Sorane の問い合わせフォームを生成します。受付には Sorane の公開配信・管理 Worker と D1 が必要です。
+`site.contact.form.enabled: true` を指定すると、`site.contact.page` の本文の後に Sorane の問い合わせフォームを生成します。受付には Sorane の受付・管理 Worker と D1 が必要です。Pages 配信では同一オリジンの `/_contact` に専用 Worker を接続でき、静的配信を継続できます。
 
 ```yaml
 site:
@@ -36,7 +36,7 @@ site:
       privacy_notice: 入力内容は問い合わせへの対応に使用し、受付から30日後に削除します。
 ```
 
-所有者は管理画面の問い合わせ受信箱で確認し、未対応・対応中・対応済みを切り替えられます。メール通知は行いません。公開承認済みのサイトだけが問い合わせを受け付け、プレビューからは送信できません。`prepare_contact` を有効にした WebMCP は下書き入力までを行い、送信と同意は利用者が行います。
+所有者は管理画面の問い合わせ受信箱で確認し、未対応・対応中・対応済みを切り替えられます。メール通知は行いません。受付を明示的に有効にした本番サイトだけが問い合わせを保存でき、プレビューホストは受付対象に含めません。`prepare_contact` を有効にした WebMCP は下書き入力までを行い、送信と同意は利用者が行います。
 
 設定と運用の詳細は [問い合わせ受付の手順](https://github.com/masanork/sorane/blob/main/docs/native-contact.md) を参照してください。
 

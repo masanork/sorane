@@ -30,6 +30,7 @@ function page(env: SoraneAdminEnv, title: string, body: string, browser?: string
   return new Response(`<!doctype html><html lang="ja"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>${escape(title)} · sorane</title><link rel="stylesheet" href="/admin.css"><script src="/admin.js" defer></script></head><body>${content}</body></html>`, { status, headers });
 }
 function config(env: SoraneAdminEnv): void {
+  if (!["full","inquiries"].includes(String(env.ADMIN_MODE ?? "full"))) fail(503,"invalid_configuration");
   for (const value of [env.ISSUER, env.RP_ORIGIN]) {
     const url = new URL(value);
     if (url.origin !== value || url.username || url.password ||
@@ -126,13 +127,18 @@ function draftInput(value:Record<string,unknown>, form=false) {
 async function home(request: Request, env: SoraneAdminEnv): Promise<Response> {
   const browser = cookie(request, BROWSER) || random();
   const token = await hash(browser), session = await current(request, env);
+  const inboxMode = String(env.ADMIN_MODE) === "inquiries";
   const brand='<a class="brand" href="/"><span class="brand-mark">s</span>sorane<span class="brand-dot">.</span></a>';
-  if (!session) return page(env, "サイト管理にサインイン", `<div class="center-page">${brand}<main><section><p class="eyebrow">WELCOME</p><h1>書くことから、はじめよう。</h1><p>原稿を整えて、プレビューを確認。<br>あなたのサイトを、ここから育てられます。</p><form method="post" action="/login">${formCsrf(token)}<button>Mikakiでサインイン</button></form><p><small>Passkeyで安全にサインインします。</small></p></section></main></div>`, browser);
-  const sites = await listSites(env, session.sub);
-  return page(env,"サイト一覧",`<div class="center-page">${brand}<main><p class="eyebrow">YOUR SITES</p><h1>サイトを選ぶ</h1><p>編集するサイトを開いて、続きを書きましょう。</p><div class="site-grid">${sites.map(site=>`<a class="site-card" href="/sites/${site.id}"><h2>${escape(site.title)}</h2><span>記事を管理する →</span><small>${roleLabels[site.role]}</small></a>`).join('')}</div>${sites.length?'':`<section><h2>サイトへのアクセスが必要です</h2><p>サイトの管理者に、次の識別子を伝えてください。</p><code>${escape(session.sub)}</code></section>`}<details class="technical"><summary>アカウント</summary><p>Mikakiの識別子：<code>${escape(session.sub)}</code></p><form method="post" action="/logout">${formCsrf(token)}<button class="secondary">ログアウト</button></form></details></main></div>`,browser);
+  if (!session) return page(env, "サイト管理にサインイン", `<div class="center-page">${brand}<main><section><p class="eyebrow">WELCOME</p><h1>${inboxMode?"問い合わせを、ここで確認。":"書くことから、はじめよう。"}</h1><p>${inboxMode?"受付内容を確認し、対応状況を管理できます。":"原稿を整えて、プレビューを確認。<br>あなたのサイトを、ここから育てられます。"}</p><form method="post" action="/login">${formCsrf(token)}<button>Mikakiでサインイン</button></form><p><small>Passkeyで安全にサインインします。</small></p></section></main></div>`, browser);
+  const sites = await listSites(env, session.sub), inquiriesOnly = String(env.ADMIN_MODE) === "inquiries";
+  return page(env,"サイト一覧",`<div class="center-page">${brand}<main><p class="eyebrow">YOUR SITES</p><h1>サイトを選ぶ</h1><p>${inquiriesOnly?"受信箱を開いて、問い合わせを確認できます。":"編集するサイトを開いて、続きを書きましょう。"}</p><div class="site-grid">${sites.map(site=>`<a class="site-card" href="/sites/${site.id}"><h2>${escape(site.title)}</h2><span>${inquiriesOnly?"問い合わせを確認する":"記事を管理する"} →</span><small>${roleLabels[site.role]}</small></a>`).join('')}</div>${sites.length?'':`<section><h2>サイトへのアクセスが必要です</h2><p>サイトの管理者に、次の識別子を伝えてください。</p><code>${escape(session.sub)}</code></section>`}<details class="technical"><summary>アカウント</summary><p>Mikakiの識別子：<code>${escape(session.sub)}</code></p><form method="post" action="/logout">${formCsrf(token)}<button class="secondary">ログアウト</button></form></details></main></div>`,browser);
 }
 async function sitePage(request: Request, env: SoraneAdminEnv, session: Session, siteId: string): Promise<Response> {
   const site = await getSite(env, siteId, session.sub);
+  if (String(env.ADMIN_MODE) === "inquiries") {
+    const headers = baseHeaders(env); headers.set("Location",`/sites/${site.id}/inquiries`);
+    return new Response(null,{status:303,headers});
+  }
   const { members, proposals, publication } = await siteDetails(env, site);
   const browser = cookie(request, BROWSER) || random(), token = await hash(browser);
   const hidden = () => fields(token, site.revision), url = new URL(request.url);
@@ -198,6 +204,7 @@ export default {
       const match = /^\/(api\/)?sites\/([^/]+)(.*)$/.exec(url.pathname);
       if (!match || !SITE_ID.test(match[2])) fail(404, "not_found");
       const [, api, siteId, tail] = match;
+      if (String(env.ADMIN_MODE) === "inquiries" && tail && !/^\/inquiries(?:\/[0-9a-f-]+)?$/.test(tail)) fail(404,"not_found");
       if (!api && (!tail || tail === "/editor") && request.method === "GET") return await sitePage(request, env, session, siteId);
       const site = await getSite(env, siteId, session.sub);
       if (api && !tail && request.method === "GET") return json(env, await siteDetails(env, site));
@@ -230,7 +237,7 @@ export default {
           const browser = cookie(request,BROWSER) || random(), token = await hash(browser);
           const currentSite = await getSite(env,siteId,fresh.sub);
           const inquiryPage = (title:string,body:string) => page(env,title,
-            shell(currentSite,"inquiries",`<div class="heading-row"><h1>${escape(title)}</h1></div>${body}`,token,env.PUBLIC_ORIGIN),browser);
+            shell(currentSite,"inquiries",`<div class="heading-row"><h1>${escape(title)}</h1></div>${body}`,token,env.PUBLIC_ORIGIN,0,String(env.ADMIN_MODE)==="inquiries"),browser);
           if (id) {
             const inquiry = await getInquiry(env,fresh,siteId,id);
             if (api) return json(env,{inquiry});
@@ -313,6 +320,6 @@ export default {
     config(env); await checkInstance(env); await cleanup(env);
     await cleanupInquiries(env);
     await env.DB.prepare("DELETE FROM preview_ticket WHERE expires_at<=?").bind(Math.floor(Date.now()/1000)).run();
-    await enqueueBuilds(env);
+    if (String(env.ADMIN_MODE) !== "inquiries") await enqueueBuilds(env);
   },
 } satisfies ExportedHandler<SoraneAdminEnv>;

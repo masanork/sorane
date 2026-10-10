@@ -25,6 +25,9 @@ await buildE2eFixture(join(root, "extended-site"), join(outDir, "extended"), { s
 await buildE2eFixture(join(root, "native-site"), join(outDir, "native"), {
   nativeContact:true, baseUrl:"https://public.sorane.example/native/",
 });
+await buildE2eFixture(join(root, "pages-site"), join(outDir, "pages"), {
+  nativeContact:true, baseUrl:"https://public.sorane.example/",
+});
 const port = Number(process.env.E2E_PORT ?? 4173);
 const contact = await contactE2e(join(outDir,"native"),port);
 

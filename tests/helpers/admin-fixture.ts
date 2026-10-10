@@ -16,7 +16,7 @@ export const COMMIT = "a".repeat(40);
 
 // A protocol fixture, not a production Mikaki instance. The Worker still performs
 // real ES256 verification, private_key_jwt, PKCE, HTTP and D1 operations.
-export async function fixture(t: Pick<import("node:test").TestContext,"after">, extra?: {workers: Record<string, unknown>[]; engine: string; bucket: string; origin?: string; sourceService?:{name:string;entrypoint:string}}) {
+export async function fixture(t: Pick<import("node:test").TestContext,"after">, extra?: {workers: Record<string, unknown>[]; engine: string; bucket: string; origin?: string; adminMode?:string; sourceService?:{name:string;entrypoint:string}}) {
   const origin = extra?.origin ?? ORIGIN;
   const op = await generateKeyPair("ES256", { extractable: true });
   const rp = await generateKeyPair("ES256", { extractable: true });
@@ -74,7 +74,7 @@ export async function fixture(t: Pick<import("node:test").TestContext,"after">, 
   const options = {
     name: "admin", modules: true, script: bundled.outputFiles[0].text,
     compatibilityDate: "2026-10-08", compatibilityFlags: ["nodejs_compat"],
-    bindings: { ISSUER, RP_ORIGIN: origin, CLIENT_ID: CLIENT, RP_PRIVATE_JWK: JSON.stringify(rpJwk), PUBLIC_ORIGIN: "https://public.sorane.example", EXPECTED_ENGINE: extra?.engine ?? "e".repeat(64) },
+    bindings: { ISSUER, RP_ORIGIN: origin, CLIENT_ID: CLIENT, RP_PRIVATE_JWK: JSON.stringify(rpJwk), PUBLIC_ORIGIN: "https://public.sorane.example", EXPECTED_ENGINE: extra?.engine ?? "e".repeat(64), ADMIN_MODE:extra?.adminMode??"full" },
     queueProducers: {BUILD_QUEUE:"test-builds"},
     ...(extra?.sourceService?{serviceBindings:{CONTENT_SOURCE:extra.sourceService}}:{}),
     d1Databases: { DB: randomUUID() }, outboundService: provider,
@@ -83,7 +83,7 @@ export async function fixture(t: Pick<import("node:test").TestContext,"after">, 
   const mf = new Miniflare(makeOptions());
   t.after(() => mf.dispose());
   let db = await mf.getD1Database("DB","admin");
-  for (const name of ["0001_admin.sql", "0002_build_and_publish.sql", "0003_artifacts_push.sql", "0004_content_drafts.sql", "0005_contact.sql"]) {
+  for (const name of ["0001_admin.sql", "0002_build_and_publish.sql", "0003_artifacts_push.sql", "0004_content_drafts.sql", "0005_contact.sql", "0006_pages_contact.sql"]) {
     const migration = readFileSync(new URL(`migrations/${name}`, ROOT), "utf8").replace(/^--.*$/gm, "").trim();
     const statements = migration.split(/;\s*(?=CREATE|ALTER|$)/).filter((s) => s.trim());
     await db.batch(statements.map((statement) => db.prepare(statement)));

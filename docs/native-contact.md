@@ -1,6 +1,6 @@
 # Sorane の問い合わせ受付
 
-Sorane が生成するフォーム、公開配信 Worker の受付 API、管理 Worker の受信箱を使います。kototoi の認証・スクリプト・API は不要です。初期版は受信箱での確認と対応状況の管理を提供し、メール通知は行いません。
+Sorane が生成するフォーム、公開配信 Worker または Pages 用 Worker の受付 API、管理 Worker の受信箱を使います。kototoi の認証・スクリプト・API は不要です。初期版は受信箱での確認と対応状況の管理を提供し、メール通知は行いません。
 
 ## フォームを生成する
 
@@ -42,10 +42,31 @@ API は JSON または URL エンコードしたフォームを受け付け、�
 ## 検証
 
 ```sh
-node --test tests/contact-worker.test.ts tests/ssg-worker.test.ts
+node --test tests/contact-worker.test.ts tests/pages-contact-worker.test.ts tests/ssg-worker.test.ts
 npm run test:e2e -- tests/e2e/contact.spec.ts
 npm run workers:check
 npm run typecheck
 ```
 
-Worker テストは実際の workerd・D1・R2 と署名付き OIDC のローカル環境を使用します。E2E は生成したフォームから受付 API、所有者の受信箱、対応状況の更新までをブラウザーで確認します。外部へのメール送信や本番へのテスト問い合わせは行いません。
+Worker テストは実際の workerd・D1・R2 と署名付き OIDC のローカル環境を使用します。E2E は生成したフォームから両方の受付 API、所有者の受信箱、対応状況の更新までをブラウザーで確認します。自動テストは外部へのメール送信や本番への問い合わせを行いません。
+
+## Pages で配信するサイト
+
+Pages の静的配信は継続し、`packages/public-worker/src/pages-contact.ts` を `https://YOUR-SITE/_contact*` の Worker Route に配置します。[Routes](https://developers.cloudflare.com/workers/configuration/routing/routes/) は URL ごとに最も具体的な設定を適用するため、既存のサイト配信とこの API を別々に更新できます。
+
+Pages 受付用の Worker と管理 Worker に同じ **本番専用** D1 をバインドし、`0006_pages_contact.sql` まで適用します。受付 Worker の `CONTACT_SITE_ID` に受信箱のサイト ID、`CONTACT_ORIGINS` に本番の HTTPS オリジンの JSON 配列を設定します。別名ホストも明示的に指定できます。プレビューホストは登録しません。管理 Worker を `ADMIN_MODE: inquiries` で起動すると、受信箱だけを表示し、記事編集・メンバー変更・ビルド・公開 API は使用できません。Queues、Artifacts、R2 の本番用リソースは不要です。
+
+Mikaki RP は開発環境と別のオリジン・登録・秘密鍵を用い、実際にサインインした所有者を管理 Worker の手順で明示的に登録します。所有者を設定するまでは、受付を有効にできません。
+
+フォームを含む Pages の本番デプロイが成功した後、実際のデプロイ UUID と公開 HTML のハッシュを記録します。次のコマンドは監査付きの有効化 SQL を出力するだけで、Cloudflare への接続や適用はしません。
+
+```sh
+node packages/public-worker/scripts/pages-contact-policy.ts \
+  --site my-site --origin https://YOUR-SITE \
+  --deployment PAGES-DEPLOYMENT-UUID --form website/dist/contact.html \
+  --actor OPERATOR --reason 'Reviewed Pages contact deployment' > /tmp/contact-policy.sql
+```
+
+出力を確認し、対象の本番 D1 に `wrangler d1 execute --remote --file` で適用します。HTML は `action="/_contact"` の Sorane フォームでなければ拒否します。公開記録が有効なオリジンだけが受け付けられ、入力 Origin もその送信先と一致する必要があります。同じ制限・同意・重複受付・保存期限・所有者認証を使います。有効化後の公開記録変更も受付の D1 トランザクション内で再確認します。
+
+停止する場合は同じコマンドに `--disable` を追加し、停止 SQL を先に適用してからフォームを無効化・再デプロイします。公開記録は Pages の自動更新を監視しません。ロールバックやフォーム設定の変更時は、運用者が公開記録も更新してください。実際の Sorane 環境は [本番設定](../deployment/production/README.md) を参照してください。

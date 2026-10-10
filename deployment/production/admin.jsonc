@@ -1,0 +1,55 @@
+{
+  "$schema": "../../node_modules/wrangler/config-schema.json",
+  "account_id": "4b749427a0c80c547e726a42aff4b6fc",
+  "compatibility_date": "2026-10-10",
+  "compatibility_flags": [
+    "nodejs_compat"
+  ],
+  "workers_dev": false,
+  "preview_urls": false,
+  "name": "sorane-contact-admin",
+  "main": "../../packages/admin-worker/src/worker.ts",
+  "vars": {
+    "ADMIN_MODE": "inquiries",
+    "ISSUER": "https://auth.mikaki.org",
+    "RP_ORIGIN": "https://admin.sorane.dev",
+    "CLIENT_ID": "43620e1d-b026-4308-9a81-00e0ddf646e6",
+    "PUBLIC_ORIGIN": "https://sorane.dev",
+    "EXPECTED_ENGINE": "0000000000000000000000000000000000000000000000000000000000000000"
+  },
+  "secrets": {
+    "required": [
+      "RP_PRIVATE_JWK"
+    ]
+  },
+  "d1_databases": [
+    {
+      "binding": "DB",
+      "database_name": "sorane-contact-production",
+      "database_id": "3062dc10-ff03-4d94-b1f9-2cac0b274e80",
+      "remote": false,
+      "migrations_dir": "../../packages/admin-worker/migrations"
+    }
+  ],
+  "routes": [
+    {
+      "pattern": "admin.sorane.dev",
+      "custom_domain": true
+    }
+  ],
+  "triggers": {
+    "crons": [
+      "*/10 * * * *"
+    ]
+  },
+  "observability": {
+    "enabled": true,
+    "logs": {
+      "enabled": true,
+      "invocation_logs": false
+    },
+    "traces": {
+      "enabled": false
+    }
+  }
+}

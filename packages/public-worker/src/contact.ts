@@ -71,7 +71,8 @@ function response(request: Request, status: number, receipt?: string, reason?: s
 }
 
 /** Called only after the published, content-addressed manifest opts in. */
-export async function receiveContact(request: Request, env: SoranePublicEnv, site: string, candidate: string): Promise<Response> {
+export async function receiveContact(request: Request, env: {DB:D1Database;PUBLIC_ORIGIN:string}, site: string, candidate: string,
+  source: "worker" | "pages" = "worker"): Promise<Response> {
   try {
     if (request.headers.get("Origin") !== env.PUBLIC_ORIGIN ||
       request.headers.get("Sec-Fetch-Site") === "cross-site") reject(403,"invalid_origin");
@@ -79,6 +80,10 @@ export async function receiveContact(request: Request, env: SoranePublicEnv, sit
     if (spam) return response(request,202,crypto.randomUUID());
     const now = Math.floor(Date.now()/1000), hour = Math.floor(now/3600);
     const db = env.DB.withSession("first-primary");
+    const publication = source === "pages" ?
+      "SELECT 1 FROM pages_contact_publication WHERE site_id=? AND policy_digest=? AND enabled=1 AND origin=? AND EXISTS(SELECT 1 FROM site_member WHERE site_id=pages_contact_publication.site_id AND role='owner')" :
+      "SELECT 1 FROM site_publication WHERE site_id=? AND candidate_digest=?";
+    const publicationValues = source === "pages" ? [site,candidate,env.PUBLIC_ORIGIN] : [site,candidate];
     const payloadHash = digest(JSON.stringify(fields));
     await db.prepare("INSERT OR IGNORE INTO contact_window(site_id,hour,salt) VALUES(?,?,?)").bind(site,hour,crypto.randomUUID()).run();
     const salt = await db.prepare("SELECT salt FROM contact_window WHERE site_id=? AND hour=?").bind(site,hour).first<string>("salt");
@@ -87,11 +92,11 @@ export async function receiveContact(request: Request, env: SoranePublicEnv, sit
     const id = crypto.randomUUID();
     const batch = await db.batch([
       db.prepare(`INSERT INTO contact_attempt(id,site_id,hour,client_hash) SELECT ?,?,?,?
-        WHERE EXISTS(SELECT 1 FROM site_publication WHERE site_id=? AND candidate_digest=?)
+        WHERE EXISTS(${publication})
         AND NOT EXISTS(SELECT 1 FROM contact_inquiry WHERE site_id=? AND request_id=?)
         AND (SELECT COUNT(*) FROM contact_attempt WHERE site_id=? AND hour=?)<100
         AND (SELECT COUNT(*) FROM contact_attempt WHERE site_id=? AND hour=? AND client_hash=?)<5`)
-        .bind(id,site,hour,client,site,candidate,site,key,site,hour,site,hour,client),
+        .bind(id,site,hour,client,...publicationValues,site,key,site,hour,site,hour,client),
       db.prepare(`INSERT INTO contact_inquiry(id,site_id,request_id,payload_hash,name,email,subject,body,created_at,expires_at)
         SELECT ?,?,?,?,?,?,?,?,?,? WHERE EXISTS(SELECT 1 FROM contact_attempt WHERE id=?)`)
         .bind(id,site,key,payloadHash,fields.name,fields.email,fields.subject,fields.body,now,now+CONTACT_RETENTION_SECONDS,id),
@@ -99,7 +104,7 @@ export async function receiveContact(request: Request, env: SoranePublicEnv, sit
     ]);
     const row = batch[2].results[0] as {id:string;payload_hash:string} | undefined;
     if (!row) {
-      if (!await db.prepare("SELECT 1 FROM site_publication WHERE site_id=? AND candidate_digest=?").bind(site,candidate).first()) reject(404,"not_found");
+      if (!await db.prepare(publication).bind(...publicationValues).first()) reject(404,"not_found");
       reject(429,"rate_limited");
     }
     if (row.payload_hash !== payloadHash) reject(409,"request_id_conflict");

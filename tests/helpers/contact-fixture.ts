@@ -15,10 +15,16 @@ const digest = (value: Uint8Array | string) => createHash("sha256").update(value
 export async function contactFixture(t: Pick<import("node:test").TestContext,"after">, output?: string, origin?: string) {
   const bundled = await build({entryPoints:[new URL("../../packages/public-worker/src/worker.ts",import.meta.url).pathname],
     bundle:true,write:false,format:"esm",platform:"node",target:"es2023"});
+  const pages = await build({entryPoints:[new URL("../../packages/public-worker/src/pages-contact.ts",import.meta.url).pathname],
+    bundle:true,write:false,format:"esm",platform:"node",target:"es2023"});
   const f = await fixture(t,{origin,engine:"e".repeat(64),bucket:"contact-bucket",workers:[{
     name:"public",routes:[PUBLIC+"/*"],modules:true,script:bundled.outputFiles[0].text,compatibilityDate:"2026-10-08",
     compatibilityFlags:["nodejs_compat","disallow_importable_env"],d1Databases:{DB:"pipeline-db"},
     r2Buckets:{BUILDS:"contact-bucket"},bindings:{PUBLIC_ORIGIN:PUBLIC},
+  },{
+    name:"pages-contact",routes:["https://pages.sorane.example/*"],modules:true,script:pages.outputFiles[0].text,
+    compatibilityDate:"2026-10-10",compatibilityFlags:["nodejs_compat","disallow_importable_env"],
+    d1Databases:{DB:"pipeline-db"},bindings:{CONTACT_SITE_ID:"native",CONTACT_ORIGINS:JSON.stringify([PUBLIC])},
   }]});
   await f.seedSite("native",{owner:"owner",editor:"editor",publisher:"publisher",viewer:"viewer"});
   if (!output) {
@@ -63,7 +69,14 @@ export async function contactFixture(t: Pick<import("node:test").TestContext,"af
     return candidate;
   }
   const candidate = await publish(), publicWorker = await f.mf.getWorker("public");
+  const pagesEvent=randomUUID(),deployment=randomUUID();
+  await f.db.batch([
+    f.db.prepare("INSERT INTO pages_contact_event VALUES(?,'native',?,?,?, ?,1,'fixture','E2E Pages publication',?)")
+      .bind(pagesEvent,PUBLIC,deployment,"f".repeat(64),"c".repeat(64),now()),
+    f.db.prepare("INSERT INTO pages_contact_publication VALUES(?,'native',?,?,?,?,1,?)")
+      .bind(PUBLIC,pagesEvent,deployment,"f".repeat(64),"c".repeat(64),now()),
+  ]);
   await f.db.prepare("INSERT INTO build_job(proposal_id,status,candidate_digest,engine_id,file_count,total_bytes) VALUES(?,'ready',?,?,?,?)")
     .bind(proposal,candidate,"e".repeat(64),files.length,files.reduce((sum,file)=>sum+file.bytes,0)).run();
-  return Object.assign(f,{publicWorker,publish,bucket,proposal,candidate});
+  return Object.assign(f,{publicWorker,pagesWorker:await f.mf.getWorker("pages-contact"),publish,bucket,proposal,candidate});
 }

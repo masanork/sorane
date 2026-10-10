@@ -14,7 +14,7 @@ rust/**/target/
 vendor/models/
 coverage/
 .wrangler/
-packages/*-worker/worker-configuration.d.ts
+packages/*-worker/*-configuration.d.ts
 test-results/
 playwright-report/
 blob-report/

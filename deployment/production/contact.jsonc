@@ -1,0 +1,38 @@
+{
+  "$schema": "../../node_modules/wrangler/config-schema.json",
+  "account_id": "4b749427a0c80c547e726a42aff4b6fc",
+  "compatibility_date": "2026-10-10",
+  "compatibility_flags": [
+    "nodejs_compat",
+    "disallow_importable_env"
+  ],
+  "workers_dev": false,
+  "preview_urls": false,
+  "name": "sorane-pages-contact",
+  "main": "../../packages/public-worker/src/pages-contact.ts",
+  "vars": {
+    "CONTACT_SITE_ID": "sorane",
+    "CONTACT_ORIGINS": "[\"https://sorane.dev\",\"https://ssg.sorane.dev\"]"
+  },
+  "d1_databases": [
+    {
+      "binding": "DB",
+      "database_name": "sorane-contact-production",
+      "database_id": "3062dc10-ff03-4d94-b1f9-2cac0b274e80",
+      "remote": false
+    }
+  ],
+  "routes": [
+    {
+      "pattern": "sorane.dev/_contact*",
+      "zone_id": "6086f7b70dbdc7108abeb6ad95310058"
+    },
+    {
+      "pattern": "ssg.sorane.dev/_contact*",
+      "zone_id": "6086f7b70dbdc7108abeb6ad95310058"
+    }
+  ],
+  "observability": {
+    "enabled": false
+  }
+}

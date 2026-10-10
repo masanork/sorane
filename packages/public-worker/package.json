@@ -2,7 +2,7 @@
   "name": "@sorane/public-worker", "version": "0.1.0", "private": true, "type": "module", "license": "MIT",
   "scripts": {
     "dev": "wrangler dev", "build": "wrangler deploy --dry-run --outdir dist",
-    "types": "wrangler types --env-interface SoranePublicEnv worker-configuration.d.ts",
+    "types": "wrangler types --env-interface SoranePublicEnv worker-configuration.d.ts && wrangler types --config wrangler.pages-contact.jsonc --env-interface SoranePagesContactEnv --include-runtime false pages-configuration.d.ts",
     "check": "tsc --noEmit -p tsconfig.json"
   }
 }

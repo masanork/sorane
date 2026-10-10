@@ -22,16 +22,41 @@ Callback is the exact management origin plus `/callback`; signed back-channel
 logout is registered at `/backchannel`. The D1 `admin_instance` identity pin
 matches this issuer, client and origin. The first two D1 migrations were applied
 on October 9; the additive push and manuscript draft migrations were applied on October 10.
-The unrelated `0005_contact.sql` also entered the migration command during
-concurrent workspace edits; its additional tables remain. Contact/inquiry code
-was excluded from this deployment, and no inquiry data was created.
+The `0005_contact.sql` initially entered the migration command during concurrent
+workspace edits while inquiry code was excluded from the isolated deployment.
+The combined inquiry implementation and `0006_pages_contact.sql` were qualified
+and deployed later on October 10, as recorded below. No live inquiry data was created.
 Only the management Worker has `RP_PRIVATE_JWK`, uploaded as an encrypted secret.
 Workers version preview URLs and invocation/trace logging remain disabled.
 
-## Qualification completed
+## Current combined deployment, October 10
+
+The complete root source includes the article editor and native contact API/inbox.
+All 669 tests passed on CI's Node 23 with line coverage 91.55%, branch coverage
+73.34% and function coverage 70.03%; all 47 browser E2E tests passed, including
+Pages and Worker forms, native WebMCP drafts, consent, lost-response retry,
+private owner access and status changes. Project/Worker type checks and all
+actual target configuration dry runs passed.
+
+| Target | Version |
+| --- | --- |
+| Admin | `3003f06c-0700-4e4b-b699-5307754558f3` |
+| Builder | `0aa80aad-a4db-444f-8e40-b83a9f542774` |
+| Public | `187971af-1d8b-4d1f-8241-ad0547ea91a7` |
+| Engine | `7cbf7c4dfac45034f002a610314985923bf041be8e49bf71002054ba7a3003f9` |
+
+Active `.sorane/workers/` configs now point to the root source, rather than the
+earlier isolated snapshot. Existing RP secrets, identity, owners, push sources,
+retained drafts and publication were preserved. Public `/demo/` still returns the
+original approved candidate `fafaadd7a7a6e932d09f3e6eb54369493bf93895fb9365757ed3785719f93e04`.
+No draft or new contact-enabled candidate was automatically approved.
+The [Pages production inquiry environment](../deployment/production/README.md)
+uses a separate database, RP and management origin.
+
+## Earlier qualification completed
 
 - All three actual resource configs passed Wrangler deployment dry runs, then
-  deployed successfully. Current version IDs: admin `f75b22ae-61b6-4126-a17b-dd5041537cb7`,
+  deployed successfully. Earlier version IDs: admin `f75b22ae-61b6-4126-a17b-dd5041537cb7`,
   builder `00d2e712-1ee5-4f66-810a-12481077ba0c`, public
   `2470840d-471d-4d45-bf83-582b8d996686`.
 - Management home returned 200, unauthenticated sites API returned 401, and the
@@ -258,7 +283,7 @@ source inputs). Screenshots are `/private/tmp/sorane-editor-ui.jpg` and
 ## Operator state and redeployment
 
 Local active configs/plan are under `.sorane/workers/` and point to the qualified
-snapshot. Operator receipts and
+root source. Historical snapshot receipts and
 the private RP key backup are under `.sorane/operator/`. These directories are
 ignored. The operator directory is mode 0700; secret files are mode 0600. Keep the
 key backup protected; it is never part of the repository or client registration.
@@ -282,8 +307,8 @@ Recheck all three generated configs with `wrangler deploy --dry-run` before
 redeploying them. Regeneration changes the pinned engine when engine sources or
 dependencies change. Do not reapply the initial identity/site inserts or register
 another RP/key merely to redeploy code. Existing resources and the RP are reused.
-The current root workspace also contains concurrent inquiry work; qualify the
-combined source before regenerating and deploying its broader feature set.
+The combined root source is now qualified and deployed, including inquiry work.
+Qualify future changes before regenerating and deploying a broader feature set.
 
 The operator-managed push configuration is in `.sorane/operator/push-sources.json`.
 Preserve `--push-sources` when regenerating: omission generates `[]` and disables

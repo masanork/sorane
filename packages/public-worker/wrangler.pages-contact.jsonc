@@ -1,0 +1,12 @@
+{
+  "$schema": "../../node_modules/wrangler/config-schema.json",
+  "name": "sorane-pages-contact",
+  "main": "src/pages-contact.ts",
+  "compatibility_date": "2026-10-10",
+  "compatibility_flags": ["nodejs_compat", "disallow_importable_env"],
+  "workers_dev": false,
+  "preview_urls": false,
+  "vars": {"CONTACT_SITE_ID":"my-site","CONTACT_ORIGINS":"[\"https://replace-pages-origin.example\"]"},
+  "d1_databases": [{"binding":"DB","database_name":"sorane-admin","database_id":"00000000-0000-0000-0000-000000000000","remote":false}],
+  "observability": {"enabled":false}
+}
