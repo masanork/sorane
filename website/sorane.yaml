@@ -11,6 +11,9 @@ site:
   copyright_holder: Masanori Kusunoki
   contact:
     page: contact.html
+    form:
+      enabled: true
+      privacy_notice: 入力内容は問い合わせへの対応に使用し、受付から30日後に削除します。
   hosting:
     provider: cloudflare
     cloudflare:
@@ -59,7 +62,7 @@ search:
     read_page: true
     datasets: true
     knowledge_packs: true
-    contact: false
+    contact: true
 
 fonts:
   enabled: false
