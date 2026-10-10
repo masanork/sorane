@@ -1,0 +1,10 @@
+# Use a separate registered RP for each environment. Never commit a private key.
+# For a disposable local Mikaki OP, replace ISSUER with its loopback origin.
+ISSUER="http://localhost:8788"
+RP_ORIGIN="http://localhost:8787"
+CLIENT_ID="replace-with-registered-client-id"
+RP_PRIVATE_JWK='{"kty":"EC","crv":"P-256","kid":"replace-with-key-id","x":"...","y":"...","d":"..."}'
+# Use an isolated HTTPS origin for generated content; never the admin origin.
+PUBLIC_ORIGIN="https://replace-public-origin.example"
+# Copy the fingerprint printed by npm run bundle -w @sorane/ssg-worker.
+EXPECTED_ENGINE="replace-with-64-hex-engine-fingerprint"

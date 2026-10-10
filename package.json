@@ -29,6 +29,17 @@
     "test:c2pa": "node --test tests/c2pa-pass.test.ts tests/static-assets.test.ts tests/asset-provenance.test.ts",
     "test:image-metadata": "node --test tests/iptc-xmp-pass.test.ts tests/static-assets.test.ts tests/asset-provenance.test.ts",
     "typecheck": "tsc --noEmit",
+    "admin:dev": "npm run dev -w @sorane/admin-worker --",
+    "admin:types": "npm run types -w @sorane/admin-worker",
+    "admin:check": "npm run check -w @sorane/admin-worker",
+    "admin:test": "node --test tests/admin-worker.test.ts",
+    "admin:bootstrap": "node packages/admin-worker/scripts/bootstrap.ts",
+    "admin:draft": "node packages/admin-worker/scripts/prepare-draft.ts",
+    "ssg:test": "node --test tests/ssg-worker.test.ts",
+    "workers:types": "npm run types -w @sorane/admin-worker && npm run types -w @sorane/ssg-worker && npm run types -w @sorane/public-worker",
+    "workers:check": "npm run check -w @sorane/admin-worker && npm run check -w @sorane/ssg-worker && npm run check -w @sorane/public-worker",
+    "workers:build": "npm run build -w @sorane/admin-worker && npm run build -w @sorane/ssg-worker && npm run build -w @sorane/public-worker",
+    "workers:configure": "node packages/ssg-worker/scripts/configure.ts",
     "cbom-check": "node scripts/cbom-check.ts",
     "supply-chain:status": "node scripts/supply-chain-status.ts",
     "stats": "node scripts/project-stats.ts",
@@ -42,11 +53,15 @@
     "node": ">=23.6"
   },
   "devDependencies": {
+    "@cloudflare/workers-types": "5.20261006.1",
     "@playwright/test": "^1.63.0",
     "@types/js-yaml": "^4.0.9",
     "@types/node": "^26.6.2",
     "c8": "^12.0.0",
-    "typescript": "^7.0.2"
+    "esbuild": "0.28.2",
+    "miniflare": "5.20261006.0-alpha",
+    "typescript": "^7.0.2",
+    "wrangler": "4.148.0"
   },
   "license": "MIT",
   "allowScripts": {
@@ -54,10 +69,14 @@
     "esbuild": true,
     "protobufjs": true,
     "sharp": true,
+    "workerd": true,
     "puppeteer": true,
     "@mermaid-js/mermaid-cli": true
   },
   "overrides": {
+    "miniflare": {
+      "sharp": "0.35.5"
+    },
     "lodash-es": "^4.17.24"
   }
 }

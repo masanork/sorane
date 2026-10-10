@@ -10,7 +10,8 @@ const TINY_PNG = Buffer.from(
 );
 
 /** Playwright 用の最小サイトをビルドする。 */
-export async function buildE2eFixture(root, outDir, { webmcp = true, snippetOnly = false, extended = !snippetOnly } = {}) {
+export async function buildE2eFixture(root, outDir, { webmcp = true, snippetOnly = false, extended = !snippetOnly,
+  nativeContact = false, baseUrl = "https://e2e.example.test" } = {}) {
   const contentDir = join(root, "content");
   const staticDir = join(root, "static");
   mkdirSync(contentDir, { recursive: true });
@@ -177,7 +178,8 @@ Search the E2E fixture for Welcome and Mermaid keywords.
       site: {
         title: "E2E",
         description: "fixture",
-        base_url: "https://e2e.example.test",
+        base_url: baseUrl,
+        ...(nativeContact ? {contact:{page:"contact.html",form:{enabled:true}}} : {}),
         lang: "en",
         i18n: { locales: { en: { lang: "en", path_prefix: "en" } } },
         og_image: "/static/pixel.png",
@@ -186,7 +188,7 @@ Search the E2E fixture for Welcome and Mermaid keywords.
         content_dir: "content",
         out_dir: outDir,
         static_dir: "static",
-        diagrams: { enabled: true },
+        diagrams: { enabled: !nativeContact },
         security: { search_snippet_only: snippetOnly },
         outputs: { okfc: true },
         okfc: { units: [{ id: "guides", title: "English guides", match: { dirs: ["en"] } }] },
@@ -197,7 +199,7 @@ Search the E2E fixture for Welcome and Mermaid keywords.
     clean: true,
   });
   const contactPath = join(outDir, "contact.html");
-  writeFileSync(contactPath, readFileSync(contactPath, "utf8").replace("</main>", `
+  if (!nativeContact) writeFileSync(contactPath, readFileSync(contactPath, "utf8").replace("</main>", `
     <form data-webmcp-contact method="post" action="/contact-submit">
       <label>Name<input name="name" maxlength="200"></label>
       <label>Subject<input name="subject" maxlength="200" required></label>

@@ -15,13 +15,13 @@ import type { DiagramsConfig } from "../config.ts";
 import { diagramSourceHash } from "./diagram-hash.ts";
 
 const execFileAsync = promisify(execFile);
-const require = createRequire(import.meta.url);
 
 export function isMermaidBuildEnabled(config?: DiagramsConfig): boolean {
   return config?.enabled !== false && config?.mermaid?.mode === "build";
 }
 
 export function resolveMmdcBinary(config: DiagramsConfig): string {
+  const require = createRequire(import.meta.url);
   const configured = config.mermaid?.mmdc;
   if (configured && configured.length > 0 && configured !== "mmdc") return configured;
   const candidates = [

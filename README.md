@@ -42,6 +42,20 @@ Copy [`template/site/`](template/site/) into your own GitHub repo. It includes *
 
 ## CLI
 
+An experimental [management Worker](packages/admin-worker/README.md) reuses
+Mikaki OIDC authentication with site-specific roles. Its
+[Workers pipeline](packages/ssg-worker/README.md) reads Artifacts commits, runs
+sorane validation/builds, previews immutable R2 candidates and publishes the
+exact approved files. A dedicated [Artifacts / Mikaki development environment](docs/artifacts-mikaki-development.md)
+is deployed and qualified with real Passkey login, site authorization, a remote
+Artifacts/Queue build, R2 preview and exact-candidate publication. The
+[published sample](https://sorane-dev-public.masanork.workers.dev/demo/) is live.
+Repository-scoped Artifacts push notifications can now create proposals and
+build automatically. [Manuscript drafts](packages/admin-worker/README.md#manuscript-drafts)
+can overlay generated Markdown on a pinned Artifacts commit for validation,
+preview and exact approval. Publication still requires human approval;
+independent AI execution and repository-write delegation remain unconnected.
+
 ```bash
 npx @sorane/cli build [--cwd <dir>] [--clean] [--skip-c2pa]
 npx @sorane/cli watch [--cwd <dir>] [--clean]

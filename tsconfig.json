@@ -12,5 +12,6 @@
     "skipLibCheck": true,
     "types": ["node"]
   },
-  "include": ["packages/**/*.ts", "tests/**/*.ts"]
+  "include": ["packages/**/*.ts", "tests/**/*.ts"],
+  "exclude": ["packages/admin-worker", "packages/ssg-worker/src", "packages/ssg-worker/worker-configuration.d.ts", "packages/public-worker"]
 }

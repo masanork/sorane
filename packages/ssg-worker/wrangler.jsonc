@@ -1,0 +1,16 @@
+{
+  "$schema": "../../node_modules/wrangler/config-schema.json",
+  "name": "sorane-build",
+  "main": "dist/worker.mjs",
+  "no_bundle": true,
+  "compatibility_date": "2026-10-08",
+  "compatibility_flags": ["nodejs_compat", "disallow_importable_env"],
+  "workers_dev": false, "preview_urls": false,
+  "limits": { "cpu_ms": 30000 },
+  "vars": { "ARTIFACTS_NAMESPACE": "sorane-dev", "PUBLIC_ORIGIN": "https://replace-public-origin.example", "BUILD_QUEUE_NAME":"sorane-build-jobs-dev", "ARTIFACTS_PUSH_SOURCES":"[]" },
+  "artifacts": [{ "binding": "ARTIFACTS", "namespace": "sorane-dev", "remote": false }],
+  "d1_databases": [{ "binding": "DB", "database_name": "sorane-admin", "database_id": "00000000-0000-0000-0000-000000000000", "remote": false }],
+  "r2_buckets": [{ "binding": "BUILDS", "bucket_name": "sorane-builds-dev", "remote": false }],
+  "queues": { "consumers": [{ "queue": "sorane-build-jobs-dev", "max_batch_size": 1, "max_batch_timeout": 1, "max_retries": 3 }] },
+  "observability": { "enabled": true, "logs": { "enabled": true, "invocation_logs": false }, "traces": { "enabled": false } }
+}

@@ -13,6 +13,12 @@ export interface SiteContactConfig {
   /** dist 基準の問い合わせページ（例: contact.html） */
   readonly page?: string;
   readonly email?: string;
+  /** Sorane の同一オリジン受付 API を使うフォーム（既定: 無効）。 */
+  readonly form?: {
+    readonly enabled?: boolean;
+    /** 利用目的・保存期間を説明するテキスト。HTML は解釈しない。 */
+    readonly privacy_notice?: string;
+  };
 }
 
 export interface SiteFindabilityConfig {

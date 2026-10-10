@@ -1,0 +1,8 @@
+{
+  "repository": "https://github.com/masanork/mikaki",
+  "commit": "a639defb797f81cd3c6dd520ed5b2050ccda54ee",
+  "path": "crates/helpdesk-rp/oidc.ts",
+  "sha256": "8e6a924c24a1d24f16c4f19ae7a023185d138052ee2e7a5100d590445dcffc73",
+  "license": "MIT",
+  "modifications": []
+}

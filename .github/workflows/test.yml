@@ -55,6 +55,9 @@ jobs:
       - name: Typecheck
         run: npm run typecheck
 
+      - name: Workers typecheck
+        run: npm run workers:types && npm run workers:check
+
       - name: Test with coverage gate
         run: npm run test:coverage
 

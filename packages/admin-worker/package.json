@@ -1,0 +1,17 @@
+{
+  "name": "@sorane/admin-worker",
+  "version": "0.1.0",
+  "private": true,
+  "type": "module",
+  "license": "MIT",
+  "scripts": {
+    "dev": "wrangler dev",
+    "types": "wrangler types --env-interface SoraneAdminEnv worker-configuration.d.ts",
+    "check": "tsc --noEmit -p tsconfig.json",
+    "migrate:local": "wrangler d1 migrations apply sorane-admin --local",
+    "build": "wrangler deploy --dry-run --outdir dist"
+  },
+  "dependencies": {
+    "jose": "6.2.12"
+  }
+}

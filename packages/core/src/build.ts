@@ -1,4 +1,5 @@
 import { plainTextFromHtml } from "./plain-text.ts";
+import { resolveContact, renderContactForm, contactStyleHead, CONTACT_SCRIPT, CONTACT_SCRIPT_FILE, CONTACT_CSS, CONTACT_CSS_FILE } from "./contact.ts";
 import {
   collectAllRedirectRules,
   formatRedirectsFile,
@@ -418,6 +419,8 @@ export async function runBuild(opts: BuildOptions): Promise<BuildResult> {
   const startedAt = performance.now();
   const { cwd } = opts;
   const config = mergeConfig(opts.config);
+  const contact = resolveContact(config);
+  let contactRendered = false;
   const includeDrafts = opts.includeDrafts === true;
   const previewMode = opts.preview === true;
   const pageEmitBase = { previewMode };
@@ -899,6 +902,10 @@ export async function runBuild(opts: BuildOptions): Promise<BuildResult> {
       bodyHtml = article.bodyHtml;
       pageDiagrams = article.diagrams;
     }
+    if (contact && outRel === contact.page) {
+      bodyHtml += renderContactForm(contact, rootPrefix);
+      contactRendered = true;
+    }
     const diagramHead = diagramHeadForPage(
       pageDiagrams,
       rootPrefix,
@@ -1062,6 +1069,7 @@ export async function runBuild(opts: BuildOptions): Promise<BuildResult> {
           ...(headerSearch.extraHead ?? []),
           ...(diagramHead ? [diagramHead] : []),
         ];
+    if (contact && outRel === contact.page) extraHead.push(contactStyleHead(rootPrefix));
     emitPage({
       ...pageEmitBase,
       cwd,
@@ -1884,6 +1892,11 @@ export async function runBuild(opts: BuildOptions): Promise<BuildResult> {
     id: string;
     title?: string;
   }[] = [];
+  if (contact) {
+    if (!contactRendered) throw new Error("contact_page_not_built");
+    writeFileSync(join(outDir, "assets", CONTACT_SCRIPT_FILE), CONTACT_SCRIPT, "utf8");
+    writeFileSync(join(outDir, "assets", CONTACT_CSS_FILE), CONTACT_CSS, "utf8");
+  }
   const webmcpPacks: WebMcpPack[] = [];
   if (buildOutputs.okfc) {
     const okfcCfg = resolveOkfcBuildConfig(config.build.okfc, true);

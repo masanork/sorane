@@ -15,7 +15,6 @@ import { installCommandFor } from "../optional-dep.ts";
 import { resolveThemeAssetDir } from "../theme-assets.ts";
 import { contentNeedsMermaidClient, resolveMermaidMode } from "./diagram-meta.ts";
 
-const require = createRequire(import.meta.url);
 
 export interface EmitDiagramAssetsOptions {
   readonly cwd: string;
@@ -37,6 +36,7 @@ export function substituteMermaidVersion(source: string, version: string): strin
 
 function resolveMermaidPackageRoot(): string | null {
   try {
+    const require = createRequire(import.meta.url);
     const pkgPath = require.resolve("mermaid/package.json");
     return dirname(pkgPath);
   } catch {

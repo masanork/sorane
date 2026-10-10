@@ -1,8 +1,4 @@
-import Ajv from "ajv";
-import addFormats from "ajv-formats";
-import { readFileSync } from "node:fs";
-import { dirname, join } from "node:path";
-import { fileURLToPath } from "node:url";
+import { getProfileValidator, profileSchemaPath } from "./profile-validator.ts";
 import { validateDisclosureFields } from "./digital-source-type.ts";
 import { extract } from "./extract.ts";
 import { normalizeConcept } from "./normalize.ts";
@@ -16,9 +12,6 @@ import {
 } from "./profile.ts";
 import { isStale, parseTrustFields } from "./trust.ts";
 import { parseYaml } from "./yaml.ts";
-
-const __dirname = dirname(fileURLToPath(import.meta.url));
-const PROFILE_SCHEMA_DIR = join(__dirname, "../profile");
 
 export interface ValidationIssue {
   readonly where: "structure" | "frontmatter" | "type" | "profile";
@@ -43,8 +36,6 @@ export interface ValidationResult {
   readonly warnings: readonly string[];
 }
 
-const validatorCache = new Map<string, ReturnType<Ajv["compile"]>>();
-
 export function validateProfileFormat(
   profile: string | undefined,
 ): ValidationIssue | null {
@@ -59,23 +50,7 @@ export function validateProfileFormat(
 }
 
 export function resolveProfileSchema(profile: string): string {
-  const m = profile.match(SUPPORTED_PROFILE_RE);
-  if (!m) {
-    throw new Error(`unsupported profile: ${profile}`);
-  }
-  return join(PROFILE_SCHEMA_DIR, `sorane-okf-${m[1]}.schema.json`);
-}
-
-function getValidatorForProfile(profile: string): ReturnType<Ajv["compile"]> {
-  const path = resolveProfileSchema(profile);
-  let v = validatorCache.get(path);
-  if (!v) {
-    const ajv = new Ajv({ allErrors: true, strict: false });
-    addFormats(ajv);
-    v = ajv.compile(JSON.parse(readFileSync(path, "utf8")));
-    validatorCache.set(path, v);
-  }
-  return v;
+  return profileSchemaPath(profile);
 }
 
 function slugFromPath(filePath: string): string {
@@ -208,7 +183,7 @@ export function validateSource(
   );
 
   if (issues.every((i) => i.where !== "profile")) {
-    const validate = getValidatorForProfile(profile);
+    const validate = getProfileValidator(profile);
     const schemaType =
       isProfile03(profile) && concept.type && !TYPES_03.has(concept.type)
         ? "article"
