@@ -83,7 +83,7 @@ export async function fixture(t: Pick<import("node:test").TestContext,"after">, 
   const mf = new Miniflare(makeOptions());
   t.after(() => mf.dispose());
   let db = await mf.getD1Database("DB","admin");
-  for (const name of ["0001_admin.sql", "0002_build_and_publish.sql", "0003_artifacts_push.sql", "0004_content_drafts.sql", "0005_contact.sql", "0006_pages_contact.sql"]) {
+  for (const name of ["0001_admin.sql", "0002_build_and_publish.sql", "0003_artifacts_push.sql", "0004_content_drafts.sql", "0005_contact.sql", "0006_pages_contact.sql", "0007_contact_notifications.sql"]) {
     const migration = readFileSync(new URL(`migrations/${name}`, ROOT), "utf8").replace(/^--.*$/gm, "").trim();
     const statements = migration.split(/;\s*(?=CREATE|ALTER|$)/).filter((s) => s.trim());
     await db.batch(statements.map((statement) => db.prepare(statement)));

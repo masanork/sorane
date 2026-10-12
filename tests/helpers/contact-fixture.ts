@@ -7,26 +7,32 @@ import { fixture, now, COMMIT } from "./admin-fixture.ts";
 import { runBuild } from "../../packages/core/src/build.ts";
 import { mergeConfig } from "../../packages/core/src/config.ts";
 import { contentType } from "../../packages/ssg-worker/src/content-type.ts";
+import { notificationWorkerFixture } from './contact-notifications.ts';
+import { notificationPolicySql } from '../../packages/public-worker/scripts/contact-notification-policy.ts';
 
 export const PUBLIC = "https://public.sorane.example";
 const digest = (value: Uint8Array | string) => createHash("sha256").update(value).digest("hex");
 // Publication seeding is test-only. It uses the real SSG output, D1 schema,
 // R2 objects and public/admin Worker handlers, with a local signed OIDC fixture.
-export async function contactFixture(t: Pick<import("node:test").TestContext,"after">, output?: string, origin?: string) {
+export async function contactFixture(t: Pick<import("node:test").TestContext,"after">, output?: string, origin?: string, notifications=false) {
   const bundled = await build({entryPoints:[new URL("../../packages/public-worker/src/worker.ts",import.meta.url).pathname],
     bundle:true,write:false,format:"esm",platform:"node",target:"es2023"});
   const pages = await build({entryPoints:[new URL("../../packages/public-worker/src/pages-contact.ts",import.meta.url).pathname],
     bundle:true,write:false,format:"esm",platform:"node",target:"es2023"});
+  const mail = notifications ? await notificationWorkerFixture() : undefined;
   const f = await fixture(t,{origin,engine:"e".repeat(64),bucket:"contact-bucket",workers:[{
     name:"public",routes:[PUBLIC+"/*"],modules:true,script:bundled.outputFiles[0].text,compatibilityDate:"2026-10-08",
     compatibilityFlags:["nodejs_compat","disallow_importable_env"],d1Databases:{DB:"pipeline-db"},
     r2Buckets:{BUILDS:"contact-bucket"},bindings:{PUBLIC_ORIGIN:PUBLIC},
   },{
-    name:"pages-contact",routes:["https://pages.sorane.example/*"],modules:true,script:pages.outputFiles[0].text,
+    name:"pages-contact",routes:["https://pages.sorane.example/*"],modules:true,script:mail?.script??pages.outputFiles[0].text,
     compatibilityDate:"2026-10-10",compatibilityFlags:["nodejs_compat","disallow_importable_env"],
     d1Databases:{DB:"pipeline-db"},bindings:{CONTACT_SITE_ID:"native",CONTACT_ORIGINS:JSON.stringify([PUBLIC])},
+    ...(mail?{serviceBindings:{MAIL_CAPTURE:mail.capture}}:{}),
   }]});
   await f.seedSite("native",{owner:"owner",editor:"editor",publisher:"publisher",viewer:"viewer"});
+  if(mail) await f.db.prepare(notificationPolicySql({site:'native',from:'inquiries@notify.example',to:'owner@example.test',
+    adminOrigin:origin??'https://admin.sorane.example'})).run();
   if (!output) {
     const root = mkdtempSync(join(tmpdir(),"sorane-contact-"));
     t.after(()=>rmSync(root,{recursive:true,force:true}));
@@ -78,5 +84,5 @@ export async function contactFixture(t: Pick<import("node:test").TestContext,"af
   ]);
   await f.db.prepare("INSERT INTO build_job(proposal_id,status,candidate_digest,engine_id,file_count,total_bytes) VALUES(?,'ready',?,?,?,?)")
     .bind(proposal,candidate,"e".repeat(64),files.length,files.reduce((sum,file)=>sum+file.bytes,0)).run();
-  return Object.assign(f,{publicWorker,pagesWorker:await f.mf.getWorker("pages-contact"),publish,bucket,proposal,candidate});
+  return Object.assign(f,{publicWorker,pagesWorker:await f.mf.getWorker("pages-contact"),publish,bucket,proposal,candidate,mail});
 }

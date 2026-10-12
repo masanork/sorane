@@ -1,8 +1,9 @@
 import { receiveContact } from "./contact.ts";
+import { deliverContactNotifications } from "./contact-notifications.ts";
 
 /** A same-origin API alongside Pages; no static content or admin cookies here. */
 export default {
-  async fetch(request, env): Promise<Response> {
+  async fetch(request, env, ctx): Promise<Response> {
     const headers = {"Cache-Control":"no-store","X-Content-Type-Options":"nosniff","X-Robots-Tag":"noindex, nofollow"};
     const error = (status:number) => Response.json({error:status===404?"not_found":"service_unavailable"},{status,headers});
     try {
@@ -16,7 +17,11 @@ export default {
         WHERE site_id=? AND origin=? AND enabled=1 AND EXISTS(SELECT 1 FROM site_member WHERE site_id=? AND role='owner')`)
         .bind(site,url.origin,site).first<{policy_digest:string}>();
       if (!policy || !/^[0-9a-f]{64}$/.test(policy.policy_digest)) return error(404);
-      return await receiveContact(request,{DB:env.DB,PUBLIC_ORIGIN:url.origin},site,policy.policy_digest,"pages");
+      return await receiveContact(request,{DB:env.DB,PUBLIC_ORIGIN:url.origin},site,policy.policy_digest,"pages",
+        receipt=>{if(env.NOTIFY) ctx.waitUntil(deliverContactNotifications(env,site,1,receipt));});
     } catch {return error(503);}
+  },
+  async scheduled(_event,env): Promise<void> {
+    await deliverContactNotifications(env,String(env.CONTACT_SITE_ID));
   },
 } satisfies ExportedHandler<SoranePagesContactEnv>;

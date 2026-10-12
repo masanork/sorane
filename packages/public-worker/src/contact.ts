@@ -72,7 +72,7 @@ function response(request: Request, status: number, receipt?: string, reason?: s
 
 /** Called only after the published, content-addressed manifest opts in. */
 export async function receiveContact(request: Request, env: {DB:D1Database;PUBLIC_ORIGIN:string}, site: string, candidate: string,
-  source: "worker" | "pages" = "worker"): Promise<Response> {
+  source: "worker" | "pages" = "worker", onAccepted?: (receipt:string)=>void): Promise<Response> {
   try {
     if (request.headers.get("Origin") !== env.PUBLIC_ORIGIN ||
       request.headers.get("Sec-Fetch-Site") === "cross-site") reject(403,"invalid_origin");
@@ -108,6 +108,8 @@ export async function receiveContact(request: Request, env: {DB:D1Database;PUBLI
       reject(429,"rate_limited");
     }
     if (row.payload_hash !== payloadHash) reject(409,"request_id_conflict");
+    // Delivery failures must never turn a committed inquiry into an API error.
+    if (row.id===id && onAccepted) {try {onAccepted(row.id);} catch {/* Cron recovers the durable outbox. */}}
     return response(request,row.id === id ? 201 : 200,row.id);
   } catch (error) {
     return response(request,error instanceof InputError ? error.status : 503,undefined,error instanceof InputError ? error.message : "service_unavailable");

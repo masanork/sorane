@@ -95,6 +95,41 @@ test("a Pages form reaches the same-origin API and the private owner inbox",asyn
   await openInbox(page,context,request);
   await page.getByRole('link',{name:subject}).click();
   await expect(page.getByRole('heading',{name:subject})).toBeVisible();
+  const receipt=page.url().split('/').at(-1)!;
+  await expect.poll(async()=>{
+    const {messages}=await (await request.get('/__contact-test/notifications')).json();
+    return messages.filter((message:any)=>message.text.includes(receipt));
+  }).toHaveLength(1);
+  const {messages}=await (await request.get('/__contact-test/notifications')).json();
+  const message=messages.find((value:any)=>value.text.includes(receipt));
+  expect(message.text).toContain(ADMIN+'/sites/native/inquiries/'+receipt);
+  expect(JSON.stringify(message)).not.toContain(subject);
+  expect(JSON.stringify(message)).not.toContain('pages-browser@example.test');
+  expect(JSON.stringify(message)).not.toContain('This form is served separately');
+});
+
+test('a lost Pages response still notifies once and retry returns the saved receipt',async({page,request})=>{
+  const subject='Pages notification retry '+Date.now();let first=true,receipt='';
+  await page.route('**/_contact',async route=>{
+    const response=await route.fetch();
+    if(first){first=false;receipt=(await response.json()).receipt;await route.abort('failed');}
+    else await route.fulfill({response});
+  });
+  await page.goto('/pages/contact.html');
+  await page.getByLabel('返信先メールアドレス').fill('pages-retry@example.test');
+  await page.getByLabel('件名',{exact:true}).fill(subject);
+  await page.getByLabel('お問い合わせ内容').fill('Private retry body');
+  await page.locator('[name=consent]').check();
+  await page.getByRole('button',{name:'問い合わせを送信'}).click();
+  await expect(page.locator('[data-sorane-contact-status]')).toContainText('通信を確認できませんでした');
+  await page.getByRole('button',{name:'問い合わせを送信'}).click();
+  await expect(page.locator('[data-sorane-contact-status]')).toContainText(receipt);
+  await expect.poll(async()=>{
+    const {messages}=await (await request.get('/__contact-test/notifications')).json();
+    return messages.filter((message:any)=>message.text.includes(receipt));
+  }).toHaveLength(1);
+  const inbox=await (await request.get('/__contact-test/inbox')).json();
+  expect(inbox.inquiries.filter((i:any)=>i.subject===subject)).toHaveLength(1);
 });
 
 test("previewing a generated form cannot submit a live inquiry",async({page,request})=>{

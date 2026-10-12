@@ -8,5 +8,7 @@
   "preview_urls": false,
   "vars": {"CONTACT_SITE_ID":"my-site","CONTACT_ORIGINS":"[\"https://replace-pages-origin.example\"]"},
   "d1_databases": [{"binding":"DB","database_name":"sorane-admin","database_id":"00000000-0000-0000-0000-000000000000","remote":false}],
+  "send_email": [{"name":"NOTIFY"}],
+  "triggers": {"crons":["*/5 * * * *"]},
   "observability": {"enabled":false}
 }

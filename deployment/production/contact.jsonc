@@ -32,7 +32,11 @@
       "zone_id": "6086f7b70dbdc7108abeb6ad95310058"
     }
   ],
+  "send_email": [{"name":"NOTIFY","allowed_sender_addresses":["inquiries@notify.sorane.dev"]}],
+  "triggers": {"crons":["*/5 * * * *"]},
   "observability": {
-    "enabled": false
+    "enabled": true,
+    "logs": {"enabled":true,"invocation_logs":false},
+    "traces": {"enabled":false}
   }
 }

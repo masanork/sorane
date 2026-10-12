@@ -16,7 +16,7 @@ export async function contactE2e(output, port) {
   // form redirects. No certificate or signing key is used outside this fixture.
   execFileSync('openssl',['req','-x509','-newkey','rsa:2048','-nodes','-days','1','-subj','/CN=localhost',
     '-keyout',join(tls,'key.pem'),'-out',join(tls,'cert.pem')],{stdio:'ignore'});
-  const f = await contactFixture({after:fn=>hooks.push(fn)},output,adminOrigin);
+  const f = await contactFixture({after:fn=>hooks.push(fn)},output,adminOrigin,true);
   const accounts = new Map();
   async function account(role) {
     if (!accounts.has(role)) accounts.set(role,await f.login(role));
@@ -58,6 +58,9 @@ export async function contactE2e(output, port) {
       }
       if (url.pathname==='/__contact-test/inbox') {
         return await respond(res,await (await account('owner')).get('/api/sites/native/inquiries')),true;
+      }
+      if (url.pathname==='/__contact-test/notifications') {
+        res.writeHead(200,{'Content-Type':'application/json'});res.end(JSON.stringify({messages:f.mail.messages}));return true;
       }
       if (url.pathname==='/__contact-test/preview') {
         return await respond(res,await (await account('owner')).post(`/api/sites/native/proposals/${f.proposal}/preview`,{})),true;
