@@ -1,4 +1,4 @@
-import test from 'node:test';
+import test, { before } from 'node:test';
 import assert from 'node:assert/strict';
 import { runInNewContext } from 'node:vm';
 import { build } from 'esbuild';
@@ -7,7 +7,14 @@ async function moduleAt(name:string) {
   const result=await build({entryPoints:[new URL(`../packages/admin-worker/src/${name}.ts`,import.meta.url).pathname],bundle:true,write:false,format:'esm',platform:'browser',target:'es2023'});
   return import('data:text/javascript;base64,'+Buffer.from(result.outputFiles[0].text).toString('base64'));
 }
-const [{SCRIPT},{articleBody}]=await Promise.all([moduleAt('ui'),moduleAt('editor')]) as [{SCRIPT:string},{articleBody:(body:string,title:string)=>{body:string;heading:{prefix:string;suffix:string}|null}}];
+let SCRIPT:string;
+let articleBody:(body:string,title:string)=>{body:string;heading:{prefix:string;suffix:string}|null};
+// Node 23's in-process test runner cannot finish registration after top-level
+// asynchronous bundling. Initialise within the test lifecycle instead.
+before(async()=>{
+  const [ui,editor]=await Promise.all([moduleAt('ui'),moduleAt('editor')]);
+  SCRIPT=ui.SCRIPT;articleBody=editor.articleBody;
+});
 
 test('the editor detaches only an exact leading title and retains the original separators',()=>{
   for(const body of ['# 記事のタイトル\n\n本文です。\n','\n#  記事のタイトル  \r\n\r\n本文です。\r\n','# 記事のタイトル']) {
