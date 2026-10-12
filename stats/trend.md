@@ -6,37 +6,36 @@ Auto-generated from `stats/history.jsonl` on each CI run on `main`.
 
 | Field | Value |
 |-------|-------|
-| Timestamp | 2026-10-12T15:50:23.459Z |
-| Commit | `4deaf78` |
+| Timestamp | 2026-10-12T16:50:12.636Z |
+| Commit | `ec85e3f` |
 | Version | `0.5.0` |
-| Packages LOC | 22,858 |
-| Test functions | 646 |
-| Total LOC | 44,069 |
-| Line coverage | 91.0% |
+| Packages LOC | 22,972 |
+| Test functions | 647 |
+| Total LOC | 44,418 |
+| Line coverage | 90.9% |
 
 ## Δ vs previous run
 
 | Metric | Δ |
 |--------|---|
-| Packages LOC | — |
-| Test functions | +3 |
-| Total LOC | +149 |
-| Coverage | +25.5% |
+| Packages LOC | +114 |
+| Test functions | +1 |
+| Total LOC | +349 |
+| Coverage | -0.1% |
 
 ## Δ vs oldest in window (30 runs)
 
 | Metric | Start | Latest | Δ |
 |--------|-------|--------|---|
-| Packages LOC | 10,491 | 22,858 | +12,367 |
-| Test functions | 414 | 646 | +232 |
-| Total LOC | 22,622 | 44,069 | +21,447 |
+| Packages LOC | 10,494 | 22,972 | +12,478 |
+| Test functions | 414 | 647 | +233 |
+| Total LOC | 22,635 | 44,418 | +21,783 |
 
 ## History
 
 | At (UTC) | Commit | Ver | Pkg LOC | Tests | Total LOC | Cov% | Δ pkg |
 |----------|--------|-----|---------|-------|-----------|------|-------|
-| 2026-06-21 04:40 | `bfc0082` | 0.2.7 | 10,491 | 414 | 22,622 | 72.7 | — |
-| 2026-06-21 04:48 | `efb487f` | 0.2.7 | 10,494 | 414 | 22,635 | 72.7 | +3 |
+| 2026-06-21 04:48 | `efb487f` | 0.2.7 | 10,494 | 414 | 22,635 | 72.7 | — |
 | 2026-06-21 05:01 | `606b197` | 0.2.8 | 10,494 | 414 | 22,739 | 72.7 | — |
 | 2026-06-21 06:05 | `c852c43` | 0.3.0 | 12,731 | 464 | 26,315 | 70.6 | +2,237 |
 | 2026-06-21 06:24 | `2cf36bd` | 0.3.0 | 12,908 | 470 | 26,621 | 70.6 | +177 |
@@ -65,6 +64,7 @@ Auto-generated from `stats/history.jsonl` on each CI run on `main`.
 | 2026-10-12 13:06 | `2822052` | 0.5.0 | 22,858 | 642 | 43,896 | 65.5 | — |
 | 2026-10-12 13:55 | `0ac345b` | 0.5.0 | 22,858 | 643 | 43,920 | 65.5 | — |
 | 2026-10-12 15:50 | `4deaf78` | 0.5.0 | 22,858 | 646 | 44,069 | 91.0 | — |
+| 2026-10-12 16:50 | `ec85e3f` | 0.5.0 | 22,972 | 647 | 44,418 | 90.9 | +114 |
 
 ## Workspace LOC (latest)
 
@@ -76,8 +76,8 @@ Auto-generated from `stats/history.jsonl` on each CI run on `main`.
 | `@sorane/cli` | 960 |
 | `@sorane/admin-worker` | 733 |
 | `@sorane/ssg-worker` | 462 |
+| `@sorane/public-worker` | 349 |
 | `@sorane/font` | 324 |
-| `@sorane/public-worker` | 235 |
 | `@sorane/astro` | 0 |
 | `@sorane/astro-backend-wasm` | 0 |
 
