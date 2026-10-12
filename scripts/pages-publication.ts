@@ -33,6 +33,16 @@ export const formPresent = (html: string) => /<form\b[^>]*data-sorane-contact\b[
 export const withoutPagesAnalytics = (html: string) => html.replace(
   /<script\b(?=[^>]*\bsrc="https:\/\/static\.cloudflareinsights\.com\/beacon\.min\.js[^\"]*")[^>]*><\/script>/g, "",
 );
+export function withoutPagesTransforms(html: string) {
+  return withoutPagesAnalytics(html).replace(/<script>[\s\S]*?<\/script>/g, script => {
+    // Bot Management adds this reviewed bootstrap on custom domains, with a
+    // fresh ray and timestamp. Pin its entire remaining source: a script that
+    // merely mentions Cloudflare, or contains extra code, must still fail.
+    const canonical = script.replace(/window\.__CF\$cv\$params=\{r:'[a-f0-9]{16}',t:'[A-Za-z0-9+/=]+'\};/g,
+      () => "window.__CF$cv$params={r:'RAY',t:'TIME'};");
+    return digest(canonical) === "016660f3823e7f69cbe84c7b6e6e3219103232ab0ac3cf4094bb7a48cfffef36" ? "" : script;
+  });
+}
 
 export function policyDigest(site: string, origin: string, deployment: string, formDigest: string, enabled: number) {
   return digest(JSON.stringify({ site, origin, deployment, formDigest, enabled }));
@@ -235,7 +245,7 @@ export async function verifyPublishedForm(d: Deployment, policies: Publication[]
     for (let attempt = 0; attempt < 6 && !verified; attempt++) {
       try {
         const response = await fetchImpl(origin + "/contact.html", { headers: { "Cache-Control": "no-cache" }, signal: AbortSignal.timeout(15000) });
-        const html = withoutPagesAnalytics(await response.text());
+        const html = withoutPagesTransforms(await response.text());
         const missing = policy.form_digest === digest("") && policy.enabled === 0;
         verified = missing ? !formPresent(html) : response.ok && digest(html) === policy.form_digest && (!policy.enabled || formPresent(html));
       } catch { /* A transient edge response must not activate an unverified form. */ }

@@ -1,9 +1,10 @@
 import test from "node:test";
 import assert from "node:assert/strict";
 import { randomUUID } from "node:crypto";
+import { readFileSync } from "node:fs";
 import { build } from "esbuild";
 import { fixture } from "./helpers/admin-fixture.ts";
-import { cloudflareClient, digest, records, publicationStatements, publishPages, verifyPublishedForm, withoutPagesAnalytics,
+import { cloudflareClient, digest, records, publicationStatements, publishPages, verifyPublishedForm, withoutPagesAnalytics, withoutPagesTransforms,
   type Deployment, type Publication, type PublicationIO, type Statement } from "../scripts/pages-publication.ts";
 
 const ORIGINS = ["https://public.sorane.example", "https://alias.sorane.example"];
@@ -194,4 +195,17 @@ test("a stale alias cannot activate the new publication even when the immutable 
   const d = deployment(), policies = records({ site: "pages", origins: ORIGINS, formDigest: digest(FORM), enabled: true }, d.id);
   await assert.rejects(verifyPublishedForm(d, policies, async url => new Response(String(url).startsWith(ORIGINS[1]) ? "Older HTML" : FORM)),
     /published_form_mismatch/);
+});
+
+test("only the reviewed Cloudflare JavaScript Detection bootstrap is excluded from HTML hashes", async () => {
+  const jsd = readFileSync(new URL("./fixtures/cloudflare-js-detection.html", import.meta.url), "utf8").trim();
+  assert.equal(withoutPagesTransforms(FORM + jsd), FORM);
+  const varied = jsd.replace("0123456789abcdef", "fedcba9876543210").replace("MTcwMDAwMDAwMA==", "MTc5MTgxMTc0MA==");
+  assert.equal(withoutPagesTransforms(FORM + varied), FORM);
+  const modified = jsd.replace("</script>", "alert('extra code');</script>");
+  assert.equal(withoutPagesTransforms(FORM + modified), FORM + modified, "additional code cannot be hidden by a Cloudflare marker");
+  const unrelated = "<script>window.__CF$cv$params={};alert('not a reviewed bootstrap')</script>";
+  assert.equal(withoutPagesTransforms(FORM + unrelated), FORM + unrelated);
+  const d = deployment(), policies = records({ site: "pages", origins: ORIGINS, formDigest: digest(FORM), enabled: true }, d.id);
+  await verifyPublishedForm(d, policies, async url => new Response(FORM + (String(url).startsWith(d.url) ? "" : varied)));
 });

@@ -67,8 +67,11 @@ GitHub Actions の Cloudflare 認証を調べる場合は、`Cloudflare Pages au
 `scripts/deploy-pages.ts` で同期します。ビルドとテストが終わってから、両オリジンの受付を
 監査記録付きで停止します。Pages の本番・ブランチ・コミットを確認し、デプロイ固有の URL と
 両公開ホストの `contact.html` がビルドの SHA-256 に一致した後、同じトランザクションで
-両オリジンを更新します。Pages が挿入する Cloudflare Analytics スクリプトだけを除外して
-照合します。受付の有効化には、D1 トランザクション内でも所有者の存在を確認します。
+両オリジンを更新します。Cloudflare Analytics と、確認済みの JavaScript Detection の
+追加スクリプトだけを除外して照合します。後者は ray ID と時刻を除いたスクリプト全体の
+ハッシュを固定し、別のコードが追加された場合は除外しません。受付の有効化には、
+D1 トランザクション内でも所有者の存在を確認します。
+JavaScript Detection の HTML への挿入は [Cloudflare の仕様](https://developers.cloudflare.com/cloudflare-challenges/challenge-types/javascript-detections/#process)を参照してください。
 
 公開の切り替え中はフォームの送信に短い停止時間があります。送信できなかった場合は入力を
 保持し、再送できます。`site.contact.form.enabled: false` の変更では、Pages の更新より先に
