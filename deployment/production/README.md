@@ -24,7 +24,7 @@ instance の identity pin、Worker の公開が完了しました。`/health` �
 2026-10-11 に、本番 RP への Passkey サインインを確認し、その認証済みアカウントを
 サイト `sorane` の所有者として登録しました。開発 RP の pairwise subject を本番へ
 コピーしていません。問い合わせフォームと WebMCP の `prepare_contact` を有効にし、
-両公開ホストの Pages 配信確認後に、同じデプロイを受付公開記録へ登録します。
+両公開ホストの Pages 配信確認後に、同じデプロイを受付公開記録へ登録しました。
 
 最終確認した Worker バージョンは、管理 `3fa16057-1aa0-4db8-88e8-fe5ca1da5ad5`、
 受付 `cd6ebd35-b9d0-47ac-ace3-a511bb36d9cc` です。669件のテスト、47件のブラウザー E2E、
@@ -49,3 +49,10 @@ npx wrangler deploy --dry-run --config deployment/production/contact.jsonc
 
 問い合わせのメール通知・自動返信はありません。所有者が受信箱を確認し、必要な連絡を
 行います。問い合わせ本文と返信先は公開ページ・検索・ビルド成果物に含めません。
+
+GitHub Actions の Cloudflare 認証を調べる場合は、`Cloudflare Pages auth diagnostics`
+ワークフローを手動実行します。既存の `CLOUDFLARE_API_TOKEN` と
+`CLOUDFLARE_ACCOUNT_ID` を使用し、token verify と Pages プロジェクト取得の GET だけを
+行います。対象アカウントは `contact.jsonc` に固定された値と照合します。トークン値・
+トークン ID・ハッシュ・API の生のレスポンスはログやサマリーへ出しません。
+この診断は Pages の読み取り可否を確認するもので、デプロイや認証情報の更新は行いません。
