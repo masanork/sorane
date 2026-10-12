@@ -60,3 +60,51 @@ GitHub Actions の Cloudflare 認証を調べる場合は、`Cloudflare Pages au
 認証に失敗した場合は HTTP ステータス・エラーコード・アカウント照合結果をサマリーに残し、
 デプロイを開始しません。読み取りの成功だけでは Pages の書き込み権限を証明できないため、
 公開の成功はその後の Wrangler と配信の確認で判断します。
+
+## Pages と受付設定の自動更新
+
+`Deploy docs site` ワークフローは `main` の Pages 更新と D1 の受付公開記録を
+`scripts/deploy-pages.ts` で同期します。ビルドとテストが終わってから、両オリジンの受付を
+監査記録付きで停止します。Pages の本番・ブランチ・コミットを確認し、デプロイ固有の URL と
+両公開ホストの `contact.html` がビルドの SHA-256 に一致した後、同じトランザクションで
+両オリジンを更新します。Pages が挿入する Cloudflare Analytics スクリプトだけを除外して
+照合します。受付の有効化には、D1 トランザクション内でも所有者の存在を確認します。
+
+公開の切り替え中はフォームの送信に短い停止時間があります。送信できなかった場合は入力を
+保持し、再送できます。`site.contact.form.enabled: false` の変更では、Pages の更新より先に
+受付を止め、配信確認後も停止を維持します。問い合わせページを取り除く変更にも対応します。
+この環境のフォーム生成先は `contact.html`、受付先は `/_contact` に固定しています。
+
+アップロード・配信確認・公開記録の更新が失敗した場合、この実行が公開した Pages だけを
+直前のデプロイへ戻し、配信確認後に元の受付設定を新しい監査記録として復元します。
+別の運用者が更新した Pages や公開記録は上書きしません。復旧中に所有者がいなくなった
+場合は受付を再開しません。結果は Actions のサマリーに `phase`・`code`・`recovery` として
+残します。`manual_review_required` の場合は、現在の Pages と D1 を確認してから復旧します。
+自動復旧は Cloudflare API に接続できることが前提です。
+
+CI トークンには対象アカウントの **Cloudflare Pages: Edit** と、この本番 DB の
+**D1: Edit** が必要です。管理 Worker の RP 秘密鍵や所有者の subject は CI に渡しません。
+CI の公開ジョブは同時に実行せず、後続の push で実行中の公開をキャンセルしません。
+
+過去の成功した本番デプロイへ戻すときは、Actions の手動実行で `main` を選び、
+`rollback_deployment` に対象 UUID を入力します。プレビューや、この本番 DB に受付設定の
+監査記録がないデプロイは変更前に拒否します。フォーム停止済みのデプロイに戻す場合は
+受付も停止し、有効だったデプロイへ戻す場合は所有者と配信を確認して再開します。
+
+```sh
+gh workflow run pages.yml --ref main -f rollback_deployment=PAGES-DEPLOYMENT-UUID
+```
+
+Cloudflare の画面から直接ロールバックした場合やジョブを強制キャンセルした場合は、
+手動実行の `sync_current` を有効にして、公開中のデプロイの監査記録と配信を照合します。
+これは Pages を再デプロイしません。未確認の新しいデプロイで中断して監査記録がない場合は、
+`rollback_deployment` で確認済みのデプロイへ戻してください。
+
+```sh
+gh workflow run pages.yml --ref main -f sync_current=true
+```
+
+ローカルで公開する場合も、通常のビルド後に `node scripts/deploy-pages.ts` を使用します。
+従来の `wrangler pages deploy` や Cloudflare の画面から行う変更は、この同期処理を通りません。
+既存の公開記録が公開中の Pages とずれている場合、通常の公開は変更前に止まり、
+上記の同期またはロールバックによる復旧を求めます。

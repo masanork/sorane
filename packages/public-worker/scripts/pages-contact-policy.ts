@@ -1,6 +1,6 @@
 import { readFileSync } from "node:fs";
-import { createHash, randomUUID } from "node:crypto";
 import { parseArgs } from "node:util";
+import { digest, records, publicationStatements } from "../../../scripts/pages-publication.ts";
 
 // Operator-only, reviewed deployment activation. This command emits SQL and
 // never deploys, contacts Cloudflare, or grants a browser publication privilege.
@@ -25,15 +25,5 @@ for (const value of origins) {
 const bytes=readFileSync(required("form",4096));
 if (!values.disable && !/<form\b[^>]*data-sorane-contact\b[^>]*action="\/_contact"/.test(bytes.toString("utf8")))
   throw new Error("The Pages build must contain the generated same-origin contact form");
-const formDigest=createHash("sha256").update(bytes).digest("hex"),enabled=values.disable?0:1;
-const quote=(value:string)=>`'${value.replaceAll("'","''")}'`;
-for (const origin of origins) {
-  const id=randomUUID(),policy=createHash("sha256").update(JSON.stringify({site,origin,deployment,formDigest,enabled})).digest("hex");
-  console.log(`INSERT INTO pages_contact_event(id,site_id,origin,deployment_id,form_digest,policy_digest,enabled,actor,reason,created_at)
-VALUES(${quote(id)},${quote(site)},${quote(origin)},${quote(deployment)},${quote(formDigest)},${quote(policy)},${enabled},${quote(actor)},${quote(reason)},
-CASE WHEN ${enabled}=0 OR EXISTS(SELECT 1 FROM site_member WHERE site_id=${quote(site)} AND role='owner') THEN unixepoch() ELSE NULL END);
-INSERT INTO pages_contact_publication(origin,site_id,event_id,deployment_id,form_digest,policy_digest,enabled,published_at)
-VALUES(${quote(origin)},${quote(site)},${quote(id)},${quote(deployment)},${quote(formDigest)},${quote(policy)},${enabled},unixepoch())
-ON CONFLICT(origin) DO UPDATE SET site_id=excluded.site_id,event_id=excluded.event_id,deployment_id=excluded.deployment_id,
-form_digest=excluded.form_digest,policy_digest=excluded.policy_digest,enabled=excluded.enabled,published_at=excluded.published_at;`);
-}
+const next=records({site,origins,formDigest:digest(bytes.toString("utf8")),enabled:!values.disable},deployment);
+for (const {sql} of publicationStatements(next,actor,reason)) console.log(sql+";");

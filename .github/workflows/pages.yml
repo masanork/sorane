@@ -9,21 +9,36 @@ on:
       - "templates/**"
       - "scripts/supply-chain-status.ts"
       - "scripts/cloudflare-pages-auth.mjs"
+      - "scripts/deploy-pages.ts"
+      - "scripts/pages-publication.ts"
+      - "deployment/production/contact.jsonc"
       - "cbom.json"
       - "package.json"
+      - "package-lock.json"
       - ".github/workflows/pages.yml"
   workflow_dispatch:
+    inputs:
+      rollback_deployment:
+        description: "Audited production Pages deployment UUID to restore (blank for deploy)"
+        required: false
+        type: string
+      sync_current:
+        description: "Reconcile contact policy after an external rollback or interrupted release"
+        required: false
+        default: false
+        type: boolean
 
 concurrency:
   group: sorane-pages-${{ github.ref }}
-  cancel-in-progress: true
+  cancel-in-progress: false
 
 jobs:
   deploy:
+    if: github.ref == 'refs/heads/main'
     runs-on: ubuntu-latest
+    timeout-minutes: 20
     permissions:
       contents: read
-      deployments: write
     steps:
       - uses: actions/checkout@v4
 
@@ -41,17 +56,28 @@ jobs:
         run: npm ci
 
       - name: Update supply chain status
+        if: inputs.rollback_deployment == '' && inputs.sync_current != true
         run: npm run supply-chain:status
 
       - name: Build search index
+        if: inputs.rollback_deployment == '' && inputs.sync_current != true
         run: node packages/cli/src/main.ts index --cwd website --force
 
       - name: Build docs site
+        if: inputs.rollback_deployment == '' && inputs.sync_current != true
         run: node packages/cli/src/main.ts build --cwd website --clean
 
-      - name: Deploy to Cloudflare Pages
-        uses: cloudflare/wrangler-action@v3
-        with:
-          apiToken: ${{ secrets.CLOUDFLARE_API_TOKEN }}
-          accountId: ${{ secrets.CLOUDFLARE_ACCOUNT_ID }}
-          command: pages deploy website/dist --project-name sorane
+      - name: Verify publication coordinator
+        run: node --test tests/pages-publication.test.ts
+
+      - name: Publish Pages and contact policy
+        env:
+          CLOUDFLARE_API_TOKEN: ${{ secrets.CLOUDFLARE_API_TOKEN }}
+          CLOUDFLARE_ACCOUNT_ID: ${{ secrets.CLOUDFLARE_ACCOUNT_ID }}
+          ROLLBACK_DEPLOYMENT: ${{ inputs.rollback_deployment }}
+          SYNC_CURRENT: ${{ inputs.sync_current }}
+        run: |
+          args=()
+          if [ -n "$ROLLBACK_DEPLOYMENT" ]; then args+=(--rollback "$ROLLBACK_DEPLOYMENT"); fi
+          if [ "$SYNC_CURRENT" = "true" ]; then args+=(--sync-current); fi
+          node scripts/deploy-pages.ts "${args[@]}"

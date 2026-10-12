@@ -42,7 +42,7 @@ API は JSON または URL エンコードしたフォームを受け付け、�
 ## 検証
 
 ```sh
-node --test tests/contact-worker.test.ts tests/pages-contact-worker.test.ts tests/ssg-worker.test.ts
+node --test tests/contact-worker.test.ts tests/pages-contact-worker.test.ts tests/pages-publication.test.ts tests/ssg-worker.test.ts
 npm run test:e2e -- tests/e2e/contact.spec.ts
 npm run workers:check
 npm run typecheck
@@ -69,4 +69,6 @@ node packages/public-worker/scripts/pages-contact-policy.ts \
 
 出力を確認し、対象の本番 D1 に `wrangler d1 execute --remote --file` で適用します。HTML は `action="/_contact"` の Sorane フォームでなければ拒否します。公開記録が有効なオリジンだけが受け付けられ、入力 Origin もその送信先と一致する必要があります。同じ制限・同意・重複受付・保存期限・所有者認証を使います。有効化後の公開記録変更も受付の D1 トランザクション内で再確認します。
 
-停止する場合は同じコマンドに `--disable` を追加し、停止 SQL を先に適用してからフォームを無効化・再デプロイします。公開記録は Pages の自動更新を監視しません。ロールバックやフォーム設定の変更時は、運用者が公開記録も更新してください。実際の Sorane 環境は [本番設定](../deployment/production/README.md) を参照してください。
+手動で停止する場合は同じコマンドに `--disable` を追加し、停止 SQL を先に適用してからフォームを無効化・再デプロイします。この SQL 生成コマンド自体は Pages を監視しません。
+
+`sorane.dev` と `ssg.sorane.dev` では、[本番設定](../deployment/production/README.md#pages-と受付設定の自動更新)の CI が Pages と公開記録を合わせて更新します。フォームを無効にした変更も、受付の停止を先に行ってから配信します。CI から過去のデプロイに戻す場合は、そのデプロイの監査記録にある受付設定を復元します。
