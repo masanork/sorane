@@ -31,8 +31,8 @@ Workers version preview URLs and invocation/trace logging remain disabled.
 
 ## Current combined deployment, October 10
 
-The complete root source includes the article editor and native contact API/inbox.
-All 669 tests passed on CI's Node 23 with line coverage 91.55%, branch coverage
+The October 10 combined source includes the article editor and native contact API/inbox.
+At that baseline, all 669 tests passed on CI's Node 23 with line coverage 91.55%, branch coverage
 73.34% and function coverage 70.03%; all 47 browser E2E tests passed, including
 Pages and Worker forms, native WebMCP drafts, consent, lost-response retry,
 private owner access and status changes. Project/Worker type checks and all
@@ -40,7 +40,7 @@ actual target configuration dry runs passed.
 
 | Target | Version |
 | --- | --- |
-| Admin | `3003f06c-0700-4e4b-b699-5307754558f3` |
+| Admin (October 11 editing polish) | `f5b5e09d-0364-49fd-9b8d-211ac4de06af` |
 | Builder | `0aa80aad-a4db-444f-8e40-b83a9f542774` |
 | Public | `187971af-1d8b-4d1f-8241-ad0547ea91a7` |
 | Engine | `7cbf7c4dfac45034f002a610314985923bf041be8e49bf71002054ba7a3003f9` |
@@ -52,6 +52,37 @@ original approved candidate `fafaadd7a7a6e932d09f3e6eb54369493bf93895fb9365757ed
 No draft or new contact-enabled candidate was automatically approved.
 The [Pages production inquiry environment](../deployment/production/README.md)
 uses a separate database, RP and management origin.
+
+## Editing polish on October 11
+
+The follow-up uses the current root source based on commit
+`1fe3f20ea4c315dd015999791d5fde4df7041a5e`, including the contact implementation.
+The article editor and list excerpt now omit a leading Markdown H1 only when it
+exactly repeats the article title. Saving restores that heading with the edited
+title and its original separators; other headings remain in the body. The editor
+still submits the existing Markdown API format and preserves all OKF metadata.
+
+Save state compares the current title/body with the initial values. Reverting an
+edit returns to the saved state, and unchanged forms make no save request.
+The action is labelled **保存して確認へ**, with a desktop keyboard shortcut hint.
+While a save is pending, title, body and formatting controls are locked to keep
+later typing from being lost during the redirect. Failed saves retain the text
+and restore editing; revision/authority conflicts explain how to recover.
+Read-only viewers see **原稿を読む** and have no save shortcut or submit handler.
+
+All 55 targeted tests passed: six editor presentation/script tests and 49 actual
+management, SSG and native contact Worker tests. Project and all three Worker
+type checks, the actual development admin deployment dry run and diff checks
+passed. Only `sorane-dev-admin` was redeployed. Its served JavaScript and CSS
+match the local source byte-for-byte. The engine, site revision (6), four retained
+proposals, owner membership and original public candidate were unchanged.
+The existing RP secret and private content service binding were verified.
+
+Computer Use had no connected browser or app surfaces, so this follow-up did
+not repeat the visual/mobile browser checks. The earlier screenshots document
+the October 10 UI, not these latest changes. Read-only remote checks and their
+baseline are saved in `.sorane/operator/editor-followup-verified.json` and
+`editor-followup-before.json`.
 
 ## Earlier qualification completed
 

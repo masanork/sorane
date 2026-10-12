@@ -303,7 +303,9 @@ test("Artifacts → actual sorane engine → preview → exact candidate approva
     const link=`/sites/alpha/editor?${new URLSearchParams({proposal:draftProposal,path:'content/hello.md'})}`;
     const html=await (await owner.get(link)).text();assert.match(html,/Reviewed manuscript/);assert.match(html,/name="title"/);
     assert.doesNotMatch(html,/name="commit"|name="repositoryId"|name="changes"/);
-    const read=await reader.get(link);assert.equal(read.status,200);assert.match(await read.text(),/readonly/);
+    assert.match(html,/<textarea[^>]*data-title-heading=/);
+    assert.doesNotMatch(html.match(/<textarea[^>]*>([\s\S]*?)<\/textarea>/)![1],/# Reviewed manuscript/,'the body displays prose without repeating the title');
+    const read=await reader.get(link);assert.equal(read.status,200);const readHtml=await read.text();assert.match(readHtml,/readonly/);assert.match(readHtml,/<h1>原稿を読む<\/h1>/);assert.doesNotMatch(readHtml,/type="submit"[^>]*>保存して確認へ/);
     const value={operationId:randomUUID(),revision:await revision(),proposalId:draftProposal,path:'content/hello.md',
       title:'直感的な編集 <script>',body:'# 直感的な編集\n\n'+('本文を直接編集できます。'.repeat(900))};
     assert.equal((await reader.post('/api/sites/alpha/editor',value)).status,403);
