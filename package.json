@@ -22,8 +22,8 @@
     "index": "node packages/cli/src/main.ts index",
     "search": "node packages/cli/src/main.ts search",
     "test": "node --test \"tests/**/*.test.ts\"",
-    "test:coverage": "node --experimental-test-coverage --test-isolation=none --test-coverage-lines=90 --test-coverage-branches=65 --test-coverage-functions=60 --test-coverage-include='packages/**/*.ts' --test-coverage-exclude='packages/**/wasm/**' --test-coverage-exclude='packages/search/**' --test-coverage-exclude='packages/cli/src/watch.ts' --test 'tests/**/*.test.ts'",
-    "test:coverage:lcov": "c8 --include='packages/**' --exclude='packages/**/wasm/**' --exclude='packages/search/**' --reporter=text-summary --reporter=lcov --report-dir=coverage node --test 'tests/**/*.test.ts'",
+    "test:coverage": "node scripts/test-coverage.ts",
+    "test:coverage:lcov": "node scripts/test-coverage.ts",
     "test:e2e": "playwright test",
     "test:mermaid-build": "node --test tests/mermaid-build.test.ts tests/build-mermaid-build.test.ts",
     "test:c2pa": "node --test tests/c2pa-pass.test.ts tests/static-assets.test.ts tests/asset-provenance.test.ts",
@@ -60,6 +60,7 @@
     "c8": "^12.0.0",
     "esbuild": "0.28.2",
     "miniflare": "5.20261006.0-alpha",
+    "tsx": "4.23.15",
     "typescript": "^7.0.2",
     "wrangler": "4.148.0"
   },

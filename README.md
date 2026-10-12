@@ -295,6 +295,34 @@ npm run publish:workspaces
 
 Packages: `@sorane/cli`, `@sorane/core`, `@sorane/okf`, `@sorane/search`, `@sorane/font`.
 
+## Development checks
+
+```bash
+npm test
+npm run typecheck
+npm run workers:check
+npm run test:coverage
+npm run test:e2e
+```
+
+Coverage uses one configuration, `.c8rc.json`, for the gate, LCOV and JSON summary.
+The thresholds remain 90% lines, 65% branches and 60% functions. One test run
+produces `coverage/lcov.info` and `coverage/coverage-summary.json`; the
+`test:coverage:lcov` command is an alias for the same run.
+
+`scripts/test-coverage.ts` preloads the existing tsx ESM loader in both tests and
+child CLIs, including commands that change directory, and keeps them on the
+same Node executable. The CLI imports the cached loader instead of registering
+it again. Mixing native type stripping with tsx, or registering tsx twice, gives
+the same source file different generated offsets. Merging those profiles with
+one source map caused the previous unstable results. The collector now rejects
+missing source maps and mixed transforms before accepting a report.
+
+The coverage regression test exercises parent tests and a child CLI, checks the
+original TypeScript line numbers, and confirms that untested code fails the gate.
+See [tsx entry-point registration](https://tsx.hirok.io/dev-api/entry-point) and
+[c8 source-map support](https://github.com/bcoe/c8#source-map-support).
+
 ## Roadmap
 
 - SemVer tags and GitHub Releases (fonts tarball)
