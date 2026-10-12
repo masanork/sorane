@@ -8,6 +8,7 @@ on:
       - "packages/**"
       - "templates/**"
       - "scripts/supply-chain-status.ts"
+      - "scripts/cloudflare-pages-auth.mjs"
       - "cbom.json"
       - "package.json"
       - ".github/workflows/pages.yml"
@@ -29,6 +30,12 @@ jobs:
       - uses: actions/setup-node@v4
         with:
           node-version: "23"
+
+      - name: Verify Cloudflare Pages authentication
+        env:
+          CLOUDFLARE_API_TOKEN: ${{ secrets.CLOUDFLARE_API_TOKEN }}
+          CLOUDFLARE_ACCOUNT_ID: ${{ secrets.CLOUDFLARE_ACCOUNT_ID }}
+        run: node scripts/cloudflare-pages-auth.mjs
 
       - name: Install dependencies
         run: npm ci

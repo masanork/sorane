@@ -58,6 +58,9 @@ jobs:
       - name: Workers typecheck
         run: npm run workers:types && npm run workers:check
 
+      - name: Cloudflare authentication diagnostic tests
+        run: node --test tests/cloudflare-pages-auth.test.mjs
+
       - name: Test with coverage gate
         run: npm run test:coverage
 
@@ -149,7 +152,8 @@ jobs:
 
       - name: Mermaid build tests (mmdc)
         run: |
-          export PUPPETEER_EXECUTABLE_PATH="$(node -e "const {chromium}=require('@playwright/test'); process.stdout.write(chromium.executablePath())")"
+          PUPPETEER_EXECUTABLE_PATH="$(node -e "const {chromium}=require('@playwright/test'); process.stdout.write(chromium.executablePath())")"
+          export PUPPETEER_EXECUTABLE_PATH
           node --test tests/mermaid-build.test.ts tests/build-mermaid-build.test.ts
 
       - name: Playwright E2E
